@@ -1,0 +1,205 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import twilio from 'twilio'
+import { db } from '@/server/db'
+import { generateResponse } from '@/server/services/ai/conversationEngine'
+import { ttsClient } from '@/server/services/audio/tts'
+import {
+  initConversationState,
+  getConversationState,
+} from '@/server/services/telephony/conversationState'
+import { ELEVENLABS_MODEL } from '@/server/services/telephony/constants'
+import { uploadAudioBuffer } from '@/server/services/audio/r2'
+
+const VoiceResponse = twilio.twiml.VoiceResponse
+
+/**
+ * GET handler — check call health.
+ * Returns whether a conversation is still active for the given callSid.
+ */
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const callSid = searchParams.get('callSid')
+
+  if (callSid) {
+    const state = await getConversationState(callSid)
+    if (!state) {
+      return NextResponse.json({ active: false, reason: 'not_found' })
+    }
+    return NextResponse.json({
+      active: state.status === 'active',
+      status: state.status,
+      turnCount: state.turnCount,
+    })
+  }
+
+  return NextResponse.json({ active: false, reason: 'missing_callSid' })
+}
+
+/**
+ * POST handler — called by Twilio when a call is answered.
+ * Returns TwiML with a greeting and speech gathering for the conversation.
+ */
+export async function POST(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const formData = await req.formData()
+
+  const callSid = (formData.get('CallSid') as string) ?? ''
+  const fromNumber = (formData.get('From') as string) ?? ''
+  const callId = searchParams.get('callId')
+
+  // Resolve scenario and character
+  let scenarioId = searchParams.get('scenarioId') ?? ''
+  let characterId = searchParams.get('characterId') ?? ''
+
+  if (!scenarioId || !characterId) {
+    // Look up from DB call record
+    try {
+      const callRecord = callId
+        ? await db.call.findUnique({
+            where: { id: callId },
+            include: { scenario: { include: { character: true } } },
+          })
+        : await db.call.findFirst({
+            where: { twilioCallSid: callSid },
+            include: { scenario: { include: { character: true } } },
+          })
+
+      if (callRecord) {
+        scenarioId = callRecord.scenarioId
+        characterId = callRecord.scenario.characterId
+
+        // Update call status to ACTIVE
+        await db.call
+          .update({
+            where: { id: callRecord.id },
+            data: { status: 'ACTIVE' },
+          })
+          .catch(() => {})
+      }
+    } catch (error) {
+      console.error('Failed to load call record:', error)
+    }
+  }
+
+  // Load scenario + character
+  let characterName = searchParams.get('characterName') ?? 'AI Character'
+  let voiceId = ''
+  let systemPrompt = ''
+
+  if (scenarioId) {
+    try {
+      const scenario = await db.scenario.findUnique({
+        where: { id: scenarioId },
+        include: { character: true },
+      })
+
+      if (scenario) {
+        characterName = scenario.character.name
+        voiceId = scenario.character.elevenLabsVoiceId
+        systemPrompt = [
+          `Tu es ${scenario.character.name}. ${scenario.character.description || ''}`,
+          scenario.character.promptSystem,
+          scenario.aiInstructions,
+          `Contexte du scénario: ${scenario.description || ''}`,
+          'Réponds en français de manière naturelle et parlée, comme dans une conversation téléphonique.',
+          'Garde tes réponses concises (2-3 phrases max) adaptées à un appel vocal.',
+        ]
+          .filter(Boolean)
+          .join('\n')
+      }
+    } catch (error) {
+      console.error('Failed to load scenario:', error)
+      systemPrompt =
+        'Tu es un assistant IA amical. Réponds en français de manière naturelle.'
+    }
+  } else {
+    systemPrompt =
+      'Tu es un assistant IA amical. Réponds en français de manière naturelle.'
+  }
+
+  // Generate greeting via conversation engine
+  let greeting = `Bonjour, vous êtes en ligne avec ${characterName}.`
+  try {
+    const result = await generateResponse({
+      systemPrompt,
+      messages: [],
+      maxTokens: 150,
+    })
+    greeting = result.response
+  } catch (error) {
+    console.error('Failed to generate greeting:', error)
+  }
+
+  // Initialize conversation state in Redis (include greeting for transcript)
+  await initConversationState(callSid, {
+    callSid,
+    scenarioId: scenarioId || 'unknown',
+    characterId: characterId || 'unknown',
+    callerNumber: fromNumber,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'assistant', content: greeting },
+    ],
+  })
+
+  // Synthesize greeting with ElevenLabs and upload to R2
+  let audioUrl = ''
+  if (ttsClient && voiceId) {
+    try {
+      const audioStream = await ttsClient.textToSpeech.convert(voiceId, {
+        text: greeting,
+        model_id: ELEVENLABS_MODEL,
+        output_format: 'ulaw_8000',
+      })
+
+      const chunks: Uint8Array[] = []
+      for await (const chunk of audioStream) {
+        chunks.push(chunk)
+      }
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+      const combined = new Uint8Array(totalLength)
+      let offset = 0
+      for (const chunk of chunks) {
+        combined.set(chunk, offset)
+        offset += chunk.length
+      }
+
+      audioUrl = await uploadAudioBuffer(
+        callSid,
+        0,
+        Buffer.from(combined),
+        'audio/mulaw',
+      )
+    } catch (error) {
+      console.error('Failed to synthesize greeting:', error)
+    }
+  }
+
+  // Build TwiML response
+  const twiml = new VoiceResponse()
+
+  if (audioUrl) {
+    twiml.play({}, audioUrl)
+  } else {
+    twiml.say(
+      { voice: 'alice', language: 'fr-FR' },
+      greeting,
+    )
+  }
+
+  const actionUrl = `/api/webhooks/twilio/voice/handle-input?scenarioId=${encodeURIComponent(scenarioId || 'unknown')}&characterId=${encodeURIComponent(characterId || 'unknown')}`
+
+  twiml.gather({
+    input: ['speech'],
+    speechTimeout: 'auto',
+    speechModel: 'experimental_utterances',
+    enhanced: true,
+    action: actionUrl,
+    method: 'POST',
+  })
+
+  return new NextResponse(twiml.toString(), {
+    headers: { 'Content-Type': 'text/xml' },
+  })
+}

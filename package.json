@@ -1,0 +1,28 @@
+{
+  "name": "@echoroom/root",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "pnpm --filter echoroom-web dev",
+    "build": "turbo build",
+    "build:web": "pnpm --filter echoroom-web build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "turbo lint && turbo typecheck",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
+    "turbo": "^2.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

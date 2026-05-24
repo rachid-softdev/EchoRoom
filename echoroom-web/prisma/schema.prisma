@@ -1,0 +1,340 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum CallStatus {
+  PENDING
+  RINGING
+  ACTIVE
+  COMPLETED
+  FAILED
+  BLOCKED
+}
+
+enum Visibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum CharacterCategory {
+  ROMANTIC
+  CHAOTIC
+  CORPORATE
+  NPC
+  HORROR
+  CRINGE
+  GAMER
+  WEIRD
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  image        String?
+  role         UserRole @default(USER)
+  displayName  String?
+  bio          String?
+
+  credits   Int @default(5)
+
+  totalLikesReceived Int @default(0)
+  totalCallsMade     Int @default(0)
+
+  consentAcceptedAt DateTime?
+  gdprDataExportedAt DateTime?
+  deletedAt         DateTime?
+  anonymizedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  calls           Call[]
+  scenarios       Scenario[]
+  reactions       Reaction[]
+  comments        Comment[]
+  moderatedComments Comment[] @relation("ModeratedComments")
+  purchases       Purchase[]
+  badges          UserBadge[]
+  clips           Clip[]
+  reportedAbuse   AbuseReport[] @relation("ReportedReports")
+  reviewedReports AbuseReport[] @relation("ReviewedReports")
+  auditLogs       AuditLog[]
+  blockedNumbers  BlockedNumber[]
+  dailyCallLimits DailyCallLimit[]
+
+  @@index([totalLikesReceived(sort: Desc)])
+  @@index([totalCallsMade(sort: Desc)])
+}
+
+model Character {
+  id              String            @id @default(cuid())
+  name            String
+  slug            String            @unique
+  description     String
+  promptSystem    String
+  previewAudioUrl String
+  avatarUrl       String
+  category        CharacterCategory
+
+  elevenLabsVoiceId String
+
+  isFeatured Boolean @default(false)
+
+  createdAt  DateTime   @default(now())
+
+  scenarios Scenario[]
+}
+
+model Scenario {
+  id               String           @id @default(cuid())
+
+  creatorId        String
+  creator          User             @relation(fields: [creatorId], references: [id])
+
+  characterId      String
+  character        Character        @relation(fields: [characterId], references: [id])
+
+  title            String
+  description      String
+  openingMessage   String
+  aiInstructions   String
+
+  visibility       Visibility       @default(PRIVATE)
+
+  moderationStatus ModerationStatus @default(PENDING)
+
+  playCount Int @default(0)
+  likeCount Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  calls            Call[]
+  comments         Comment[]
+  reactions        Reaction[]
+  featuredEntries  FeaturedScenario[]
+
+  @@index([creatorId])
+  @@index([characterId])
+  @@index([visibility])
+  @@index([likeCount(sort: Desc)])
+  @@index([playCount(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Call {
+  id              String     @id @default(cuid())
+
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+
+  scenarioId      String
+  scenario        Scenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  phoneNumber     String
+
+  status          CallStatus @default(PENDING)
+
+  durationSeconds Int        @default(0)
+
+  recordingUrl String?
+  transcript   Json?
+
+  twilioCallSid String?   @unique   // Twilio call SID for webhook matching
+
+  costCredits Int
+
+  clips     Clip[]
+
+  createdAt DateTime @default(now())
+  endedAt   DateTime?
+
+  @@index([userId])
+  @@index([scenarioId])
+  @@index([twilioCallSid])
+}
+
+model Reaction {
+  id         String   @id @default(cuid())
+
+  userId     String
+  scenarioId String
+
+  emoji      String
+
+  user     User     @relation(fields: [userId], references: [id])
+  scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, scenarioId, emoji])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+
+  userId     String
+  scenarioId String
+
+  content    String
+
+  moderationStatus ModerationStatus @default(APPROVED)
+  moderatedById    String?
+  moderatedAt      DateTime?
+
+  moderatedBy User? @relation("ModeratedComments", fields: [moderatedById], references: [id])
+
+  user     User     @relation(fields: [userId], references: [id])
+  scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Purchase {
+  id               String   @id @default(cuid())
+
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+
+  stripePaymentId  String   @unique
+
+  creditsPurchased Int
+
+  createdAt        DateTime @default(now())
+}
+
+model Clip {
+  id        String   @id @default(cuid())
+  callId    String
+  userId    String
+  title     String   @default("Clip")
+  startTime Int
+  endTime   Int
+  clipUrl   String?
+  status    String   @default("READY")
+
+  createdAt DateTime @default(now())
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@index([userId])
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  iconUrl     String?
+  criteria    Json
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  awardedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model FeaturedScenario {
+  id          String   @id @default(cuid())
+  scenarioId  String
+  featuredAt  DateTime @default(now())
+  featureType String   @default("AUTOMATED")
+
+  scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@unique([featuredAt])
+  @@index([scenarioId])
+}
+
+model AbuseReport {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetType String
+  targetId   String
+  reason     String
+  status     String   @default("PENDING")
+
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  reviewedBy User? @relation("ReviewedReports", fields: [reviewedById], references: [id])
+  reporter   User  @relation("ReportedReports", fields: [reporterId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([reporterId])
+  @@index([targetId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  adminId    String
+  metadata   Json?
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([entityType])
+  @@index([adminId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model BlockedNumber {
+  id          String   @id @default(cuid())
+  phoneNumber String   @unique
+  reason      String?
+  blockedById String
+
+  blockedBy User @relation(fields: [blockedById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model DailyCallLimit {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  callCount Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@index([userId])
+}
