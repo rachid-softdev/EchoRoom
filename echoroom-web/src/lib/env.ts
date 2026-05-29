@@ -31,7 +31,7 @@ type EnvType = z.infer<typeof envSchema>;
 const DEV_DEFAULTS: Record<string, string> = {
   NODE_ENV: "development",
   DATABASE_URL: "postgresql://localhost:5432/echoroom?schema=public",
-  NEXTAUTH_SECRET: "dev-secret-that-is-at-least-32-characters-long!!!",
+  NEXTAUTH_SECRET: "CHANGE_ME_BEFORE_PRODUCTION_aaaaaaaaaaaaaaaaaaaa",
   STRIPE_SECRET_KEY: "sk_test_dev",
   STRIPE_WEBHOOK_SECRET: "whsec_dev",
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
@@ -52,6 +52,16 @@ const DEV_DEFAULTS: Record<string, string> = {
 function loadEnv(): EnvType {
   const nodeEnv = process.env.NODE_ENV ?? "development";
   const isProduction = nodeEnv === "production";
+
+  if (isProduction) {
+    const secret = process.env.NEXTAUTH_SECRET ?? "";
+    if (secret.startsWith("CHANGE_ME")) {
+      throw new Error(
+        "NEXTAUTH_SECRET is still set to the default value. " +
+        "Generate a unique secret before deploying to production.",
+      );
+    }
+  }
 
   if (isProduction) {
     // Production: strict validation — all vars must be in process.env
