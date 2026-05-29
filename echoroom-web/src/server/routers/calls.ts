@@ -139,6 +139,18 @@ export const callsRouter = router({
       return { items, nextCursor };
     }),
 
+  todayCount: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { todayStart, todayEnd } = getUTCDayRange();
+      const count = await db.call.count({
+        where: {
+          userId: ctx.session.user.id,
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      });
+      return { count };
+    }),
+
   replay: protectedProcedure
     .input(z.object({ callId: z.string() }))
     .query(async ({ input, ctx }) => {

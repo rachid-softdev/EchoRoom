@@ -71,6 +71,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function DashboardPage() {
   const creditsQuery = api.billing.getCredits.useQuery();
   const callsQuery = api.calls.history.useQuery({ limit: 5 });
+  const todayCountQuery = api.calls.todayCount.useQuery();
   const scenariosQuery = api.scenarios.myScenarios.useQuery({ limit: 3 });
 
   const credits = creditsQuery.data?.credits ?? 0;
@@ -103,7 +104,7 @@ export default function DashboardPage() {
             <Phone className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{calls.length}</p>
+            <p className="text-3xl font-bold">{todayCountQuery.data?.count ?? 0}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
