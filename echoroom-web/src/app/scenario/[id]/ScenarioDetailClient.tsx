@@ -68,17 +68,17 @@ export function ScenarioDetailClient({
     },
   })
 
-  const deleteCommentMutation = api.admin.deleteComment.useMutation({
+  const moderateCommentMutation = api.admin.moderateComment.useMutation({
     onSuccess: () => {
       commentsQuery.refetch()
       toast({
-        title: "Commentaire supprimé",
+        title: "Commentaire modéré",
         variant: "success",
       })
     },
     onError: (err) => {
       toast({
-        title: err.message ?? "Erreur lors de la suppression",
+        title: err.message ?? "Erreur lors de la modération",
         variant: "destructive",
       })
     },
@@ -306,11 +306,11 @@ export function ScenarioDetailClient({
                             size="icon"
                             className="ml-auto w-6 h-6 text-muted-foreground hover:text-destructive"
                             onClick={() =>
-                              deleteCommentMutation.mutate({
+                              moderateCommentMutation.mutate({
                                 commentId: comment.id,
                               })
                             }
-                            disabled={deleteCommentMutation.isPending}
+                            disabled={moderateCommentMutation.isPending}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>

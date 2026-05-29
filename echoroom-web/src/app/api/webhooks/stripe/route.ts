@@ -4,6 +4,9 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
 import { db } from "@/server/db";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("stripe-webhook");
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid signature";
-    console.error("Stripe webhook signature verification failed:", message);
+    log.error("Stripe webhook signature verification failed", { message });
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
@@ -35,44 +38,51 @@ export async function POST(req: NextRequest) {
       const userId = session.metadata?.userId;
       const creditsStr = session.metadata?.credits;
       if (!userId || !creditsStr) {
-        console.error("Missing metadata on checkout session", session.id);
+        log.error("Missing metadata on checkout session", { sessionId: session.id });
         return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
       }
 
       const credits = Number.parseInt(creditsStr, 10);
       if (Number.isNaN(credits) || credits <= 0) {
-        console.error("Invalid credits value", creditsStr);
+        log.error("Invalid credits value", { creditsStr });
         return NextResponse.json({ error: "Invalid credits" }, { status: 400 });
       }
 
-      // Add credits to user
-      await db.user.update({
-        where: { id: userId },
-        data: { credits: { increment: credits } },
+      // Idempotency check: skip if already processed
+      const existingPurchase = await db.purchase.findUnique({
+        where: { stripePaymentId: session.id },
       });
+      if (existingPurchase) {
+        log.info("Duplicate checkout.session.completed, skipping", { sessionId: session.id });
+        return NextResponse.json({ received: true });
+      }
 
-      // Record the purchase
-      await db.purchase.create({
-        data: {
-          userId,
-          stripePaymentId: session.id,
-          creditsPurchased: credits,
-        },
-      });
+      // Add credits to user + record the purchase (atomic transaction)
+      await db.$transaction([
+        db.user.update({
+          where: { id: userId },
+          data: { credits: { increment: credits } },
+        }),
+        db.purchase.create({
+          data: {
+            userId,
+            stripePaymentId: session.id,
+            creditsPurchased: credits,
+          },
+        }),
+      ]);
 
-      console.log(
-        `Credits added: +${credits} for user ${userId} (session ${session.id})`,
-      );
+      log.info("Credits added", { credits, userId, sessionId: session.id });
       break;
     }
 
     case "checkout.session.expired": {
-      console.log("Checkout session expired:", event.data.object.id);
+      log.info("Checkout session expired", { sessionId: event.data.object.id });
       break;
     }
 
     default: {
-      console.log(`Unhandled Stripe event type: ${event.type}`);
+      log.info("Unhandled Stripe event type", { eventType: event.type });
     }
   }
 

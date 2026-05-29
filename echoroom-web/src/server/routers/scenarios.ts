@@ -35,7 +35,7 @@ export const scenariosRouter = router({
           openingMessage: input.openingMessage,
           aiInstructions: input.aiInstructions,
           visibility: input.visibility,
-          creatorId: ctx.session!.user.id,
+          creatorId: ctx.session.user.id,
         },
       });
 
@@ -179,7 +179,7 @@ export const scenariosRouter = router({
           code: "NOT_FOUND",
           message: "Scénario introuvable",
         });
-      if (existing.creatorId !== ctx.session!.user.id)
+      if (existing.creatorId !== ctx.session.user.id)
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Vous n'êtes pas le créateur de ce scénario",

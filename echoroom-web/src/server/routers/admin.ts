@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
+import { getUTCDateString } from "../lib/date";
 
 export const adminRouter = router({
   featureScenario: adminProcedure
@@ -18,21 +19,18 @@ export const adminRouter = router({
         });
       }
 
-      // Remove any existing entry for today to satisfy the @@unique constraint on featuredAt
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
-
-      await db.featuredScenario.deleteMany({
-        where: {
-          featuredAt: { gte: todayStart, lte: todayEnd },
-        },
-      });
-
-      await db.featuredScenario.create({
-        data: {
+      const today = getUTCDateString();
+      await db.featuredScenario.upsert({
+        where: { featuredDate: today },
+        update: {
           scenarioId: input.scenarioId,
+          featuredAt: new Date(),
+          featureType: "ADMIN_CURATED",
+        },
+        create: {
+          scenarioId: input.scenarioId,
+          featuredDate: today,
+          featuredAt: new Date(),
           featureType: "ADMIN_CURATED",
         },
       });
@@ -42,7 +40,7 @@ export const adminRouter = router({
           action: "FEATURE_SCENARIO",
           entityType: "Scenario",
           entityId: input.scenarioId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 
@@ -52,8 +50,9 @@ export const adminRouter = router({
   removeFeatured: adminProcedure
     .input(z.object({ scenarioId: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      const today = getUTCDateString();
       await db.featuredScenario.deleteMany({
-        where: { scenarioId: input.scenarioId },
+        where: { scenarioId: input.scenarioId, featuredDate: today },
       });
 
       await db.auditLog.create({
@@ -61,7 +60,7 @@ export const adminRouter = router({
           action: "REMOVE_FEATURED",
           entityType: "Scenario",
           entityId: input.scenarioId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 
@@ -124,7 +123,7 @@ export const adminRouter = router({
           action: "APPROVE_SCENARIO",
           entityType: "Scenario",
           entityId: input.scenarioId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 
@@ -155,7 +154,7 @@ export const adminRouter = router({
           action: "REJECT_SCENARIO",
           entityType: "Scenario",
           entityId: input.scenarioId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 
@@ -192,7 +191,7 @@ export const adminRouter = router({
       return { items, nextCursor };
     }),
 
-  deleteComment: adminProcedure
+  moderateComment: adminProcedure
     .input(z.object({ commentId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const comment = await db.comment.findUnique({
@@ -210,17 +209,17 @@ export const adminRouter = router({
         where: { id: input.commentId },
         data: {
           moderationStatus: "REJECTED",
-          moderatedById: ctx.session!.user.id,
+          moderatedById: ctx.session.user.id,
           moderatedAt: new Date(),
         },
       });
 
       await db.auditLog.create({
         data: {
-          action: "DELETE_COMMENT",
+          action: "MODERATE_COMMENT",
           entityType: "Comment",
           entityId: input.commentId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 
@@ -274,7 +273,7 @@ export const adminRouter = router({
         where: { id: input.reportId },
         data: {
           status: "DISMISSED",
-          reviewedById: ctx.session!.user.id,
+          reviewedById: ctx.session.user.id,
           reviewedAt: new Date(),
         },
       });
@@ -284,7 +283,7 @@ export const adminRouter = router({
           action: "DISMISS_ABUSE_REPORT",
           entityType: "AbuseReport",
           entityId: input.reportId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 
@@ -325,7 +324,7 @@ export const adminRouter = router({
         data: {
           phoneNumber: input.phoneNumber,
           reason: input.reason,
-          blockedById: ctx.session!.user.id,
+          blockedById: ctx.session.user.id,
         },
       });
 
@@ -334,7 +333,7 @@ export const adminRouter = router({
           action: "BLOCK_NUMBER",
           entityType: "BlockedNumber",
           entityId: blocked.id,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
           metadata: { phoneNumber: input.phoneNumber },
         },
       });
@@ -365,7 +364,7 @@ export const adminRouter = router({
           action: "UNBLOCK_NUMBER",
           entityType: "BlockedNumber",
           entityId: input.id,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
           metadata: { phoneNumber: blocked.phoneNumber },
         },
       });
@@ -421,7 +420,7 @@ export const adminRouter = router({
           action: "DELETE_USER",
           entityType: "User",
           entityId: input.userId,
-          adminId: ctx.session!.user.id,
+          adminId: ctx.session.user.id,
         },
       });
 

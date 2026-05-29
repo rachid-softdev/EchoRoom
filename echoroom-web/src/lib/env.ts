@@ -23,11 +23,12 @@ const envSchema = z.object({
   R2_PUBLIC_URL: z.string().url().optional(),
   POSTHOG_KEY: z.string().min(1),
   POSTHOG_HOST: z.string().url().default("https://us.i.posthog.com"),
+  TRUSTED_ORIGINS: z.string().optional(),
 });
 
 type EnvType = z.infer<typeof envSchema>;
 
-const DEV_DEFAULTS: EnvType = {
+const DEV_DEFAULTS: Record<string, string> = {
   NODE_ENV: "development",
   DATABASE_URL: "postgresql://localhost:5432/echoroom?schema=public",
   NEXTAUTH_SECRET: "dev-secret-that-is-at-least-32-characters-long!!!",
@@ -48,53 +49,51 @@ const DEV_DEFAULTS: EnvType = {
   POSTHOG_HOST: "https://us.i.posthog.com",
 };
 
-function fillEnvWithDefaults(): EnvType {
-  const merged: Record<string, string> = {};
+function loadEnv(): EnvType {
+  const nodeEnv = process.env.NODE_ENV ?? "development";
+  const isProduction = nodeEnv === "production";
 
-  for (const key of Object.keys(DEV_DEFAULTS) as Array<keyof EnvType>) {
+  if (isProduction) {
+    // Production: strict validation — all vars must be in process.env
+    const result = envSchema.safeParse(process.env);
+    if (!result.success) {
+      console.error(
+        "❌ Invalid production environment variables:",
+        JSON.stringify(result.error.flatten().fieldErrors, null, 2),
+      );
+      throw new Error("Invalid production environment variables");
+    }
+    return result.data;
+  }
+
+  // Development / test: merge process.env with dev defaults
+  const merged: Record<string, string> = {};
+  const schemaKeys = Object.keys(envSchema.shape) as Array<keyof EnvType>;
+
+  for (const key of schemaKeys) {
     const envValue = process.env[key];
-    merged[key] = (envValue as string) ?? DEV_DEFAULTS[key];
+    merged[key] = (envValue as string) ?? DEV_DEFAULTS[key] ?? "";
   }
 
   const result = envSchema.safeParse(merged);
   if (!result.success) {
     console.error(
-      "Env validation failed with defaults:",
-      JSON.stringify(result.error.flatten().fieldErrors),
+      "❌ Invalid environment variables:",
+      JSON.stringify(result.error.flatten().fieldErrors, null, 2),
     );
-    throw new Error("Invalid environment variables");
+    throw new Error("Invalid environment variables — application cannot start");
   }
 
   return result.data;
 }
 
-let cached: EnvType | null = null;
-
-function getEnv(): EnvType {
-  if (cached) return cached;
-  cached = fillEnvWithDefaults();
-  return cached;
-}
-
-export const env = new Proxy({} as EnvType, {
-  get(_target, prop: string | symbol) {
-    return getEnv()[prop as keyof EnvType];
-  },
-});
+// Eager validation at module load
+export const env: Readonly<EnvType> = Object.freeze(loadEnv());
 
 /**
- * Call this at application startup in production to validate that
- * real environment variables are set (not dev defaults).
+ * No-op kept for backward compatibility.
+ * Validation now happens at module import time.
  */
 export function validateProductionEnv(): void {
-  if (process.env.NODE_ENV !== "production") return;
-
-  const result = envSchema.safeParse(process.env);
-  if (!result.success) {
-    console.error(
-      "Invalid production environment variables:",
-      JSON.stringify(result.error.flatten().fieldErrors),
-    );
-    throw new Error("Invalid production environment variables");
-  }
+  // Validation already performed in loadEnv() during module initialization
 }

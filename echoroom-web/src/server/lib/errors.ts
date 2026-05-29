@@ -8,7 +8,8 @@ export type AppErrorCode =
   | "TWILIO_ERROR"
   | "NOT_FOUND"
   | "DAILY_LIMIT_EXCEEDED"
-  | "NUMBER_BLOCKED";
+  | "NUMBER_BLOCKED"
+  | "CREDIT_DEBIT_FAILED";
 
 export class AppError extends Error {
   constructor(

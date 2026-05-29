@@ -1,5 +1,5 @@
-"use client"
-
+import type { Metadata } from "next"
+import { db } from "@/server/db"
 import { DashboardShell } from "@/components/shared/DashboardShell"
 import {
   Card,
@@ -12,6 +12,48 @@ import { User, Construction } from "lucide-react"
 
 interface ProfilePageProps {
   params: { username: string }
+}
+
+export async function generateMetadata({
+  params,
+}: ProfilePageProps): Promise<Metadata> {
+  const user = await db.user.findUnique({
+    where: { username: params.username },
+    select: { username: true },
+  })
+
+  if (!user) {
+    return {
+      title: "Profil introuvable — EchoRoom AI",
+      description: "Ce profil n'existe pas sur EchoRoom AI.",
+      openGraph: {
+        title: "Profil introuvable — EchoRoom AI",
+        description: "Ce profil n'existe pas sur EchoRoom AI.",
+        siteName: "EchoRoom AI",
+        type: "website",
+      },
+    }
+  }
+
+  const title = `${user.username} — EchoRoom AI`
+  const description = `Découvrez le profil de ${user.username} sur EchoRoom AI : ses scénarios, son activité et ses statistiques.`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: "EchoRoom AI",
+      type: "profile",
+      username: user.username,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  }
 }
 
 export default function ProfilePage({ params }: ProfilePageProps) {

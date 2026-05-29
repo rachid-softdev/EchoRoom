@@ -16,6 +16,9 @@ import {
   ELEVENLABS_MODEL,
 } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
+import { createLogger } from '@/server/lib/logger'
+
+const log = createLogger('handle-input')
 
 const VoiceResponse = twilio.twiml.VoiceResponse
 
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest) {
       })
       farewell = result.response
     } catch (error) {
-      console.error('Failed to generate farewell:', error)
+      log.error('Failed to generate farewell', { error })
     }
 
     // Synthesize farewell and upload
@@ -113,7 +116,7 @@ export async function POST(req: NextRequest) {
           state.turnCount + 1,
         )
       } catch (error) {
-        console.error('Failed to synthesize farewell:', error)
+        log.error('Failed to synthesize farewell', { error })
       }
     }
 
@@ -154,7 +157,7 @@ export async function POST(req: NextRequest) {
     })
     aiResponse = result.response
   } catch (error) {
-    console.error('Failed to generate response:', error)
+    log.error('Failed to generate response', { error })
   }
 
   // If it's the last turn, inform the user
@@ -182,7 +185,7 @@ export async function POST(req: NextRequest) {
         state.turnCount + 1,
       )
     } catch (error) {
-      console.error('Failed to synthesize response:', error)
+      log.error('Failed to synthesize response', { error })
     }
   }
 

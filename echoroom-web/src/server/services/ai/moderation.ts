@@ -1,12 +1,15 @@
 import OpenAI from "openai";
 import { env } from "@/lib/env";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("moderation");
 
 let openai: OpenAI | null = null;
 
 try {
   openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 } catch {
-  console.warn("OpenAI unavailable — moderation disabled");
+  log.warn("OpenAI unavailable — moderation disabled");
 }
 
 const forbiddenPatterns = [
@@ -108,7 +111,7 @@ export async function checkContent(
       }
     } catch {
       // If AI moderation fails, fall back to blocklist-only
-      console.warn("AI moderation call failed, falling back to blocklist");
+      log.warn("AI moderation call failed, falling back to blocklist");
     }
   }
 

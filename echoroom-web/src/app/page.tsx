@@ -214,18 +214,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Footer ─────────────────────────────────────────── */}
-      <footer className="border-t border-border px-6 py-8">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Phone className="w-5 h-5 text-primary" />
-            <span className="font-semibold">EchoRoom</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} EchoRoom AI. Tous droits réservés.
-          </p>
-        </div>
-      </footer>
+
     </div>
   );
 }

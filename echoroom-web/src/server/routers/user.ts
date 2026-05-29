@@ -7,7 +7,7 @@ export const userRouter = router({
   exportMyData: protectedProcedure
     .use(withRateLimit({ limit: 2, window: 3600 }))
     .mutation(async ({ ctx }) => {
-      const userId = ctx.session!.user.id;
+      const userId = ctx.session.user.id;
 
       const user = await db.user.findUnique({
         where: { id: userId },
@@ -117,7 +117,7 @@ export const userRouter = router({
       }),
     )
     .mutation(async ({ ctx }) => {
-      const userId = ctx.session!.user.id;
+      const userId = ctx.session.user.id;
       const shortId = userId.slice(0, 8);
 
       await db.$transaction(async (tx) => {
@@ -151,7 +151,7 @@ export const userRouter = router({
 
   myDeletionStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await db.user.findUnique({
-      where: { id: ctx.session!.user.id },
+      where: { id: ctx.session.user.id },
       select: {
         deletedAt: true,
         anonymizedAt: true,
