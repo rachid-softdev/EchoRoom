@@ -109,8 +109,37 @@ export const scenariosRouter = router({
     .use(withIPRateLimit({ limit: 120, window: 60 }))
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
-      const scenario = await db.scenario.findUnique({
-        where: { id: input.id },
+      // Single query with permissions baked into the WHERE clause.
+      // Unlike the previous implementation (findUnique + post-filter), this
+      // ensures that non-existent IDs and unauthorized scenarios return the
+      // same response path and timing, preventing scenario enumeration via
+      // timing side-channels.
+      const userId = ctx.session?.user?.id;
+      const userRole = ctx.session?.user?.role;
+
+      // Build permission conditions based on user authentication and role
+      const permissionConditions: Array<Record<string, unknown>> = [
+        // PUBLIC + APPROVED — anyone can see
+        { visibility: "PUBLIC", moderationStatus: "APPROVED" },
+      ];
+
+      // Creator can always see their own scenarios regardless of visibility/moderation
+      if (userId) {
+        permissionConditions.push({
+          creatorId: userId,
+        });
+      }
+
+      // Staff (ADMIN, MODERATOR) can see all scenarios
+      if (userRole === "ADMIN" || userRole === "MODERATOR") {
+        permissionConditions.push({});
+      }
+
+      const scenario = await db.scenario.findFirst({
+        where: {
+          id: input.id,
+          OR: permissionConditions,
+        },
         include: {
           creator: { select: { id: true, username: true, image: true } },
           character: {
@@ -127,29 +156,7 @@ export const scenariosRouter = router({
         },
       });
 
-      if (!scenario) return null;
-
-      // Visibility guard
-      if (
-        scenario.visibility === "PRIVATE" ||
-        scenario.visibility === "UNLISTED"
-      ) {
-        if (ctx.session?.user?.id !== scenario.creatorId) return null;
-      }
-
-      // Moderation guard
-      if (
-        scenario.moderationStatus === "PENDING" ||
-        scenario.moderationStatus === "REJECTED"
-      ) {
-        const isCreator = ctx.session?.user?.id === scenario.creatorId;
-        const isStaff =
-          ctx.session?.user?.role === "ADMIN" ||
-          ctx.session?.user?.role === "MODERATOR";
-        if (!isCreator && !isStaff) return null;
-      }
-
-      return scenario;
+      return scenario ?? null;
     }),
 
   update: protectedProcedure

@@ -181,6 +181,18 @@ export async function GET(_req: NextRequest) {
     abuseReports,
   }
 
+  // Create audit log entry for GDPR compliance (Article 15 — data access logging)
+  await db.auditLog.create({
+    data: {
+      action: 'GDPR_EXPORT',
+      entityType: 'User',
+      entityId: userId,
+      adminId: userId, // Self-service export
+    },
+  }).catch((error) => {
+    log.error('Failed to create audit log for GDPR export', { error, userId })
+  })
+
   log.info('GDPR data exported', { userId })
 
   return new NextResponse(JSON.stringify(exportData, null, 2), {

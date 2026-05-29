@@ -77,12 +77,18 @@ interface ModerationResult {
   reason?: string;
 }
 
+// Maximum input length for content moderation (characters).
+// Prevents DoS via CPU-exhaustion from regex on massive inputs
+// and avoids excessive OpenAI API costs from character-based billing.
+const MAX_MODERATION_INPUT_LENGTH = 10_000;
+
 export async function checkContent(
   text: string,
   signal?: AbortSignal,
 ): Promise<ModerationResult> {
   // Normalisation Unicode NFKC — empêche les homoglyphes
-  const normalized = text.normalize("NFKC");
+  // Also truncate to MAX_MODERATION_INPUT_LENGTH to prevent resource exhaustion
+  const normalized = text.normalize("NFKC").substring(0, MAX_MODERATION_INPUT_LENGTH);
 
   // Step 1: Blocklist check (sur le texte normalisé)
   for (const pattern of forbiddenPatterns) {
@@ -147,7 +153,7 @@ export async function moderateOutput(
     const result = await checkContent(text, controller.signal);
     if (!result.approved) {
       log.warn("AI-generated content blocked", {
-        text, // Full text for audit/review
+        text: text.substring(0, 100), // Truncated to prevent PII leakage into logs
         reason: result.reason,
       });
       return "Je ne peux pas répondre à cela. Passons à autre chose.";

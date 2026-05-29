@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
+import bcrypt from "bcryptjs";
 import { maskPhoneNumber } from "@/server/lib/encryption";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
@@ -397,6 +398,8 @@ export const adminRouter = router({
       }
 
       const anonId = crypto.randomUUID();
+      // Generate a valid bcrypt hash of a random UUID as the sentinel password.
+      const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
 
       await db.$transaction(async (tx) => {
         await tx.user.update({
@@ -406,7 +409,7 @@ export const adminRouter = router({
             anonymizedAt: new Date(),
             email: `deleted-${anonId}@anonymized.echoroom.app`,
             username: `utilisateur-${anonId.substring(0, 8)}`,
-            passwordHash: crypto.randomUUID(),
+            passwordHash: deletedHash,
             displayName: null,
             bio: null,
             image: null,

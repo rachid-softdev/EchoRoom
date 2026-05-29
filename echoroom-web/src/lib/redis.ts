@@ -15,7 +15,7 @@ try {
     });
   }
 } catch {
-  log.warn("Redis unavailable — rate limiting disabled");
+  log.warn("Redis unavailable — rate limiting using in-memory fallback");
 }
 
 export { redis };
