@@ -171,18 +171,24 @@ export function withRateLimit(config: RateLimitConfig) {
   });
 }
 
+const TEXT_FIELDS = [
+  "title",
+  "description",
+  "openingMessage",
+  "aiInstructions",
+  "content",
+  "reason",
+  "name",
+  "text",
+] as const;
+
 function extractTextFromInput(input: unknown): string | null {
   if (!input || typeof input !== "object") return null;
   const obj = input as Record<string, unknown>;
-  if (typeof obj.title === "string" && typeof obj.description === "string") {
-    return [obj.title, obj.description, obj.openingMessage, obj.aiInstructions]
-      .filter((v): v is string => typeof v === "string")
-      .join(" ");
-  }
-  if (typeof obj.content === "string") {
-    return obj.content;
-  }
-  return null;
+  const textParts = TEXT_FIELDS
+    .map((field) => obj[field])
+    .filter((v): v is string => typeof v === "string");
+  return textParts.length > 0 ? textParts.join(" ") : null;
 }
 
 export const withContentModeration = middleware(async ({ next, input }) => {
