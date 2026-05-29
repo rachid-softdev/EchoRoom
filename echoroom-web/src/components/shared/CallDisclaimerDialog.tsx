@@ -26,10 +26,12 @@ export function CallDisclaimerDialog({
   onOpenChange,
   onAccept,
 }: CallDisclaimerDialogProps) {
+  const [mounted, setMounted] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [hasAcceptedBefore, setHasAcceptedBefore] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "true") {
       setHasAcceptedBefore(true);
@@ -43,8 +45,9 @@ export function CallDisclaimerDialog({
     onOpenChange(false);
   }
 
-  // If already accepted, don't show the dialog
-  if (hasAcceptedBefore) {
+  // During SSR and before hydration, render nothing to prevent mismatch.
+  // After hydration, check if user has already accepted.
+  if (!mounted || hasAcceptedBefore) {
     return null;
   }
 

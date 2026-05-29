@@ -1,19 +1,8 @@
-import { Redis } from "@upstash/redis";
-import { env } from "@/lib/env";
+import { redis } from "@/lib/redis";
 import { TRPCError } from "@trpc/server";
+import { createLogger } from "@/server/lib/logger";
 
-let redis: Redis | null = null;
-try {
-  if (env.REDIS_URL) {
-    const url = new URL(env.REDIS_URL);
-    redis = new Redis({
-      url: env.REDIS_URL,
-      token: url.password || "",
-    });
-  }
-} catch {
-  // Rate limiting disabled
-}
+const log = createLogger("rate-limit");
 
 interface RateLimitConfig {
   identifier: string;
@@ -30,7 +19,7 @@ export async function checkRateLimit({
 }: RateLimitConfig): Promise<void> {
   if (!redis) {
     if (!redisUnavailableLogged) {
-      console.warn("[RateLimit] Redis unavailable — rate limiting disabled");
+      log.warn("Redis unavailable — rate limiting disabled");
       redisUnavailableLogged = true;
     }
     return;

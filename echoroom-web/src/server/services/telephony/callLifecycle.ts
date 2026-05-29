@@ -2,12 +2,17 @@ import { twilioClient, TWILIO_PHONE } from "./twilio";
 import { db } from "@/server/db";
 import { env } from "@/lib/env";
 import { AppError } from "@/server/lib/errors";
+import { atomicDebit, atomicRefund } from "@/server/services/billing/creditOps";
 import { checkAndAwardBadges } from "@/server/services/social/badges";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("call-lifecycle");
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
   maxAttempts: number = 3,
-  delayMs: number = 1000,
+  baseDelayMs: number = 1000,
+  maxDelayMs: number = 10000,
 ): Promise<T> {
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -16,11 +21,16 @@ export async function withRetry<T>(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+        // Exponential backoff with jitter
+        const delay = Math.min(
+          baseDelayMs * 2 ** (attempt - 1) + Math.random() * 1000,
+          maxDelayMs,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
-  throw lastError!;
+  throw lastError ?? new Error("Unexpected error in withRetry");
 }
 
 interface StartCallParams {
@@ -40,34 +50,37 @@ export async function initiateCall(params: StartCallParams) {
     throw new AppError("SCENARIO_NOT_FOUND", "Scenario not found");
   }
 
-  const user = await db.user.findUnique({
-    where: { id: params.userId },
-  });
-
-  if (!user) {
-    throw new AppError("USER_NOT_FOUND", "User not found");
-  }
-
-  if (user.credits < 1) {
-    throw new AppError("INSUFFICIENT_CREDITS", "Insufficient credits");
-  }
-
-  // Create the call record
-  const call = await db.call.create({
-    data: {
+  // Step 1: Atomic debit + create call record in a single transaction
+  const { call } = await db.$transaction(async (tx) => {
+    // Atomically debit the user
+    const debitResult = await atomicDebit(tx, {
       userId: params.userId,
-      scenarioId: params.scenarioId,
-      phoneNumber: params.phoneNumber,
-      status: "PENDING",
-      costCredits: 1,
-    },
+      cost: 1,
+    });
+
+    if (!debitResult.debited) {
+      if (debitResult.reason === "USER_NOT_FOUND") {
+        throw new AppError("USER_NOT_FOUND", "User not found");
+      }
+      throw new AppError("INSUFFICIENT_CREDITS", "Insufficient credits");
+    }
+
+    // Create the call record within the same transaction
+    const newCall = await tx.call.create({
+      data: {
+        userId: params.userId,
+        scenarioId: params.scenarioId,
+        phoneNumber: params.phoneNumber,
+        status: "PENDING",
+        costCredits: 1,
+      },
+    });
+
+    return { call: newCall };
   });
 
+  // Step 2: Initiate Twilio call (outside transaction — network call)
   try {
-    // Initiate Twilio call
-    // The voice webhook route (api/webhooks/twilio/voice) will be
-    // implemented in Phase 3 — it returns TwiML that drives the
-    // AI conversation (TTS, STT, conversation state machine).
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
     const twilioCall = await twilioClient.calls.create({
@@ -80,33 +93,29 @@ export async function initiateCall(params: StartCallParams) {
       timeout: params.maxDurationSeconds,
     });
 
-    // Store the Twilio CallSid and update status atomically
-    await db.$transaction([
-      db.call.update({
-        where: { id: call.id },
-        data: { status: "RINGING", twilioCallSid: twilioCall.sid },
-      }),
-      db.user.update({
-        where: { id: params.userId },
-        data: { credits: { decrement: 1 } },
-      }),
-    ]);
+    // Update call with Twilio SID and status
+    await db.call.update({
+      where: { id: call.id },
+      data: { status: "RINGING", twilioCallSid: twilioCall.sid },
+    });
 
     return { callId: call.id, estimatedCredits: 1 };
-  } catch (_error) {
-    // Refund on failure
-    await db.$transaction([
-      db.user.update({
-        where: { id: params.userId },
-        data: { credits: { increment: call.costCredits } },
-      }),
-      db.call.update({
+  } catch (error) {
+    // Step 3: Atomic refund on failure
+    await db.$transaction(async (tx) => {
+      await atomicRefund(tx, { userId: params.userId, amount: 1 });
+      await tx.call.update({
         where: { id: call.id },
         data: { status: "FAILED" },
-      }),
-    ]);
+      });
+    });
 
-    throw new AppError("TWILIO_ERROR", "Failed to initiate call");
+    // Log and throw with original error context
+    log.error("Twilio call initiation failed", { error });
+    throw new AppError(
+      "TWILIO_ERROR",
+      `Failed to initiate call: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -134,8 +143,8 @@ export async function completeCall(callId: string, durationSeconds: number) {
   ]);
 
   // Fire-and-forget badge check — do not block the response
-  checkAndAwardBadges(call.userId, "FIRST_CALL").catch(() => {
-    // Silently ignore badge check failures
+  checkAndAwardBadges(call.userId, "FIRST_CALL").catch((err) => {
+    log.error("Badge check failed", { error: err, userId: call.userId });
   });
 }
 

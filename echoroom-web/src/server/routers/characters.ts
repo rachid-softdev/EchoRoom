@@ -19,6 +19,16 @@ export const charactersRouter = router({
       const characters = await db.character.findMany({
         where,
         orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          previewAudioUrl: true,
+          avatarUrl: true,
+          category: true,
+          isFeatured: true,
+        },
       });
 
       return characters;
@@ -29,6 +39,16 @@ export const charactersRouter = router({
     .query(async ({ input }) => {
       const character = await db.character.findUnique({
         where: { slug: input.slug },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          previewAudioUrl: true,
+          avatarUrl: true,
+          category: true,
+          isFeatured: true,
+        },
       });
 
       if (!character) {

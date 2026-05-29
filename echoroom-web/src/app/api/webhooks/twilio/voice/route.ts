@@ -10,6 +10,9 @@ import {
 } from '@/server/services/telephony/conversationState'
 import { ELEVENLABS_MODEL } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
+import { createLogger } from '@/server/lib/logger'
+
+const log = createLogger('voice')
 
 const VoiceResponse = twilio.twiml.VoiceResponse
 
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest) {
           .catch(() => {})
       }
     } catch (error) {
-      console.error('Failed to load call record:', error)
+      log.error('Failed to load call record', { error })
     }
   }
 
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest) {
           .join('\n')
       }
     } catch (error) {
-      console.error('Failed to load scenario:', error)
+      log.error('Failed to load scenario', { error })
       systemPrompt =
         'Tu es un assistant IA amical. Réponds en français de manière naturelle.'
     }
@@ -128,7 +131,7 @@ export async function POST(req: NextRequest) {
     })
     greeting = result.response
   } catch (error) {
-    console.error('Failed to generate greeting:', error)
+    log.error('Failed to generate greeting', { error })
   }
 
   // Initialize conversation state in Redis (include greeting for transcript)
@@ -172,7 +175,7 @@ export async function POST(req: NextRequest) {
         'audio/mulaw',
       )
     } catch (error) {
-      console.error('Failed to synthesize greeting:', error)
+      log.error('Failed to synthesize greeting', { error })
     }
   }
 

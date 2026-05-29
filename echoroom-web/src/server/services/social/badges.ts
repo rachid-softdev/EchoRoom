@@ -52,11 +52,16 @@ export async function checkAndAwardBadges(
   const badgeTypes = TRIGGER_TO_BADGE_TYPES[triggerEvent];
   if (!badgeTypes || badgeTypes.length === 0) return null;
 
-  const badges = await db.badge.findMany();
-
-  const candidateBadges = badges.filter((badge) => {
-    const criteria = badge.criteria as BadgeCriteria;
-    return badgeTypes.includes(criteria.type);
+  // Prisma stores `criteria` as JSONB (PostgreSQL). Use `path` filter on the JSON field
+  // to push filtering to the database instead of fetching all rows.
+  // If your Prisma version doesn't support JSON `path` filtering, fall back to in-memory
+  // filtering — the badge table is a small reference set (<50 rows), so the impact is minimal.
+  const candidateBadges = await db.badge.findMany({
+    where: {
+      OR: badgeTypes.map((type) => ({
+        criteria: { path: ["type"], equals: type },
+      })),
+    },
   });
 
   for (const badge of candidateBadges) {

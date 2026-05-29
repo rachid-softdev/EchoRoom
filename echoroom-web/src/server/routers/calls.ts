@@ -4,6 +4,7 @@ import { router, protectedProcedure, withRateLimit } from "../trpc";
 import { db } from "../db";
 import { initiateCall } from "../services/telephony/callLifecycle";
 import { AppError } from "../lib/errors";
+import { getUTCDayRange } from "../lib/date";
 
 export const callsRouter = router({
   start: protectedProcedure
@@ -31,15 +32,12 @@ export const callsRouter = router({
       }
 
       // Daily call limit check
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
+      const { todayStart } = getUTCDayRange();
 
       const dailyLimit = await db.dailyCallLimit.findUnique({
         where: {
           userId_date: {
-            userId: ctx.session!.user.id,
+            userId: ctx.session.user.id,
             date: todayStart,
           },
         },
@@ -56,7 +54,7 @@ export const callsRouter = router({
       try {
         const result = await initiateCall({
           scenarioId: input.scenarioId,
-          userId: ctx.session!.user.id,
+          userId: ctx.session.user.id,
           phoneNumber: input.phoneNumber,
           maxDurationSeconds: input.maxDurationSeconds,
         });
@@ -71,12 +69,12 @@ export const callsRouter = router({
         await db.dailyCallLimit.upsert({
           where: {
             userId_date: {
-              userId: ctx.session!.user.id,
+              userId: ctx.session.user.id,
               date: todayStart,
             },
           },
           create: {
-            userId: ctx.session!.user.id,
+            userId: ctx.session.user.id,
             date: todayStart,
             callCount: 1,
           },
@@ -94,6 +92,7 @@ export const callsRouter = router({
             case "USER_NOT_FOUND":
               throw new TRPCError({ code: "UNAUTHORIZED", message: "Utilisateur introuvable" });
             case "INSUFFICIENT_CREDITS":
+            case "CREDIT_DEBIT_FAILED":
               throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Crédits insuffisants" });
             case "TWILIO_ERROR":
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Échec de l'appel" });

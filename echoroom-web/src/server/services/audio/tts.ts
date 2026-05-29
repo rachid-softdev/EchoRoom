@@ -1,12 +1,15 @@
 import { ElevenLabsClient } from "elevenlabs";
 import { env } from "@/lib/env";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("tts");
 
 let ttsClient: ElevenLabsClient | null = null;
 
 try {
   ttsClient = new ElevenLabsClient({ apiKey: env.ELEVENLABS_API_KEY });
 } catch {
-  console.warn("ElevenLabs unavailable");
+  log.warn("ElevenLabs unavailable");
 }
 
 export async function synthesizeSpeech(

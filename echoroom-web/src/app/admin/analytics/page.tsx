@@ -1,5 +1,4 @@
-"use client";
-
+import type { Metadata } from "next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { Shield, Phone, Users, Activity, TrendingUp } from "lucide-react";
@@ -10,6 +9,15 @@ const stats = [
   { label: "Scénarios créés", value: "—", icon: Activity },
   { label: "Revenus", value: "—", icon: TrendingUp },
 ];
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Admin — Analytiques — EchoRoom AI",
+    description:
+      "Tableau de bord analytique de la plateforme EchoRoom AI.",
+    robots: { index: false, follow: false },
+  }
+}
 
 export default function AnalyticsPage() {
   return (

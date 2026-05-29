@@ -1,12 +1,15 @@
 import { createClient, type DeepgramClient } from "@deepgram/sdk";
 import { env } from "@/lib/env";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("transcription");
 
 let deepgram: DeepgramClient | null = null;
 
 try {
   deepgram = createClient(env.DEEPGRAM_API_KEY);
 } catch {
-  console.warn("Deepgram unavailable");
+  log.warn("Deepgram unavailable");
 }
 
 interface TranscriptionResult {
@@ -22,14 +25,13 @@ interface TranscriptionResult {
 
 export async function transcribeAudio(
   audioBuffer: ArrayBuffer,
-  mimetype: string = "audio/wav",
+  _mimetype: string = "audio/wav",
 ): Promise<TranscriptionResult | null> {
   if (!deepgram) {
     return null;
   }
 
-  const fileBuffer = Buffer.from(audioBuffer) as Buffer<ArrayBufferLike> & { mimetype?: string };
-  fileBuffer.mimetype = mimetype;
+  const fileBuffer = Buffer.from(audioBuffer);
   const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
     fileBuffer,
     {
@@ -41,7 +43,7 @@ export async function transcribeAudio(
   );
 
   if (error || !result) {
-    console.error("Deepgram transcription error:", error);
+    log.error("Deepgram transcription error", { error });
     return {
       transcript: "",
       confidence: 0,

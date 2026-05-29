@@ -1,20 +1,9 @@
+import { redis } from "@/lib/redis";
 import { TRPCError } from "@trpc/server";
-import { Redis } from "@upstash/redis";
-import { env } from "@/lib/env";
 import { middleware } from "../trpc";
+import { createLogger } from "@/server/lib/logger";
 
-let redis: Redis | null = null;
-try {
-  if (env.REDIS_URL) {
-    const url = new URL(env.REDIS_URL);
-    redis = new Redis({
-      url: env.REDIS_URL,
-      token: url.password || "",
-    });
-  }
-} catch {
-  // IP rate limiting disabled
-}
+const log = createLogger("ip-rate-limit");
 
 let warnLogged = false;
 
@@ -22,10 +11,10 @@ export function withIPRateLimit(config: { limit: number; window: number }) {
   return middleware(async ({ ctx, next, path }) => {
     if (!redis) {
       if (!warnLogged) {
-        console.warn("[IP RateLimit] Redis unavailable — IP rate limiting disabled");
+        log.warn("Redis unavailable — IP rate limiting disabled");
         warnLogged = true;
       }
-      return next({ ctx });
+      return next();
     }
 
     const ip =
@@ -51,6 +40,6 @@ export function withIPRateLimit(config: { limit: number; window: number }) {
     });
     await redis.expire(key, config.window);
 
-    return next({ ctx });
+    return next();
   });
 }

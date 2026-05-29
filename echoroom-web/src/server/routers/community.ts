@@ -23,7 +23,7 @@ export const communityRouter = router({
     .mutation(async ({ input, ctx }) => {
       const comment = await db.comment.create({
         data: {
-          userId: ctx.session!.user.id,
+          userId: ctx.session.user.id,
           scenarioId: input.scenarioId,
           content: input.content,
         },
@@ -78,7 +78,7 @@ export const communityRouter = router({
     .mutation(async ({ input, ctx }) => {
       const existing = await db.abuseReport.findFirst({
         where: {
-          reporterId: ctx.session!.user.id,
+          reporterId: ctx.session.user.id,
           targetType: input.targetType,
           targetId: input.targetId,
           status: "PENDING",
@@ -94,7 +94,7 @@ export const communityRouter = router({
 
       const report = await db.abuseReport.create({
         data: {
-          reporterId: ctx.session!.user.id,
+          reporterId: ctx.session.user.id,
           targetType: input.targetType,
           targetId: input.targetId,
           reason: input.reason,

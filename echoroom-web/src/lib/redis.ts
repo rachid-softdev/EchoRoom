@@ -1,5 +1,8 @@
 import { Redis } from "@upstash/redis";
 import { env } from "./env";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("redis");
 
 let redis: Redis | null = null;
 
@@ -12,7 +15,7 @@ try {
     });
   }
 } catch {
-  console.warn("Redis unavailable — rate limiting disabled");
+  log.warn("Redis unavailable — rate limiting disabled");
 }
 
 export { redis };

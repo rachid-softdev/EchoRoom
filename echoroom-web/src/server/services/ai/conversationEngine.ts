@@ -1,12 +1,15 @@
 import OpenAI from "openai";
 import { env } from "@/lib/env";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("conversation-engine");
 
 let openai: OpenAI | null = null;
 
 try {
   openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 } catch {
-  console.warn("OpenAI unavailable — conversation engine disabled");
+  log.warn("OpenAI unavailable — conversation engine disabled");
 }
 
 interface ConversationMessage {

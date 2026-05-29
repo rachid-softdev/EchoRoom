@@ -12,6 +12,9 @@ import {
 import { RECORDING_TURN_NUMBER } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { failCall } from '@/server/services/telephony/callLifecycle'
+import { createLogger } from '@/server/lib/logger'
+
+const log = createLogger('twilio-webhook')
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
@@ -23,9 +26,7 @@ export async function POST(req: NextRequest) {
   const fromNumber = formData.get('From') as string | null
 
   // Log the status update
-  console.log(
-    `Twilio status webhook: CallSid=${callSid}, Status=${callStatus}, From=${fromNumber}, Duration=${callDuration}`,
-  )
+  log.info('Twilio status webhook', { callSid, callStatus, fromNumber, callDuration })
 
   if (!callSid) {
     return NextResponse.json({ status: 'ok' })
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (error) {
-    console.error('Error processing Twilio webhook:', error)
+    log.error('Error processing Twilio webhook', { error })
   }
 
   return NextResponse.json({ status: 'ok' })
@@ -117,9 +118,15 @@ async function handleCompletedCall(
   })
 
   if (!callRecord) {
-    console.warn(`No call record found for CallSid=${callSid}`)
+    log.warn('No call record found for CallSid', { callSid })
     await setConversationStatus(callSid, 'completed').catch(() => {})
     await deleteConversationState(callSid).catch(() => {})
+    return
+  }
+
+  // Idempotency: skip if call is already completed
+  if (callRecord && callRecord.status === "COMPLETED") {
+    log.info('Call already completed, skipping duplicate webhook', { callSid })
     return
   }
 
@@ -161,7 +168,7 @@ async function handleCompletedCall(
         }
       }
     } catch (error) {
-      console.error('Failed to fetch/transcribe recording:', error)
+      log.error('Failed to fetch/transcribe recording', { error })
     }
   }
 
@@ -181,40 +188,53 @@ async function handleCompletedCall(
         )
       : 0
 
-  // Update Call record
-  await db.call.update({
-    where: { id: callRecord.id },
-    data: {
-      status: 'COMPLETED',
-      transcript: transcript as Prisma.InputJsonValue,
-      recordingUrl: recordingR2Key,
-      durationSeconds: duration,
-      endedAt: new Date(),
-    },
-  })
-
-  // Reconcile credits: charge per-minute rate based on actual duration
-  const costCredits = Math.max(1, Math.ceil(duration / 60))
-  const creditDiff = costCredits - callRecord.costCredits
-
-  if (creditDiff > 0) {
-    // Charge additional credits
-    await db.user.update({
-      where: { id: callRecord.userId },
-      data: { credits: { decrement: creditDiff } },
+  // Atomic update of call record + credit reconcile
+  await db.$transaction(async (tx) => {
+    // Double-check status within the transaction
+    const currentCall = await tx.call.findUnique({
+      where: { id: callRecord.id },
+      select: { status: true, costCredits: true },
     })
-  } else if (creditDiff < 0) {
-    // Refund unused credits
-    await db.user.update({
-      where: { id: callRecord.userId },
-      data: { credits: { increment: Math.abs(creditDiff) } },
-    })
-  }
 
-  // Update costCredits to reflect actual charge
-  await db.call.update({
-    where: { id: callRecord.id },
-    data: { costCredits },
+    if (currentCall?.status === "COMPLETED") {
+      log.info('Call already completed, detected in transaction, skipping', { callSid })
+      return
+    }
+
+    const costCredits = Math.max(1, Math.ceil(duration / 60))
+    const creditDiff = costCredits - (currentCall?.costCredits ?? callRecord.costCredits)
+
+    // Update call record
+    await tx.call.update({
+      where: { id: callRecord.id },
+      data: {
+        status: "COMPLETED",
+        transcript: transcript as Prisma.InputJsonValue,
+        recordingUrl: recordingR2Key,
+        durationSeconds: duration,
+        endedAt: new Date(),
+        costCredits,
+      },
+    })
+
+    // Reconcile credits atomically
+    if (creditDiff > 0) {
+      const result = await tx.user.updateMany({
+        where: {
+          id: callRecord.userId,
+          credits: { gte: creditDiff },
+        },
+        data: { credits: { decrement: creditDiff } },
+      })
+      if (result.count === 0) {
+        log.error('Failed to debit additional credits — insufficient balance', { userId: callRecord.userId, creditDiff })
+      }
+    } else if (creditDiff < 0) {
+      await tx.user.update({
+        where: { id: callRecord.userId },
+        data: { credits: { increment: Math.abs(creditDiff) } },
+      })
+    }
   })
 
   // Clean up conversation state from Redis
@@ -238,15 +258,13 @@ async function fetchRecordingAudio(
     })
 
     if (!response.ok) {
-      console.error(
-        `Failed to fetch recording: ${response.status}`,
-      )
+      log.error('Failed to fetch recording', { status: response.status })
       return null
     }
 
     return await response.arrayBuffer()
   } catch (error) {
-    console.error('Error fetching recording:', error)
+    log.error('Error fetching recording', { error })
     return null
   }
 }

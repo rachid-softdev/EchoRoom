@@ -21,7 +21,7 @@ export const socialRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const userId = ctx.session!.user.id;
+      const userId = ctx.session.user.id;
 
       const existing = await db.reaction.findUnique({
         where: {
@@ -136,7 +136,7 @@ export const socialRouter = router({
     .mutation(async ({ input, ctx }) => {
       return createClip({
         callId: input.callId,
-        userId: ctx.session!.user.id,
+        userId: ctx.session.user.id,
         title: input.title,
         startTime: input.startTime,
         endTime: input.endTime,
@@ -152,7 +152,7 @@ export const socialRouter = router({
   deleteClip: protectedProcedure
     .input(z.object({ clipId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      return deleteClip(input.clipId, ctx.session!.user.id);
+      return deleteClip(input.clipId, ctx.session.user.id);
     }),
 
   getLeaderboardScenarios: publicProcedure
@@ -237,8 +237,14 @@ export const socialRouter = router({
         platform: z.enum(["DISCORD", "TWITTER", "TIKTOK", "COPY_LINK", "WEB_SHARE"]),
       }),
     )
-    .mutation(async () => {
-      // Tracking is handled by PostHog on the client side
+    .mutation(async ({ input, ctx }) => {
+      await db.shareEvent.create({
+        data: {
+          scenarioId: input.scenarioId,
+          platform: input.platform,
+          userId: ctx.session?.user?.id ?? null,
+        },
+      });
       return { success: true };
     }),
 });

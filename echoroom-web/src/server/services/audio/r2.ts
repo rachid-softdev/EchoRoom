@@ -4,6 +4,9 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3'
 import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from '@/lib/r2'
+import { createLogger } from '@/server/lib/logger'
+
+const log = createLogger('r2')
 
 function r2Key(callSid: string, turnNumber: number): string {
   const timestamp = Date.now()
@@ -47,7 +50,7 @@ export async function getAudioStream(
 
     return (response.Body as ReadableStream) ?? null
   } catch (error) {
-    console.error('R2 getAudioStream error:', error)
+    log.error('R2 getAudioStream error', { error })
     return null
   }
 }
@@ -61,6 +64,6 @@ export async function deleteAudioFile(r2KeyParam: string): Promise<void> {
       }),
     )
   } catch (error) {
-    console.error('R2 deleteAudioFile error:', error)
+    log.error('R2 deleteAudioFile error', { error })
   }
 }

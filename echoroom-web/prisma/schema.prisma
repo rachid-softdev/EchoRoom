@@ -68,6 +68,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  shareEvents     ShareEvent[]
   calls           Call[]
   scenarios       Scenario[]
   reactions       Reaction[]
@@ -128,6 +129,7 @@ model Scenario {
 
   createdAt DateTime @default(now())
 
+  shareEvents      ShareEvent[]
   calls            Call[]
   comments         Comment[]
   reactions        Reaction[]
@@ -187,6 +189,22 @@ model Reaction {
   createdAt DateTime @default(now())
 
   @@unique([userId, scenarioId, emoji])
+}
+
+model ShareEvent {
+  id         String   @id @default(cuid())
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  platform   String
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([scenarioId])
+  @@index([userId])
+  @@index([platform])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Comment {
@@ -269,11 +287,12 @@ model FeaturedScenario {
   id          String   @id @default(cuid())
   scenarioId  String
   featuredAt  DateTime @default(now())
+  featuredDate String
   featureType String   @default("AUTOMATED")
 
   scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
 
-  @@unique([featuredAt])
+  @@unique([featuredDate])
   @@index([scenarioId])
 }
 

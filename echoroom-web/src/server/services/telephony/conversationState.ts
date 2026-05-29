@@ -1,5 +1,8 @@
 import { redis } from '@/lib/redis'
 import { CONVERSATION_TTL_S } from './constants'
+import { createLogger } from '@/server/lib/logger'
+
+const log = createLogger('conversation-state')
 
 export interface ConversationMessage {
   role: 'system' | 'assistant' | 'user'
@@ -42,7 +45,7 @@ export async function initConversationState(
     })
     return state
   } catch (error) {
-    console.error('Redis initConversationState error:', error)
+    log.error('Redis initConversationState error', { error })
     return null
   }
 }
@@ -63,7 +66,7 @@ export async function getConversationState(
 
     return state
   } catch (error) {
-    console.error('Redis getConversationState error:', error)
+    log.error('Redis getConversationState error', { error })
     return null
   }
 }
@@ -87,7 +90,7 @@ export async function appendMessage(
 
     return state
   } catch (error) {
-    console.error('Redis appendMessage error:', error)
+    log.error('Redis appendMessage error', { error })
     return null
   }
 }
@@ -110,7 +113,7 @@ export async function incrementTurn(
 
     return state
   } catch (error) {
-    console.error('Redis incrementTurn error:', error)
+    log.error('Redis incrementTurn error', { error })
     return null
   }
 }
@@ -134,7 +137,7 @@ export async function setConversationStatus(
 
     return state
   } catch (error) {
-    console.error('Redis setConversationStatus error:', error)
+    log.error('Redis setConversationStatus error', { error })
     return null
   }
 }
@@ -147,6 +150,6 @@ export async function deleteConversationState(
   try {
     await redis.del(redisKey(callSid))
   } catch (error) {
-    console.error('Redis deleteConversationState error:', error)
+    log.error('Redis deleteConversationState error', { error })
   }
 }
