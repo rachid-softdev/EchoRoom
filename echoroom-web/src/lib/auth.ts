@@ -8,8 +8,18 @@ import { db } from "@/server/db";
  * Dummy bcrypt hash used for timing-constant authentication.
  * Prevents account enumeration by ensuring the same code path
  * is executed whether the user exists or not.
+ *
+ * Lazy-initialized to avoid blocking the module load with a ~250ms
+ * synchronous bcrypt hash on every cold start (important for serverless).
  */
-const DUMMY_HASH = bcrypt.hashSync("dummy-timing-attack-prevention", 12);
+let DUMMY_HASH: string | null = null;
+
+function getDummyHash(): string {
+  if (!DUMMY_HASH) {
+    DUMMY_HASH = bcrypt.hashSync("dummy-timing-attack-prevention", 12);
+  }
+  return DUMMY_HASH;
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -39,17 +49,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email },
         });
 
-        // Timing-constant comparison: always run bcrypt.compare
-        // even when user doesn't exist, to prevent account enumeration.
-        const passwordHash = user?.passwordHash ?? DUMMY_HASH;
-        const isValid = await bcrypt.compare(password, passwordHash);
-
-        if (!user || !isValid) {
+        // Check if account is deleted BEFORE bcrypt.compare().
+        // Deleted accounts have passwordHash = bcrypt(RANDOM_UUID) which is a
+        // valid bcrypt hash, but we short-circuit here to avoid any possibility
+        // of bcrypt.compare() receiving an invalid hash format (e.g. if the
+        // database record is somehow corrupted or partially migrated).
+        if (user?.deletedAt) {
           return null;
         }
 
-        // Check if account is deleted
-        if (user.deletedAt) {
+        // Timing-constant comparison: always run bcrypt.compare
+        // even when user doesn't exist, to prevent account enumeration.
+        const passwordHash = user?.passwordHash ?? getDummyHash();
+        const isValid = await bcrypt.compare(password, passwordHash);
+
+        if (!user || !isValid) {
           return null;
         }
 
@@ -124,8 +138,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       };
 
       session.user.id = t.id;
-      session.user.role = t.role;
       session.user.username = t.username;
+
+      // Always fetch the role from the DB to ensure the session reflects
+      // the current role even between JWT revalidation cycles (5 min max).
+      // This prevents a demoted admin from retaining ADMIN access via
+      // a stale cached role in the JWT token.
+      if (t.id) {
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { id: t.id },
+            select: { role: true, deletedAt: true },
+          });
+          if (!dbUser || dbUser.deletedAt) {
+            // User was deleted — return minimal session
+            session.user.role = "USER";
+            return session;
+          }
+          session.user.role = dbUser.role;
+        } catch {
+          // Fallback to token role on DB error (degraded mode)
+          session.user.role = t.role;
+        }
+      } else {
+        session.user.role = t.role;
+      }
+
       // Credits are NOT stored in JWT — always fetch from DB via getCredits query
       return session;
     },

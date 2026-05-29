@@ -10,22 +10,16 @@ interface TwilioTokenPayload {
 }
 
 /**
- * Create an HMAC-SHA256 signed token for Twilio webhook URLs.
+ * Verify and decode an HMAC-SHA256 signed token.
  * Format: base64url(payload).base64url(signature)
- * Payload is JSON: { callId, scenarioId, iat }
- */
-export function createTwilioToken(callId: string, scenarioId: string): string {
-  const payload: TwilioTokenPayload = { callId, scenarioId, iat: Date.now() };
-  const payloadStr = JSON.stringify(payload);
-  const payloadB64 = Buffer.from(payloadStr).toString("base64url");
-  const signature = createHmac("sha256", env.TWILIO_TOKEN_SECRET)
-    .update(payloadStr)
-    .digest("base64url");
-  return `${payloadB64}.${signature}`;
-}
-
-/**
- * Verify and decode an HMAC-signed token.
+ *
+ * Used by the voice webhook GET handler for authenticated health checks.
+ * NOTE: createTwilioToken was removed as dead code — the voice POST handler
+ * relies on Twilio signature validation (validate.ts) for authentication
+ * and passes callId/scenarioId directly in query params. The HMAC token
+ * layer added complexity without security benefit over Twilio's own
+ * request validation.
+ *
  * Returns null if the token is invalid, expired, or tampered with.
  */
 export function verifyTwilioToken(

@@ -153,32 +153,42 @@ export async function failCall(
   callId: string,
   durationSeconds: number = 0,
 ) {
-  // Idempotent refund inside an atomic transaction
+  // Idempotent refund inside an atomic transaction.
+  // Uses updateMany with a status guard to prevent TOCTOU race conditions
+  // under PostgreSQL READ COMMITTED isolation. The read-then-check pattern
+  // would allow two concurrent transactions to both see status="PENDING"
+  // and both refund — updateMany with WHERE status NOT IN (FAILED, COMPLETED)
+  // ensures only one transaction succeeds atomically.
   await db.$transaction(async (tx) => {
-    const call = await tx.call.findUnique({
-      where: { id: callId },
-      select: { userId: true, costCredits: true, status: true },
-    });
-
-    // Guard: not found or already failed/completed
-    if (!call || call.status === "FAILED" || call.status === "COMPLETED") {
-      return;
-    }
-
-    // Refund credits
-    await tx.user.update({
-      where: { id: call.userId },
-      data: { credits: { increment: call.costCredits } },
-    });
-
-    // Update call status
-    await tx.call.update({
-      where: { id: callId },
+    // Atomically claim the FAILED status — only succeeds if not already
+    // failed or completed. Returns 0 rows affected if already processed.
+    const updateResult = await tx.call.updateMany({
+      where: {
+        id: callId,
+        status: { notIn: ["FAILED", "COMPLETED"] },
+      },
       data: {
         status: "FAILED",
         durationSeconds,
         endedAt: new Date(),
       },
+    });
+
+    // If no rows were updated, the call was already finalised — skip refund
+    if (updateResult.count === 0) return;
+
+    // Fetch the call to get userId and costCredits for the refund
+    const call = await tx.call.findUnique({
+      where: { id: callId },
+      select: { userId: true, costCredits: true },
+    });
+
+    if (!call) return; // Should never happen after a successful update, but safety check
+
+    // Refund credits to the user
+    await tx.user.update({
+      where: { id: call.userId },
+      data: { credits: { increment: call.costCredits } },
     });
   });
 }

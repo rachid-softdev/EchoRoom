@@ -41,14 +41,27 @@ export const authRouter = router({
         });
       }
 
-      // Block disposable email domains
+      // Block disposable email domains (with recursive subdomain check).
+      // "user@mail.mailinator.com" would not match "mailinator.com" with a
+      // simple set lookup, so we check all parent domains recursively.
       const emailDomain = input.email.split("@")[1]?.toLowerCase();
-      if (emailDomain && DISPOSABLE_DOMAINS.has(emailDomain)) {
-        log.warn("Disposable email blocked", { email: input.email, domain: emailDomain });
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Les emails jetables ne sont pas autorisés",
-        });
+      if (emailDomain) {
+        const parts = emailDomain.split(".");
+        let isDisposable = false;
+        for (let i = parts.length - 2; i >= 0; i--) {
+          const parentDomain = parts.slice(i).join(".");
+          if (DISPOSABLE_DOMAINS.has(parentDomain)) {
+            isDisposable = true;
+            log.warn("Disposable email blocked", { email: input.email, domain: parentDomain });
+            break;
+          }
+        }
+        if (isDisposable) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Les emails jetables ne sont pas autorisés",
+          });
+        }
       }
 
       const existingEmail = await db.user.findUnique({

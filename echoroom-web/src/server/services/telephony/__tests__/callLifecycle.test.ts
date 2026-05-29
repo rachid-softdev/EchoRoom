@@ -4,9 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Call Lifecycle tests: failCall idempotency
 // ---------------------------------------------------------------------------
 // failCall uses callback-based $transaction to atomically:
-//   1. Check call status (guard: skip if already FAILED or COMPLETED)
-//   2. Refund credits to user
-//   3. Update call status to FAILED
+//   1. Call updateMany with status guard (WHERE status NOT IN FAILED, COMPLETED)
+//   2. If updateMany count > 0: fetch call data, refund credits
+//   3. If updateMany count = 0: skip (already finalised)
+// Uses updateMany instead of read-then-check to prevent TOCTOU race conditions.
 
 vi.mock("@/server/db", () => ({
   db: {
@@ -32,11 +33,12 @@ describe("failCall", () => {
     const { db } = await import("@/server/db");
     const mockTx = {
       call: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn().mockResolvedValue({
           id: "call-1",
           userId: "user-1",
           costCredits: 1,
-          status: "ACTIVE",
+          status: "FAILED",
         }),
         update: vi.fn().mockResolvedValue({}),
       },
@@ -50,10 +52,19 @@ describe("failCall", () => {
     const { failCall } = await import("../callLifecycle");
     await failCall("call-1", 30);
 
-    // Should check current call status inside transaction
+    // Should update call status with guard against already-failed/completed
+    expect(mockTx.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-1", status: { notIn: ["FAILED", "COMPLETED"] } },
+      data: expect.objectContaining({
+        status: "FAILED",
+        durationSeconds: 30,
+      }),
+    });
+
+    // Should fetch userId and costCredits after successful update
     expect(mockTx.call.findUnique).toHaveBeenCalledWith({
       where: { id: "call-1" },
-      select: { userId: true, costCredits: true, status: true },
+      select: { userId: true, costCredits: true },
     });
 
     // Should refund the costCredits
@@ -61,44 +72,33 @@ describe("failCall", () => {
       where: { id: "user-1" },
       data: { credits: { increment: 1 } },
     });
-
-    // Should mark call as FAILED
-    expect(mockTx.call.update).toHaveBeenCalledWith({
-      where: { id: "call-1" },
-      data: expect.objectContaining({
-        status: "FAILED",
-        durationSeconds: 30,
-      }),
-    });
   });
 
   it("should be idempotent: second call should not refund again", async () => {
     const { db } = await import("@/server/db");
+    const mockTxUpdateMany = vi.fn();
     const mockTxFindUnique = vi.fn();
 
-    // First call: status is ACTIVE, should process
-    // Second call: status is FAILED, should skip
-    mockTxFindUnique
-      .mockResolvedValueOnce({
-        id: "call-1",
-        userId: "user-1",
-        costCredits: 1,
-        status: "ACTIVE",
-      })
-      .mockResolvedValueOnce({
-        id: "call-1",
-        userId: "user-1",
-        costCredits: 1,
-        status: "FAILED",
-      });
+    // First call: updateMany succeeds (count=1)
+    // Second call: updateMany returns 0 (already FAILED)
+    mockTxUpdateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    // Only the first call should proceed to findUnique
+    mockTxFindUnique.mockResolvedValueOnce({
+      id: "call-1",
+      userId: "user-1",
+      costCredits: 1,
+    });
 
     const mockTxUpdateUser = vi.fn();
-    const mockTxUpdateCall = vi.fn();
 
     const mockTx = {
       call: {
+        updateMany: mockTxUpdateMany,
         findUnique: mockTxFindUnique,
-        update: mockTxUpdateCall,
+        update: vi.fn(),
       },
       user: {
         update: mockTxUpdateUser,
@@ -112,24 +112,18 @@ describe("failCall", () => {
     // First call — should process
     await failCall("call-1", 30);
     expect(mockTxUpdateUser).toHaveBeenCalledTimes(1);
-    expect(mockTxUpdateCall).toHaveBeenCalledTimes(1);
 
-    // Second call — should be idempotent (skip)
+    // Second call — should be idempotent (skip refund because updateMany returned 0)
     await failCall("call-1", 60);
     expect(mockTxUpdateUser).toHaveBeenCalledTimes(1); // Still 1 — no additional refund
-    expect(mockTxUpdateCall).toHaveBeenCalledTimes(1); // Still 1 — no additional update
   });
 
   it("should skip already completed calls", async () => {
     const { db } = await import("@/server/db");
     const mockTx = {
       call: {
-        findUnique: vi.fn().mockResolvedValue({
-          id: "call-1",
-          userId: "user-1",
-          costCredits: 1,
-          status: "COMPLETED",
-        }),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }), // 0 affected — already finalised
+        findUnique: vi.fn(),
         update: vi.fn(),
       },
       user: {
@@ -142,16 +136,17 @@ describe("failCall", () => {
     const { failCall } = await import("../callLifecycle");
     await failCall("call-1");
 
-    // Should not modify anything
+    // Should not modify anything after updateMany returns 0
     expect(mockTx.user.update).not.toHaveBeenCalled();
-    expect(mockTx.call.update).not.toHaveBeenCalled();
+    expect(mockTx.call.findUnique).not.toHaveBeenCalled();
   });
 
   it("should skip non-existent calls", async () => {
     const { db } = await import("@/server/db");
     const mockTx = {
       call: {
-        findUnique: vi.fn().mockResolvedValue(null),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }), // 0 affected — no matching row
+        findUnique: vi.fn(),
         update: vi.fn(),
       },
       user: {
@@ -164,22 +159,22 @@ describe("failCall", () => {
     const { failCall } = await import("../callLifecycle");
     await failCall("nonexistent-call");
 
-    // Should not modify anything
+    // Should not modify anything after updateMany returns 0
     expect(mockTx.user.update).not.toHaveBeenCalled();
-    expect(mockTx.call.update).not.toHaveBeenCalled();
+    expect(mockTx.call.findUnique).not.toHaveBeenCalled();
   });
 
   it("should handle zero duration gracefully", async () => {
     const { db } = await import("@/server/db");
     const mockTx = {
       call: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn().mockResolvedValue({
           id: "call-1",
           userId: "user-1",
           costCredits: 2,
-          status: "ACTIVE",
         }),
-        update: vi.fn().mockResolvedValue({}),
+        update: vi.fn(),
       },
       user: {
         update: vi.fn().mockResolvedValue({}),
@@ -191,16 +186,19 @@ describe("failCall", () => {
     const { failCall } = await import("../callLifecycle");
     await failCall("call-1"); // No duration provided
 
-    expect(mockTx.user.update).toHaveBeenCalledWith({
-      where: { id: "user-1" },
-      data: { credits: { increment: 2 } },
-    });
-    expect(mockTx.call.update).toHaveBeenCalledWith({
-      where: { id: "call-1" },
+    // updateMany should have durationSeconds=0 as default
+    expect(mockTx.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-1", status: { notIn: ["FAILED", "COMPLETED"] } },
       data: expect.objectContaining({
         status: "FAILED",
         durationSeconds: 0,
       }),
+    });
+
+    // Should refund 2 credits
+    expect(mockTx.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { credits: { increment: 2 } },
     });
   });
 
@@ -208,13 +206,13 @@ describe("failCall", () => {
     const { db } = await import("@/server/db");
     const mockTx = {
       call: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn().mockResolvedValue({
           id: "call-expensive",
           userId: "user-premium",
           costCredits: 10,
-          status: "ACTIVE",
         }),
-        update: vi.fn().mockResolvedValue({}),
+        update: vi.fn(),
       },
       user: {
         update: vi.fn().mockResolvedValue({}),

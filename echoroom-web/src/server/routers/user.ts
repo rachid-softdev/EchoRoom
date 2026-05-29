@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import bcrypt from "bcryptjs";
 import { router, protectedProcedure, withRateLimit } from "../trpc";
 import { db } from "../db";
 import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
@@ -126,6 +127,10 @@ export const userRouter = router({
     .mutation(async ({ ctx }) => {
       const userId = ctx.session.user.id;
       const anonId = crypto.randomUUID();
+      // Generate a valid bcrypt hash of a random UUID as the sentinel password.
+      // crypto.randomUUID() alone would crash bcrypt.compare() in auth.ts
+      // because UUIDs don't match the $2b$ format that bcrypt expects.
+      const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
 
       await db.$transaction(async (tx) => {
         await tx.user.update({
@@ -135,7 +140,7 @@ export const userRouter = router({
             anonymizedAt: new Date(),
             email: `deleted-${anonId}@anonymized.echoroom.app`,
             username: `utilisateur-${anonId.substring(0, 8)}`,
-            passwordHash: crypto.randomUUID(),
+            passwordHash: deletedHash,
             displayName: null,
             bio: null,
             image: null,

@@ -146,9 +146,12 @@ async function handleCompletedCall(
     return
   }
 
-  // Idempotency: skip if call is already completed
-  if (callRecord && callRecord.status === "COMPLETED") {
-    log.info('Call already completed, skipping duplicate webhook', { callSid })
+  // Idempotency: skip if call is already completed or failed.
+  // This prevents a completed webhook from overwriting a FAILED status
+  // that was set by failCall() (e.g., from a "busy" status webhook arriving
+  // before the final "completed" status).
+  if (callRecord && (callRecord.status === "COMPLETED" || callRecord.status === "FAILED")) {
+    log.info('Call already completed/failed, skipping duplicate webhook', { callSid, status: callRecord.status })
     return
   }
 
@@ -225,8 +228,8 @@ async function handleCompletedCall(
       select: { status: true, costCredits: true },
     })
 
-    if (currentCall?.status === "COMPLETED") {
-      log.info('Call already completed, detected in transaction, skipping', { callSid })
+    if (currentCall?.status === "COMPLETED" || currentCall?.status === "FAILED") {
+      log.info('Call already completed/failed, detected in transaction, skipping', { callSid, status: currentCall.status })
       return
     }
 
@@ -284,6 +287,11 @@ async function fetchRecordingAudio(
       headers: {
         Authorization: `Basic ${auth}`,
       },
+      // Reject HTTP redirects to prevent credential leakage to untrusted origins.
+      // Although isValidTwilioRecordingUrl validates the initial URL, a redirect
+      // (e.g., from Twilio's CDN or a misconfiguration) would forward the
+      // Authorization header to the redirect target without origin validation.
+      redirect: 'error',
     })
 
     if (!response.ok) {
