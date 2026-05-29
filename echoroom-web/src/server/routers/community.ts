@@ -9,7 +9,7 @@ import {
   withIPRateLimit,
 } from "../trpc";
 import { db } from "../db";
-import { MIN_REPORT_REASON_LENGTH } from "../../lib/constants";
+import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
 
 export const communityRouter = router({
   comment: protectedProcedure

@@ -182,7 +182,8 @@ const TEXT_FIELDS = [
   "text",
 ] as const;
 
-function extractTextFromInput(input: unknown): string | null {
+/** Extract text content from known text fields for content moderation. Exported for testing. */
+export function extractTextFromInput(input: unknown): string | null {
   if (!input || typeof input !== "object") return null;
   const obj = input as Record<string, unknown>;
   const textParts = TEXT_FIELDS

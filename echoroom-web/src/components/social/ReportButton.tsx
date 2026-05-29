@@ -85,9 +85,9 @@ export function ReportButton({
             rows={4}
           />
           <p className="text-xs text-muted-foreground">
-            {reason.length >= 10
+            {reason.length >= MIN_REPORT_REASON_LENGTH
               ? "Signalement prêt à être envoyé"
-              : `${10 - reason.length} caractères minimum requis`}
+              : `${MIN_REPORT_REASON_LENGTH - reason.length} caractères minimum requis`}
           </p>
         </div>
         <DialogFooter>
