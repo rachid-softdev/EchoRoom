@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, withRateLimit } from "../trpc";
 import { db } from "../db";
+import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
 
 export const userRouter = router({
   exportMyData: protectedProcedure
@@ -65,13 +66,20 @@ export const userRouter = router({
         },
       });
 
-      // Mask phone numbers: keep last 4 digits only
-      const maskedCalls = calls.map((call) => ({
-        ...call,
-        phoneNumber: call.phoneNumber.length >= 4
-          ? `xxxx${call.phoneNumber.slice(-4)}`
-          : "xxxx",
-      }));
+      // Mask phone numbers: decrypt then show last 4 digits only
+      const maskedCalls = calls.map((call) => {
+        let masked = "****";
+        try {
+          const decrypted = decryptPhoneNumber(call.phoneNumber);
+          masked = maskPhoneNumber(decrypted);
+        } catch {
+          // Legacy plaintext or decryption failure — fallback to simple masking
+          if (call.phoneNumber.length >= 4) {
+            masked = `xxxx${call.phoneNumber.slice(-4)}`;
+          }
+        }
+        return { ...call, phoneNumber: masked };
+      });
 
       const comments = await db.comment.findMany({
         where: { userId },
@@ -89,7 +97,6 @@ export const userRouter = router({
         select: {
           id: true,
           creditsPurchased: true,
-          stripePaymentId: true,
           createdAt: true,
         },
       });
@@ -118,7 +125,7 @@ export const userRouter = router({
     )
     .mutation(async ({ ctx }) => {
       const userId = ctx.session.user.id;
-      const shortId = userId.slice(0, 8);
+      const anonId = crypto.randomUUID();
 
       await db.$transaction(async (tx) => {
         await tx.user.update({
@@ -126,24 +133,19 @@ export const userRouter = router({
           data: {
             deletedAt: new Date(),
             anonymizedAt: new Date(),
-            email: `deleted-${userId}@anonymized.echoroom.app`,
-            username: `utilisateur-${shortId}`,
-            passwordHash: "DELETED",
+            email: `deleted-${anonId}@anonymized.echoroom.app`,
+            username: `utilisateur-${anonId.substring(0, 8)}`,
+            passwordHash: crypto.randomUUID(),
             displayName: null,
             bio: null,
             image: null,
           },
         });
 
-        await tx.scenario.updateMany({
-          where: { creatorId: userId },
-          data: { visibility: "PRIVATE" },
-        });
-
-        await tx.comment.updateMany({
-          where: { userId },
-          data: { content: "[Commentaire supprimé]" },
-        });
+        const { anonymizePersonalData } = await import(
+          "@/server/services/user/anonymization"
+        );
+        await anonymizePersonalData(tx, userId);
       });
 
       return { success: true };
@@ -168,4 +170,35 @@ export const userRouter = router({
 
     return user;
   }),
+
+  withdrawConsent: protectedProcedure
+    .use(withRateLimit({ limit: 2, window: 3600 }))
+    .input(
+      z.object({
+        confirmation: z.literal("RETIRER"),
+      }),
+    )
+    .mutation(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+
+      await db.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: { consentWithdrawnAt: new Date() },
+        });
+
+        const { anonymizePersonalData } = await import(
+          "@/server/services/user/anonymization"
+        );
+        await anonymizePersonalData(tx, userId);
+
+        // Invalidate all sessions for this user
+        await tx.user.update({
+          where: { id: userId },
+          data: { tokenVersion: { increment: 1 } },
+        });
+      });
+
+      return { success: true };
+    }),
 });

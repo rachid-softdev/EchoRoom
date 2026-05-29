@@ -5,6 +5,7 @@ import {
   publicProcedure,
   protectedProcedure,
   withRateLimit,
+  withIPRateLimit,
 } from "../trpc";
 import { db } from "../db";
 import { checkAndAwardBadges } from "../services/social/badges";
@@ -94,6 +95,7 @@ export const socialRouter = router({
     }),
 
   getReactions: publicProcedure
+    .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(z.object({ scenarioId: z.string() }))
     .query(async ({ input, ctx }) => {
       const grouped = await db.reaction.groupBy({
@@ -144,6 +146,7 @@ export const socialRouter = router({
     }),
 
   getClips: publicProcedure
+    .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(z.object({ callId: z.string() }))
     .query(async ({ input }) => {
       return getClips(input.callId);
@@ -156,6 +159,7 @@ export const socialRouter = router({
     }),
 
   getLeaderboardScenarios: publicProcedure
+    .use(withIPRateLimit({ limit: 30, window: 60 }))
     .input(
       z.object({
         period: z.enum(["ALL", "WEEK", "MONTH"]).default("ALL"),
@@ -171,6 +175,7 @@ export const socialRouter = router({
     }),
 
   getLeaderboardCreators: publicProcedure
+    .use(withIPRateLimit({ limit: 30, window: 60 }))
     .input(
       z.object({
         period: z.enum(["ALL", "WEEK", "MONTH"]).default("ALL"),
@@ -185,13 +190,16 @@ export const socialRouter = router({
       return { items };
     }),
 
-  getBadges: publicProcedure.query(async () => {
+  getBadges: publicProcedure
+    .use(withIPRateLimit({ limit: 60, window: 60 }))
+    .query(async () => {
     return db.badge.findMany({
       orderBy: { name: "asc" },
     });
   }),
 
   getUserBadges: publicProcedure
+    .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
       const userBadges = await db.userBadge.findMany({
@@ -209,7 +217,9 @@ export const socialRouter = router({
       }));
     }),
 
-  getFeatured: publicProcedure.query(async () => {
+  getFeatured: publicProcedure
+    .use(withIPRateLimit({ limit: 60, window: 60 }))
+    .query(async () => {
     const featured = await db.featuredScenario.findFirst({
       orderBy: { featuredAt: "desc" },
       include: {
@@ -229,8 +239,9 @@ export const socialRouter = router({
     return featured?.scenario ?? null;
   }),
 
-  trackShare: publicProcedure
-    .use(withRateLimit({ limit: 120, window: 3600 }))
+  trackShare: protectedProcedure
+    .use(withRateLimit({ limit: 60, window: 3600 }))
+    .use(withIPRateLimit({ limit: 30, window: 60 }))
     .input(
       z.object({
         scenarioId: z.string(),
@@ -238,11 +249,18 @@ export const socialRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const scenario = await db.scenario.findUnique({
+        where: { id: input.scenarioId },
+        select: { id: true },
+      });
+      if (!scenario) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Scénario introuvable" });
+      }
       await db.shareEvent.create({
         data: {
           scenarioId: input.scenarioId,
           platform: input.platform,
-          userId: ctx.session?.user?.id ?? null,
+          userId: ctx.session.user.id,
         },
       });
       return { success: true };

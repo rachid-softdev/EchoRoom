@@ -63,6 +63,7 @@ model User {
   totalCallsMade     Int @default(0)
 
   consentAcceptedAt DateTime?
+  consentWithdrawnAt DateTime?
   gdprDataExportedAt DateTime?
   deletedAt         DateTime?
   anonymizedAt      DateTime?

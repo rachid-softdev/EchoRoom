@@ -24,6 +24,8 @@ const envSchema = z.object({
   POSTHOG_KEY: z.string().min(1),
   POSTHOG_HOST: z.string().url().default("https://us.i.posthog.com"),
   TRUSTED_ORIGINS: z.string().optional(),
+  PHONE_ENCRYPTION_KEY: z.string().min(32),
+  TWILIO_TOKEN_SECRET: z.string().min(16),
 });
 
 type EnvType = z.infer<typeof envSchema>;
@@ -47,6 +49,8 @@ const DEV_DEFAULTS: Record<string, string> = {
   R2_ENDPOINT: "https://dev.r2.cloudflarestorage.com",
   POSTHOG_KEY: "phc_dev",
   POSTHOG_HOST: "https://us.i.posthog.com",
+  PHONE_ENCRYPTION_KEY: "dev_phone_key_32_chars_minimum_here___",
+  TWILIO_TOKEN_SECRET: "dev_twilio_token_secret_16_chars",
 };
 
 function loadEnv(): EnvType {

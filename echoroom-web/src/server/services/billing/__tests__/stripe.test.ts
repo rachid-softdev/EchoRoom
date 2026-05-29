@@ -31,7 +31,7 @@ describe("createCheckoutSession", () => {
     const result = await createCheckoutSession({
       userId: "user-abc",
       credits: 50,
-      priceId: "price_abc123",
+      priceId: "price_2_credits_50",
       successUrl: "https://echoroom.app/billing/success",
       cancelUrl: "https://echoroom.app/billing/cancel",
     });
@@ -43,7 +43,7 @@ describe("createCheckoutSession", () => {
 
     expect(mockSessionsCreate).toHaveBeenCalledWith({
       mode: "payment",
-      line_items: [{ price: "price_abc123", quantity: 1 }],
+      line_items: [{ price: "price_2_credits_50", quantity: 1 }],
       metadata: {
         userId: "user-abc",
         credits: "50",
@@ -60,8 +60,8 @@ describe("createCheckoutSession", () => {
 
     await createCheckoutSession({
       userId: "user-xyz",
-      credits: 100,
-      priceId: "price_xyz",
+      credits: 10,
+      priceId: "price_1_credits_10",
       successUrl: "https://example.com/success",
       cancelUrl: "https://example.com/cancel",
     });
@@ -70,32 +70,25 @@ describe("createCheckoutSession", () => {
       expect.objectContaining({
         metadata: {
           userId: "user-xyz",
-          credits: "100", // Must be string
+          credits: "10", // Must be string
         },
       }),
     );
   });
 
-  it("should handle zero credits gracefully", async () => {
-    mockSessionsCreate.mockResolvedValue({ id: "cs_test_zero" });
-
+  it("should reject an unknown priceId", async () => {
     const { createCheckoutSession } = await import("../stripe");
 
-    await createCheckoutSession({
-      userId: "user-zero",
-      credits: 0,
-      priceId: "price_zero",
-      successUrl: "https://example.com/success",
-      cancelUrl: "https://example.com/cancel",
-    });
-
-    expect(mockSessionsCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: {
-          userId: "user-zero",
-          credits: "0",
-        },
+    await expect(
+      createCheckoutSession({
+        userId: "user-zero",
+        credits: 10,
+        priceId: "price_unknown",
+        successUrl: "https://example.com/success",
+        cancelUrl: "https://example.com/cancel",
       }),
-    );
+    ).rejects.toThrow("Unknown priceId: price_unknown");
+
+    expect(mockSessionsCreate).not.toHaveBeenCalled();
   });
 });

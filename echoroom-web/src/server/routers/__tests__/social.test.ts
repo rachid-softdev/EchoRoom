@@ -10,6 +10,9 @@ const mockDb = vi.hoisted(() => ({
   shareEvent: {
     create: vi.fn(),
   },
+  scenario: {
+    findUnique: vi.fn(),
+  },
 }));
 
 vi.mock("@/server/db", () => ({
@@ -37,6 +40,7 @@ vi.mock("@/server/trpc", () => {
     adminProcedure: chain,
     middleware: vi.fn((fn: Function) => fn),
     withRateLimit: vi.fn(() => (opts: { next: Function }) => opts.next()),
+    withIPRateLimit: vi.fn(() => (opts: { next: Function }) => opts.next()),
   };
 });
 
@@ -49,6 +53,7 @@ type MutationHandler = (opts: TrackShareInput) => Promise<{ success: boolean }>;
 describe("socialRouter.trackShare", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDb.scenario.findUnique.mockResolvedValue({ id: "scenario-abc" });
   });
 
   it("should create a ShareEvent record and return { success: true }", async () => {
@@ -76,7 +81,7 @@ describe("socialRouter.trackShare", () => {
     });
   });
 
-  it("should store userId as null when session has no user (anonymous/public)", async () => {
+  it("should pass the user ID to ShareEvent create", async () => {
     mockDb.shareEvent.create.mockResolvedValue({ id: "share-2" });
 
     const { socialRouter } = await import("../social");
@@ -86,19 +91,19 @@ describe("socialRouter.trackShare", () => {
 
     await handler({
       input: { scenarioId: "scenario-xyz", platform: "DISCORD" },
-      ctx: { session: null },
+      ctx: { session: { user: { id: "user-2" } } },
     });
 
     expect(mockDb.shareEvent.create).toHaveBeenCalledWith({
       data: {
         scenarioId: "scenario-xyz",
         platform: "DISCORD",
-        userId: null,
+        userId: "user-2",
       },
     });
   });
 
-  it("should store userId as null when session exists but user is undefined", async () => {
+  it("should verify the scenario exists before creating a share", async () => {
     mockDb.shareEvent.create.mockResolvedValue({ id: "share-3" });
 
     const { socialRouter } = await import("../social");
@@ -108,15 +113,12 @@ describe("socialRouter.trackShare", () => {
 
     await handler({
       input: { scenarioId: "scenario-xyz", platform: "COPY_LINK" },
-      ctx: { session: {} },
+      ctx: { session: { user: { id: "user-3" } } },
     });
 
-    expect(mockDb.shareEvent.create).toHaveBeenCalledWith({
-      data: {
-        scenarioId: "scenario-xyz",
-        platform: "COPY_LINK",
-        userId: null,
-      },
+    expect(mockDb.scenario.findUnique).toHaveBeenCalledWith({
+      where: { id: "scenario-xyz" },
+      select: { id: true },
     });
   });
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
+import { maskPhoneNumber } from "@/server/lib/encryption";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
@@ -335,7 +336,7 @@ export const adminRouter = router({
           entityType: "BlockedNumber",
           entityId: blocked.id,
           adminId: ctx.session.user.id,
-          metadata: { phoneNumber: input.phoneNumber },
+          metadata: { phoneNumber: maskPhoneNumber(input.phoneNumber) },
         },
       });
 
@@ -366,7 +367,7 @@ export const adminRouter = router({
           entityType: "BlockedNumber",
           entityId: input.id,
           adminId: ctx.session.user.id,
-          metadata: { phoneNumber: blocked.phoneNumber },
+          metadata: { phoneNumber: maskPhoneNumber(blocked.phoneNumber) },
         },
       });
 
@@ -388,7 +389,14 @@ export const adminRouter = router({
         });
       }
 
-      const shortId = input.userId.slice(0, 8);
+      if (user.deletedAt) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Cet utilisateur est déjà supprimé",
+        });
+      }
+
+      const anonId = crypto.randomUUID();
 
       await db.$transaction(async (tx) => {
         await tx.user.update({
@@ -396,24 +404,19 @@ export const adminRouter = router({
           data: {
             deletedAt: new Date(),
             anonymizedAt: new Date(),
-            email: `deleted-${input.userId}@anonymized.echoroom.app`,
-            username: `utilisateur-${shortId}`,
-            passwordHash: "DELETED",
+            email: `deleted-${anonId}@anonymized.echoroom.app`,
+            username: `utilisateur-${anonId.substring(0, 8)}`,
+            passwordHash: crypto.randomUUID(),
             displayName: null,
             bio: null,
             image: null,
           },
         });
 
-        await tx.scenario.updateMany({
-          where: { creatorId: input.userId },
-          data: { visibility: "PRIVATE" },
-        });
-
-        await tx.comment.updateMany({
-          where: { userId: input.userId },
-          data: { content: "[Commentaire supprimé]" },
-        });
+        const { anonymizePersonalData } = await import(
+          "@/server/services/user/anonymization"
+        );
+        await anonymizePersonalData(tx, input.userId);
       });
 
       await db.auditLog.create({
@@ -438,16 +441,12 @@ export const adminRouter = router({
           email: true,
           username: true,
           displayName: true,
-          bio: true,
-          image: true,
           role: true,
           credits: true,
           totalLikesReceived: true,
           totalCallsMade: true,
           consentAcceptedAt: true,
-          gdprDataExportedAt: true,
           deletedAt: true,
-          anonymizedAt: true,
           createdAt: true,
           _count: {
             select: {
@@ -479,7 +478,7 @@ export const adminRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const where: Record<string, unknown> = {};
+      const where: Prisma.UserWhereInput = {};
       if (input.search) {
         where.OR = [
           { username: { contains: input.search, mode: "insensitive" } },

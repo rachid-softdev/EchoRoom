@@ -56,7 +56,7 @@ export const scenariosRouter = router({
         input.sort === "TOP" ? { likeCount: "desc" as const } : { createdAt: "desc" as const };
 
       // Cap fetch size for TRENDING sort to avoid in-memory sorting of entire table
-      const effectiveLimit = input.sort === "TRENDING" ? 200 : input.limit + 1;
+      const effectiveLimit = input.sort === "TRENDING" ? 50 : input.limit + 1;
 
       const scenarios = await db.scenario.findMany({
         where: {

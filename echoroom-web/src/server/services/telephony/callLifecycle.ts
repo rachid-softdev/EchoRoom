@@ -5,6 +5,8 @@ import { AppError } from "@/server/lib/errors";
 import { atomicDebit, atomicRefund } from "@/server/services/billing/creditOps";
 import { checkAndAwardBadges } from "@/server/services/social/badges";
 import { createLogger } from "@/server/lib/logger";
+import { encryptPhoneNumber } from "@/server/lib/encryption";
+import { createTwilioToken } from "@/server/lib/twilioToken";
 
 const log = createLogger("call-lifecycle");
 
@@ -70,7 +72,7 @@ export async function initiateCall(params: StartCallParams) {
       data: {
         userId: params.userId,
         scenarioId: params.scenarioId,
-        phoneNumber: params.phoneNumber,
+        phoneNumber: encryptPhoneNumber(params.phoneNumber),
         status: "PENDING",
         costCredits: 1,
       },
@@ -83,10 +85,11 @@ export async function initiateCall(params: StartCallParams) {
   try {
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
+    const token = createTwilioToken(call.id, scenario.id);
     const twilioCall = await twilioClient.calls.create({
       to: params.phoneNumber,
       from: TWILIO_PHONE,
-      url: `${appUrl}/api/webhooks/twilio/voice?callId=${call.id}&scenarioId=${encodeURIComponent(scenario.id)}&characterId=${encodeURIComponent(scenario.character.id)}`,
+      url: `${appUrl}/api/webhooks/twilio/voice?token=${token}`,
       statusCallback: `${appUrl}/api/webhooks/twilio`,
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       statusCallbackMethod: "POST",
@@ -127,20 +130,20 @@ export async function completeCall(callId: string, durationSeconds: number) {
 
   if (!call) return;
 
-  await db.$transaction([
-    db.call.update({
+  await db.$transaction(async (tx) => {
+    await tx.call.update({
       where: { id: callId },
       data: {
         status: "COMPLETED",
         durationSeconds,
         endedAt: new Date(),
       },
-    }),
-    db.user.update({
+    });
+    await tx.user.update({
       where: { id: call.userId },
       data: { totalCallsMade: { increment: 1 } },
-    }),
-  ]);
+    });
+  });
 
   // Fire-and-forget badge check — do not block the response
   checkAndAwardBadges(call.userId, "FIRST_CALL").catch((err) => {

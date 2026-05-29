@@ -11,10 +11,11 @@ export const callsRouter = router({
     .input(
       z.object({
         scenarioId: z.string(),
-        phoneNumber: z.string().regex(
-          /^\+[1-9]\d{6,14}$/,
-          "Le numéro doit être au format international (ex: +33612345678)",
-        ),
+        phoneNumber: z.string().transform((val) => val.normalize("NFKC"))
+          .pipe(z.string().regex(
+            /^\+[1-9]\d{6,14}$/,
+            "Le numéro doit être au format international (ex: +33612345678)",
+          )),
         maxDurationSeconds: z.number().int().min(60).max(3600).default(300),
       }),
     )
