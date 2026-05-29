@@ -8,6 +8,19 @@ import {
   withRateLimit,
 } from "../trpc";
 import { db } from "../db";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("auth");
+
+const DISPOSABLE_DOMAINS = new Set([
+  "mailinator.com", "tempmail.com", "10minutemail.com",
+  "guerrillamail.com", "throwaway.email", "yopmail.com",
+  "temp-mail.org", "sharklasers.com", "trashmail.com",
+  "burnermail.io", "maildrop.cc", "getairmail.com",
+  "emailondeck.com", "fakeinbox.com", "tempinbox.com",
+  "mailexpire.com", "spambox.us", "spamgourmet.com",
+  "dispostable.com", "mailcatch.com",
+]);
 
 export const authRouter = router({
   register: publicProcedure
@@ -25,6 +38,16 @@ export const authRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Vous devez accepter les conditions d'utilisation",
+        });
+      }
+
+      // Block disposable email domains
+      const emailDomain = input.email.split("@")[1]?.toLowerCase();
+      if (emailDomain && DISPOSABLE_DOMAINS.has(emailDomain)) {
+        log.warn("Disposable email blocked", { email: input.email, domain: emailDomain });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Les emails jetables ne sont pas autorisés",
         });
       }
 
@@ -60,6 +83,52 @@ export const authRouter = router({
       });
 
       return { userId: user.id };
+    }),
+
+  changePassword: protectedProcedure
+    .use(withRateLimit({ limit: 3, window: 3600 }))
+    .input(
+      z.object({
+        currentPassword: z.string().min(1),
+        newPassword: z.string().min(8).max(128),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { passwordHash: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Utilisateur introuvable",
+        });
+      }
+
+      const isValid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+      if (!isValid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Mot de passe actuel incorrect",
+        });
+      }
+
+      const newPasswordHash = await bcrypt.hash(input.newPassword, 12);
+
+      await db.user.update({
+        where: { id: userId },
+        data: {
+          passwordHash: newPasswordHash,
+          tokenVersion: { increment: 1 },
+        },
+      });
+
+      log.info("Password changed", { userId });
+
+      return { success: true };
     }),
 
   me: protectedProcedure.query(async ({ ctx }) => {
