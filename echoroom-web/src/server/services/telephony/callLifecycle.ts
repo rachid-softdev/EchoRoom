@@ -6,7 +6,6 @@ import { atomicDebit, atomicRefund } from "@/server/services/billing/creditOps";
 import { checkAndAwardBadges } from "@/server/services/social/badges";
 import { createLogger } from "@/server/lib/logger";
 import { encryptPhoneNumber } from "@/server/lib/encryption";
-import { createTwilioToken } from "@/server/lib/twilioToken";
 
 const log = createLogger("call-lifecycle");
 
@@ -85,11 +84,10 @@ export async function initiateCall(params: StartCallParams) {
   try {
     const appUrl = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-    const token = createTwilioToken(call.id, scenario.id);
     const twilioCall = await twilioClient.calls.create({
       to: params.phoneNumber,
       from: TWILIO_PHONE,
-      url: `${appUrl}/api/webhooks/twilio/voice?token=${token}`,
+      url: `${appUrl}/api/webhooks/twilio/voice?callId=${call.id}&scenarioId=${scenario.id}`,
       statusCallback: `${appUrl}/api/webhooks/twilio`,
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       statusCallbackMethod: "POST",

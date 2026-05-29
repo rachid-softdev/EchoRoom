@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
+import { env } from "@/lib/env";
 
 // PHONE_ENCRYPTION_KEY must be a high-entropy secret (min 32 chars).
 // It is hashed with SHA-256 to produce exactly 32 bytes for AES-256.
@@ -15,11 +16,7 @@ let encryptionKey: Buffer | null = null;
 
 function getEncryptionKey(): Buffer {
   if (encryptionKey) return encryptionKey;
-  const key = process.env.PHONE_ENCRYPTION_KEY;
-  if (!key) {
-    throw new Error("PHONE_ENCRYPTION_KEY environment variable is required");
-  }
-  encryptionKey = createHash("sha256").update(key).digest();
+  encryptionKey = createHash("sha256").update(env.PHONE_ENCRYPTION_KEY).digest();
   return encryptionKey;
 }
 

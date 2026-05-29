@@ -12,24 +12,36 @@ import { ELEVENLABS_MODEL } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from '../validate'
+import { verifyTwilioToken } from '@/server/lib/twilioToken'
 
 const log = createLogger('voice')
 
 const VoiceResponse = twilio.twiml.VoiceResponse
 
 /**
- * GET handler — check call health.
- * Returns whether a conversation is still active for the given callSid.
+ * GET handler — minimal health check.
+ *
+ * Without a valid token, returns only `{ active: boolean }` to prevent
+ * leaking conversation details. If a valid HMAC token is provided via
+ * the `token` query param (for future internal tools), returns richer
+ * data including status and turnCount (but NEVER messages).
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const callSid = searchParams.get('callSid')
+  const token = searchParams.get('token')
 
-  if (callSid) {
-    const state = await getConversationState(callSid)
+  // Authenticated requests via HMAC token get richer data
+  if (token) {
+    const payload = verifyTwilioToken(token)
+    if (!payload) {
+      return NextResponse.json({ active: false, reason: 'invalid_token' }, { status: 403 })
+    }
+
+    const state = await getConversationState(payload.callId)
     if (!state) {
       return NextResponse.json({ active: false, reason: 'not_found' })
     }
+
     return NextResponse.json({
       active: state.status === 'active',
       status: state.status,
@@ -37,7 +49,8 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  return NextResponse.json({ active: false, reason: 'missing_callSid' })
+  // Unauthenticated requests: minimal info only
+  return NextResponse.json({ active: false })
 }
 
 /**

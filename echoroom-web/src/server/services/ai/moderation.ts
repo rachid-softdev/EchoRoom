@@ -140,20 +140,11 @@ export async function moderateOutput(
   text: string,
   timeoutMs: number = 2000,
 ): Promise<string> {
-  // Promise.race ensures the moderation actually times out
-  // (AbortController signal is not propagated through checkContent's OpenAI call)
-  const timeoutPromise = new Promise<ModerationResult>((_, reject) =>
-    setTimeout(
-      () => reject(Object.assign(new Error("Moderation timeout"), { name: "AbortError" })),
-      timeoutMs,
-    ),
-  );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const result = await Promise.race([
-      checkContent(text),
-      timeoutPromise,
-    ]);
+    const result = await checkContent(text, controller.signal);
     if (!result.approved) {
       log.warn("AI-generated content blocked", {
         text, // Full text for audit/review
@@ -163,12 +154,14 @@ export async function moderateOutput(
     }
     return text;
   } catch (error) {
-    if ((error as Error)?.name === "AbortError") {
+    if (error instanceof DOMException && error.name === "AbortError") {
       log.warn("Moderation timed out — allowing content through", {
         text: text.substring(0, 100),
       });
       return text; // Fail-open for safety (better than no response on a call)
     }
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

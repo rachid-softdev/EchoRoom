@@ -72,17 +72,15 @@ describe("encryptPhoneNumber", () => {
     expect(ciphertextHex.length).toBeGreaterThan(0);
   });
 
-  it("throws when PHONE_ENCRYPTION_KEY is not set", async () => {
+  it("throws when PHONE_ENCRYPTION_KEY is missing in env module", async () => {
     vi.resetModules();
+    // env.ts provides a dev default, so to simulate a missing key we must mock the module.
+    vi.doMock("@/lib/env", () => ({
+      env: Object.freeze({} as Record<string, string>),
+    }));
+
     const { encryptPhoneNumber: enc } = await import("../encryption");
-
-    const saved = process.env.PHONE_ENCRYPTION_KEY;
-    delete process.env.PHONE_ENCRYPTION_KEY;
-    expect(() => enc("+33612345678")).toThrow(
-      "PHONE_ENCRYPTION_KEY environment variable is required"
-    );
-
-    process.env.PHONE_ENCRYPTION_KEY = saved;
+    expect(() => enc("+33612345678")).toThrow();
   });
 });
 
@@ -183,21 +181,15 @@ describe("decryptPhoneNumber", () => {
     expect(() => decryptPhoneNumber(tampered)).toThrow();
   });
 
-  it("throws when PHONE_ENCRYPTION_KEY is not set", async () => {
+  it("throws when PHONE_ENCRYPTION_KEY is missing in env module", async () => {
     vi.resetModules();
+    vi.doMock("@/lib/env", () => ({
+      env: Object.freeze({} as Record<string, string>),
+    }));
+
     const { decryptPhoneNumber } = await import("../encryption");
-
-    // Construct a fake encrypted string with valid format
-    // 24 hex chars for IV (12 bytes), 32 hex chars for authTag (16 bytes)
     const fakeEncrypted = "v1:aaaaaaaaaaaaaaaaaaaaaaaa:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:cccccc";
-
-    const saved = process.env.PHONE_ENCRYPTION_KEY;
-    delete process.env.PHONE_ENCRYPTION_KEY;
-    expect(() => decryptPhoneNumber(fakeEncrypted)).toThrow(
-      "PHONE_ENCRYPTION_KEY environment variable is required"
-    );
-
-    process.env.PHONE_ENCRYPTION_KEY = saved;
+    expect(() => decryptPhoneNumber(fakeEncrypted)).toThrow();
   });
 });
 
