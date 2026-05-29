@@ -206,11 +206,6 @@ export default function HomePage() {
             Fonctionnalité audio disponible prochainement. En attendant, explorez
             la bibliothèque de scénarios.
           </p>
-          <audio controls className="w-full" preload="none">
-            <source src="" type="audio/mpeg" />
-            <track kind="captions" src="" label="Français" />
-            Votre navigateur ne supporte pas l&apos;audio.
-          </audio>
         </div>
       </section>
 

@@ -55,12 +55,15 @@ export const scenariosRouter = router({
       const orderBy =
         input.sort === "TOP" ? { likeCount: "desc" as const } : { createdAt: "desc" as const };
 
+      // Cap fetch size for TRENDING sort to avoid in-memory sorting of entire table
+      const effectiveLimit = input.sort === "TRENDING" ? 200 : input.limit + 1;
+
       const scenarios = await db.scenario.findMany({
         where: {
           visibility: "PUBLIC",
           moderationStatus: "APPROVED",
         },
-        take: input.limit + 1,
+        take: effectiveLimit,
         ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
         orderBy,
         include: {
@@ -68,7 +71,7 @@ export const scenariosRouter = router({
             select: { id: true, username: true, image: true },
           },
           character: {
-            select: { id: true, name: true, slug: true, avatarUrl: true },
+            select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
           },
           _count: {
             select: { reactions: true, comments: true },
@@ -261,6 +264,7 @@ export const scenariosRouter = router({
               name: true,
               slug: true,
               avatarUrl: true,
+              category: true,
             },
           },
           _count: { select: { reactions: true, comments: true } },
