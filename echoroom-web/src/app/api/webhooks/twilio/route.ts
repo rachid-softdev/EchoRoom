@@ -13,11 +13,33 @@ import { RECORDING_TURN_NUMBER } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { failCall } from '@/server/services/telephony/callLifecycle'
 import { createLogger } from '@/server/lib/logger'
+import { validateTwilioRequest, extractParams } from './validate'
 
 const log = createLogger('twilio-webhook')
 
+/** Defense-in-depth: validate that RecordingUrl points to a legitimate Twilio endpoint. */
+function isValidTwilioRecordingUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "api.twilio.com" &&
+      parsed.pathname.startsWith("/2010-04-01/Accounts/") &&
+      parsed.pathname.includes("/Recordings/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
+  const params = extractParams(formData)
+
+  // Twilio webhook signature validation
+  if (!validateTwilioRequest(req, params)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 403 })
+  }
   const callSid = formData.get('CallSid') as string | null
   const callStatus = formData.get('CallStatus') as string | null
   const callDuration = formData.get('CallDuration') as string | null
@@ -150,25 +172,32 @@ async function handleCompletedCall(
   let recordingR2Key: string | null = null
 
   if (recordingUrl) {
-    try {
-      const recordingResponse = await fetchRecordingAudio(recordingUrl)
-      if (recordingResponse) {
-        // Upload recording to R2 for long-term storage
-        recordingR2Key = await uploadAudioBuffer(
-          callSid,
-          RECORDING_TURN_NUMBER,
-          Buffer.from(recordingResponse),
-          'audio/wav',
-        )
+    // Defense-in-depth: validate the recording URL origin
+    if (!isValidTwilioRecordingUrl(recordingUrl)) {
+      log.warn("Invalid RecordingUrl origin — skipping recording fetch", {
+        recordingUrl,
+      });
+    } else {
+      try {
+        const recordingResponse = await fetchRecordingAudio(recordingUrl)
+        if (recordingResponse) {
+          // Upload recording to R2 for long-term storage
+          recordingR2Key = await uploadAudioBuffer(
+            callSid,
+            RECORDING_TURN_NUMBER,
+            Buffer.from(recordingResponse),
+            'audio/wav',
+          )
 
-        // Transcribe with Deepgram
-        const transcriptionResult = await transcribeAudio(recordingResponse)
-        if (transcriptionResult?.transcript) {
-          deepgramTranscript = transcriptionResult.transcript
+          // Transcribe with Deepgram
+          const transcriptionResult = await transcribeAudio(recordingResponse)
+          if (transcriptionResult?.transcript) {
+            deepgramTranscript = transcriptionResult.transcript
+          }
         }
+      } catch (error) {
+        log.error('Failed to fetch/transcribe recording', { error })
       }
-    } catch (error) {
-      log.error('Failed to fetch/transcribe recording', { error })
     }
   }
 

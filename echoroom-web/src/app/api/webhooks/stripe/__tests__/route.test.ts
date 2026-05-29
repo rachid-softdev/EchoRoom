@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Stripe Webhook Route tests
@@ -11,12 +12,11 @@ import type { NextRequest } from "next/server";
 //
 // Use vi.hoisted for all mock variables referenced in vi.mock factories.
 
-const { mockConstructEvent, mockFindUnique, mockUpdate, mockCreate, mockTransaction } =
+const { mockConstructEvent, mockTxCreate, mockTxUpdate, mockTransaction } =
   vi.hoisted(() => ({
     mockConstructEvent: vi.fn(),
-    mockFindUnique: vi.fn(),
-    mockUpdate: vi.fn(),
-    mockCreate: vi.fn(),
+    mockTxCreate: vi.fn(),
+    mockTxUpdate: vi.fn(),
     mockTransaction: vi.fn(),
   }));
 
@@ -36,13 +36,6 @@ vi.mock("@/lib/stripe", () => ({
 
 vi.mock("@/server/db", () => ({
   db: {
-    purchase: {
-      findUnique: mockFindUnique,
-      create: mockCreate,
-    },
-    user: {
-      update: mockUpdate,
-    },
     $transaction: mockTransaction,
   },
 }));
@@ -132,14 +125,14 @@ describe("Stripe webhook POST handler", () => {
       data: { object: session },
     });
 
-    // No existing purchase found
-    mockFindUnique.mockResolvedValue(null);
-
-    // Make user.update and purchase.create return sensible values
-    // so the $transaction array is well-formed
-    mockUpdate.mockReturnValue({ id: "user-123", credits: { increment: 50 } });
-    mockCreate.mockReturnValue({ id: "purchase-new", stripePaymentId: "cs_test_new" });
-    mockTransaction.mockResolvedValue([{}, {}]);
+    // Mock successful transaction
+    mockTxCreate.mockResolvedValue({ id: "purchase-new", stripePaymentId: "cs_test_new" });
+    mockTxUpdate.mockResolvedValue({ id: "user-123", credits: 150 });
+    const mockTx = {
+      purchase: { create: mockTxCreate },
+      user: { update: mockTxUpdate },
+    };
+    mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
     const { POST } = await import("../route");
 
@@ -150,18 +143,12 @@ describe("Stripe webhook POST handler", () => {
     const body = await response.json();
     expect(body).toEqual({ received: true });
 
-    // Verify idempotency check
-    expect(mockFindUnique).toHaveBeenCalledWith({
-      where: { stripePaymentId: "cs_test_new" },
-    });
+    // Verify $transaction was called with a callback function
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    expect(typeof mockTransaction.mock.calls[0][0]).toBe("function");
 
-    // Verify individual operations were called correctly
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: "user-123" },
-      data: { credits: { increment: 50 } },
-    });
-
-    expect(mockCreate).toHaveBeenCalledWith({
+    // Verify purchase was created inside the transaction
+    expect(mockTxCreate).toHaveBeenCalledWith({
       data: {
         userId: "user-123",
         stripePaymentId: "cs_test_new",
@@ -169,8 +156,11 @@ describe("Stripe webhook POST handler", () => {
       },
     });
 
-    // Verify $transaction was called with the operations array
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    // Verify credits were added inside the transaction
+    expect(mockTxUpdate).toHaveBeenCalledWith({
+      where: { id: "user-123" },
+      data: { credits: { increment: 50 } },
+    });
   });
 
   it("should add correct credits amount from metadata", async () => {
@@ -187,24 +177,27 @@ describe("Stripe webhook POST handler", () => {
       data: { object: session },
     });
 
-    mockFindUnique.mockResolvedValue(null);
-    mockUpdate.mockReturnValue({});
-    mockCreate.mockReturnValue({});
-    mockTransaction.mockResolvedValue([{}, {}]);
+    mockTxCreate.mockResolvedValue({ id: "purchase-1" });
+    mockTxUpdate.mockResolvedValue({});
+    const mockTx = {
+      purchase: { create: mockTxCreate },
+      user: { update: mockTxUpdate },
+    };
+    mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
     const { POST } = await import("../route");
 
     const req = createNextRequest(JSON.stringify({}), "valid_sig");
     await POST(req);
 
-    // Verify correct increment
-    expect(mockUpdate).toHaveBeenCalledWith({
+    // Verify correct increment inside transaction
+    expect(mockTxUpdate).toHaveBeenCalledWith({
       where: { id: "user-123" },
       data: { credits: { increment: 100 } },
     });
 
-    // Verify purchase record
-    expect(mockCreate).toHaveBeenCalledWith({
+    // Verify purchase record created inside transaction
+    expect(mockTxCreate).toHaveBeenCalledWith({
       data: {
         userId: "user-123",
         stripePaymentId: "cs_test_credits",
@@ -213,7 +206,7 @@ describe("Stripe webhook POST handler", () => {
     });
   });
 
-  it("should skip duplicate checkout.session.completed events (idempotency)", async () => {
+  it("should skip duplicate checkout.session.completed events (idempotency via P2002)", async () => {
     const session = {
       id: "cs_test_dup",
       metadata: {
@@ -227,11 +220,17 @@ describe("Stripe webhook POST handler", () => {
       data: { object: session },
     });
 
-    // Existing purchase found — this is a duplicate
-    mockFindUnique.mockResolvedValue({
-      id: "purchase-1",
-      stripePaymentId: "cs_test_dup",
-    });
+    // Simulate Prisma P2002 unique constraint violation (duplicate stripePaymentId)
+    const p2002Error = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed on stripePaymentId",
+      { code: "P2002", clientVersion: "5.22.0", meta: { target: ["stripePaymentId"] } },
+    );
+    mockTxCreate.mockRejectedValue(p2002Error);
+    const mockTx = {
+      purchase: { create: mockTxCreate },
+      user: { update: mockTxUpdate },
+    };
+    mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
     const { POST } = await import("../route");
 
@@ -242,10 +241,10 @@ describe("Stripe webhook POST handler", () => {
     const body = await response.json();
     expect(body).toEqual({ received: true });
 
-    // Should NOT process duplicate
-    expect(mockUpdate).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
-    expect(mockTransaction).not.toHaveBeenCalled();
+    // Transaction callback was called (and threw P2002 inside)
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    // user.update should NOT have been called (transaction aborted before)
+    expect(mockTxUpdate).not.toHaveBeenCalled();
   });
 
   it("should return 400 when metadata.userId is missing", async () => {
@@ -269,9 +268,8 @@ describe("Stripe webhook POST handler", () => {
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body).toEqual({ error: "Missing metadata" });
-    expect(mockFindUnique).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxCreate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
@@ -296,8 +294,8 @@ describe("Stripe webhook POST handler", () => {
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body).toEqual({ error: "Missing metadata" });
-    expect(mockUpdate).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxCreate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
@@ -323,8 +321,8 @@ describe("Stripe webhook POST handler", () => {
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body).toEqual({ error: "Invalid credits" });
-    expect(mockUpdate).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxCreate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
@@ -385,9 +383,8 @@ describe("Stripe webhook POST handler", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ received: true });
-    expect(mockFindUnique).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockTxCreate).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 
@@ -405,9 +402,8 @@ describe("Stripe webhook POST handler", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ received: true });
-    expect(mockFindUnique).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockTxCreate).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
   });
 

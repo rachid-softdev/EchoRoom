@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
+import { moderateOutput } from "./moderation";
 
 const log = createLogger("conversation-engine");
 
@@ -55,8 +56,12 @@ export async function generateResponse(
     completion.choices[0]?.message?.content ??
     "Je n'ai rien à dire...";
 
+  // Centralized output moderation — catches ALL AI-generated content
+  // Moderation will timeout after 2s and allow content through (fail-open)
+  const moderatedResponse = await moderateOutput(response, 2000);
+
   return {
-    response,
+    response: moderatedResponse,
     tokensUsed: completion.usage?.total_tokens ?? 0,
   };
 }
@@ -87,5 +92,8 @@ export async function generateScript(
     temperature: 0.9,
   });
 
-  return completion.choices[0]?.message?.content ?? "...";
+  const response = completion.choices[0]?.message?.content ?? "...";
+
+  // Also moderate script generation output
+  return moderateOutput(response, 2000);
 }

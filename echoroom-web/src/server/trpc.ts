@@ -27,7 +27,9 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
       validateCSRF(opts.req, {
         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
         trustedOrigins: parseTrustedOrigins(process.env.TRUSTED_ORIGINS),
-        allowMissingOrigin: true,
+        // In production, require Origin header (strict CSRF).
+        // In development, allow missing Origin for mobile apps and tools.
+        allowMissingOrigin: process.env.NODE_ENV !== "production",
       });
     } catch (error) {
       if (error instanceof CSRFFailure) {
@@ -87,7 +89,6 @@ export interface AuthenticatedSession {
     email: string;
     username: string;
     role: "USER" | "ADMIN" | "MODERATOR";
-    credits: number;
     image: string | null;
   };
   expires: string;
@@ -100,7 +101,6 @@ export interface AdminSession {
     email: string;
     username: string;
     role: "ADMIN";
-    credits: number;
     image: string | null;
   };
   expires: string;

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { Prisma } from "@prisma/client";
 import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
 import { db } from "@/server/db";
@@ -48,29 +49,37 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid credits" }, { status: 400 });
       }
 
-      // Idempotency check: skip if already processed
-      const existingPurchase = await db.purchase.findUnique({
-        where: { stripePaymentId: session.id },
-      });
-      if (existingPurchase) {
-        log.info("Duplicate checkout.session.completed, skipping", { sessionId: session.id });
-        return NextResponse.json({ received: true });
-      }
-
       // Add credits to user + record the purchase (atomic transaction)
-      await db.$transaction([
-        db.user.update({
-          where: { id: userId },
-          data: { credits: { increment: credits } },
-        }),
-        db.purchase.create({
-          data: {
-            userId,
-            stripePaymentId: session.id,
-            creditsPurchased: credits,
-          },
-        }),
-      ]);
+      // Uses callback-based transaction for true atomicity.
+      // Idempotency is enforced by the unique constraint on stripePaymentId.
+      try {
+        await db.$transaction(async (tx) => {
+          await tx.purchase.create({
+            data: {
+              userId,
+              stripePaymentId: session.id,
+              creditsPurchased: credits,
+            },
+          });
+
+          await tx.user.update({
+            where: { id: userId },
+            data: { credits: { increment: credits } },
+          });
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          // Duplicate stripePaymentId — already processed
+          log.info("Duplicate checkout.session.completed, skipped", {
+            sessionId: session.id,
+          });
+          return NextResponse.json({ received: true });
+        }
+        throw error;
+      }
 
       log.info("Credits added", { credits, userId, sessionId: session.id });
       break;

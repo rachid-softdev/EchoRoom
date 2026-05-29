@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
@@ -171,9 +172,9 @@ export const adminRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const where: Record<string, unknown> = {};
-      if (input.action) where.action = input.action;
-      if (input.entityType) where.entityType = input.entityType;
+      const where: Prisma.AuditLogWhereInput = {};
+      if (input.action) where.action = { equals: input.action };
+      if (input.entityType) where.entityType = { equals: input.entityType };
 
       const logs = await db.auditLog.findMany({
         where,
@@ -235,8 +236,8 @@ export const adminRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const where: Record<string, unknown> = {};
-      if (input.status) where.status = input.status;
+      const where: Prisma.AbuseReportWhereInput = {};
+      if (input.status) where.status = { equals: input.status };
 
       const reports = await db.abuseReport.findMany({
         where,
@@ -474,7 +475,7 @@ export const adminRouter = router({
       z.object({
         cursor: z.string().optional(),
         limit: z.number().min(1).max(50).default(20),
-        search: z.string().max(100).optional(),
+        search: z.string().max(100).min(2).optional(),
       }),
     )
     .query(async ({ input }) => {

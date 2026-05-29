@@ -152,25 +152,32 @@ export async function failCall(
   callId: string,
   durationSeconds: number = 0,
 ) {
-  const call = await db.call.findUnique({
-    where: { id: callId },
-  });
+  // Idempotent refund inside an atomic transaction
+  await db.$transaction(async (tx) => {
+    const call = await tx.call.findUnique({
+      where: { id: callId },
+      select: { userId: true, costCredits: true, status: true },
+    });
 
-  if (!call) return;
+    // Guard: not found or already failed/completed
+    if (!call || call.status === "FAILED" || call.status === "COMPLETED") {
+      return;
+    }
 
-  // Refund credits and update status atomically
-  await db.$transaction([
-    db.user.update({
+    // Refund credits
+    await tx.user.update({
       where: { id: call.userId },
       data: { credits: { increment: call.costCredits } },
-    }),
-    db.call.update({
+    });
+
+    // Update call status
+    await tx.call.update({
       where: { id: callId },
       data: {
         status: "FAILED",
         durationSeconds,
         endedAt: new Date(),
       },
-    }),
-  ]);
+    });
+  });
 }

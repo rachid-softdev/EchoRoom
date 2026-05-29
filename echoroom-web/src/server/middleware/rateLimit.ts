@@ -1,6 +1,7 @@
 import { redis } from "@/lib/redis";
 import { TRPCError } from "@trpc/server";
 import { createLogger } from "@/server/lib/logger";
+import { inMemoryRateLimitStore } from "./rateLimitStore";
 
 const log = createLogger("rate-limit");
 
@@ -18,9 +19,21 @@ export async function checkRateLimit({
   window: windowSec,
 }: RateLimitConfig): Promise<void> {
   if (!redis) {
+    // Fallback in-memory rate limiting when Redis is unavailable
     if (!redisUnavailableLogged) {
-      log.warn("Redis unavailable — rate limiting disabled");
+      log.warn("Redis unavailable — using in-memory rate limiting fallback");
       redisUnavailableLogged = true;
+    }
+    const allowed = inMemoryRateLimitStore.check(
+      `ratelimit:${identifier}`,
+      limit,
+      windowSec,
+    );
+    if (!allowed) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "Trop de requêtes. Veuillez réessayer plus tard.",
+      });
     }
     return;
   }

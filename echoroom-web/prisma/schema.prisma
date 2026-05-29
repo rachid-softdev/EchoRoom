@@ -57,6 +57,8 @@ model User {
 
   credits   Int @default(5)
 
+  tokenVersion      Int  @default(0)  // Incremented on password change to invalidate JWT
+
   totalLikesReceived Int @default(0)
   totalCallsMade     Int @default(0)
 

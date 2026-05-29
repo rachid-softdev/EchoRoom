@@ -55,14 +55,39 @@ vi.mock("@/server/services/telephony/callLifecycle", () => ({
   failCall: vi.fn(),
 }));
 
+// Mock Twilio validation to always pass in route tests
+// (validateTwilioRequest is tested separately in validate.test.ts)
+vi.mock("../validate", () => ({
+  validateTwilioRequest: vi.fn().mockReturnValue(true),
+  extractParams: vi.fn((formData) => {
+    const params: Record<string, string> = {};
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === "string") params[key] = value;
+    }
+    return params;
+  }),
+}));
+
 // Fetch is globally available in Node 18+ / jsdom
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
+const mockHeaders = {
+  get: vi.fn((name: string) => {
+    if (name === "x-twilio-signature") return "test_signature";
+    return null;
+  }),
+};
+
 function createFormDataRequest(fields: Record<string, string>): NextRequest {
   const formData = new Map(Object.entries(fields));
+  mockHeaders.get.mockImplementation((name: string) => {
+    if (name === "x-twilio-signature") return "test_signature";
+    return null;
+  });
   return {
     formData: () => Promise.resolve(formData),
+    headers: mockHeaders,
   } as unknown as NextRequest;
 }
 
@@ -693,7 +718,11 @@ describe("Twilio webhook POST handler", () => {
   // Recording fetch failure
   // -----------------------------------------------------------------------
 
-  it("should handle recording fetch failure gracefully", async () => {
+  // -----------------------------------------------------------------------
+  // SSRF protection: Recording URL validation
+  // -----------------------------------------------------------------------
+
+  it("should fetch recording from valid Twilio URL", async () => {
     const { getConversationState, setConversationStatus, deleteConversationState } =
       await import("@/server/services/telephony/conversationState");
     const { db } = await import("@/server/db");
@@ -713,7 +742,195 @@ describe("Twilio webhook POST handler", () => {
       user: { id: "user-1" },
     });
 
-    // Recording fetch fails
+    // Valid Twilio recording URL must match:
+    // hostname === "api.twilio.com"
+    // pathname starts with "/2010-04-01/Accounts/"
+    // pathname includes "/Recordings/"
+    const validUrl =
+      "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
+    mockFetch.mockResolvedValue({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(256)),
+    });
+
+    const mockTx = {
+      call: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "call-1",
+          status: "ACTIVE",
+          costCredits: 1,
+        }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      user: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (setConversationStatus as any).mockResolvedValue(undefined);
+    (deleteConversationState as any).mockResolvedValue(undefined);
+
+    const { POST } = await import("../route");
+
+    const req = createFormDataRequest({
+      CallSid: "CA_test",
+      CallStatus: "completed",
+      RecordingUrl: validUrl,
+    });
+
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+
+    // Should have called fetch with the valid Twilio URL
+    expect(mockFetch).toHaveBeenCalledWith(
+      validUrl,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: expect.stringContaining("Basic"),
+        }),
+      }),
+    );
+  });
+
+  it("should reject non-Twilio recording URLs (SSRF protection)", async () => {
+    const { getConversationState } =
+      await import("@/server/services/telephony/conversationState");
+    const { db } = await import("@/server/db");
+
+    (getConversationState as any).mockResolvedValue({
+      messages: [{ role: "user", content: "Hello" }],
+      turnCount: 1,
+    });
+
+    (db.call.findFirst as any).mockResolvedValue({
+      id: "call-1",
+      twilioCallSid: "CA_test",
+      status: "ACTIVE",
+      costCredits: 1,
+      userId: "user-1",
+      scenario: { characterId: "char-1" },
+      user: { id: "user-1" },
+    });
+
+    // A malicious recording URL pointing to internal service
+    const maliciousUrl = "http://169.254.169.254/latest/meta-data/";
+    // Reset fetch mock to ensure it's not called
+    mockFetch.mockClear();
+
+    const mockTx = {
+      call: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "call-1",
+          status: "ACTIVE",
+          costCredits: 1,
+        }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      user: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+
+    const { POST } = await import("../route");
+
+    const req = createFormDataRequest({
+      CallSid: "CA_test",
+      CallStatus: "completed",
+      RecordingUrl: maliciousUrl,
+    });
+
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+
+    // Should NOT have made any fetch call for SSRF prevention
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("should reject internal Twilio-like recording URLs (SSRF protection)", async () => {
+    const { getConversationState } =
+      await import("@/server/services/telephony/conversationState");
+    const { db } = await import("@/server/db");
+
+    (getConversationState as any).mockResolvedValue({
+      messages: [{ role: "user", content: "Hello" }],
+      turnCount: 1,
+    });
+
+    (db.call.findFirst as any).mockResolvedValue({
+      id: "call-1",
+      twilioCallSid: "CA_test",
+      status: "ACTIVE",
+      costCredits: 1,
+      userId: "user-1",
+      scenario: { characterId: "char-1" },
+      user: { id: "user-1" },
+    });
+
+    // Internal URL that mimics Twilio path structure but on private IP
+    const internalUrl =
+      "http://10.0.0.1/2010-04-01/Accounts/AC_test/Recordings/RE123";
+    mockFetch.mockClear();
+
+    const mockTx = {
+      call: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "call-1",
+          status: "ACTIVE",
+          costCredits: 1,
+        }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      user: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+
+    const { POST } = await import("../route");
+
+    const req = createFormDataRequest({
+      CallSid: "CA_test",
+      CallStatus: "completed",
+      RecordingUrl: internalUrl,
+    });
+
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+
+    // Should NOT have made any fetch call
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("should handle recording fetch failure gracefully (valid URL but network error)", async () => {
+    const { getConversationState, setConversationStatus, deleteConversationState } =
+      await import("@/server/services/telephony/conversationState");
+    const { db } = await import("@/server/db");
+
+    (getConversationState as any).mockResolvedValue({
+      messages: [{ role: "user", content: "Hello" }],
+      turnCount: 1,
+    });
+
+    (db.call.findFirst as any).mockResolvedValue({
+      id: "call-1",
+      twilioCallSid: "CA_test",
+      status: "ACTIVE",
+      costCredits: 1,
+      userId: "user-1",
+      scenario: { characterId: "char-1" },
+      user: { id: "user-1" },
+    });
+
+    // Valid URL but fetch fails
+    const validUrl =
+      "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
     mockFetch.mockRejectedValue(new Error("Network error"));
 
     const mockTx = {
@@ -740,11 +957,17 @@ describe("Twilio webhook POST handler", () => {
     const req = createFormDataRequest({
       CallSid: "CA_test",
       CallStatus: "completed",
-      RecordingUrl: "https://api.twilio.com/recording.wav",
+      RecordingUrl: validUrl,
     });
 
     // Should not throw — errors are caught
     const response = await POST(req);
     expect(response.status).toBe(200);
+
+    // Fetch was attempted (URL was valid)
+    expect(mockFetch).toHaveBeenCalledWith(
+      validUrl,
+      expect.any(Object),
+    );
   });
 });

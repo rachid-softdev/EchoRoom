@@ -11,6 +11,7 @@ import {
 import { ELEVENLABS_MODEL } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
+import { validateTwilioRequest, extractParams } from '../validate'
 
 const log = createLogger('voice')
 
@@ -46,6 +47,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const formData = await req.formData()
+  const params = extractParams(formData)
+
+  // Twilio webhook signature validation
+  if (!validateTwilioRequest(req, params)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 403 })
+  }
 
   const callSid = (formData.get('CallSid') as string) ?? ''
   const fromNumber = (formData.get('From') as string) ?? ''

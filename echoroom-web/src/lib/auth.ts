@@ -4,6 +4,13 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { db } from "@/server/db";
 
+/**
+ * Dummy bcrypt hash used for timing-constant authentication.
+ * Prevents account enumeration by ensuring the same code path
+ * is executed whether the user exists or not.
+ */
+const DUMMY_HASH = bcrypt.hashSync("dummy-timing-attack-prevention", 12);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   session: {
@@ -32,13 +39,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email },
         });
 
-        if (!user) {
+        // Timing-constant comparison: always run bcrypt.compare
+        // even when user doesn't exist, to prevent account enumeration.
+        const passwordHash = user?.passwordHash ?? DUMMY_HASH;
+        const isValid = await bcrypt.compare(password, passwordHash);
+
+        if (!user || !isValid) {
           return null;
         }
 
-        const isValid = await bcrypt.compare(password, user.passwordHash);
-
-        if (!isValid) {
+        // Check if account is deleted
+        if (user.deletedAt) {
           return null;
         }
 
@@ -49,32 +60,73 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           username: user.username,
           image: user.image,
           role: user.role,
-          credits: user.credits,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      // On initial sign-in
       if (user) {
         token.id = user.id as string;
         token.role = (user.role ?? "USER") as "USER" | "ADMIN" | "MODERATOR";
-        token.credits = (user.credits ?? 5) as number;
         token.username = (user.username ?? "") as string;
+
+        // Immediately fetch the real tokenVersion from DB.
+        // This ensures the JWT matches the DB value and prevents
+        // infinite session invalidation after admin tokenVersion increments.
+        if (user.id) {
+          const dbUser = await db.user.findUnique({
+            where: { id: user.id as string },
+            select: { tokenVersion: true },
+          });
+          token.tokenVersion = dbUser?.tokenVersion ?? 0;
+        }
+        token.lastVerified = Date.now();
       }
+
+      // Re-validate against DB periodically or on explicit update
+      // This avoids a DB query on EVERY request while still detecting
+      // role changes, account deletion, and token invalidation.
+      const needsRevalidation =
+        trigger === "update" ||
+        !token.lastVerified ||
+        Date.now() - (token.lastVerified as number) > 5 * 60 * 1000;
+
+      if (needsRevalidation && token.id) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, deletedAt: true, tokenVersion: true },
+        });
+
+        // Account deleted or not found → invalidate token
+        if (!dbUser || dbUser.deletedAt) {
+          return null;
+        }
+
+        // Token version mismatch (password changed, session revoked) → invalidate
+        if (dbUser.tokenVersion !== (token.tokenVersion ?? 0)) {
+          return null;
+        }
+
+        // Update role from DB (in case of admin demotion/promotion)
+        token.role = dbUser.role;
+        token.lastVerified = Date.now();
+      }
+
       return token;
     },
     async session({ session, token }) {
       const t = token as unknown as {
         id: string;
         role: "USER" | "ADMIN" | "MODERATOR";
-        credits: number;
         username: string;
       };
+
       session.user.id = t.id;
       session.user.role = t.role;
-      session.user.credits = t.credits;
       session.user.username = t.username;
+      // Credits are NOT stored in JWT — always fetch from DB via getCredits query
       return session;
     },
   },

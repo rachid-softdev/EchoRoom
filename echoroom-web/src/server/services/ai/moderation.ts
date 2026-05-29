@@ -30,7 +30,7 @@ const forbiddenPatterns = [
   /porn/i,
   /nsfw/i,
   /nude/i,
-  /nu(e)?/i,
+  /\bnue?\b/i,         // Fixed: removed capturing group, added \b (was /nu(e)?/i — ReDoS + false positive)
   /escort/i,
   /prostitut/i,
   /scam/i,
@@ -61,8 +61,8 @@ const forbiddenPatterns = [
   /putain/i,
   /merde/i,
   /nique/i,
-  /0[1-9]\d{8}/,  // French phone numbers
-  /\+33[1-9]\d{8}/, // International French numbers
+  /\b0[1-9]\d{8}\b/,   // Fixed: added \b word boundaries (was without)
+  /(?<!\d)\+33[1-9]\d{8}\b/, // Fixed: added \b word boundaries, (?<!\d) for + (was without)
 
   // Celebrity names
   /miley cyrus/i,
@@ -79,10 +79,14 @@ interface ModerationResult {
 
 export async function checkContent(
   text: string,
+  signal?: AbortSignal,
 ): Promise<ModerationResult> {
-  // Step 1: Blocklist check
+  // Normalisation Unicode NFKC — empêche les homoglyphes
+  const normalized = text.normalize("NFKC");
+
+  // Step 1: Blocklist check (sur le texte normalisé)
   for (const pattern of forbiddenPatterns) {
-    if (pattern.test(text)) {
+    if (pattern.test(normalized)) {
       return {
         approved: false,
         reason: "Contenu interdit détecté (mot-clé bloqué)",
@@ -93,10 +97,13 @@ export async function checkContent(
   // Step 2: AI-based check if OpenAI is available
   if (openai) {
     try {
-      const response = await openai.moderations.create({
-        model: "omni-moderation-latest",
-        input: text,
-      });
+      const response = await openai.moderations.create(
+        {
+          model: "omni-moderation-latest",
+          input: normalized,
+        },
+        { signal },
+      );
 
       const result = response.results[0];
       if (result?.flagged) {
@@ -111,9 +118,57 @@ export async function checkContent(
       }
     } catch {
       // If AI moderation fails, fall back to blocklist-only
-      log.warn("AI moderation call failed, falling back to blocklist");
+      log.error("AI moderation call failed — falling back to blocklist", {
+        text: text.substring(0, 100),
+      });
+      // In production, this should trigger an alert
+      if (process.env.NODE_ENV === "production") {
+        console.error("[ALERT] OpenAI moderation unavailable!");
+      }
     }
   }
 
   return { approved: true };
+}
+
+/**
+ * Moderate AI-generated output with a configurable timeout.
+ * On timeout, content is allowed through (fail-open for call continuity).
+ * Blocked content is logged for audit/review.
+ */
+export async function moderateOutput(
+  text: string,
+  timeoutMs: number = 2000,
+): Promise<string> {
+  // Promise.race ensures the moderation actually times out
+  // (AbortController signal is not propagated through checkContent's OpenAI call)
+  const timeoutPromise = new Promise<ModerationResult>((_, reject) =>
+    setTimeout(
+      () => reject(Object.assign(new Error("Moderation timeout"), { name: "AbortError" })),
+      timeoutMs,
+    ),
+  );
+
+  try {
+    const result = await Promise.race([
+      checkContent(text),
+      timeoutPromise,
+    ]);
+    if (!result.approved) {
+      log.warn("AI-generated content blocked", {
+        text, // Full text for audit/review
+        reason: result.reason,
+      });
+      return "Je ne peux pas répondre à cela. Passons à autre chose.";
+    }
+    return text;
+  } catch (error) {
+    if ((error as Error)?.name === "AbortError") {
+      log.warn("Moderation timed out — allowing content through", {
+        text: text.substring(0, 100),
+      });
+      return text; // Fail-open for safety (better than no response on a call)
+    }
+    throw error;
+  }
 }

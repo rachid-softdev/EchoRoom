@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft, Phone, Settings } from 'lucide-react'
 import { Badge } from '@/components/ui'
 import { Button } from '@/components/ui'
-import { useSession } from 'next-auth/react'
+import { useCreditBalance } from '@/hooks/useCreditBalance'
 
 interface DashboardShellProps {
   title: string
@@ -21,8 +21,7 @@ export function DashboardShell({
   actions,
   children,
 }: DashboardShellProps) {
-  const { data: session } = useSession()
-  const credits = session?.user?.credits as number | undefined
+  const { credits } = useCreditBalance()
 
   return (
     <div className="flex flex-col min-h-screen">
