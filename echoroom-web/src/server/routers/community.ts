@@ -9,6 +9,7 @@ import {
   withIPRateLimit,
 } from "../trpc";
 import { db } from "../db";
+import { MIN_REPORT_REASON_LENGTH } from "../../lib/constants";
 
 export const communityRouter = router({
   comment: protectedProcedure
@@ -72,7 +73,7 @@ export const communityRouter = router({
       z.object({
         targetType: z.string().min(1).max(50),
         targetId: z.string().min(1),
-        reason: z.string().min(10).max(1000),
+        reason: z.string().min(MIN_REPORT_REASON_LENGTH).max(1000),
       }),
     )
     .mutation(async ({ input, ctx }) => {

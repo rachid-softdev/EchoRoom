@@ -15,6 +15,7 @@ import {
 } from "@/components/ui"
 import { toast } from "@/components/ui"
 import { api } from "@/lib/trpc"
+import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants"
 
 interface ReportButtonProps {
   targetType: "SCENARIO" | "COMMENT" | "USER"
@@ -47,7 +48,7 @@ export function ReportButton({
   })
 
   function handleSubmit() {
-    if (reason.trim().length < 10) return
+    if (reason.trim().length < MIN_REPORT_REASON_LENGTH) return
     reportMutation.mutate({
       targetType,
       targetId,
@@ -103,7 +104,7 @@ export function ReportButton({
           <Button
             variant="destructive"
             onClick={handleSubmit}
-            disabled={reason.trim().length < 10 || reportMutation.isPending}
+            disabled={reason.trim().length < MIN_REPORT_REASON_LENGTH || reportMutation.isPending}
           >
             {reportMutation.isPending ? "Envoi..." : "Signaler"}
           </Button>
