@@ -8,7 +8,7 @@ interface ScenarioCardData {
   id: string
   title: string
   description: string
-  character?: { name: string; slug?: string }
+  character?: { name: string; slug?: string; category?: string }
   creator?: { username: string }
   _count?: { reactions: number; comments: number }
   playCount?: number
@@ -41,7 +41,7 @@ export function ScenarioCard({
   showShare = false,
 }: ScenarioCardProps) {
   const categoryLabel =
-    CATEGORY_LABELS[scenario.character?.slug?.toUpperCase() ?? ''] ?? 'Scénario'
+    CATEGORY_LABELS[scenario.character?.category ?? ''] ?? 'Scénario'
 
   return (
     <Link href={href}>

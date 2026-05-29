@@ -68,7 +68,7 @@ export const scenariosRouter = router({
             select: { id: true, username: true, image: true },
           },
           character: {
-            select: { id: true, name: true, slug: true, avatarUrl: true },
+            select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
           },
           _count: {
             select: { reactions: true, comments: true },
@@ -261,6 +261,7 @@ export const scenariosRouter = router({
               name: true,
               slug: true,
               avatarUrl: true,
+              category: true,
             },
           },
           _count: { select: { reactions: true, comments: true } },
