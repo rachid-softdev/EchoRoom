@@ -10,6 +10,12 @@ import { createLogger } from "@/server/lib/logger";
 const log = createLogger("stripe-webhook");
 
 export async function POST(req: NextRequest) {
+  // Enforce body size limit (100KB for Stripe webhooks)
+  const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+  if (contentLength > 100_000) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
 

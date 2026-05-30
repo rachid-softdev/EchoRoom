@@ -32,7 +32,16 @@ function isValidTwilioRecordingUrl(url: string): boolean {
   }
 }
 
+/** Maximum time to wait for a recording fetch from Twilio before aborting. */
+const RECORDING_FETCH_TIMEOUT_MS = 10_000;
+
 export async function POST(req: NextRequest) {
+  // Enforce body size limit (50KB for Twilio webhooks)
+  const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+  if (contentLength > 50_000) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
   const formData = await req.formData()
   const params = extractParams(formData)
 
@@ -236,7 +245,36 @@ async function handleCompletedCall(
     const costCredits = Math.max(1, Math.ceil(duration / 60))
     const creditDiff = costCredits - (currentCall?.costCredits ?? callRecord.costCredits)
 
-    // Update call record
+    // Check credits BEFORE marking completed
+    if (creditDiff > 0) {
+      const result = await tx.user.updateMany({
+        where: {
+          id: callRecord.userId,
+          credits: { gte: creditDiff },
+        },
+        data: { credits: { decrement: creditDiff } },
+      })
+      if (result.count === 0) {
+        // Insufficient credits — fail the call instead of completing it
+        await tx.call.update({
+          where: { id: callRecord.id },
+          data: {
+            status: "FAILED",
+            endedAt: new Date(),
+          },
+        })
+        log.error('Insufficient credits to reconcile — call marked as FAILED', { userId: callRecord.userId, creditDiff })
+        return
+      }
+    } else if (creditDiff < 0) {
+      // Refund excess credits (use updateMany for consistency)
+      await tx.user.updateMany({
+        where: { id: callRecord.userId },
+        data: { credits: { increment: Math.abs(creditDiff) } },
+      })
+    }
+
+    // Only mark as COMPLETED after successful credit check/refund
     await tx.call.update({
       where: { id: callRecord.id },
       data: {
@@ -248,25 +286,6 @@ async function handleCompletedCall(
         costCredits,
       },
     })
-
-    // Reconcile credits atomically
-    if (creditDiff > 0) {
-      const result = await tx.user.updateMany({
-        where: {
-          id: callRecord.userId,
-          credits: { gte: creditDiff },
-        },
-        data: { credits: { decrement: creditDiff } },
-      })
-      if (result.count === 0) {
-        log.error('Failed to debit additional credits — insufficient balance', { userId: callRecord.userId, creditDiff })
-      }
-    } else if (creditDiff < 0) {
-      await tx.user.update({
-        where: { id: callRecord.userId },
-        data: { credits: { increment: Math.abs(creditDiff) } },
-      })
-    }
   })
 
   // Clean up conversation state from Redis
@@ -283,23 +302,34 @@ async function fetchRecordingAudio(
       `${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`,
     ).toString('base64')
 
-    const response = await fetch(recordingUrl, {
-      headers: {
-        Authorization: `Basic ${auth}`,
-      },
-      // Reject HTTP redirects to prevent credential leakage to untrusted origins.
-      // Although isValidTwilioRecordingUrl validates the initial URL, a redirect
-      // (e.g., from Twilio's CDN or a misconfiguration) would forward the
-      // Authorization header to the redirect target without origin validation.
-      redirect: 'error',
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      RECORDING_FETCH_TIMEOUT_MS,
+    )
 
-    if (!response.ok) {
-      log.error('Failed to fetch recording', { status: response.status })
-      return null
+    try {
+      const response = await fetch(recordingUrl, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+        // Reject HTTP redirects to prevent credential leakage to untrusted origins.
+        // Although isValidTwilioRecordingUrl validates the initial URL, a redirect
+        // (e.g., from Twilio's CDN or a misconfiguration) would forward the
+        // Authorization header to the redirect target without origin validation.
+        redirect: 'error',
+        signal: controller.signal,
+      })
+
+      if (!response.ok) {
+        log.error('Failed to fetch recording', { status: response.status })
+        return null
+      }
+
+      return await response.arrayBuffer()
+    } finally {
+      clearTimeout(timeoutId)
     }
-
-    return await response.arrayBuffer()
   } catch (error) {
     log.error('Error fetching recording', { error })
     return null

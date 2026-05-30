@@ -145,10 +145,20 @@ export const socialRouter = router({
       });
     }),
 
-  getClips: publicProcedure
+  getClips: protectedProcedure
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(z.object({ callId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const call = await db.call.findUnique({
+        where: { id: input.callId },
+        select: { userId: true },
+      });
+      if (!call) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Appel introuvable" });
+      }
+      if (call.userId !== ctx.session.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Accès refusé" });
+      }
       return getClips(input.callId);
     }),
 

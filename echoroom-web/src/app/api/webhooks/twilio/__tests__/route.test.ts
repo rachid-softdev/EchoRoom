@@ -471,8 +471,8 @@ describe("Twilio webhook POST handler", () => {
 
     await POST(req);
 
-    // Should refund 4 credits (5 - 1 = 4)
-    expect(mockTx.user.update).toHaveBeenCalledWith({
+    // C-1: Refund now uses updateMany for consistency
+    expect(mockTx.user.updateMany).toHaveBeenCalledWith({
       where: { id: "user-1" },
       data: { credits: { increment: 4 } },
     });

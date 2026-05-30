@@ -3,7 +3,6 @@ import { db } from "@/server/db";
 import { env } from "@/lib/env";
 import { AppError } from "@/server/lib/errors";
 import { atomicDebit, atomicRefund } from "@/server/services/billing/creditOps";
-import { checkAndAwardBadges } from "@/server/services/social/badges";
 import { createLogger } from "@/server/lib/logger";
 import { encryptPhoneNumber } from "@/server/lib/encryption";
 import { createTwilioToken } from "@/server/lib/twilioToken";
@@ -123,35 +122,6 @@ export async function initiateCall(params: StartCallParams) {
       `Failed to initiate call: ${error instanceof Error ? error.message : "Unknown error"}`,
     );
   }
-}
-
-export async function completeCall(callId: string, durationSeconds: number) {
-  const call = await db.call.findUnique({
-    where: { id: callId },
-    select: { userId: true },
-  });
-
-  if (!call) return;
-
-  await db.$transaction(async (tx) => {
-    await tx.call.update({
-      where: { id: callId },
-      data: {
-        status: "COMPLETED",
-        durationSeconds,
-        endedAt: new Date(),
-      },
-    });
-    await tx.user.update({
-      where: { id: call.userId },
-      data: { totalCallsMade: { increment: 1 } },
-    });
-  });
-
-  // Fire-and-forget badge check — do not block the response
-  checkAndAwardBadges(call.userId, "FIRST_CALL").catch((err) => {
-    log.error("Badge check failed", { error: err, userId: call.userId });
-  });
 }
 
 export async function failCall(
