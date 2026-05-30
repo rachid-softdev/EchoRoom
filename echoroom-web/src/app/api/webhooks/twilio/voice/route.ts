@@ -105,7 +105,11 @@ export async function POST(req: NextRequest) {
       log.warn('Invalid or expired Twilio token')
     }
   } else {
-    // Legacy fallback for already-initiated calls (during deployment transition)
+    /**
+     * @deprecated Legacy fallback for calls initiated before HMAC token migration (Q2 2026).
+     * Remove after all active calls from the old format have expired (Redis TTL).
+     * Use the `token` query parameter approach above instead.
+     */
     const callId = searchParams.get('callId')
     scenarioId = searchParams.get('scenarioId') ?? ''
     characterId = searchParams.get('characterId') ?? ''

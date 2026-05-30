@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { router, protectedProcedure, withRateLimit } from "../trpc";
 import { db } from "../db";
 import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
+import { anonymizePersonalData } from "@/server/services/user/anonymization";
 
 export const userRouter = router({
   exportMyData: protectedProcedure
@@ -144,12 +145,10 @@ export const userRouter = router({
             displayName: null,
             bio: null,
             image: null,
+            tokenVersion: { increment: 1 },
           },
         });
 
-        const { anonymizePersonalData } = await import(
-          "@/server/services/user/anonymization"
-        );
         await anonymizePersonalData(tx, userId);
       });
 
@@ -192,9 +191,6 @@ export const userRouter = router({
           data: { consentWithdrawnAt: new Date() },
         });
 
-        const { anonymizePersonalData } = await import(
-          "@/server/services/user/anonymization"
-        );
         await anonymizePersonalData(tx, userId);
 
         // Invalidate all sessions for this user

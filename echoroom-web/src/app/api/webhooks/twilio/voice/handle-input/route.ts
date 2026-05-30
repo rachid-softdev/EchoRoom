@@ -82,14 +82,11 @@ export async function POST(req: NextRequest) {
   try {
     const moderationResult = await checkContent(speechResult);
     if (!moderationResult.approved) {
-      log.warn("User speech blocked by moderation", {
-        text: speechResult.substring(0, 100),
-        reason: moderationResult.reason,
-      });
+      log.warn("User speech blocked by moderation", { reason: moderationResult.reason, contentLength: speechResult.length });
       moderatedSpeech = "[Contenu non autorisé]";
     }
   } catch (error) {
-    log.error("Speech moderation failed — allowing content through (fail-open)", { error });
+    log.warn("Speech moderation failed — allowing content through (fail-open)", { error });
   }
 
   // Append user message to conversation state
