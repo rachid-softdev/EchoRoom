@@ -13,6 +13,7 @@ const mockDb = vi.hoisted(() => {
   const mockTx = {
     user: {
       update: vi.fn().mockResolvedValue({ id: "user-1" }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     scenario: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     comment: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
@@ -83,8 +84,8 @@ vi.mock("@/server/trpc", () => {
 describe("adminRouter.deleteUser — N2 tokenVersion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: user exists and is not deleted
-    mockDb.user.findUnique.mockResolvedValue({ id: "user-1", deletedAt: null });
+    // Default: user exists and is not deleted (updateMany returns count=1)
+    mockDb._mockTx.user.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("should include tokenVersion: { increment: 1 } in user.update", async () => {
@@ -101,16 +102,14 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
     // Verify $transaction was called
     expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
 
-    // Verify user.update was called with tokenVersion increment
-    const updateCalls = mockDb._mockTx.user.update.mock.calls;
-    expect(updateCalls.length).toBeGreaterThanOrEqual(1);
+    // Verify user.updateMany was called with tokenVersion increment
+    const updateManyCalls = mockDb._mockTx.user.updateMany.mock.calls;
+    expect(updateManyCalls.length).toBeGreaterThanOrEqual(1);
 
-    // Find the call that contains tokenVersion
-    const tokenVersionCall = updateCalls.find(
-      (call: any[]) => call[0]?.data?.tokenVersion,
-    );
-    expect(tokenVersionCall).toBeDefined();
-    expect(tokenVersionCall[0].data.tokenVersion).toEqual({ increment: 1 });
+    // Check the data passed to updateMany
+    const callData = updateManyCalls[0][0];
+    expect(callData.where).toEqual({ id: "user-1", deletedAt: null });
+    expect(callData.data.tokenVersion).toEqual({ increment: 1 });
   });
 
   it("should include other deletion fields alongside tokenVersion", async () => {
@@ -124,13 +123,10 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    const updateCalls = mockDb._mockTx.user.update.mock.calls;
-    const tokenVersionCall = updateCalls.find(
-      (call: any[]) => call[0]?.data?.tokenVersion,
-    );
-    expect(tokenVersionCall).toBeDefined();
+    const updateManyCalls = mockDb._mockTx.user.updateMany.mock.calls;
+    expect(updateManyCalls.length).toBeGreaterThanOrEqual(1);
 
-    const data = tokenVersionCall[0].data;
+    const data = updateManyCalls[0][0].data;
     expect(data).toHaveProperty("deletedAt");
     expect(data).toHaveProperty("anonymizedAt");
     expect(data).toHaveProperty("email");
@@ -162,8 +158,9 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
     );
   });
 
-  it("should throw NOT_FOUND when user does not exist", async () => {
-    mockDb.user.findUnique.mockResolvedValue(null);
+  it("should throw CONFLICT when user does not exist or is already deleted", async () => {
+    // updateMany returns count=0 to simulate user not found or already deleted
+    mockDb._mockTx.user.updateMany.mockResolvedValue({ count: 0 });
 
     const { adminRouter } = await import("../admin");
 
@@ -175,30 +172,10 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
         input: { userId: "nonexistent" },
         ctx: { session: { user: { id: "admin-1" } } },
       }),
-    ).rejects.toThrow("Utilisateur introuvable");
+    ).rejects.toThrow("Utilisateur introuvable ou déjà supprimé");
 
-    expect(mockDb.$transaction).not.toHaveBeenCalled();
-  });
-
-  it("should throw CONFLICT when user is already deleted", async () => {
-    mockDb.user.findUnique.mockResolvedValue({
-      id: "user-1",
-      deletedAt: new Date(),
-    });
-
-    const { adminRouter } = await import("../admin");
-
-    // @ts-expect-error — mutation handler captured at import time
-    const handler = adminRouter.deleteUser.handler;
-
-    await expect(
-      handler({
-        input: { userId: "user-1" },
-        ctx: { session: { user: { id: "admin-1" } } },
-      }),
-    ).rejects.toThrow("Cet utilisateur est déjà supprimé");
-
-    expect(mockDb.$transaction).not.toHaveBeenCalled();
+    // Transaction was called (updateMany runs inside it)
+    expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import twilio from "twilio";
 import { validateTwilioRequest, extractParams } from "../../validate";
+import { checkWebhookRateLimit } from "../../../rateLimit";
+
+const VoiceResponse = twilio.twiml.VoiceResponse;
 
 /**
  * Twilio Media Streams endpoint — handles bidirectional audio streaming
@@ -24,12 +28,9 @@ import { validateTwilioRequest, extractParams } from "../../validate";
  *       OpenAI conversation engine, and ElevenLabs streaming TTS.
  */
 export async function GET(_req: Request) {
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Hangup/>
-</Response>`;
-
-  return new NextResponse(twiml, {
+  const twiml = new VoiceResponse();
+  twiml.hangup();
+  return new NextResponse(twiml.toString(), {
     headers: { "Content-Type": "text/xml" },
   });
 }
@@ -40,6 +41,17 @@ export async function POST(req: NextRequest) {
 
   if (!validateTwilioRequest(req, params)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+
+  if (!(await checkWebhookRateLimit("twilio:voice:stream", ip))) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
   }
 
   return GET(req);

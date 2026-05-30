@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
+import twilio from 'twilio'
 import { db } from '@/server/db'
 import { env } from '@/lib/env'
 import { transcribeAudio } from '@/server/services/audio/transcription'
@@ -14,8 +15,11 @@ import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { failCall } from '@/server/services/telephony/callLifecycle'
 import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from './validate'
+import { checkWebhookRateLimit } from '../rateLimit'
 
 const log = createLogger('twilio-webhook')
+
+const twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
 
 /** Defense-in-depth: validate that RecordingUrl points to a legitimate Twilio endpoint. */
 function isValidTwilioRecordingUrl(url: string): boolean {
@@ -32,14 +36,22 @@ function isValidTwilioRecordingUrl(url: string): boolean {
   }
 }
 
-/** Maximum time to wait for a recording fetch from Twilio before aborting. */
-const RECORDING_FETCH_TIMEOUT_MS = 10_000;
-
 export async function POST(req: NextRequest) {
   // Enforce body size limit (50KB for Twilio webhooks)
   const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
   if (contentLength > 50_000) {
     return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+
+  if (!(await checkWebhookRateLimit("twilio:status", ip))) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
   }
 
   const formData = await req.formData()
@@ -297,41 +309,23 @@ async function fetchRecordingAudio(
   recordingUrl: string,
 ): Promise<ArrayBuffer | null> {
   try {
-    // Twilio recording URLs require auth
-    const auth = Buffer.from(
-      `${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`,
-    ).toString('base64')
+    // Use Twilio's built-in request client which signs requests automatically.
+    // This avoids embedding credentials in HTTP headers (Basic Auth),
+    // preventing credential leakage via redirects or log exposure.
+      const response = await twilioClient.request({
+        method: 'get',
+        uri: recordingUrl,
+      });
 
-    const controller = new AbortController()
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      RECORDING_FETCH_TIMEOUT_MS,
-    )
-
-    try {
-      const response = await fetch(recordingUrl, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
-        // Reject HTTP redirects to prevent credential leakage to untrusted origins.
-        // Although isValidTwilioRecordingUrl validates the initial URL, a redirect
-        // (e.g., from Twilio's CDN or a misconfiguration) would forward the
-        // Authorization header to the redirect target without origin validation.
-        redirect: 'error',
-        signal: controller.signal,
-      })
-
-      if (!response.ok) {
-        log.error('Failed to fetch recording', { status: response.status })
-        return null
-      }
-
-      return await response.arrayBuffer()
-    } finally {
-      clearTimeout(timeoutId)
+    if (response.statusCode !== 200) {
+      log.error('Failed to fetch recording via Twilio SDK', { status: response.statusCode });
+      return null;
     }
+
+    // response.body contains the audio data (Buffer)
+    return response.body as unknown as ArrayBuffer;
   } catch (error) {
-    log.error('Error fetching recording', { error })
-    return null
+    log.error('Error fetching recording via Twilio SDK', { error });
+    return null;
   }
 }

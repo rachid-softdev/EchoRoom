@@ -214,20 +214,24 @@ describe("POST /api/user/export — N4 atomic rate limiting", () => {
     expect(body.calls[0].phoneNumber).toBe("xxxx5678");
   });
 
-  it("should return 400 when x-requested-with header is missing (CSRF)", async () => {
+  it("should return 403 when origin header does not match app URL (CSRF)", async () => {
     const { POST } = await import("../export/route");
 
+    // Request with a non-matching origin should be rejected
     const req = {
       headers: {
-        get: () => null,
+        get: (name: string) => {
+          if (name === "origin") return "https://evil-site.com";
+          return null;
+        },
       },
     } as unknown as Request;
 
     const response = await POST(req);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
 
     const body = await response.json();
-    expect(body.error).toBe("Requête invalide");
+    expect(body.error).toBe("Origine non autorisée");
   });
 
   it("should return 401 when user is not authenticated", async () => {

@@ -4,52 +4,25 @@ import twilio from 'twilio'
 import { db } from '@/server/db'
 import { generateResponse } from '@/server/services/ai/conversationEngine'
 import { ttsClient } from '@/server/services/audio/tts'
-import {
-  initConversationState,
-  getConversationState,
-} from '@/server/services/telephony/conversationState'
+import { initConversationState } from '@/server/services/telephony/conversationState'
 import { ELEVENLABS_MODEL } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from '../validate'
 import { verifyTwilioToken, createTwilioToken } from '@/server/lib/twilioToken'
+import { checkWebhookRateLimit } from '../../rateLimit'
 
 const log = createLogger('voice')
 
 const VoiceResponse = twilio.twiml.VoiceResponse
 
 /**
- * GET handler — minimal health check.
- *
- * Without a valid token, returns only `{ active: boolean }` to prevent
- * leaking conversation details. If a valid HMAC token is provided via
- * the `token` query param (for future internal tools), returns richer
- * data including status and turnCount (but NEVER messages).
+ * GET handler — simple health check.
+ * Always returns { active: false } regardless of any token.
+ * This prevents conversation state leakage via stale/exposed HMAC tokens.
+ * Full conversation status is only available via authenticated tRPC endpoints.
  */
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const token = searchParams.get('token')
-
-  // Authenticated requests via HMAC token get richer data
-  if (token) {
-    const payload = verifyTwilioToken(token)
-    if (!payload) {
-      return NextResponse.json({ active: false, reason: 'invalid_token' }, { status: 403 })
-    }
-
-    const state = await getConversationState(payload.callId)
-    if (!state) {
-      return NextResponse.json({ active: false, reason: 'not_found' })
-    }
-
-    return NextResponse.json({
-      active: state.status === 'active',
-      status: state.status,
-      turnCount: state.turnCount,
-    })
-  }
-
-  // Unauthenticated requests: minimal info only
+export async function GET(_req: NextRequest) {
   return NextResponse.json({ active: false })
 }
 
@@ -62,6 +35,17 @@ export async function POST(req: NextRequest) {
   const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
   if (contentLength > 50_000) {
     return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+
+  if (!(await checkWebhookRateLimit("twilio:voice:init", ip))) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
   }
 
   const { searchParams } = new URL(req.url)
@@ -186,14 +170,15 @@ export async function POST(req: NextRequest) {
     log.error('Failed to generate greeting', { error })
   }
 
-  // Initialize conversation state in Redis (include greeting for transcript)
+  // Initialize conversation state in Redis (system prompt stored separately)
   await initConversationState(callSid, {
     callSid,
+    callId: callId ?? callSid,  // DB UUID if available, fallback to Twilio SID
     scenarioId: scenarioId || 'unknown',
     characterId: characterId || 'unknown',
     callerNumber: fromNumber,
+    systemPrompt,  // Stored in dedicated field (not in messages[])
     messages: [
-      { role: 'system', content: systemPrompt },
       { role: 'assistant', content: greeting },
     ],
   })

@@ -205,10 +205,12 @@ export const scenariosRouter = router({
         (f) => input[f] !== undefined && input[f] !== existing[f],
       );
 
-      const updateData: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(input)) {
-        if (key !== "id" && value !== undefined) updateData[key] = value;
-      }
+      const updateData: Prisma.ScenarioUpdateInput = {};
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.openingMessage !== undefined) updateData.openingMessage = input.openingMessage;
+      if (input.aiInstructions !== undefined) updateData.aiInstructions = input.aiInstructions;
+      if (input.visibility !== undefined) updateData.visibility = input.visibility;
 
       if (contentChanged) {
         const changedText = contentFields
@@ -226,7 +228,7 @@ export const scenariosRouter = router({
 
       await db.scenario.update({
         where: { id: input.id },
-        data: updateData as Prisma.ScenarioUpdateInput,
+        data: updateData,
       });
       return { scenarioId: input.id };
     }),

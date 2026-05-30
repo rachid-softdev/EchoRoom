@@ -1,12 +1,17 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { maskPhoneNumber } from "@/server/lib/encryption";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
+
+function hashPhoneForAudit(phone: string): string {
+  const hash = createHash("sha256").update(phone).digest("hex");
+  return `blocked-${hash.substring(0, 8)}`;
+}
 
 export const adminRouter = router({
   featureScenario: adminProcedure
@@ -338,7 +343,7 @@ export const adminRouter = router({
           entityType: "BlockedNumber",
           entityId: blocked.id,
           adminId: ctx.session.user.id,
-          metadata: { phoneNumber: maskPhoneNumber(input.phoneNumber) },
+          metadata: { phoneNumber: hashPhoneForAudit(input.phoneNumber) },
         },
       });
 
@@ -369,7 +374,7 @@ export const adminRouter = router({
           entityType: "BlockedNumber",
           entityId: input.id,
           adminId: ctx.session.user.id,
-          metadata: { phoneNumber: maskPhoneNumber(blocked.phoneNumber) },
+          metadata: { phoneNumber: hashPhoneForAudit(blocked.phoneNumber) },
         },
       });
 

@@ -6,6 +6,7 @@ import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
+import { checkWebhookRateLimit } from "../rateLimit";
 
 const log = createLogger("stripe-webhook");
 
@@ -14,6 +15,17 @@ export async function POST(req: NextRequest) {
   const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
   if (contentLength > 100_000) {
     return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+
+  if (!(await checkWebhookRateLimit("stripe:checkout", ip))) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
   }
 
   const body = await req.text();
@@ -58,12 +70,21 @@ export async function POST(req: NextRequest) {
       // Add credits to user + record the purchase (atomic transaction)
       // Uses callback-based transaction for true atomicity.
       // Idempotency is enforced by the unique constraint on stripePaymentId.
+      // Use the Payment Intent ID (pi_xxx) rather than Session ID (cs_xxx)
+      // because downstream events (charge.refunded, charge.dispute.created)
+      // reference payment_intent, not session.id.
+      const paymentIntentId = session.payment_intent as string | null;
+      if (!paymentIntentId) {
+        log.error("No payment_intent on completed checkout session", { sessionId: session.id });
+        return NextResponse.json({ error: "Missing payment_intent" }, { status: 400 });
+      }
+
       try {
         await db.$transaction(async (tx) => {
           await tx.purchase.create({
             data: {
               userId,
-              stripePaymentId: session.id,
+              stripePaymentId: paymentIntentId,
               creditsPurchased: credits,
             },
           });
@@ -93,6 +114,88 @@ export async function POST(req: NextRequest) {
 
     case "checkout.session.expired": {
       log.info("Checkout session expired", { sessionId: event.data.object.id });
+      break;
+    }
+
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      const paymentIntentId = charge.payment_intent as string;
+
+      if (!paymentIntentId) {
+        log.warn("Refund event without payment_intent", { chargeId: charge.id });
+        break;
+      }
+
+      // Find the purchase associated with this payment
+      const purchases = await db.purchase.findMany({
+        where: { stripePaymentId: paymentIntentId },
+      });
+
+      if (purchases.length === 0) {
+        log.warn("No purchase found for refunded payment", { paymentIntentId });
+        break;
+      }
+
+      for (const purchase of purchases) {
+        // Revoke credits atomically — may go negative if already spent
+        await db.$transaction(async (tx) => {
+          // Check idempotency: skip if already refunded
+          const current = await tx.purchase.findUnique({
+            where: { id: purchase.id },
+            select: { refundedAt: true },
+          });
+
+          if (current?.refundedAt) {
+            log.info("Duplicate refund event, skipping", { purchaseId: purchase.id });
+            return;
+          }
+
+          await tx.user.update({
+            where: { id: purchase.userId },
+            data: { credits: { decrement: purchase.creditsPurchased } },
+          });
+
+          await tx.purchase.update({
+            where: { id: purchase.id },
+            data: { refundedAt: new Date() },
+          });
+        });
+
+        log.info("Credits revoked after refund", {
+          userId: purchase.userId,
+          credits: purchase.creditsPurchased,
+          chargeId: charge.id,
+        });
+      }
+      break;
+    }
+
+    case "charge.dispute.created": {
+      const dispute = event.data.object as Stripe.Dispute;
+      const disputePaymentIntent = dispute.payment_intent as string;
+
+      if (!disputePaymentIntent) {
+        log.warn("Dispute without payment_intent", { disputeId: dispute.id });
+        break;
+      }
+
+      // Flag the purchase as disputed (don't revoke credits yet)
+      const disputePurchases = await db.purchase.findMany({
+        where: { stripePaymentId: disputePaymentIntent },
+      });
+
+      for (const purchase of disputePurchases) {
+        await db.purchase.update({
+          where: { id: purchase.id },
+          data: { disputedAt: new Date() },
+        });
+
+        log.warn("Chargeback/dispute on purchase", {
+          userId: purchase.userId,
+          purchaseId: purchase.id,
+          disputeId: dispute.id,
+        });
+      }
       break;
     }
 

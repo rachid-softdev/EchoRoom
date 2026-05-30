@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { randomBytes } from "node:crypto";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -33,7 +34,6 @@ type EnvType = z.infer<typeof envSchema>;
 const DEV_DEFAULTS: Record<string, string> = {
   NODE_ENV: "development",
   DATABASE_URL: "postgresql://localhost:5432/echoroom?schema=public",
-  NEXTAUTH_SECRET: "CHANGE_ME_BEFORE_PRODUCTION_aaaaaaaaaaaaaaaaaaaa",
   STRIPE_SECRET_KEY: "sk_test_dev",
   STRIPE_WEBHOOK_SECRET: "whsec_dev",
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
@@ -98,7 +98,13 @@ function loadEnv(): EnvType {
 
   for (const key of schemaKeys) {
     const envValue = process.env[key];
-    merged[key] = (envValue as string) ?? DEV_DEFAULTS[key] ?? "";
+    if (key === "NEXTAUTH_SECRET" && !envValue) {
+      const generated = randomBytes(32).toString("hex");
+      console.warn("⚠️  NEXTAUTH_SECRET not set — generating random key for this session");
+      merged[key] = generated;
+    } else {
+      merged[key] = (envValue as string) ?? DEV_DEFAULTS[key] ?? "";
+    }
   }
 
   const result = envSchema.safeParse(merged);
