@@ -69,39 +69,75 @@ export async function POST(req: NextRequest) {
 
   const callSid = (formData.get('CallSid') as string) ?? ''
   const fromNumber = (formData.get('From') as string) ?? ''
-  const callId = searchParams.get('callId')
 
-  // Resolve scenario and character
-  let scenarioId = searchParams.get('scenarioId') ?? ''
-  let characterId = searchParams.get('characterId') ?? ''
+  // Resolve scenario and character — prefer opaque token over raw query params
+  let scenarioId = ''
+  let characterId = ''
+  const token = searchParams.get('token')
 
-  if (!scenarioId || !characterId) {
-    // Look up from DB call record
-    try {
-      const callRecord = callId
-        ? await db.call.findUnique({
-            where: { id: callId },
-            include: { scenario: { include: { character: true } } },
-          })
-        : await db.call.findFirst({
-            where: { twilioCallSid: callSid },
-            include: { scenario: { include: { character: true } } },
-          })
+  if (token) {
+    const payload = verifyTwilioToken(token)
+    if (payload) {
+      const callId = payload.callId
+      scenarioId = payload.scenarioId
 
-      if (callRecord) {
-        scenarioId = callRecord.scenarioId
-        characterId = callRecord.scenario.characterId
+      // Resolve characterId from the scenario
+      try {
+        const scenario = await db.scenario.findUnique({
+          where: { id: scenarioId },
+          include: { character: true },
+        })
+        if (scenario) {
+          characterId = scenario.characterId
 
-        // Update call status to ACTIVE
-        await db.call
-          .update({
-            where: { id: callRecord.id },
-            data: { status: 'ACTIVE' },
-          })
-          .catch(() => {})
+          // Update call status to ACTIVE
+          await db.call
+            .update({
+              where: { id: callId },
+              data: { status: 'ACTIVE' },
+            })
+            .catch(() => {})
+        }
+      } catch (error) {
+        log.error('Failed to resolve scenario from token', { error })
       }
-    } catch (error) {
-      log.error('Failed to load call record', { error })
+    } else {
+      log.warn('Invalid or expired Twilio token')
+    }
+  } else {
+    // Legacy fallback for already-initiated calls (during deployment transition)
+    const callId = searchParams.get('callId')
+    scenarioId = searchParams.get('scenarioId') ?? ''
+    characterId = searchParams.get('characterId') ?? ''
+
+    if (!scenarioId || !characterId) {
+      // Look up from DB call record
+      try {
+        const callRecord = callId
+          ? await db.call.findUnique({
+              where: { id: callId },
+              include: { scenario: { include: { character: true } } },
+            })
+          : await db.call.findFirst({
+              where: { twilioCallSid: callSid },
+              include: { scenario: { include: { character: true } } },
+            })
+
+        if (callRecord) {
+          scenarioId = callRecord.scenarioId
+          characterId = callRecord.scenario.characterId
+
+          // Update call status to ACTIVE
+          await db.call
+            .update({
+              where: { id: callRecord.id },
+              data: { status: 'ACTIVE' },
+            })
+            .catch(() => {})
+        }
+      } catch (error) {
+        log.error('Failed to load call record', { error })
+      }
     }
   }
 

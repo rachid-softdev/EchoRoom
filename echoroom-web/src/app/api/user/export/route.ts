@@ -8,14 +8,23 @@ import { createLogger } from '@/server/lib/logger'
 const log = createLogger('gdpr-export')
 
 /**
- * GET /api/user/export — Download a JSON archive of the authenticated user's personal data.
+ * POST /api/user/export — Download a JSON archive of the authenticated user's personal data.
  *
  * Returns a downloadable JSON file with the same structure as the `exportMyData` tRPC mutation,
  * plus additional data (Clips and AbuseReports) that were missing from the original implementation.
  *
  * Rate-limited: 1 request per hour (checked via gdprDataExportedAt timestamp).
+ * Uses POST (not GET) because the operation has state-changing side effects
+ * (audit log creation, gdprDataExportedAt update). The X-Requested-With header
+ * check provides CSRF protection for older browsers without SameSite support.
  */
-export async function GET(_req: NextRequest) {
+export async function POST(req: NextRequest) {
+  // CSRF defense: require X-Requested-With header (not sent by cross-origin requests)
+  const requestedWith = req.headers.get('x-requested-with')
+  if (!requestedWith) {
+    return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  }
+
   const session = await auth()
 
   if (!session?.user?.id) {

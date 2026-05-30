@@ -144,7 +144,9 @@ export const authRouter = router({
       return { success: true };
     }),
 
-  me: protectedProcedure.query(async ({ ctx }) => {
+  me: protectedProcedure
+    .use(withRateLimit({ limit: 120, window: 60 }))
+    .query(async ({ ctx }) => {
     const user = await db.user.findUnique({
       where: { id: ctx.session.user.id },
       select: {

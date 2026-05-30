@@ -18,6 +18,7 @@ import {
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from '../../validate'
+import { checkContent } from '@/server/services/ai/moderation'
 
 const log = createLogger('handle-input')
 
@@ -76,8 +77,23 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Content-moderation on user input (defense-in-depth against prompt injection)
+  let moderatedSpeech = speechResult;
+  try {
+    const moderationResult = await checkContent(speechResult);
+    if (!moderationResult.approved) {
+      log.warn("User speech blocked by moderation", {
+        text: speechResult.substring(0, 100),
+        reason: moderationResult.reason,
+      });
+      moderatedSpeech = "[Contenu non autorisé]";
+    }
+  } catch (error) {
+    log.error("Speech moderation failed — allowing content through (fail-open)", { error });
+  }
+
   // Append user message to conversation state
-  await appendMessage(callSid, { role: 'user', content: speechResult })
+  await appendMessage(callSid, { role: 'user', content: moderatedSpeech })
 
   // Detect goodbye intent
   const isGoodbye = detectGoodbye(speechResult)
@@ -96,7 +112,7 @@ export async function POST(req: NextRequest) {
           'Tu es un assistant amical.',
         messages: [
           ...state.messages.filter((m) => m.role !== 'system'),
-          { role: 'user', content: speechResult },
+          { role: 'user', content: moderatedSpeech },
           {
             role: 'system',
             content:
@@ -158,7 +174,7 @@ export async function POST(req: NextRequest) {
         'Tu es un assistant amical.',
       messages: [
         ...state.messages.filter((m) => m.role !== 'system'),
-        { role: 'user', content: speechResult },
+        { role: 'user', content: moderatedSpeech },
       ],
       maxTokens: 200,
     })
