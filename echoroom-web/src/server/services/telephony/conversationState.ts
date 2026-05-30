@@ -1,6 +1,7 @@
 import { redis } from '@/lib/redis'
 import { CONVERSATION_TTL_S } from './constants'
 import { createLogger } from '@/server/lib/logger'
+import { encryptPhoneNumber, decryptPhoneNumber } from "@/server/lib/encryption";
 
 const log = createLogger('conversation-state')
 
@@ -34,6 +35,7 @@ export async function initConversationState(
 
   const state: ConversationState = {
     ...data,
+    callerNumber: data.callerNumber ? encryptPhoneNumber(data.callerNumber) : "",
     turnCount: 0,
     lastActiveAt: new Date().toISOString(),
     status: 'active',
@@ -151,5 +153,21 @@ export async function deleteConversationState(
     await redis.del(redisKey(callSid))
   } catch (error) {
     log.error('Redis deleteConversationState error', { error })
+  }
+}
+
+/**
+ * Retrieve and decrypt the caller's phone number from conversation state.
+ * Handles both encrypted (v1 format) and legacy plaintext formats
+ * for the short window during deployment transition.
+ */
+export async function getCallerNumber(callSid: string): Promise<string | null> {
+  const state = await getConversationState(callSid);
+  if (!state?.callerNumber) return null;
+  try {
+    return decryptPhoneNumber(state.callerNumber);
+  } catch {
+    // Legacy plaintext or not yet encrypted — return as-is
+    return state.callerNumber;
   }
 }

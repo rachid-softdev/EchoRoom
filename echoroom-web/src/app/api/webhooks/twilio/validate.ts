@@ -18,7 +18,7 @@ export function validateTwilioRequest(
 
   const requestUrl = url ?? req.url;
 
-  const isValid = (twilio as any).validateRequest(
+  const isValid = twilio.validateRequest(
     env.TWILIO_AUTH_TOKEN,
     signature,
     requestUrl,

@@ -124,9 +124,7 @@ export async function checkContent(
       }
     } catch {
       // If AI moderation fails, fall back to blocklist-only
-      log.error("AI moderation call failed — falling back to blocklist", {
-        text: text.substring(0, 100),
-      });
+      log.warn("AI moderation call failed — falling back to blocklist");
       // In production, this should trigger an alert
       if (process.env.NODE_ENV === "production") {
         console.error("[ALERT] OpenAI moderation unavailable!");
@@ -152,18 +150,13 @@ export async function moderateOutput(
   try {
     const result = await checkContent(text, controller.signal);
     if (!result.approved) {
-      log.warn("AI-generated content blocked", {
-        text: text.substring(0, 100), // Truncated to prevent PII leakage into logs
-        reason: result.reason,
-      });
+      log.warn("AI-generated content blocked", { reason: result.reason, contentLength: text.length });
       return "Je ne peux pas répondre à cela. Passons à autre chose.";
     }
     return text;
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      log.warn("Moderation timed out — allowing content through", {
-        text: text.substring(0, 100),
-      });
+      log.warn("Moderation timed out — allowing content through", { contentLength: text.length });
       return text; // Fail-open for safety (better than no response on a call)
     }
     throw error;

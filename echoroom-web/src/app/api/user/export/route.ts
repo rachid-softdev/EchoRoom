@@ -33,25 +33,37 @@ export async function POST(req: NextRequest) {
 
   const userId = session.user.id
 
-  // Rate-limit: allow one export per hour
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { gdprDataExportedAt: true },
+  // Atomic rate-limit: only proceed if last export was > 1 hour ago.
+  // updateMany with WHERE acts as an optimistic lock under READ COMMITTED.
+  const lockResult = await db.user.updateMany({
+    where: {
+      id: userId,
+      OR: [
+        { gdprDataExportedAt: null },
+        { gdprDataExportedAt: { lte: new Date(Date.now() - 3600 * 1000) } },
+      ],
+    },
+    data: { gdprDataExportedAt: new Date() },
   })
 
-  if (user?.gdprDataExportedAt) {
-    const hoursSinceLastExport =
-      (Date.now() - user.gdprDataExportedAt.getTime()) / 1000 / 3600
-    if (hoursSinceLastExport < 1) {
-      const retryAfter = Math.ceil(3600 - hoursSinceLastExport * 3600)
-      return NextResponse.json(
-        {
-          error: 'Trop de requêtes. Vous pouvez exporter vos données une fois par heure.',
-          retryAfterSeconds: retryAfter,
-        },
-        { status: 429 },
-      )
+  if (lockResult.count === 0) {
+    // Either user doesn't exist or rate-limited
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { gdprDataExportedAt: true },
+    })
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
     }
+    if (!user.gdprDataExportedAt) {
+      return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
+    }
+    const hoursSinceLastExport = (Date.now() - user.gdprDataExportedAt.getTime()) / 1000 / 3600
+    const retryAfter = Math.ceil(3600 - hoursSinceLastExport * 3600)
+    return NextResponse.json(
+      { error: 'Trop de requêtes. Vous pouvez exporter vos données une fois par heure.', retryAfterSeconds: retryAfter },
+      { status: 429 },
+    )
   }
 
   // Fetch user profile
@@ -171,12 +183,6 @@ export async function POST(req: NextRequest) {
       status: true,
       createdAt: true,
     },
-  })
-
-  // Update gdprDataExportedAt timestamp
-  await db.user.update({
-    where: { id: userId },
-    data: { gdprDataExportedAt: new Date() },
   })
 
   const exportData = {

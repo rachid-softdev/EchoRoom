@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { maskPhoneNumber } from "@/server/lib/encryption";
+import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
@@ -413,12 +414,10 @@ export const adminRouter = router({
             displayName: null,
             bio: null,
             image: null,
+            tokenVersion: { increment: 1 },
           },
         });
 
-        const { anonymizePersonalData } = await import(
-          "@/server/services/user/anonymization"
-        );
         await anonymizePersonalData(tx, input.userId);
       });
 
