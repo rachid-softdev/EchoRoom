@@ -19,27 +19,41 @@ export default function SettingsPageClient() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
-  const exportMutation = api.user.exportMyData.useMutation({
-    onSuccess: (data) => {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch("/api/user/export", {
+        method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Erreur ${res.status}`);
+      }
+
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `echoroom-data-export.json`;
+      a.download = `echoroom-export-${data.user?.id?.substring(0, 8) ?? "data"}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({
-        title: "Export réussi",
-        variant: "success",
-      });
-    },
-    onError: (err) => {
-      toast({
-        title: err.message ?? "Erreur lors de l'export",
-        variant: "destructive",
-      });
-    },
-  });
+
+      toast({ title: "Export réussi", variant: "success" });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erreur lors de l'export";
+      toast({ title: message, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const deleteMutation = api.user.deleteMyAccount.useMutation({
     onSuccess: () => {
@@ -141,11 +155,11 @@ export default function SettingsPageClient() {
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => exportMutation.mutate()}
-              disabled={exportMutation.isPending}
+              onClick={handleExport}
+              disabled={isExporting}
             >
               <Download className="w-4 h-4" />
-              {exportMutation.isPending ? "Export..." : "Exporter"}
+              {isExporting ? "Export..." : "Exporter"}
             </Button>
           </div>
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">

@@ -49,15 +49,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email },
         });
 
-        // Check if account is deleted BEFORE bcrypt.compare().
-        // Deleted accounts have passwordHash = bcrypt(RANDOM_UUID) which is a
-        // valid bcrypt hash, but we short-circuit here to avoid any possibility
-        // of bcrypt.compare() receiving an invalid hash format (e.g. if the
-        // database record is somehow corrupted or partially migrated).
-        if (user?.deletedAt) {
-          return null;
-        }
-
         // Timing-constant comparison: always run bcrypt.compare
         // even when user doesn't exist, to prevent account enumeration.
         const passwordHash = user?.passwordHash ?? getDummyHash();
