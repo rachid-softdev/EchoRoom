@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, withRateLimit } from "../trpc";
 import { db } from "../db";
 import { initiateCall } from "../services/telephony/callLifecycle";
+import { getPresignedUrl } from "../services/audio/r2";
 import { AppError } from "../lib/errors";
 import { getUTCDayRange } from "../lib/date";
 
@@ -173,8 +174,12 @@ export const callsRouter = router({
         });
       }
 
+      const recordingUrl = call.recordingUrl
+        ? await getPresignedUrl(call.recordingUrl)
+        : null;
+
       return {
-        recordingUrl: call.recordingUrl,
+        recordingUrl,
         transcript: call.transcript as
           | Array<{ speaker: string; text: string; timestamp: number }>
           | null,

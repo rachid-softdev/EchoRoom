@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@/server/db";
+import { getPresignedUrl } from "@/server/services/audio/r2";
 
 interface CreateClipParams {
   callId: string;
@@ -43,7 +44,7 @@ export async function createClip(params: CreateClipParams) {
 }
 
 export async function getClips(callId: string) {
-  return db.clip.findMany({
+  const clips = await db.clip.findMany({
     where: { callId },
     orderBy: { createdAt: "desc" },
     select: {
@@ -56,6 +57,14 @@ export async function getClips(callId: string) {
       createdAt: true,
     },
   });
+
+  // Presign clip URLs for secure access
+  return Promise.all(
+    clips.map(async (clip) => ({
+      ...clip,
+      clipUrl: clip.clipUrl ? await getPresignedUrl(clip.clipUrl) : null,
+    })),
+  );
 }
 
 export async function deleteClip(clipId: string, userId: string) {

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/server/db'
 import { decryptPhoneNumber, maskPhoneNumber } from '@/server/lib/encryption'
+import { getPresignedUrl } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
 
 const log = createLogger('gdpr-export')
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Fetch clips (missing from original exportMyData)
-  const clips = await db.clip.findMany({
+  const rawClips = await db.clip.findMany({
     where: { userId },
     select: {
       id: true,
@@ -180,6 +181,16 @@ export async function POST(req: NextRequest) {
       createdAt: true,
     },
   })
+
+  // Presign clip URLs (24h TTL for export — user needs time to process the archive)
+  const clips = await Promise.all(
+    rawClips.map(async (clip) => ({
+      ...clip,
+      clipUrl: clip.clipUrl
+        ? await getPresignedUrl(clip.clipUrl, { ttlSeconds: 86400 })
+        : null,
+    })),
+  )
 
   // Fetch abuse reports (missing from original exportMyData)
   const abuseReports = await db.abuseReport.findMany({

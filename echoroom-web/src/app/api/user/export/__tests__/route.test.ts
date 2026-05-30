@@ -29,6 +29,7 @@ vi.mock("@/server/db", () => ({
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     scenario: { findMany: vi.fn().mockResolvedValue([]) },
     call: { findMany: vi.fn().mockResolvedValue([]) },
