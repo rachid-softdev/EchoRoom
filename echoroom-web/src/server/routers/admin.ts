@@ -383,34 +383,35 @@ export const adminRouter = router({
       // Generate a valid bcrypt hash of a random UUID as the sentinel password.
       const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
 
-      const result = await db.user.updateMany({
-        where: { id: input.userId, deletedAt: null },
-        data: {
-          deletedAt: new Date(),
-          anonymizedAt: new Date(),
-          email: `deleted-${anonId}@anonymized.echoroom.app`,
-          username: `utilisateur-${anonId.substring(0, 8)}`,
-          passwordHash: deletedHash,
-          displayName: null,
-          bio: null,
-          image: null,
-          tokenVersion: { increment: 1 },
-        },
-      });
-
-      if (result.count === 0) {
-        // User either doesn't exist or is already deleted
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Utilisateur introuvable ou déjà supprimé",
-        });
-      }
+      const { anonymizePersonalData: loadAnonymize } = await import(
+        "@/server/services/user/anonymization"
+      );
 
       await db.$transaction(async (tx) => {
-        const { anonymizePersonalData } = await import(
-          "@/server/services/user/anonymization"
-        );
-        await anonymizePersonalData(tx, input.userId);
+        const result = await tx.user.updateMany({
+          where: { id: input.userId, deletedAt: null },
+          data: {
+            deletedAt: new Date(),
+            anonymizedAt: new Date(),
+            email: `deleted-${anonId}@anonymized.echoroom.app`,
+            username: `utilisateur-${anonId.substring(0, 8)}`,
+            passwordHash: deletedHash,
+            displayName: null,
+            bio: null,
+            image: null,
+            tokenVersion: { increment: 1 },
+          },
+        });
+
+        if (result.count === 0) {
+          // User either doesn't exist or is already deleted
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Utilisateur introuvable ou déjà supprimé",
+          });
+        }
+
+        await loadAnonymize(tx, input.userId);
       });
 
       await db.auditLog.create({
