@@ -19,10 +19,19 @@ const log = createLogger('gdpr-export')
  * check provides CSRF protection for older browsers without SameSite support.
  */
 export async function POST(req: NextRequest) {
-  // CSRF defense: require X-Requested-With header (not sent by cross-origin requests)
-  const requestedWith = req.headers.get('x-requested-with')
-  if (!requestedWith) {
-    return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  // CSRF defense via Origin header (SameSite=Lax for session cookies is primary defense)
+  const origin = req.headers.get('origin');
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  if (origin) {
+    try {
+      const originUrl = new URL(origin);
+      const appUrlObj = new URL(appUrl);
+      if (originUrl.origin !== appUrlObj.origin) {
+        return NextResponse.json({ error: 'Origine non autorisée' }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Origine invalide' }, { status: 400 });
+    }
   }
 
   const session = await auth()

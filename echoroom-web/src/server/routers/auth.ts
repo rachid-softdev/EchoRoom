@@ -29,7 +29,12 @@ export const authRouter = router({
       z.object({
         email: z.string().email(),
         username: z.string().min(3).max(20),
-        password: z.string().min(8),
+        password: z.string()
+          .min(8, "Minimum 8 caractères")
+          .max(128, "Maximum 128 caractères")
+          .regex(/[A-Z]/, "Doit contenir une majuscule")
+          .regex(/[a-z]/, "Doit contenir une minuscule")
+          .regex(/[0-9]/, "Doit contenir un chiffre"),
         consentAccepted: z.boolean(),
       }),
     )
@@ -103,7 +108,12 @@ export const authRouter = router({
     .input(
       z.object({
         currentPassword: z.string().min(1),
-        newPassword: z.string().min(8).max(128),
+        newPassword: z.string()
+          .min(8, "Minimum 8 caractères")
+          .max(128, "Maximum 128 caractères")
+          .regex(/[A-Z]/, "Doit contenir une majuscule")
+          .regex(/[a-z]/, "Doit contenir une minuscule")
+          .regex(/[0-9]/, "Doit contenir un chiffre"),
       }),
     )
     .mutation(async ({ ctx, input }) => {

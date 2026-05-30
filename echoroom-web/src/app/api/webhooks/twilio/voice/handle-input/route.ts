@@ -19,6 +19,7 @@ import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from '../../validate'
 import { checkContent } from '@/server/services/ai/moderation'
+import { verifyTwilioToken, createTwilioToken } from '@/server/lib/twilioToken'
 
 const log = createLogger('handle-input')
 
@@ -30,6 +31,12 @@ const VoiceResponse = twilio.twiml.VoiceResponse
  * TwiML for the next turn or a hangup if the conversation is done.
  */
 export async function POST(req: NextRequest) {
+  // Enforce body size limit (50KB for Twilio webhooks)
+  const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+  if (contentLength > 50_000) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
   const { searchParams } = new URL(req.url)
   const formData = await req.formData()
   const params = extractParams(formData)
@@ -42,10 +49,38 @@ export async function POST(req: NextRequest) {
   const callSid = (formData.get('CallSid') as string) ?? ''
   const speechResult = (formData.get('SpeechResult') as string) ?? ''
 
-  const scenarioId =
-    searchParams.get('scenarioId') ?? 'unknown'
-  const characterId =
-    searchParams.get('characterId') ?? 'unknown'
+  // Resolve scenario and character from HMAC token (with legacy transition fallback)
+  let scenarioId = 'unknown'
+  let characterId = 'unknown'
+  const token = searchParams.get('token')
+
+  if (token) {
+    const payload = verifyTwilioToken(token)
+    if (payload) {
+      scenarioId = payload.scenarioId
+      // Resolve characterId from the scenario
+      try {
+        const scenario = await db.scenario.findUnique({
+          where: { id: scenarioId },
+          include: { character: true },
+        })
+        if (scenario) {
+          characterId = scenario.characterId
+        }
+      } catch (error) {
+        log.error('Failed to resolve characterId from scenario in handle-input', { error })
+      }
+    } else {
+      log.warn('Invalid or expired token in handle-input', { callSid })
+    }
+  } else {
+    // TRANSITION FALLBACK: for calls initiated BEFORE this deploy
+    // The old actionUrl contains scenarioId/characterId as query params.
+    // Remove this fallback after MAX_CALL_DURATION (~60 min) post-deploy.
+    scenarioId = searchParams.get('scenarioId') ?? 'unknown';
+    characterId = searchParams.get('characterId') ?? 'unknown';
+    log.warn('DEPRECATED: handle-input called without token — using legacy query params', { callSid, scenarioId });
+  }
 
   // Get conversation state from Redis
   const state = await getConversationState(callSid)
@@ -61,6 +96,16 @@ export async function POST(req: NextRequest) {
     return new NextResponse(twiml.toString(), {
       headers: { 'Content-Type': 'text/xml' },
     })
+  }
+
+  // Consistency check: verify token/query-param scenarioId matches Redis state
+  if (state.scenarioId && scenarioId !== 'unknown' && state.scenarioId !== scenarioId) {
+    log.warn('ScenarioId mismatch between token/params and Redis state — using Redis state as source of truth', {
+      callSid,
+      tokenScenarioId: scenarioId,
+      redisScenarioId: state.scenarioId,
+    })
+    scenarioId = state.scenarioId
   }
 
   // Check if call exceeded limits
@@ -209,7 +254,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const actionUrl = `/api/webhooks/twilio/voice/handle-input?scenarioId=${encodeURIComponent(scenarioId)}&characterId=${encodeURIComponent(characterId)}`
+  const handleInputToken = createTwilioToken(callSid, scenarioId || 'unknown')
+  const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`
 
   const twiml = new VoiceResponse()
 

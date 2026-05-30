@@ -93,9 +93,9 @@ export function decryptPhoneNumber(encrypted: string): string {
  * @returns Masked string with middle digits replaced by "****".
  */
 export function maskPhoneNumber(phone: string): string {
-  if (phone.length < 4) return "****";
-  if (phone.length <= 8) return `${phone.slice(0, 1)}****${phone.slice(-4)}`;
-  return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+  if (phone.length < 6) return "******";
+  const prefix = phone.startsWith("+") ? phone.substring(0, 3) : phone.substring(0, 2);
+  return `${prefix}****${phone.slice(-4)}`;
 }
 
 /**

@@ -198,39 +198,46 @@ describe("decryptPhoneNumber", () => {
 // ---------------------------------------------------------------------------
 
 describe("maskPhoneNumber", () => {
-  it("masks international phone: +33612345678 -> +33****5678", () => {
+  it("does not leak length for short numbers (less than 6 chars)", () => {
+    // M-3 fix: < 6 chars returns fixed-length "******"
+    expect(maskPhoneNumber("1234")).toBe("******");
+    expect(maskPhoneNumber("12345")).toBe("******");
+    expect(maskPhoneNumber("123")).toBe("******");
+    expect(maskPhoneNumber("12")).toBe("******");
+    expect(maskPhoneNumber("1")).toBe("******");
+  });
+
+  it("returns ****** for empty string", () => {
+    expect(maskPhoneNumber("")).toBe("******");
+  });
+
+  it("masks exactly 6-7 character numbers with 2-char prefix and last 4", () => {
+    // length 6: prefix = "12", last 4 = "3456"
+    expect(maskPhoneNumber("123456")).toBe("12****3456");
+    // length 7: prefix = "12", last 4 = "4567"
+    expect(maskPhoneNumber("1234567")).toBe("12****4567");
+  });
+
+  it("preserves first 3 chars for international numbers (+ prefix)", () => {
+    // 12 chars: first 3 = "+33", last 4 = "5678"
     expect(maskPhoneNumber("+33612345678")).toBe("+33****5678");
-  });
-
-  it("masks domestic phone: 0123456789 -> 012****6789", () => {
-    expect(maskPhoneNumber("0123456789")).toBe("012****6789");
-  });
-
-  it("masks a number with exactly 4 characters", () => {
-    // length <= 8: slice(0,1) = "1", slice(-4) = "1234" -> "1****1234"
-    expect(maskPhoneNumber("1234")).toBe("1****1234");
-  });
-
-  it("returns **** for numbers shorter than 4 characters", () => {
-    expect(maskPhoneNumber("123")).toBe("****");
-    expect(maskPhoneNumber("12")).toBe("****");
-    expect(maskPhoneNumber("1")).toBe("****");
-  });
-
-  it("returns **** for empty string", () => {
-    expect(maskPhoneNumber("")).toBe("****");
-  });
-
-  it("preserves first 3 and last 4 characters for longer numbers", () => {
     // 15 chars: first 3 = "+44", last 4 = "7890"
     expect(maskPhoneNumber("+4479111237890")).toBe("+44****7890");
-    // 10 chars: first 3 = "555", last 4 = "4321"
-    expect(maskPhoneNumber("5551234321")).toBe("555****4321");
+  });
+
+  it("preserves first 2 chars for domestic numbers (no + prefix)", () => {
+    // 10 chars: first 2 = "06", last 4 = "5678"
+    expect(maskPhoneNumber("0612345678")).toBe("06****5678");
+    // 10 chars: first 2 = "55", last 4 = "4321"
+    expect(maskPhoneNumber("5551234321")).toBe("55****4321");
+    // 10 chars: first 2 = "01", last 4 = "6789"
+    expect(maskPhoneNumber("0123456789")).toBe("01****6789");
   });
 
   it("does not trim whitespace", () => {
-    // " +33612345678" -> " +3" + "****" + "5678"
-    expect(maskPhoneNumber(" +33612345678")).toBe(" +3****5678");
+    // " +33612345678" -> does NOT start with "+" due to leading space
+    // so prefix = first 2 chars = " +", last 4 = "5678"
+    expect(maskPhoneNumber(" +33612345678")).toBe(" +****5678");
   });
 });
 

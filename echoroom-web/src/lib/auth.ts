@@ -9,17 +9,11 @@ import { db } from "@/server/db";
  * Prevents account enumeration by ensuring the same code path
  * is executed whether the user exists or not.
  *
- * Lazy-initialized to avoid blocking the module load with a ~250ms
- * synchronous bcrypt hash on every cold start (important for serverless).
+ * Module-level constant to avoid re-hashing on every cold start.
+ * bcrypt.hashSync blocks ~250ms at import time, but this is acceptable
+ * because the module is cached by Node.js after the first import.
  */
-let DUMMY_HASH: string | null = null;
-
-function getDummyHash(): string {
-  if (!DUMMY_HASH) {
-    DUMMY_HASH = bcrypt.hashSync("dummy-timing-attack-prevention", 12);
-  }
-  return DUMMY_HASH;
-}
+const DUMMY_HASH = bcrypt.hashSync("dummy-timing-attack-prevention", 12);
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -51,7 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Timing-constant comparison: always run bcrypt.compare
         // even when user doesn't exist, to prevent account enumeration.
-        const passwordHash = user?.passwordHash ?? getDummyHash();
+        const passwordHash = user?.passwordHash ?? DUMMY_HASH;
         const isValid = await bcrypt.compare(password, passwordHash);
 
         if (!user || !isValid) {

@@ -58,12 +58,27 @@ function loadEnv(): EnvType {
   const isProduction = nodeEnv === "production";
 
   if (isProduction) {
-    const secret = process.env.NEXTAUTH_SECRET ?? "";
-    if (secret.startsWith("CHANGE_ME")) {
-      throw new Error(
-        "NEXTAUTH_SECRET is still set to the default value. " +
-        "Generate a unique secret before deploying to production.",
-      );
+    // Check all critical secrets against their dev defaults
+    const criticalKeys: Array<{ key: string; label: string }> = [
+      { key: "NEXTAUTH_SECRET", label: "NEXTAUTH_SECRET (auth)" },
+      { key: "STRIPE_SECRET_KEY", label: "STRIPE_SECRET_KEY (Stripe)" },
+      { key: "STRIPE_WEBHOOK_SECRET", label: "STRIPE_WEBHOOK_SECRET (Stripe webhooks)" },
+      { key: "TWILIO_AUTH_TOKEN", label: "TWILIO_AUTH_TOKEN (Twilio)" },
+      { key: "OPENAI_API_KEY", label: "OPENAI_API_KEY (OpenAI)" },
+      { key: "ELEVENLABS_API_KEY", label: "ELEVENLABS_API_KEY (ElevenLabs)" },
+      { key: "DEEPGRAM_API_KEY", label: "DEEPGRAM_API_KEY (Deepgram)" },
+      { key: "PHONE_ENCRYPTION_KEY", label: "PHONE_ENCRYPTION_KEY (encryption)" },
+      { key: "TWILIO_TOKEN_SECRET", label: "TWILIO_TOKEN_SECRET (Twilio tokens)" },
+    ];
+    for (const { key, label } of criticalKeys) {
+      const value = process.env[key] ?? "";
+      const devDefault = DEV_DEFAULTS[key];
+      if (devDefault && value === devDefault) {
+        throw new Error(
+          `${label} is still set to the development default value. ` +
+          "Set a unique production value before deploying.",
+        );
+      }
     }
     // Production: strict validation — all vars must be in process.env
     const result = envSchema.safeParse(process.env);

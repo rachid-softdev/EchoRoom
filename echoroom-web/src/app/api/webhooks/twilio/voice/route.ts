@@ -12,7 +12,7 @@ import { ELEVENLABS_MODEL } from '@/server/services/telephony/constants'
 import { uploadAudioBuffer } from '@/server/services/audio/r2'
 import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from '../validate'
-import { verifyTwilioToken } from '@/server/lib/twilioToken'
+import { verifyTwilioToken, createTwilioToken } from '@/server/lib/twilioToken'
 
 const log = createLogger('voice')
 
@@ -58,6 +58,12 @@ export async function GET(req: NextRequest) {
  * Returns TwiML with a greeting and speech gathering for the conversation.
  */
 export async function POST(req: NextRequest) {
+  // Enforce body size limit (50KB for Twilio webhooks)
+  const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+  if (contentLength > 50_000) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
   const { searchParams } = new URL(req.url)
   const formData = await req.formData()
   const params = extractParams(formData)
@@ -73,12 +79,13 @@ export async function POST(req: NextRequest) {
   // Resolve scenario and character — prefer opaque token over raw query params
   let scenarioId = ''
   let characterId = ''
+  let callId: string | undefined
   const token = searchParams.get('token')
 
   if (token) {
     const payload = verifyTwilioToken(token)
     if (payload) {
-      const callId = payload.callId
+      callId = payload.callId
       scenarioId = payload.scenarioId
 
       // Resolve characterId from the scenario
@@ -105,43 +112,28 @@ export async function POST(req: NextRequest) {
       log.warn('Invalid or expired Twilio token')
     }
   } else {
-    /**
-     * @deprecated Legacy fallback for calls initiated before HMAC token migration (Q2 2026).
-     * Remove after all active calls from the old format have expired (Redis TTL).
-     * Use the `token` query parameter approach above instead.
-     */
-    const callId = searchParams.get('callId')
-    scenarioId = searchParams.get('scenarioId') ?? ''
-    characterId = searchParams.get('characterId') ?? ''
+    // Safer fallback: resolve from DB using only twilioCallSid (no raw query params)
+    try {
+      const callRecord = await db.call.findFirst({
+        where: { twilioCallSid: callSid },
+        include: { scenario: { include: { character: true } } },
+      })
 
-    if (!scenarioId || !characterId) {
-      // Look up from DB call record
-      try {
-        const callRecord = callId
-          ? await db.call.findUnique({
-              where: { id: callId },
-              include: { scenario: { include: { character: true } } },
-            })
-          : await db.call.findFirst({
-              where: { twilioCallSid: callSid },
-              include: { scenario: { include: { character: true } } },
-            })
+      if (callRecord) {
+        callId = callRecord.id
+        scenarioId = callRecord.scenarioId
+        characterId = callRecord.scenario.characterId
 
-        if (callRecord) {
-          scenarioId = callRecord.scenarioId
-          characterId = callRecord.scenario.characterId
-
-          // Update call status to ACTIVE
-          await db.call
-            .update({
-              where: { id: callRecord.id },
-              data: { status: 'ACTIVE' },
-            })
-            .catch(() => {})
-        }
-      } catch (error) {
-        log.error('Failed to load call record', { error })
+        // Update call status to ACTIVE
+        await db.call
+          .update({
+            where: { id: callRecord.id },
+            data: { status: 'ACTIVE' },
+          })
+          .catch(() => {})
       }
+    } catch (error) {
+      log.error('Failed to load call record from twilioCallSid', { error })
     }
   }
 
@@ -251,7 +243,8 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const actionUrl = `/api/webhooks/twilio/voice/handle-input?scenarioId=${encodeURIComponent(scenarioId || 'unknown')}&characterId=${encodeURIComponent(characterId || 'unknown')}`
+  const handleInputToken = createTwilioToken(callId ?? 'unknown', scenarioId || 'unknown')
+  const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`
 
   twiml.gather({
     input: ['speech'],
