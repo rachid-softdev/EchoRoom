@@ -158,3 +158,88 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
     ).resolves.toBeUndefined();
   }, 5000);
 });
+
+// ---------------------------------------------------------------------------
+// Webhook-specific rate limit: checkWebhookRateLimit
+// ---------------------------------------------------------------------------
+
+vi.mock("@/lib/redis", () => ({
+  redis: null, // Force in-memory fallback
+}));
+
+describe("checkWebhookRateLimit — unknown endpoint keys", () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("should return false for unknown endpoint keys (deny by default)", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    const result = await checkWebhookRateLimit("unknown:endpoint", "127.0.0.1");
+    expect(result).toBe(false);
+  });
+
+  it("should return false for empty endpoint key", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    const result = await checkWebhookRateLimit("", "127.0.0.1");
+    expect(result).toBe(false);
+  });
+
+  it("should return false for malicious endpoint key", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    const result = await checkWebhookRateLimit("../../etc/passwd", "127.0.0.1");
+    expect(result).toBe(false);
+  });
+
+  it("should allow requests for known endpoint keys", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    // "twilio:status" is a known key with limit 60, window 60, perIp false
+    const result = await checkWebhookRateLimit("twilio:status", "127.0.0.1");
+    expect(result).toBe(true);
+  });
+
+  it("should allow multiple requests for known keys within limit", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    // "stripe:checkout" has limit 20, so first 20 should pass
+    for (let i = 0; i < 20; i++) {
+      const result = await checkWebhookRateLimit("stripe:checkout", "127.0.0.1");
+      expect(result).toBe(true);
+    }
+
+    // 21st should be denied
+    const result = await checkWebhookRateLimit("stripe:checkout", "127.0.0.1");
+    expect(result).toBe(false);
+  });
+
+  it("should fall back to in-memory store when Redis is unavailable", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    // Hit the limit for "twilio:voice:init" (limit 30, per IP)
+    for (let i = 0; i < 30; i++) {
+      const result = await checkWebhookRateLimit("twilio:voice:init", "10.0.0.1");
+      expect(result).toBe(true);
+    }
+
+    // 31st should be denied
+    const result = await checkWebhookRateLimit("twilio:voice:init", "10.0.0.1");
+    expect(result).toBe(false);
+  });
+
+  it("should have independent counters for different IPs", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    // Exhaust IP 10.0.0.1 for "twilio:voice:init" (limit 30, per IP)
+    for (let i = 0; i < 30; i++) {
+      await checkWebhookRateLimit("twilio:voice:init", "10.0.0.1");
+    }
+    expect(await checkWebhookRateLimit("twilio:voice:init", "10.0.0.1")).toBe(false);
+
+    // Different IP should still work
+    expect(await checkWebhookRateLimit("twilio:voice:init", "10.0.0.2")).toBe(true);
+  });
+});

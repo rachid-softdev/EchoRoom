@@ -31,8 +31,12 @@ class InMemoryRateLimitStore {
     const entry = this.store.get(key);
 
     if (!entry || entry.resetAt <= now) {
-      // New time window
-      this.store.set(key, { count: 1, resetAt: now + windowSec * 1000 });
+      // Nouvelle fenêtre alignée sur l'horloge (comportement déterministe)
+      const windowStart = now - (now % (windowSec * 1000));
+      this.store.set(key, {
+        count: 1,
+        resetAt: windowStart + windowSec * 1000,
+      });
       return true;
     }
 

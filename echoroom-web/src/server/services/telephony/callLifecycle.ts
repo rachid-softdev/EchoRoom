@@ -86,7 +86,7 @@ export async function initiateCall(params: StartCallParams) {
 
     // Use an opaque HMAC-signed token instead of raw database IDs
     // to prevent internal ID leakage in Twilio console logs.
-    const token = createTwilioToken(call.id, scenario.id);
+    const token = createTwilioToken(call.id, scenario.id, scenario.characterId);
 
     const twilioCall = await twilioClient.calls.create({
       to: params.phoneNumber,

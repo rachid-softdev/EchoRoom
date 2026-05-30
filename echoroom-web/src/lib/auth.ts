@@ -132,31 +132,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = t.id;
       session.user.username = t.username;
 
-      // Always fetch the role from the DB to ensure the session reflects
-      // the current role even between JWT revalidation cycles (5 min max).
-      // This prevents a demoted admin from retaining ADMIN access via
-      // a stale cached role in the JWT token.
-      if (t.id) {
-        try {
-          const dbUser = await db.user.findUnique({
-            where: { id: t.id },
-            select: { role: true, deletedAt: true },
-          });
-          if (!dbUser || dbUser.deletedAt) {
-            // User was deleted — return minimal session
-            session.user.role = "USER";
-            return session;
-          }
-          session.user.role = dbUser.role;
-        } catch {
-          // Fallback to token role on DB error (degraded mode)
-          session.user.role = t.role;
-        }
-      } else {
-        session.user.role = t.role;
-      }
+      // Utiliser le rôle directement depuis le JWT.
+      // La revalidation périodique (30s pour admins, 15 min pour users)
+      // dans le callback jwt() garantit que le rôle est à jour.
+      session.user.role = t.role;
 
-      // Credits are NOT stored in JWT — always fetch from DB via getCredits query
+      // Les crédits ne sont PAS stockés dans le JWT — toujours depuis la DB via getCredits
       return session;
     },
   },

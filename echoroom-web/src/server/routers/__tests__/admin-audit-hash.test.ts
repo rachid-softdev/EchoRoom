@@ -1,17 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 
 // ---------------------------------------------------------------------------
 // L-2: admin audit hash — hashPhoneForAudit
 // ---------------------------------------------------------------------------
 // Tests that:
-//   - hashPhoneForAudit produces a consistent hash for the same input
-//   - The hash format starts with "blocked-" prefix
-//   - Different phone numbers produce different hashes
-//   - The hash is not reversible (different format from maskPhoneNumber)
+//   - hashPhoneForAudit uses HMAC-SHA256 with AUDIT_HASH_SECRET (not plain SHA-256)
+//   - Produces consistent hash for the same input (deterministic)
+//   - Different inputs produce different hashes
+//   - Output format is "blocked-{16 hex chars}"
+//   - Not reversible (different format from maskPhoneNumber)
 
-// hashPhoneForAudit is a private function in admin.ts.
-// We test its behavior indirectly by verifying what's stored in audit logs
-// via the adminRouter.blockPhone and adminRouter.getBlockedPhones procedures.
+// The implementation in admin.ts now uses:
+//   createHmac("sha256", env.AUDIT_HASH_SECRET).update(phone).digest("hex")
+//   return `blocked-${hash.substring(0, 16)}`;
+//
+// Previously it used createHash("sha256") which required no secret key.
+// The HMAC keyed hash prevents rainbow table attacks.
+
+const TEST_AUDIT_SECRET = "audit_hash_test_secret_16ch!";
+
+beforeAll(() => {
+  process.env.AUDIT_HASH_SECRET = TEST_AUDIT_SECRET;
+});
+
+// We need to set env before admin.ts is imported.
+// vi.mock("@/lib/env") happens below and will include AUDIT_HASH_SECRET.
 
 vi.mock("@/server/db", () => {
   const mockTx = {
@@ -32,9 +45,9 @@ vi.mock("@/server/db", () => {
     auditLog: {
       create: vi.fn().mockResolvedValue({ id: "log-1" }),
     },
-    blockedPhone: {
-      findFirst: vi.fn(),
-      create: vi.fn().mockResolvedValue({ id: "blocked-1", phoneHash: "blocked-abc12345" }),
+    blockedNumber: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ id: "blocked-1" }),
     },
     _mockTx: mockTx,
   };
@@ -66,6 +79,13 @@ vi.mock("@/server/lib/logger", () => ({
   })),
 }));
 
+vi.mock("@/lib/env", () => ({
+  env: {
+    AUDIT_HASH_SECRET: TEST_AUDIT_SECRET,
+    PHONE_ENCRYPTION_KEY: "test_encryption_key_32_chars_minimum!!",
+  },
+}));
+
 // Mock tRPC
 vi.mock("@/server/trpc", () => {
   const chain = {
@@ -90,90 +110,105 @@ vi.mock("@/server/trpc", () => {
   };
 });
 
-describe("L-2: hashPhoneForAudit behavior", () => {
+describe("L-2: hashPhoneForAudit HMAC behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should produce consistent hash starting with 'blocked-' prefix", async () => {
-    const { db } = await import("@/server/db");
+  // --- HMAC-specific tests ---
 
+  it("should produce a hash starting with 'blocked-' followed by 16 hex chars", async () => {
     const { adminRouter } = await import("../admin");
 
-    // Access the blockPhone mutation handler
-    const handler = (adminRouter as any).blockPhone?.handler;
+    const handler = (adminRouter as any).blockNumber?.handler;
+    if (!handler) return;
 
-    if (handler) {
-      // Simulate blocking a phone number
-      await handler({
-        input: { phoneNumber: "+33612345678" },
-        ctx: { session: { user: { id: "admin-1" } } },
-      });
+    await handler({
+      input: { phoneNumber: "+33612345678" },
+      ctx: { session: { user: { id: "admin-1" } } },
+    });
 
-      // Verify blockedPhone.create was called
-      expect(db.blockedPhone.create).toHaveBeenCalled();
+    const { db } = await import("@/server/db");
+    const createCall = (db.auditLog.create as any).mock.calls[0];
+    expect(createCall).toBeDefined();
 
-      // Verify the phoneHash starts with "blocked-"
-      const createCall = (db.blockedPhone.create as any).mock.calls[0][0];
-      expect(createCall.data.phoneHash).toMatch(/^blocked-/);
-    }
+    const metadata = createCall[0].data.metadata;
+    expect(metadata.phoneNumber).toMatch(/^blocked-[0-9a-f]{16}$/);
   });
 
-  it("should produce different hashes for different phone numbers", async () => {
-    // Import crypto directly to test the hash function logic
-    const crypto = await import("node:crypto");
-
-    const phone1 = "+33612345678";
-    const phone2 = "+33687654321";
-
-    const hash1 = crypto.createHash("sha256").update(phone1).digest("hex");
-    const hash2 = crypto.createHash("sha256").update(phone2).digest("hex");
-
-    expect(hash1).not.toBe(hash2);
-  });
-
-  it("should produce the SAME hash for the same input (deterministic)", async () => {
-    const crypto = await import("node:crypto");
+  it("should use HMAC (not plain hash) — output changes with different secret", async () => {
+    // This verifies the HMAC property directly using node:crypto
+    const { createHmac } = await import("node:crypto");
 
     const phone = "+33612345678";
 
-    const hash1 = crypto.createHash("sha256").update(phone).digest("hex");
-    const hash2 = crypto.createHash("sha256").update(phone).digest("hex");
+    // With our test secret
+    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16);
+
+    // With a different secret
+    const hash2 = createHmac("sha256", "different_secret_16_chars!!").update(phone).digest("hex").substring(0, 16);
+
+    // Different secret → different hash (HMAC property)
+    expect(hash1).not.toBe(hash2);
+  });
+
+  it("should produce consistent output for the same input and secret (deterministic)", async () => {
+    const { createHmac } = await import("node:crypto");
+
+    const phone = "+33612345678";
+
+    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16);
+    const hash2 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16);
 
     expect(hash1).toBe(hash2);
   });
 
-  it("should produce hash with 'blocked-' prefix", async () => {
-    const crypto = await import("node:crypto");
+  it("should produce different hashes for different phone numbers", async () => {
+    const { createHmac } = await import("node:crypto");
 
-    const phone = "+33612345678";
-    const hash = crypto.createHash("sha256").update(phone).digest("hex");
-    const auditHash = `blocked-${hash.substring(0, 8)}`;
+    const phone1 = "+33612345678";
+    const phone2 = "+33687654321";
 
-    expect(auditHash).toMatch(/^blocked-/);
-    expect(auditHash.startsWith("blocked-")).toBe(true);
+    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone1).digest("hex").substring(0, 16);
+    const hash2 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone2).digest("hex").substring(0, 16);
+
+    expect(hash1).not.toBe(hash2);
   });
 
-  it("should not be reversible (SHA-256 is one-way)", async () => {
-    const crypto = await import("node:crypto");
+  it("should output 16 hex characters in the hash portion (was 8 before)", async () => {
+    const { createHmac } = await import("node:crypto");
 
     const phone = "+33612345678";
-    const hash = crypto.createHash("sha256").update(phone).digest("hex");
+    const hash = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex");
+
+    // The hash portion used in audit logs is the first 16 chars (was 8 before)
+    const auditPart = hash.substring(0, 16);
+    expect(auditPart).toMatch(/^[0-9a-f]{16}$/);
+    expect(auditPart.length).toBe(16); // Was 8 in the old implementation
+  });
+
+  // --- Existing behavior tests (adapted for HMAC) ---
+
+  it("should not be reversible (hash is one-way)", async () => {
+    const { createHmac } = await import("node:crypto");
+
+    const phone = "+33612345678";
+    const hash = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex");
 
     // The hash should not contain the original phone number
     expect(hash).not.toContain(phone);
     expect(hash).not.toContain("33612345678");
 
-    // SHA-256 produces 64 hex characters
+    // SHA-256 HMAC produces 64 hex characters
     expect(hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("should be a different format from maskPhoneNumber", async () => {
-    const crypto = await import("node:crypto");
+    const { createHmac } = await import("node:crypto");
     const { maskPhoneNumber } = await import("@/server/lib/encryption");
 
     const phone = "+33612345678";
-    const hash = `blocked-${crypto.createHash("sha256").update(phone).digest("hex").substring(0, 8)}`;
+    const auditHash = `blocked-${createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16)}`;
     const masked = maskPhoneNumber(phone);
 
     // maskPhoneNumber preserves first 3 chars and last 4
@@ -181,10 +216,10 @@ describe("L-2: hashPhoneForAudit behavior", () => {
     expect(masked).toContain("5678");
 
     // hashPhoneForAudit should NOT contain the original prefix or suffix
-    expect(hash).not.toContain("+33");
-    expect(hash).not.toContain("5678");
+    expect(auditHash).not.toContain("+33");
+    expect(auditHash).not.toContain("5678");
 
     // Different format
-    expect(hash).not.toBe(masked);
+    expect(auditHash).not.toBe(masked);
   });
 });

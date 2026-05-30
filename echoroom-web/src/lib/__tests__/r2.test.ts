@@ -71,10 +71,10 @@ describe("getR2Key", () => {
       .toBe("audio/sid/1_1717000000000");
   });
 
-  it("should pass through unparseable string that looks like a URL", () => {
-    // new URL() throws on "http://" — should pass through as-is
+  it("should return null for unparseable string that looks like a URL", () => {
+    // new URL() throws on "http://" — URL malformée → null
     const result = getR2Key("http://");
-    expect(result).toBe("http://");
+    expect(result).toBeNull();
   });
 
   it("should pass through non-URL string (not http/https)", () => {

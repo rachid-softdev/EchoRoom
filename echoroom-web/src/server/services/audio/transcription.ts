@@ -25,7 +25,7 @@ interface TranscriptionResult {
 
 export async function transcribeAudio(
   audioBuffer: ArrayBuffer,
-  _mimetype: string = "audio/wav",
+  mimetype: string = "audio/wav",
 ): Promise<TranscriptionResult | null> {
   if (!deepgram) {
     return null;
@@ -37,6 +37,7 @@ export async function transcribeAudio(
     {
       model: "nova-2",
       language: "fr",
+      mimetype,  // Passer le type MIME pour une meilleure précision
       punctuate: true,
       paragraphs: true,
     },

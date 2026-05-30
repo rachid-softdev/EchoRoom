@@ -1,7 +1,10 @@
+import { randomBytes } from "node:crypto";
 import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
 
 const log = createLogger("r2-check");
+
+const SECURITY_CHECK_PATH = `.echoroom-security-check-${randomBytes(4).toString("hex")}`;
 
 export interface R2PrivacyCheckResult {
   isPrivate: boolean;
@@ -49,7 +52,7 @@ export async function verifyBucketPrivacy(): Promise<R2PrivacyCheckResult> {
     }
 
     // Try to fetch a non-existent key from the public URL
-    const checkUrl = `${env.R2_PUBLIC_URL}/.echoroom-security-check`;
+    const checkUrl = `${env.R2_PUBLIC_URL}/${SECURITY_CHECK_PATH}`;
     const response = await fetch(checkUrl, {
       method: "HEAD",
       signal: AbortSignal.timeout(5000),

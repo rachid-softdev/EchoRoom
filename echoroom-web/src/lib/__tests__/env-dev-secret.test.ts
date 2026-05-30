@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 // ---------------------------------------------------------------------------
 // H-1: env.ts — Random dev secret for NEXTAUTH_SECRET

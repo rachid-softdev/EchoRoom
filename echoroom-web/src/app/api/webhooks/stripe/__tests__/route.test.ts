@@ -12,13 +12,17 @@ import { Prisma } from "@prisma/client";
 //
 // Use vi.hoisted for all mock variables referenced in vi.mock factories.
 
-const { mockConstructEvent, mockTxCreate, mockTxUpdate, mockTransaction } =
-  vi.hoisted(() => ({
-    mockConstructEvent: vi.fn(),
-    mockTxCreate: vi.fn(),
-    mockTxUpdate: vi.fn(),
-    mockTransaction: vi.fn(),
-  }));
+const {
+  mockConstructEvent,
+  mockTxCreate,
+  mockTxUpdate,
+  mockTransaction,
+} = vi.hoisted(() => ({
+  mockConstructEvent: vi.fn(),
+  mockTxCreate: vi.fn(),
+  mockTxUpdate: vi.fn(),
+  mockTransaction: vi.fn(),
+}));
 
 vi.mock("@/lib/env", () => ({
   env: {
@@ -37,7 +41,23 @@ vi.mock("@/lib/stripe", () => ({
 vi.mock("@/server/db", () => ({
   db: {
     $transaction: mockTransaction,
+    purchase: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    user: {
+      update: vi.fn(),
+    },
   },
+}));
+
+// Always allow rate limiting in tests — we're not testing rate limiting here.
+// Note: route.ts imports from "../rateLimit" (relative to webhooks/stripe/route.ts).
+// From the test file's perspective (webhooks/stripe/__tests__/route.test.ts), the
+// path should use the project alias.
+vi.mock("@/app/api/webhooks/rateLimit", () => ({
+  checkWebhookRateLimit: async () => true,
 }));
 
 function createNextRequest(body: string, signature: string | null): NextRequest {
@@ -452,5 +472,248 @@ describe("Stripe webhook POST handler", () => {
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body).toEqual({ error: "Missing metadata" });
+  });
+
+  // -----------------------------------------------------------------------
+  // charge.dispute.closed handler
+  // -----------------------------------------------------------------------
+
+  describe("charge.dispute.closed", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should revoke credits when dispute is lost", async () => {
+      const dispute = {
+        id: "dp_lost_123",
+        payment_intent: "pi_lost_123",
+        status: "lost",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.closed",
+        data: { object: dispute },
+      });
+
+      // The route code calls db.purchase.findMany directly (not in a transaction)
+      // for the initial lookup. Set up the direct mock.
+      const { db } = await import("@/server/db");
+      (db.purchase.findMany as any).mockResolvedValue([
+        { id: "purchase-dp-1", userId: "user-1", creditsPurchased: 50 },
+      ]);
+
+      // For the lost branch, it calls db.$transaction with a callback.
+      // Inside the transaction, tx.purchase.findUnique, tx.user.update, tx.purchase.update
+      const txFindUnique = vi.fn().mockResolvedValue({ refundedAt: null });
+      const txUserUpdate = vi.fn();
+      const txPurchaseUpdate = vi.fn();
+
+      mockTransaction.mockImplementation(async (cb: any) => cb({
+        purchase: {
+          findUnique: txFindUnique,
+          update: txPurchaseUpdate,
+        },
+        user: {
+          update: txUserUpdate,
+        },
+      }));
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toEqual({ received: true });
+
+      // Verify purchase.findMany was called to find disputed purchases
+      expect(db.purchase.findMany).toHaveBeenCalledWith({
+        where: { stripePaymentId: "pi_lost_123" },
+      });
+
+      // Verify idempotency check inside transaction
+      expect(txFindUnique).toHaveBeenCalledWith({
+        where: { id: "purchase-dp-1" },
+        select: { refundedAt: true },
+      });
+
+      // Verify credits were decremented inside transaction
+      expect(txUserUpdate).toHaveBeenCalledWith({
+        where: { id: "user-1" },
+        data: { credits: { decrement: 50 } },
+      });
+
+      // Verify purchase was marked as refunded inside transaction
+      expect(txPurchaseUpdate).toHaveBeenCalledWith({
+        where: { id: "purchase-dp-1" },
+        data: { refundedAt: expect.any(Date) },
+      });
+    });
+
+    it("should clear disputedAt when dispute is won", async () => {
+      const dispute = {
+        id: "dp_won_123",
+        payment_intent: "pi_won_123",
+        status: "won",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.closed",
+        data: { object: dispute },
+      });
+
+      const { db } = await import("@/server/db");
+      (db.purchase.findMany as any).mockResolvedValue([
+        { id: "purchase-won-1", userId: "user-1", creditsPurchased: 50 },
+      ]);
+
+      // For "won" branch, db.purchase.update is called directly (not in a transaction)
+      (db.purchase.update as any).mockResolvedValue({ id: "purchase-won-1" });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+
+      // Verify disputedAt was set to null
+      expect(db.purchase.update).toHaveBeenCalledWith({
+        where: { id: "purchase-won-1" },
+        data: { disputedAt: null },
+      });
+    });
+
+    it("should not revoke credits when dispute is won (only clear disputedAt)", async () => {
+      const dispute = {
+        id: "dp_won_456",
+        payment_intent: "pi_won_456",
+        status: "won",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.closed",
+        data: { object: dispute },
+      });
+
+      const { db } = await import("@/server/db");
+      (db.purchase.findMany as any).mockResolvedValue([
+        { id: "purchase-won-2", userId: "user-2", creditsPurchased: 100 },
+      ]);
+      (db.purchase.update as any).mockResolvedValue({ id: "purchase-won-2" });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      await POST(req);
+
+      // For "won" status, the $transaction is NOT called (no credit revocation)
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it("should handle dispute.closed without payment_intent gracefully", async () => {
+      const dispute = {
+        id: "dp_no_pi_123",
+        payment_intent: null as any,
+        status: "lost",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.closed",
+        data: { object: dispute },
+      });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      // Should still return 200 (event acknowledged, but no action taken)
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toEqual({ received: true });
+
+      // No transaction should be called since there's no payment_intent
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it("should handle dispute.closed with no matching purchases gracefully", async () => {
+      const dispute = {
+        id: "dp_no_match",
+        payment_intent: "pi_no_match",
+        status: "lost",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.closed",
+        data: { object: dispute },
+      });
+
+      const { db } = await import("@/server/db");
+      (db.purchase.findMany as any).mockResolvedValue([]);
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+
+      // findMany was called but returned empty — no further action
+      expect(db.purchase.findMany).toHaveBeenCalledWith({
+        where: { stripePaymentId: "pi_no_match" },
+      });
+    });
+
+    it("should be idempotent — duplicate dispute.lost events don't double-revoke", async () => {
+      const dispute = {
+        id: "dp_dup_123",
+        payment_intent: "pi_dup_123",
+        status: "lost",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.closed",
+        data: { object: dispute },
+      });
+
+      const { db } = await import("@/server/db");
+      (db.purchase.findMany as any).mockResolvedValue([
+        { id: "purchase-dup-1", userId: "user-dup", creditsPurchased: 75 },
+      ]);
+
+      // Inside transaction: simulate that the purchase was ALREADY refunded
+      const txFindUnique = vi.fn().mockResolvedValue({ refundedAt: new Date("2026-01-01") });
+      const txUserUpdate = vi.fn();
+      const txPurchaseUpdate = vi.fn();
+
+      mockTransaction.mockImplementation(async (cb: any) => cb({
+        purchase: {
+          findUnique: txFindUnique,
+          update: txPurchaseUpdate,
+        },
+        user: {
+          update: txUserUpdate,
+        },
+      }));
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+
+      // Idempotency check: refundedAt is set, so skip revocation
+      expect(txFindUnique).toHaveBeenCalledWith({
+        where: { id: "purchase-dup-1" },
+        select: { refundedAt: true },
+      });
+
+      // No credit revocation or update since already refunded
+      expect(txUserUpdate).not.toHaveBeenCalled();
+      expect(txPurchaseUpdate).not.toHaveBeenCalled();
+    });
   });
 });

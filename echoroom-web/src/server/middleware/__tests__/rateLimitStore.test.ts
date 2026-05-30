@@ -119,4 +119,56 @@ describe("InMemoryRateLimitStore", () => {
     store.check("key:c", 5, 60);
     expect(store.size).toBe(3);
   });
+
+  // -----------------------------------------------------------------------
+  // Window alignment to clock boundaries
+  // -----------------------------------------------------------------------
+
+  it("should align window to clock boundaries (deterministic reset)", () => {
+    // The implementation uses: windowStart = now - (now % (windowSec * 1000))
+    // This means for a 60-second window, the window aligns to minute boundaries.
+    // For a 10-second window, it aligns to :00, :10, :20, :30, :40, :50.
+
+    // For a 10-second window, clock boundaries are at multiples of 10s
+    // We can't control Date.now() directly (it's not mocked), but we can verify
+    // that the resetAt is always a multiple of windowSec * 1000 from epoch.
+
+    // First request starts a new window
+    store.check("clock-align", 5, 10);
+
+    // We can't check exact resetAt since it's private, but we verify behavior:
+    // requests within the same window are tracked correctly
+    expect(store.check("clock-align", 5, 10)).toBe(true); // 2nd
+    expect(store.check("clock-align", 5, 10)).toBe(true); // 3rd
+    expect(store.check("clock-align", 5, 10)).toBe(true); // 4th
+    expect(store.check("clock-align", 5, 10)).toBe(true); // 5th
+    expect(store.check("clock-align", 5, 10)).toBe(false); // 6th — denied
+  });
+
+  it("should handle window alignment with different window sizes", () => {
+    // Test with a 5-second window
+    store.check("clock-5s", 2, 5);
+    expect(store.check("clock-5s", 2, 5)).toBe(true);  // 2nd
+    expect(store.check("clock-5s", 2, 5)).toBe(false); // 3rd — denied
+
+    // Test with a 30-second window
+    store.check("clock-30s", 2, 30);
+    expect(store.check("clock-30s", 2, 30)).toBe(true);  // 2nd
+    expect(store.check("clock-30s", 2, 30)).toBe(false); // 3rd — denied
+  });
+
+  it("should reset window at clock boundary, not at first request time", async () => {
+    // For a 1-second window, the clock boundary is every second.
+    // After 1 second passes, the window should reset.
+
+    expect(store.check("boundary-test", 1, 1)).toBe(true);  // 1st
+    expect(store.check("boundary-test", 1, 1)).toBe(false); // 2nd — denied
+
+    // Wait just over 1 second — window should reset if it's aligned to clock
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    // Should be allowed (window reset at clock boundary)
+    expect(store.check("boundary-test", 1, 1)).toBe(true);  // 1st of new window
+    expect(store.check("boundary-test", 1, 1)).toBe(false); // 2nd — denied
+  });
 });

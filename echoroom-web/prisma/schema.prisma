@@ -231,16 +231,19 @@ model Comment {
 }
 
 model Purchase {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
 
   userId           String
-  user             User     @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
 
-  stripePaymentId  String   @unique
+  stripePaymentId  String    @unique
 
   creditsPurchased Int
 
-  createdAt        DateTime @default(now())
+  refundedAt       DateTime?
+  disputedAt       DateTime?
+
+  createdAt        DateTime  @default(now())
 }
 
 model Clip {

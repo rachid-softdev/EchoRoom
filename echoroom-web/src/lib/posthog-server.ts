@@ -13,4 +13,30 @@ try {
   // Analytics silently disabled
 }
 
-export { posthog };
+/**
+ * Force-flush PostHog events.
+ * Appelé après chaque événement en environnement serverless.
+ */
+async function flushPosthog(): Promise<void> {
+  if (!posthog) return;
+  try {
+    await posthog.flush();
+  } catch {
+    // Analytics silently fail
+  }
+}
+
+/**
+ * Shutdown PostHog client (flush + release resources).
+ */
+async function shutdownPosthog(): Promise<void> {
+  if (!posthog) return;
+  try {
+    await posthog.shutdown();
+    posthog = null;
+  } catch {
+    // Analytics silently fail
+  }
+}
+
+export { posthog, flushPosthog, shutdownPosthog };

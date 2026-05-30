@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   const callSid = (formData.get('CallSid') as string) ?? ''
   const speechResult = (formData.get('SpeechResult') as string) ?? ''
 
-  // Resolve scenario and character from HMAC token (with legacy transition fallback)
+  // Résoudre scenario et character depuis le token HMAC
   let scenarioId = 'unknown'
   let characterId = 'unknown'
   const token = searchParams.get('token')
@@ -72,24 +72,11 @@ export async function POST(req: NextRequest) {
     const payload = verifyTwilioToken(token)
     if (payload) {
       scenarioId = payload.scenarioId
-      // Resolve characterId from the scenario
-      try {
-        const scenario = await db.scenario.findUnique({
-          where: { id: scenarioId },
-          include: { character: true },
-        })
-        if (scenario) {
-          characterId = scenario.characterId
-        }
-      } catch (error) {
-        log.error('Failed to resolve characterId from scenario in handle-input', { error })
-      }
+      characterId = payload.characterId  // Maintenant fourni directement dans le token
     } else {
       log.warn('Invalid or expired token in handle-input', { callSid })
     }
   }
-  // No else-branch: if no valid token, scenarioId/characterId remain 'unknown'.
-  // The downstream code handles 'unknown' gracefully.
 
   // Get conversation state from Redis
   const state = await getConversationState(callSid)
@@ -269,7 +256,7 @@ export async function POST(req: NextRequest) {
 
   // Use the DB call ID from conversation state (supports new + legacy formats)
   const resolvedCallId = getCallId(state);
-  const handleInputToken = createTwilioToken(resolvedCallId, scenarioId || 'unknown')
+  const handleInputToken = createTwilioToken(resolvedCallId, scenarioId || 'unknown', characterId)
   const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`
 
   const twiml = new VoiceResponse()

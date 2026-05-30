@@ -27,6 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    // suppressHydrationWarning est nécessaire car le thème dark est défini
+    // statiquement dans le HTML (<html className="dark">). Next.js
+    // n'a pas encore hydraté le ThemeProvider au moment du rendu initial.
+    // Ceci est intentionnel et ne masque pas de vrais problèmes d'hydratation.
     <html lang="fr" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <TRPCReactProvider>

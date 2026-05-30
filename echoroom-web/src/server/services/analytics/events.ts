@@ -1,4 +1,4 @@
-import { posthog } from "@/lib/posthog-server";
+import { posthog, flushPosthog } from "@/lib/posthog-server";
 
 interface TrackEventParams {
   event: string;
@@ -6,7 +6,7 @@ interface TrackEventParams {
   properties?: Record<string, string | number | boolean | null>;
 }
 
-export function trackEvent({ event, userId, properties }: TrackEventParams) {
+export async function trackEvent({ event, userId, properties }: TrackEventParams) {
   if (!posthog) return;
 
   try {
@@ -15,12 +15,13 @@ export function trackEvent({ event, userId, properties }: TrackEventParams) {
       event,
       properties: properties ?? {},
     });
+    await flushPosthog();
   } catch {
     // Analytics silently fail
   }
 }
 
-export function identifyUser(userId: string, traits?: Record<string, string | number | boolean>) {
+export async function identifyUser(userId: string, traits?: Record<string, string | number | boolean>) {
   if (!posthog) return;
 
   try {
@@ -28,6 +29,7 @@ export function identifyUser(userId: string, traits?: Record<string, string | nu
       distinctId: userId,
       properties: traits ?? {},
     });
+    await flushPosthog();
   } catch {
     // Analytics silently fail
   }

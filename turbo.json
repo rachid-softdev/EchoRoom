@@ -22,7 +22,7 @@
       "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "cache": true,
       "outputs": ["coverage/**"]
     },

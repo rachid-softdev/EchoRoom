@@ -5,11 +5,12 @@ import { env } from "@/lib/env";
 // and each <Gather> creates a fresh token for the next action URL.
 // Each turn typically lasts 5-30 seconds.
 // Reducing this limits exposure of leaked tokens in Twilio console logs.
-const DEFAULT_TTL_MS = 60 * 60 * 1000; // 1 hour
+const DEFAULT_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 interface TwilioTokenPayload {
   callId: string;
   scenarioId: string;
+  characterId: string;
   iat: number;
 }
 
@@ -25,8 +26,9 @@ interface TwilioTokenPayload {
 export function createTwilioToken(
   callId: string,
   scenarioId: string,
+  characterId: string,
 ): string {
-  const payload: TwilioTokenPayload = { callId, scenarioId, iat: Date.now() };
+  const payload: TwilioTokenPayload = { callId, scenarioId, characterId, iat: Date.now() };
   const payloadStr = JSON.stringify(payload);
   const payloadB64 = Buffer.from(payloadStr).toString("base64url");
 

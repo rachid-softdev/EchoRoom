@@ -31,8 +31,8 @@ export async function checkWebhookRateLimit(
 ): Promise<boolean> {
   const config = WEBHOOK_RATE_LIMITS[endpointKey];
   if (!config) {
-    log.warn("Unknown webhook endpoint key", { endpointKey });
-    return true; // Unknown endpoints: allow (degraded)
+    log.warn("Unknown webhook endpoint key, denying", { endpointKey });
+    return false; // Unknown endpoints: deny (sécurité maximale)
   }
 
   const now = Date.now();

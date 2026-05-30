@@ -14,7 +14,7 @@
         "noNonNullAssertion": "error"
       },
       "correctness": {
-        "noUnusedImports": "warn"
+        "noUnusedImports": "error"
       },
       "suspicious": {
         "noShadowRestrictedNames": "off",

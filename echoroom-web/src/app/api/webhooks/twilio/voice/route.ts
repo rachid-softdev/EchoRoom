@@ -228,7 +228,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const handleInputToken = createTwilioToken(callId ?? 'unknown', scenarioId || 'unknown')
+  const handleInputToken = createTwilioToken(callId ?? 'unknown', scenarioId || 'unknown', characterId || 'unknown')
   const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`
 
   twiml.gather({

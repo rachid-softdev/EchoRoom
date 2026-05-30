@@ -199,6 +199,75 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    case "charge.dispute.closed": {
+      const dispute = event.data.object as Stripe.Dispute;
+      const disputePaymentIntent = dispute.payment_intent as string;
+
+      if (!disputePaymentIntent) {
+        log.warn("Dispute closed without payment_intent", { disputeId: dispute.id });
+        break;
+      }
+
+      const closedPurchases = await db.purchase.findMany({
+        where: { stripePaymentId: disputePaymentIntent },
+      });
+
+      if (closedPurchases.length === 0) {
+        log.warn("No purchase found for closed dispute", { disputePaymentIntent });
+        break;
+      }
+
+      for (const purchase of closedPurchases) {
+        if (dispute.status === "lost" || dispute.status === "warning_closed") {
+          // Dispute perdu contre le marchand — révoquer les crédits
+          // Peut passer en négatif si déjà dépensés (même pattern que charge.refunded)
+          await db.$transaction(async (tx) => {
+            // Vérifier l'idempotence : ignorer si déjà refunded
+            const current = await tx.purchase.findUnique({
+              where: { id: purchase.id },
+              select: { refundedAt: true },
+            });
+
+            if (current?.refundedAt) {
+              log.info("Already refunded, skipping dispute loss revocation", {
+                purchaseId: purchase.id,
+              });
+              return;
+            }
+
+            await tx.user.update({
+              where: { id: purchase.userId },
+              data: { credits: { decrement: purchase.creditsPurchased } },
+            });
+
+            await tx.purchase.update({
+              where: { id: purchase.id },
+              data: { refundedAt: new Date() },
+            });
+          });
+
+          log.error("Credits revoked after dispute lost", {
+            userId: purchase.userId,
+            credits: purchase.creditsPurchased,
+            disputeId: dispute.id,
+          });
+        } else if (dispute.status === "won") {
+          // Dispute gagné — effacer le flag disputedAt
+          await db.purchase.update({
+            where: { id: purchase.id },
+            data: { disputedAt: null },
+          });
+
+          log.info("Dispute won, cleared disputedAt flag", {
+            userId: purchase.userId,
+            purchaseId: purchase.id,
+            disputeId: dispute.id,
+          });
+        }
+      }
+      break;
+    }
+
     default: {
       log.info("Unhandled Stripe event type", { eventType: event.type });
     }

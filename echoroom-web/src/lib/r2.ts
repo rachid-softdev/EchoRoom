@@ -39,8 +39,8 @@ export function getR2Key(storedUrl: string | null | undefined): string | null {
       const key = url.pathname.replace(/^\//, '');
       return key.length > 0 ? key : null;
     } catch {
-      // Malformed URL — pass through as-is (caller handles the error)
-      return trimmed;
+      // URL malformée — impossible d'extraire une clé R2
+      return null;
     }
   }
 

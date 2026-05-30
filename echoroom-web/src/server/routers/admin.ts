@@ -1,16 +1,19 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
-import { createHash } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { anonymizePersonalData } from "@/server/services/user/anonymization";
+import { env } from "@/lib/env";
 import { router, adminProcedure } from "../trpc";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
 
 function hashPhoneForAudit(phone: string): string {
-  const hash = createHash("sha256").update(phone).digest("hex");
-  return `blocked-${hash.substring(0, 8)}`;
+  // HMAC avec AUDIT_HASH_SECRET comme sel pour empêcher les rainbow tables
+  const hash = createHmac("sha256", env.AUDIT_HASH_SECRET)
+    .update(phone)
+    .digest("hex");
+  return `blocked-${hash.substring(0, 16)}`;
 }
 
 export const adminRouter = router({
@@ -384,7 +387,7 @@ export const adminRouter = router({
   deleteUser: adminProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const anonId = crypto.randomUUID();
+      const anonId = randomUUID();
       // Generate a valid bcrypt hash of a random UUID as the sentinel password.
       const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
 

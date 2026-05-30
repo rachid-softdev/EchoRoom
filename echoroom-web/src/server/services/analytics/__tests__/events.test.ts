@@ -9,8 +9,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 //   - identifyUser handles null posthog gracefully (no crash)
 //   - Events are properly captured with correct structure (object-style API)
 
+const mockFlushPosthog = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("@/lib/posthog-server", () => ({
   posthog: null as { capture: ReturnType<typeof vi.fn>; identify: ReturnType<typeof vi.fn> } | null,
+  flushPosthog: mockFlushPosthog,
 }));
 
 vi.mock("@/server/lib/logger", () => ({
@@ -166,5 +169,69 @@ describe("L-6: events with PostHog active", () => {
         userId: "user-1",
       });
     }).not.toThrow();
+  });
+
+  // -----------------------------------------------------------------------
+  // Flush behavior tests
+  // -----------------------------------------------------------------------
+
+  it("should call flushPosthog after trackEvent capture", async () => {
+    const mockPosthog = createMockPosthog();
+    const flushFn = vi.fn().mockResolvedValue(undefined);
+
+    vi.doMock("@/lib/posthog-server", () => ({
+      posthog: mockPosthog,
+      flushPosthog: flushFn,
+    }));
+
+    const { trackEvent } = await import("../events");
+
+    await trackEvent({
+      event: "test_flush",
+      userId: "user-1",
+      properties: { key: "value" },
+    });
+
+    expect(mockPosthog.capture).toHaveBeenCalledTimes(1);
+    expect(flushFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call flushPosthog after identifyUser", async () => {
+    const mockPosthog = createMockPosthog();
+    const flushFn = vi.fn().mockResolvedValue(undefined);
+
+    vi.doMock("@/lib/posthog-server", () => ({
+      posthog: mockPosthog,
+      flushPosthog: flushFn,
+    }));
+
+    const { identifyUser } = await import("../events");
+
+    await identifyUser("user-456", { role: "ADMIN" });
+
+    expect(mockPosthog.identify).toHaveBeenCalledTimes(1);
+    expect(flushFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("should not crash when flushPosthog throws", async () => {
+    const mockPosthog = createMockPosthog();
+    const flushFn = vi.fn().mockRejectedValue(new Error("Flush failed"));
+
+    vi.doMock("@/lib/posthog-server", () => ({
+      posthog: mockPosthog,
+      flushPosthog: flushFn,
+    }));
+
+    const { trackEvent } = await import("../events");
+
+    await expect(
+      trackEvent({
+        event: "flush_error",
+        userId: "user-1",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(mockPosthog.capture).toHaveBeenCalledTimes(1);
+    expect(flushFn).toHaveBeenCalledTimes(1);
   });
 });

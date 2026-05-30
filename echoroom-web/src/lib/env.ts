@@ -27,6 +27,7 @@ const envSchema = z.object({
   TRUSTED_ORIGINS: z.string().optional(),
   PHONE_ENCRYPTION_KEY: z.string().min(32),
   TWILIO_TOKEN_SECRET: z.string().min(16),
+  AUDIT_HASH_SECRET: z.string().min(16),
 });
 
 type EnvType = z.infer<typeof envSchema>;
@@ -51,6 +52,7 @@ const DEV_DEFAULTS: Record<string, string> = {
   POSTHOG_HOST: "https://us.i.posthog.com",
   PHONE_ENCRYPTION_KEY: "dev_phone_key_32_chars_minimum_here___",
   TWILIO_TOKEN_SECRET: "dev_twilio_token_secret_16_chars",
+  AUDIT_HASH_SECRET: "audit_hash_dev_secret_16ch!",
 };
 
 function loadEnv(): EnvType {
@@ -69,6 +71,7 @@ function loadEnv(): EnvType {
       { key: "DEEPGRAM_API_KEY", label: "DEEPGRAM_API_KEY (Deepgram)" },
       { key: "PHONE_ENCRYPTION_KEY", label: "PHONE_ENCRYPTION_KEY (encryption)" },
       { key: "TWILIO_TOKEN_SECRET", label: "TWILIO_TOKEN_SECRET (Twilio tokens)" },
+      { key: "AUDIT_HASH_SECRET", label: "AUDIT_HASH_SECRET (audit hashing)" },
     ];
     for (const { key, label } of criticalKeys) {
       const value = process.env[key] ?? "";
