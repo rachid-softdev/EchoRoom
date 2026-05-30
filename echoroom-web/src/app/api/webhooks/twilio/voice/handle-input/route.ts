@@ -9,6 +9,8 @@ import {
   appendMessage,
   incrementTurn,
   setConversationStatus,
+  getSystemPromptFromState,
+  getCallId,
 } from '@/server/services/telephony/conversationState'
 import { detectGoodbye } from '@/server/services/telephony/goodbyeDetector'
 import {
@@ -20,6 +22,7 @@ import { createLogger } from '@/server/lib/logger'
 import { validateTwilioRequest, extractParams } from '../../validate'
 import { checkContent } from '@/server/services/ai/moderation'
 import { verifyTwilioToken, createTwilioToken } from '@/server/lib/twilioToken'
+import { checkWebhookRateLimit } from '../../../rateLimit'
 
 const log = createLogger('handle-input')
 
@@ -35,6 +38,17 @@ export async function POST(req: NextRequest) {
   const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
   if (contentLength > 50_000) {
     return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+
+  if (!(await checkWebhookRateLimit("twilio:voice:input", ip))) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
   }
 
   const { searchParams } = new URL(req.url)
@@ -73,14 +87,9 @@ export async function POST(req: NextRequest) {
     } else {
       log.warn('Invalid or expired token in handle-input', { callSid })
     }
-  } else {
-    // TRANSITION FALLBACK: for calls initiated BEFORE this deploy
-    // The old actionUrl contains scenarioId/characterId as query params.
-    // Remove this fallback after MAX_CALL_DURATION (~60 min) post-deploy.
-    scenarioId = searchParams.get('scenarioId') ?? 'unknown';
-    characterId = searchParams.get('characterId') ?? 'unknown';
-    log.warn('DEPRECATED: handle-input called without token — using legacy query params', { callSid, scenarioId });
   }
+  // No else-branch: if no valid token, scenarioId/characterId remain 'unknown'.
+  // The downstream code handles 'unknown' gracefully.
 
   // Get conversation state from Redis
   const state = await getConversationState(callSid)
@@ -100,12 +109,22 @@ export async function POST(req: NextRequest) {
 
   // Consistency check: verify token/query-param scenarioId matches Redis state
   if (state.scenarioId && scenarioId !== 'unknown' && state.scenarioId !== scenarioId) {
-    log.warn('ScenarioId mismatch between token/params and Redis state — using Redis state as source of truth', {
+    log.error('CRITICAL: ScenarioId mismatch between token and Redis state — possible tampering', {
       callSid,
       tokenScenarioId: scenarioId,
       redisScenarioId: state.scenarioId,
-    })
-    scenarioId = state.scenarioId
+    });
+
+    // Reject the request — inconsistent state suggests tampering or a bug
+    const twiml = new VoiceResponse();
+    twiml.say(
+      { voice: 'alice', language: 'fr-FR' },
+      'Erreur de conversation. Veuillez rappeler.',
+    );
+    twiml.hangup();
+    return new NextResponse(twiml.toString(), {
+      headers: { 'Content-Type': 'text/xml' },
+    });
   }
 
   // Check if call exceeded limits
@@ -145,13 +164,10 @@ export async function POST(req: NextRequest) {
     // Generate a farewell response
     let farewell = 'Merci pour cette conversation. Au revoir!'
     try {
-      const systemMessage = state.messages.find(
-        (m) => m.role === 'system',
-      )
+      // Use system prompt via helper (supports new + legacy formats)
+      const systemPrompt = await getSystemPromptFromState(state)
       const result = await generateResponse({
-        systemPrompt:
-          systemMessage?.content ??
-          'Tu es un assistant amical.',
+        systemPrompt,
         messages: [
           ...state.messages.filter((m) => m.role !== 'system'),
           { role: 'user', content: moderatedSpeech },
@@ -207,13 +223,10 @@ export async function POST(req: NextRequest) {
   // Run conversation engine with full history
   let aiResponse = 'Je n\'ai rien à dire...'
   try {
-    const systemMessage = state.messages.find(
-      (m) => m.role === 'system',
-    )
+    // Use system prompt via helper (supports new + legacy formats)
+    const systemPrompt = await getSystemPromptFromState(state)
     const result = await generateResponse({
-      systemPrompt:
-        systemMessage?.content ??
-        'Tu es un assistant amical.',
+      systemPrompt,
       messages: [
         ...state.messages.filter((m) => m.role !== 'system'),
         { role: 'user', content: moderatedSpeech },
@@ -254,7 +267,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const handleInputToken = createTwilioToken(callSid, scenarioId || 'unknown')
+  // Use the DB call ID from conversation state (supports new + legacy formats)
+  const resolvedCallId = getCallId(state);
+  const handleInputToken = createTwilioToken(resolvedCallId, scenarioId || 'unknown')
   const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`
 
   const twiml = new VoiceResponse()

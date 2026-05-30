@@ -1,7 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/env";
 
-const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// 1 hour is sufficient — max call duration is 10 minutes (CALL_TIMEOUT_MS)
+// and each <Gather> creates a fresh token for the next action URL.
+// Each turn typically lasts 5-30 seconds.
+// Reducing this limits exposure of leaked tokens in Twilio console logs.
+const DEFAULT_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 interface TwilioTokenPayload {
   callId: string;

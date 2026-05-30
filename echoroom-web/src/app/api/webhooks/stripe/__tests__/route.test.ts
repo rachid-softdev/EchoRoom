@@ -114,6 +114,7 @@ describe("Stripe webhook POST handler", () => {
   it("should process new checkout.session.completed event and add credits", async () => {
     const session = {
       id: "cs_test_new",
+      payment_intent: "pi_test_new",
       metadata: {
         userId: "user-123",
         credits: "50",
@@ -126,7 +127,7 @@ describe("Stripe webhook POST handler", () => {
     });
 
     // Mock successful transaction
-    mockTxCreate.mockResolvedValue({ id: "purchase-new", stripePaymentId: "cs_test_new" });
+    mockTxCreate.mockResolvedValue({ id: "purchase-new", stripePaymentId: "pi_test_new" });
     mockTxUpdate.mockResolvedValue({ id: "user-123", credits: 150 });
     const mockTx = {
       purchase: { create: mockTxCreate },
@@ -151,7 +152,7 @@ describe("Stripe webhook POST handler", () => {
     expect(mockTxCreate).toHaveBeenCalledWith({
       data: {
         userId: "user-123",
-        stripePaymentId: "cs_test_new",
+        stripePaymentId: "pi_test_new",
         creditsPurchased: 50,
       },
     });
@@ -166,6 +167,7 @@ describe("Stripe webhook POST handler", () => {
   it("should add correct credits amount from metadata", async () => {
     const session = {
       id: "cs_test_credits",
+      payment_intent: "pi_test_credits",
       metadata: {
         userId: "user-123",
         credits: "100",
@@ -200,7 +202,7 @@ describe("Stripe webhook POST handler", () => {
     expect(mockTxCreate).toHaveBeenCalledWith({
       data: {
         userId: "user-123",
-        stripePaymentId: "cs_test_credits",
+        stripePaymentId: "pi_test_credits",
         creditsPurchased: 100,
       },
     });
@@ -209,6 +211,7 @@ describe("Stripe webhook POST handler", () => {
   it("should skip duplicate checkout.session.completed events (idempotency via P2002)", async () => {
     const session = {
       id: "cs_test_dup",
+      payment_intent: "pi_test_dup",
       metadata: {
         userId: "user-123",
         credits: "50",
@@ -250,6 +253,7 @@ describe("Stripe webhook POST handler", () => {
   it("should return 400 when metadata.userId is missing", async () => {
     const session = {
       id: "cs_test_no_user",
+      payment_intent: "pi_test_no_user",
       metadata: {
         credits: "50",
       },
@@ -276,6 +280,7 @@ describe("Stripe webhook POST handler", () => {
   it("should return 400 when metadata.credits is missing", async () => {
     const session = {
       id: "cs_test_no_credits",
+      payment_intent: "pi_test_no_credits",
       metadata: {
         userId: "user-123",
       },
@@ -302,6 +307,7 @@ describe("Stripe webhook POST handler", () => {
   it("should return 400 when credits value is not a valid number", async () => {
     const session = {
       id: "cs_test_bad_credits",
+      payment_intent: "pi_test_bad_credits",
       metadata: {
         userId: "user-123",
         credits: "not-a-number",
@@ -335,6 +341,7 @@ describe("Stripe webhook POST handler", () => {
       data: {
         object: {
           id: "cs_test_zero",
+          payment_intent: "pi_test_zero",
           metadata: { userId: "user-123", credits: "0" },
         },
       },
@@ -353,6 +360,7 @@ describe("Stripe webhook POST handler", () => {
       data: {
         object: {
           id: "cs_test_neg",
+          payment_intent: "pi_test_neg",
           metadata: { userId: "user-123", credits: "-50" },
         },
       },
@@ -427,6 +435,7 @@ describe("Stripe webhook POST handler", () => {
   it("should handle missing metadata fields in checkout.session.completed", async () => {
     const session = {
       id: "cs_test_no_meta",
+      payment_intent: "pi_test_no_meta",
       metadata: {},
     };
 

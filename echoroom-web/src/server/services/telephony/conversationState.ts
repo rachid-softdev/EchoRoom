@@ -12,10 +12,12 @@ export interface ConversationMessage {
 
 export interface ConversationState {
   callSid: string
+  callId: string       // DB UUID of the Call record
   scenarioId: string
   characterId: string
   callerNumber: string
-  messages: ConversationMessage[]
+  messages: ConversationMessage[]  // NEVER contains role: 'system'
+  systemPrompt?: string            // Stored separately for prompt injection defense
   turnCount: number
   lastActiveAt: string
   status: 'active' | 'completed' | 'timed_out' | 'failed'
@@ -170,4 +172,60 @@ export async function getCallerNumber(callSid: string): Promise<string | null> {
     // Legacy plaintext or not yet encrypted — return as-is
     return state.callerNumber;
   }
+}
+
+/**
+ * Returns the DB call ID from the conversation state.
+ * Falls back to callSid for conversations initiated before callId was added.
+ */
+export function getCallId(state: ConversationState): string {
+  return state.callId || state.callSid;
+}
+
+/**
+ * Retrieve the system prompt from conversation state.
+ * For NEW conversations, reads from the dedicated systemPrompt field.
+ * For LEGACY conversations (before this deploy), reads from messages array.
+ * If neither has a system prompt, falls back to querying the database.
+ *
+ * @returns The system prompt string, or a safe default if not found.
+ */
+export async function getSystemPromptFromState(
+  state: ConversationState,
+): Promise<string> {
+  // New format: dedicated systemPrompt field
+  if (state.systemPrompt) return state.systemPrompt;
+
+  // Legacy format: system message in messages array
+  const systemMessage = state.messages.find((m) => m.role === 'system');
+  if (systemMessage) return systemMessage.content;
+
+  // Fallback: try to load from database using scenarioId
+  if (state.scenarioId && state.scenarioId !== 'unknown') {
+    try {
+      const { db } = await import('@/server/db');
+      const scenario = await db.scenario.findUnique({
+        where: { id: state.scenarioId },
+        include: { character: true },
+      });
+      if (scenario) {
+        return [
+          `Tu es ${scenario.character.name}. ${scenario.character.description || ''}`,
+          scenario.character.promptSystem,
+          scenario.aiInstructions,
+          `Contexte du scénario: ${scenario.description || ''}`,
+          'Réponds en français de manière naturelle et parlée, comme dans une conversation téléphonique.',
+          'Garde tes réponses concises (2-3 phrases max) adaptées à un appel vocal.',
+        ]
+          .filter(Boolean)
+          .join('\n');
+      }
+    } catch (error) {
+      const log = (await import('@/server/lib/logger')).createLogger('getSystemPrompt');
+      log.error('Failed to load scenario for system prompt', { error });
+    }
+  }
+
+  // Ultimate fallback
+  return 'Tu es un assistant IA amical. Réponds en français de manière naturelle.';
 }

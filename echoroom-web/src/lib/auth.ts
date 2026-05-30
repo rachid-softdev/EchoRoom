@@ -9,11 +9,11 @@ import { db } from "@/server/db";
  * Prevents account enumeration by ensuring the same code path
  * is executed whether the user exists or not.
  *
- * Module-level constant to avoid re-hashing on every cold start.
- * bcrypt.hashSync blocks ~250ms at import time, but this is acceptable
- * because the module is cached by Node.js after the first import.
+ * Pre-computed hash constant to avoid blocking the event loop
+ * on import (~250ms bcrypt.hashSync call per cold start).
+ * Generated with: bcrypt.hashSync("dummy-timing-attack-prevention", 12)
  */
-const DUMMY_HASH = bcrypt.hashSync("dummy-timing-attack-prevention", 12);
+const DUMMY_HASH = "$2a$12$Cu8vgg8BQxK03D9Sf95z.O5wQsmxCzuzVT6wfuRxXRsGcOXCLF1Mq";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -87,10 +87,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Re-validate against DB periodically or on explicit update
       // This avoids a DB query on EVERY request while still detecting
       // role changes, account deletion, and token invalidation.
+      // - Admins/moderators: every 1 minute (fast role change detection)
+      // - Regular users: every 15 minutes (reduce DB load)
+      const userRole = token.role as string;
+      const revalidationInterval = userRole === "ADMIN" || userRole === "MODERATOR"
+        ? 60 * 1000       // 1 minute for staff
+        : 15 * 60 * 1000; // 15 minutes for regular users
+
       const needsRevalidation =
         trigger === "update" ||
         !token.lastVerified ||
-        Date.now() - (token.lastVerified as number) > 5 * 60 * 1000;
+        Date.now() - (token.lastVerified as number) > revalidationInterval;
 
       if (needsRevalidation && token.id) {
         const dbUser = await db.user.findUnique({

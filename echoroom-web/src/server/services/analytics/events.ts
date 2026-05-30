@@ -1,4 +1,4 @@
-import { posthog } from "@/lib/posthog";
+import { posthog } from "@/lib/posthog-server";
 
 interface TrackEventParams {
   event: string;
@@ -10,17 +10,11 @@ export function trackEvent({ event, userId, properties }: TrackEventParams) {
   if (!posthog) return;
 
   try {
-    if (userId) {
-      posthog.capture(event, {
-        distinct_id: userId,
-        ...properties,
-      });
-    } else {
-      posthog.capture(event, {
-        distinct_id: "anonymous",
-        ...properties,
-      });
-    }
+    posthog.capture({
+      distinctId: userId ?? "anonymous",
+      event,
+      properties: properties ?? {},
+    });
   } catch {
     // Analytics silently fail
   }
@@ -30,7 +24,10 @@ export function identifyUser(userId: string, traits?: Record<string, string | nu
   if (!posthog) return;
 
   try {
-    posthog.identify(userId, traits as Record<string, unknown>);
+    posthog.identify({
+      distinctId: userId,
+      properties: traits ?? {},
+    });
   } catch {
     // Analytics silently fail
   }

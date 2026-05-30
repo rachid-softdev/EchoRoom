@@ -68,6 +68,14 @@ vi.mock("../validate", () => ({
   }),
 }));
 
+// Mock the twilio SDK — the route uses twilioClient.request() instead of raw fetch
+const mockTwilioRequest = vi.hoisted(() => vi.fn());
+vi.mock("twilio", () => ({
+  default: vi.fn(() => ({
+    request: mockTwilioRequest,
+  })),
+}));
+
 // Fetch is globally available in Node 18+ / jsdom
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -783,15 +791,11 @@ describe("Twilio webhook POST handler", () => {
     const response = await POST(req);
     expect(response.status).toBe(200);
 
-    // Should have called fetch with the valid Twilio URL
-    expect(mockFetch).toHaveBeenCalledWith(
-      validUrl,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: expect.stringContaining("Basic"),
-        }),
-      }),
-    );
+    // Should have called twilioClient.request with the valid Twilio URL
+    expect(mockTwilioRequest).toHaveBeenCalledWith({
+      method: "get",
+      uri: validUrl,
+    });
   });
 
   it("should reject non-Twilio recording URLs (SSRF protection)", async () => {
@@ -931,7 +935,7 @@ describe("Twilio webhook POST handler", () => {
     // Valid URL but fetch fails
     const validUrl =
       "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
-    mockFetch.mockRejectedValue(new Error("Network error"));
+    mockTwilioRequest.mockRejectedValue(new Error("Network error"));
 
     const mockTx = {
       call: {
@@ -964,10 +968,10 @@ describe("Twilio webhook POST handler", () => {
     const response = await POST(req);
     expect(response.status).toBe(200);
 
-    // Fetch was attempted (URL was valid)
-    expect(mockFetch).toHaveBeenCalledWith(
-      validUrl,
-      expect.any(Object),
-    );
+    // twilioClient.request was attempted (URL was valid)
+    expect(mockTwilioRequest).toHaveBeenCalledWith({
+      method: "get",
+      uri: validUrl,
+    });
   });
 });
