@@ -237,6 +237,41 @@ export const adminRouter = router({
       return { success: true };
     }),
 
+  approveComment: adminProcedure
+    .input(z.object({ commentId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const comment = await db.comment.findUnique({
+        where: { id: input.commentId },
+      });
+
+      if (!comment) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Commentaire introuvable",
+        });
+      }
+
+      await db.comment.update({
+        where: { id: input.commentId },
+        data: {
+          moderationStatus: "APPROVED",
+          moderatedById: ctx.session.user.id,
+          moderatedAt: new Date(),
+        },
+      });
+
+      await db.auditLog.create({
+        data: {
+          action: "APPROVE_COMMENT",
+          entityType: "Comment",
+          entityId: input.commentId,
+          adminId: ctx.session.user.id,
+        },
+      });
+
+      return { success: true };
+    }),
+
   getAbuseReports: adminProcedure
     .input(
       z.object({

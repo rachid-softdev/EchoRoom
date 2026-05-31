@@ -20,27 +20,34 @@ export async function synthesizeSpeech(
     return null;
   }
 
-  const response = await ttsClient.textToSpeech.convert(voiceId, {
-    text,
-    model_id: "eleven_flash_v2_5",
-    output_format: "ulaw_8000",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  // Convert the stream to ArrayBuffer
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of response) {
-    chunks.push(chunk);
+  try {
+    const response = await ttsClient.textToSpeech.convert(voiceId, {
+      text,
+      model_id: "eleven_flash_v2_5",
+      output_format: "ulaw_8000",
+    }, { signal: controller.signal });
+
+    // Convert the stream to ArrayBuffer
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response) {
+      chunks.push(chunk);
+    }
+
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    return result.buffer;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return result.buffer;
 }
 
 export { ttsClient };

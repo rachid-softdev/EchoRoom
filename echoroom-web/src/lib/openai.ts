@@ -9,7 +9,11 @@ let client: OpenAI | null = null;
 export function getOpenAIClient(): OpenAI | null {
   if (client) return client;
   try {
-    client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    client = new OpenAI({
+      apiKey: env.OPENAI_API_KEY,
+      timeout: 30000,
+      maxRetries: 2,
+    });
   } catch {
     log.warn("OpenAI client initialization failed — AI features disabled");
   }

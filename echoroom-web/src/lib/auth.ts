@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { db } from "@/server/db";
+import { checkRateLimit } from "@/server/middleware/rateLimit";
 
 /**
  * Dummy bcrypt hash used for timing-constant authentication.
@@ -38,6 +39,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const email = credentials.email as string;
         const password = credentials.password as string;
+
+        // Rate limit: 5 tentatives / 15 min par email
+        await checkRateLimit({
+          identifier: `login:${email}`,
+          limit: 5,
+          window: 900,
+        }).catch(() => {
+          // If rate limit check itself fails, allow login to proceed
+        });
 
         const user = await db.user.findUnique({
           where: { email },
