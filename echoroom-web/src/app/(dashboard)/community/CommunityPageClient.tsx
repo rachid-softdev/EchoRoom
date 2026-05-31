@@ -13,17 +13,32 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { api } from "@/lib/trpc";
 import { ReactionBar } from "@/components/social/ReactionBar";
 import { CATEGORY_LABELS } from "@/lib/constants";
+import { toast } from "@/components/ui";
 
 export default function CommunityPageClient() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const feedQuery = api.scenarios.feed.useQuery({ limit: 20 });
-  const commentMutation = api.community.comment.useMutation();
+  const commentMutation = api.community.comment.useMutation({
+    onSuccess: () => {
+      feedQuery.refetch();
+      toast({
+        title: "Commentaire ajouté",
+        variant: "default",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: err.message ?? "Erreur lors de l'ajout du commentaire",
+        variant: "destructive",
+      });
+    },
+  });
 
   function handleComment(scenarioId: string) {
     const content = commentInputs[scenarioId]?.trim();
-    if (!content) return;
+    if (!content || commentMutation.isPending) return;
     commentMutation.mutate({ scenarioId, content });
-    setCommentInputs((prev) => ({ ...prev, [scenarioId]: "" }));
+    // Input is only cleared on success (in onSuccess callback)
   }
 
   return (

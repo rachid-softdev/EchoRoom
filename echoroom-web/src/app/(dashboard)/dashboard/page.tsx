@@ -51,15 +51,13 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
-  // TODO: Optimize — batch into single tRPC query
-  const creditsQuery = api.billing.getCredits.useQuery();
-  const callsQuery = api.calls.history.useQuery({ limit: 5 });
-  const todayCountQuery = api.calls.todayCount.useQuery();
-  const scenariosQuery = api.scenarios.myScenarios.useQuery({ limit: 3 });
+  // Single batch query replaces 4 separate tRPC calls
+  const dashboardQuery = api.dashboard.getData.useQuery({ callsLimit: 5, scenariosLimit: 3 });
 
-  const credits = creditsQuery.data?.credits ?? 0;
-  const calls = callsQuery.data?.items ?? [];
-  const scenarios = scenariosQuery.data?.items ?? [];
+  const credits = dashboardQuery.data?.credits ?? 0;
+  const calls = dashboardQuery.data?.calls ?? [];
+  const todayCount = dashboardQuery.data?.todayCount ?? 0;
+  const scenarios = dashboardQuery.data?.scenarios ?? [];
 
   return (
     <DashboardShell title="Dashboard">
@@ -87,7 +85,7 @@ export default function DashboardPage() {
             <Phone className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{todayCountQuery.data?.count ?? 0}</p>
+            <p className="text-3xl font-bold">{todayCount}</p>
           </CardContent>
         </Card>
         <Card>

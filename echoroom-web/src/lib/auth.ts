@@ -19,7 +19,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 24 * 60 * 60, // 24 hours (reduced from 30 days)
   },
   pages: {
     signIn: "/login",
@@ -65,11 +65,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, trigger }) {
-      // On initial sign-in
+      // On initial sign-in: set issuedAt + fetch tokenVersion from DB
       if (user) {
         token.id = user.id as string;
         token.role = (user.role ?? "USER") as "USER" | "ADMIN" | "MODERATOR";
         token.username = (user.username ?? "") as string;
+        token.issuedAt = Date.now();
 
         // Immediately fetch the real tokenVersion from DB.
         // This ensures the JWT matches the DB value and prevents
@@ -82,10 +83,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.tokenVersion = dbUser?.tokenVersion ?? 0;
         }
         token.lastVerified = Date.now();
+        return token;
       }
 
-      // Re-validate against DB periodically or on explicit update
-      // This avoids a DB query on EVERY request while still detecting
+      // ── Soft refresh: issue a new token if close to expiry ──
+      // If the token is within 1 hour of its 24h maxAge, re-issue with
+      // a fresh issuedAt to extend the session without forcing re-login.
+      // Re-verify against DB to ensure the account is still valid.
+      const issuedAt = token.issuedAt as number | undefined;
+      const now = Date.now();
+      const tokenAge = issuedAt ? now - issuedAt : 0;
+      const maxAgeMs = 24 * 60 * 60 * 1000;
+      const refreshWindowMs = 1 * 60 * 60 * 1000; // 1 hour before expiry
+
+      if (issuedAt && tokenAge > maxAgeMs - refreshWindowMs && tokenAge < maxAgeMs) {
+        // Verify account is still valid before extending
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, deletedAt: true, tokenVersion: true },
+        });
+
+        if (!dbUser || dbUser.deletedAt) return null;
+        if (dbUser.tokenVersion !== (token.tokenVersion ?? 0)) return null;
+
+        // Issue refreshed token
+        token.role = dbUser.role;
+        token.issuedAt = now;
+        token.lastVerified = now;
+        return token;
+      }
+
+      // ── Periodic re-validation ──
+      // Avoids a DB query on EVERY request while still detecting
       // role changes, account deletion, and token invalidation.
       // - Admins/moderators: every 1 minute (fast role change detection)
       // - Regular users: every 15 minutes (reduce DB load)
@@ -97,7 +126,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const needsRevalidation =
         trigger === "update" ||
         !token.lastVerified ||
-        Date.now() - (token.lastVerified as number) > revalidationInterval;
+        now - (token.lastVerified as number) > revalidationInterval;
 
       if (needsRevalidation && token.id) {
         const dbUser = await db.user.findUnique({
@@ -117,7 +146,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Update role from DB (in case of admin demotion/promotion)
         token.role = dbUser.role;
-        token.lastVerified = Date.now();
+        token.lastVerified = now;
       }
 
       return token;

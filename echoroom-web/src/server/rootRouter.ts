@@ -8,6 +8,7 @@ import { communityRouter } from "./routers/community";
 import { adminRouter } from "./routers/admin";
 import { socialRouter } from "./routers/social";
 import { userRouter } from "./routers/user";
+import { dashboardRouter } from "./routers/dashboard";
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   admin: adminRouter,
   social: socialRouter,
   user: userRouter,
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;
