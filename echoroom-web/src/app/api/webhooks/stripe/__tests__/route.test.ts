@@ -75,7 +75,7 @@ function createNextRequest(body: string, signature: string | null): NextRequest 
 
 describe("Stripe webhook POST handler", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   // -----------------------------------------------------------------------
@@ -481,7 +481,7 @@ describe("Stripe webhook POST handler", () => {
 
   describe("charge.refunded", () => {
     beforeEach(() => {
-      vi.clearAllMocks();
+      vi.resetAllMocks();
     });
 
     it("should process first refund and revoke credits", async () => {
@@ -495,15 +495,24 @@ describe("Stripe webhook POST handler", () => {
         data: { object: charge },
       });
 
-      const { db } = await import("@/server/db");
-      // updateMany returns count=1 (first time)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
-      (db.purchase.findUnique as any).mockResolvedValue({
+      // Set up tx-level mocks — production code uses tx.* inside $transaction
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+      const mockTxFindUnique = vi.fn().mockResolvedValue({
         id: "purchase-1",
         userId: "user-1",
         creditsPurchased: 50,
       });
-      (db.user.update as any).mockResolvedValue({});
+      const mockTxUserUpdate = vi.fn().mockResolvedValue({});
+      const mockTx = {
+        purchase: {
+          updateMany: mockTxUpdateMany,
+          findUnique: mockTxFindUnique,
+        },
+        user: {
+          update: mockTxUserUpdate,
+        },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -515,7 +524,7 @@ describe("Stripe webhook POST handler", () => {
       expect(body).toEqual({ received: true });
 
       // Atomic update: only matches where refundedAt IS NULL
-      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+      expect(mockTxUpdateMany).toHaveBeenCalledWith({
         where: {
           stripePaymentId: "pi_refund_123",
           refundedAt: null,
@@ -524,13 +533,13 @@ describe("Stripe webhook POST handler", () => {
       });
 
       // Fetch purchase to get user and credit amount
-      expect(db.purchase.findUnique).toHaveBeenCalledWith({
+      expect(mockTxFindUnique).toHaveBeenCalledWith({
         where: { stripePaymentId: "pi_refund_123" },
         select: { userId: true, creditsPurchased: true },
       });
 
       // Revoke credits
-      expect(db.user.update).toHaveBeenCalledWith({
+      expect(mockTxUserUpdate).toHaveBeenCalledWith({
         where: { id: "user-1" },
         data: { credits: { decrement: 50 } },
       });
@@ -547,9 +556,20 @@ describe("Stripe webhook POST handler", () => {
         data: { object: charge },
       });
 
-      const { db } = await import("@/server/db");
       // updateMany returns count=0 (already refunded — refundedAt IS NOT NULL)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+      const mockTxFindUnique = vi.fn();
+      const mockTxUserUpdate = vi.fn();
+      const mockTx = {
+        purchase: {
+          updateMany: mockTxUpdateMany,
+          findUnique: mockTxFindUnique,
+        },
+        user: {
+          update: mockTxUserUpdate,
+        },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -558,9 +578,9 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
 
-      // Should not proceed to findUnique or user.update
-      expect(db.purchase.findUnique).not.toHaveBeenCalled();
-      expect(db.user.update).not.toHaveBeenCalled();
+      // Should not proceed to findUnique or user.update (returned early since count=0)
+      expect(mockTxFindUnique).not.toHaveBeenCalled();
+      expect(mockTxUserUpdate).not.toHaveBeenCalled();
     });
 
     it("should handle refund without payment_intent gracefully", async () => {
@@ -594,9 +614,20 @@ describe("Stripe webhook POST handler", () => {
         data: { object: charge },
       });
 
-      const { db } = await import("@/server/db");
       // updateMany returns count=0 (no purchase with that payment_intent)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+      const mockTxFindUnique = vi.fn();
+      const mockTxUserUpdate = vi.fn();
+      const mockTx = {
+        purchase: {
+          updateMany: mockTxUpdateMany,
+          findUnique: mockTxFindUnique,
+        },
+        user: {
+          update: mockTxUserUpdate,
+        },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -604,8 +635,8 @@ describe("Stripe webhook POST handler", () => {
       const response = await POST(req);
 
       expect(response.status).toBe(200);
-      expect(db.purchase.findUnique).not.toHaveBeenCalled();
-      expect(db.user.update).not.toHaveBeenCalled();
+      expect(mockTxFindUnique).not.toHaveBeenCalled();
+      expect(mockTxUserUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -615,7 +646,7 @@ describe("Stripe webhook POST handler", () => {
 
   describe("charge.dispute.created", () => {
     beforeEach(() => {
-      vi.clearAllMocks();
+      vi.resetAllMocks();
     });
 
     it("should set disputedAt on first dispute notification", async () => {
@@ -701,7 +732,7 @@ describe("Stripe webhook POST handler", () => {
 
   describe("charge.dispute.closed", () => {
     beforeEach(() => {
-      vi.clearAllMocks();
+      vi.resetAllMocks();
     });
 
     it("should revoke credits when dispute is lost (updateMany guard)", async () => {
@@ -716,15 +747,24 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
-      // updateMany returns count=1 (first time processing)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
-      (db.purchase.findUnique as any).mockResolvedValue({
+      // Set up tx-level mocks — production code uses tx.* inside $transaction
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+      const mockTxFindUnique = vi.fn().mockResolvedValue({
         id: "purchase-lost-1",
         userId: "user-1",
         creditsPurchased: 50,
       });
-      (db.user.update as any).mockResolvedValue({});
+      const mockTxUserUpdate = vi.fn().mockResolvedValue({});
+      const mockTx = {
+        purchase: {
+          updateMany: mockTxUpdateMany,
+          findUnique: mockTxFindUnique,
+        },
+        user: {
+          update: mockTxUserUpdate,
+        },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -734,7 +774,7 @@ describe("Stripe webhook POST handler", () => {
       expect(response.status).toBe(200);
 
       // Atomic update: only matches where refundedAt IS NULL
-      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+      expect(mockTxUpdateMany).toHaveBeenCalledWith({
         where: {
           stripePaymentId: "pi_lost_123",
           refundedAt: null,
@@ -743,13 +783,13 @@ describe("Stripe webhook POST handler", () => {
       });
 
       // Fetch purchase details
-      expect(db.purchase.findUnique).toHaveBeenCalledWith({
+      expect(mockTxFindUnique).toHaveBeenCalledWith({
         where: { stripePaymentId: "pi_lost_123" },
         select: { userId: true, creditsPurchased: true },
       });
 
       // Revoke credits
-      expect(db.user.update).toHaveBeenCalledWith({
+      expect(mockTxUserUpdate).toHaveBeenCalledWith({
         where: { id: "user-1" },
         data: { credits: { decrement: 50 } },
       });
@@ -849,9 +889,20 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
       // updateMany returns 0 (no purchase with that payment_intent)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+      const mockTxFindUnique = vi.fn();
+      const mockTxUserUpdate = vi.fn();
+      const mockTx = {
+        purchase: {
+          updateMany: mockTxUpdateMany,
+          findUnique: mockTxFindUnique,
+        },
+        user: {
+          update: mockTxUserUpdate,
+        },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -859,8 +910,8 @@ describe("Stripe webhook POST handler", () => {
       const response = await POST(req);
 
       expect(response.status).toBe(200);
-      expect(db.purchase.findUnique).not.toHaveBeenCalled();
-      expect(db.user.update).not.toHaveBeenCalled();
+      expect(mockTxFindUnique).not.toHaveBeenCalled();
+      expect(mockTxUserUpdate).not.toHaveBeenCalled();
     });
 
     it("should be idempotent — duplicate dispute.lost events don't double-revoke", async () => {
@@ -875,9 +926,20 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
       // updateMany returns 0 (already refunded — refundedAt IS NOT NULL)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+      const mockTxFindUnique = vi.fn();
+      const mockTxUserUpdate = vi.fn();
+      const mockTx = {
+        purchase: {
+          updateMany: mockTxUpdateMany,
+          findUnique: mockTxFindUnique,
+        },
+        user: {
+          update: mockTxUserUpdate,
+        },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -887,8 +949,8 @@ describe("Stripe webhook POST handler", () => {
       expect(response.status).toBe(200);
 
       // updateMany was called but returned 0 — no further action
-      expect(db.purchase.findUnique).not.toHaveBeenCalled();
-      expect(db.user.update).not.toHaveBeenCalled();
+      expect(mockTxFindUnique).not.toHaveBeenCalled();
+      expect(mockTxUserUpdate).not.toHaveBeenCalled();
     });
   });
 });

@@ -8,11 +8,14 @@ import {
   withContentModeration,
   withIPRateLimit,
 } from "../trpc";
+import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
+import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 
 export const communityRouter = router({
   comment: protectedProcedure
+    .use(withREDMetrics)
     .use(withContentModeration)
     .use(withRateLimit({ limit: 30, window: 3600 }))
     .input(
@@ -27,7 +30,7 @@ export const communityRouter = router({
           userId: ctx.session.user.id,
           scenarioId: input.scenarioId,
           content: input.content,
-          moderationStatus: "APPROVED",
+          moderationStatus: "PENDING",
         },
         include: {
           user: {
@@ -36,10 +39,14 @@ export const communityRouter = router({
         },
       });
 
+      // Schedule async AI moderation (fire-and-forget)
+      void scheduleAsyncModeration(input.content, { type: "comment", id: comment.id });
+
       return comment;
     }),
 
   getComments: publicProcedure
+    .use(withREDMetrics)
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
@@ -69,6 +76,7 @@ export const communityRouter = router({
     }),
 
   reportAbuse: protectedProcedure
+    .use(withREDMetrics)
     .use(withRateLimit({ limit: 10, window: 3600 }))
     .input(
       z.object({

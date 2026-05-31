@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, withRateLimit } from "../trpc";
+import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { initiateCall } from "../services/telephony/callLifecycle";
 import { getPresignedUrl } from "../services/audio/r2";
@@ -9,6 +10,7 @@ import { getUTCDayRange } from "../lib/date";
 
 export const callsRouter = router({
   start: protectedProcedure
+    .use(withREDMetrics)
     .input(
       z.object({
         scenarioId: z.string(),
@@ -70,6 +72,7 @@ export const callsRouter = router({
     }),
 
   history: protectedProcedure
+    .use(withREDMetrics)
     .input(
       z.object({
         cursor: z.string().optional(),
