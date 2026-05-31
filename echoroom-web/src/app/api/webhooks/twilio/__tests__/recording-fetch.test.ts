@@ -81,8 +81,9 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
     // Access the private function via module internals
     // We test it by sending a completed webhook with a valid URL
     // and verifying fetch was called
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -90,7 +91,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -100,11 +101,11 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
       user: { id: "user-1" },
     });
 
-    const validUrl =
-      "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
-    mockFetch.mockResolvedValue({
-      ok: true,
-      arrayBuffer: () => Promise.resolve(new ArrayBuffer(256)),
+    const validUrl = "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
+    // The route now uses twilioClient.request() instead of raw fetch
+    mockRequest.mockResolvedValue({
+      statusCode: 200,
+      body: Buffer.from("fake audio data"),
     });
 
     const mockTx = {
@@ -128,11 +129,13 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
 
     const { POST } = await import("../route");
 
-    const formData = new Map(Object.entries({
-      CallSid: "CA_test",
-      CallStatus: "completed",
-      RecordingUrl: validUrl,
-    })) as unknown as FormData;
+    const formData = new Map(
+      Object.entries({
+        CallSid: "CA_test",
+        CallStatus: "completed",
+        RecordingUrl: validUrl,
+      }),
+    ) as unknown as FormData;
 
     const req = {
       formData: () => Promise.resolve(formData),
@@ -157,8 +160,9 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
   });
 
   it("should reject non-Twilio recording URLs (SSRF protection)", async () => {
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -166,7 +170,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -177,7 +181,6 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
     });
 
     const maliciousUrl = "http://169.254.169.254/latest/meta-data/";
-    mockFetch.mockClear();
 
     const mockTx = {
       call: {
@@ -200,11 +203,13 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
 
     const { POST } = await import("../route");
 
-    const formData = new Map(Object.entries({
-      CallSid: "CA_test",
-      CallStatus: "completed",
-      RecordingUrl: maliciousUrl,
-    })) as unknown as FormData;
+    const formData = new Map(
+      Object.entries({
+        CallSid: "CA_test",
+        CallStatus: "completed",
+        RecordingUrl: maliciousUrl,
+      }),
+    ) as unknown as FormData;
 
     const req = {
       formData: () => Promise.resolve(formData),
@@ -226,8 +231,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
   });
 
   it("should reject internal URLs mimicking Twilio path", async () => {
-    const { getConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState } = await import("@/server/services/telephony/conversationState");
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -235,7 +239,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -246,9 +250,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
     });
 
     // Internal URL that mimics Twilio path structure
-    const internalUrl =
-      "http://10.0.0.1/2010-04-01/Accounts/AC_test/Recordings/RE123";
-    mockFetch.mockClear();
+    const internalUrl = "http://10.0.0.1/2010-04-01/Accounts/AC_test/Recordings/RE123";
 
     const mockTx = {
       call: {
@@ -269,11 +271,13 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
 
     const { POST } = await import("../route");
 
-    const formData = new Map(Object.entries({
-      CallSid: "CA_test",
-      CallStatus: "completed",
-      RecordingUrl: internalUrl,
-    })) as unknown as FormData;
+    const formData = new Map(
+      Object.entries({
+        CallSid: "CA_test",
+        CallStatus: "completed",
+        RecordingUrl: internalUrl,
+      }),
+    ) as unknown as FormData;
 
     const req = {
       formData: () => Promise.resolve(formData),
@@ -294,8 +298,9 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
   });
 
   it("should handle recording fetch failure gracefully (network error)", async () => {
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -303,7 +308,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -313,8 +318,7 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
       user: { id: "user-1" },
     });
 
-    const validUrl =
-      "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
+    const validUrl = "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
     mockRequest.mockRejectedValue(new Error("Network error"));
 
     const mockTx = {
@@ -338,11 +342,13 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
 
     const { POST } = await import("../route");
 
-    const formData = new Map(Object.entries({
-      CallSid: "CA_test",
-      CallStatus: "completed",
-      RecordingUrl: validUrl,
-    })) as unknown as FormData;
+    const formData = new Map(
+      Object.entries({
+        CallSid: "CA_test",
+        CallStatus: "completed",
+        RecordingUrl: validUrl,
+      }),
+    ) as unknown as FormData;
 
     const req = {
       formData: () => Promise.resolve(formData),

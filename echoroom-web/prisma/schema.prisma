@@ -244,6 +244,8 @@ model Purchase {
   disputedAt       DateTime?
 
   createdAt        DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Clip {

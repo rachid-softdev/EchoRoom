@@ -41,7 +41,7 @@ describe("L-5: Security headers verification", () => {
 
   it("middleware.ts should handle security-related headers", () => {
     const middlewareContent = readFileSync(MIDDLEWARE_PATH, "utf-8");
-    
+
     // Check for common security header patterns in middleware
     const hasSecurityHeaders =
       middlewareContent.includes("x-frame-options") ||
@@ -65,10 +65,7 @@ describe("L-5: Security headers verification", () => {
 
   it("production env.ts should check for default/development secret values (defense-in-depth)", () => {
     // Read env.ts to verify it checks for production guard values
-    const envContent = readFileSync(
-      resolve(__dirname, "../src/lib/env.ts"),
-      "utf-8"
-    );
+    const envContent = readFileSync(resolve(__dirname, "../src/lib/env.ts"), "utf-8");
 
     // Verify criticalKeys check exists for production
     expect(envContent).toContain("criticalKeys");
@@ -79,10 +76,7 @@ describe("L-5: Security headers verification", () => {
   });
 
   it("should verify NEXTAUTH_SECRET has a minimum length requirement (32 chars)", () => {
-    const envContent = readFileSync(
-      resolve(__dirname, "../src/lib/env.ts"),
-      "utf-8"
-    );
+    const envContent = readFileSync(resolve(__dirname, "../src/lib/env.ts"), "utf-8");
 
     // Zod schema should enforce min(32) for NEXTAUTH_SECRET
     expect(envContent).toContain("NEXTAUTH_SECRET");

@@ -124,9 +124,7 @@ describe("Twilio webhook POST handler", () => {
   // -----------------------------------------------------------------------
 
   it("should skip duplicate completed webhooks (already COMPLETED)", async () => {
-    const { getConversationState } = await import(
-      "@/server/services/telephony/conversationState"
-    );
+    const { getConversationState } = await import("@/server/services/telephony/conversationState");
     const { db } = await import("@/server/db");
 
     // Mock conversation state
@@ -139,7 +137,7 @@ describe("Twilio webhook POST handler", () => {
     });
 
     // Mock call record — already completed
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "COMPLETED",
@@ -170,14 +168,11 @@ describe("Twilio webhook POST handler", () => {
   });
 
   it("should process new completed call with recording", async () => {
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
-    const { transcribeAudio } = await import(
-      "@/server/services/audio/transcription"
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
     );
-    const { uploadAudioBuffer } = await import(
-      "@/server/services/audio/r2"
-    );
+    const { transcribeAudio } = await import("@/server/services/audio/transcription");
+    const { uploadAudioBuffer } = await import("@/server/services/audio/r2");
     const { db } = await import("@/server/db");
 
     // Mock conversation state
@@ -190,7 +185,7 @@ describe("Twilio webhook POST handler", () => {
     });
 
     // Mock call record — not completed yet
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -200,10 +195,10 @@ describe("Twilio webhook POST handler", () => {
       user: { id: "user-1" },
     });
 
-    // Mock recording fetch
-    mockFetch.mockResolvedValue({
-      ok: true,
-      arrayBuffer: () => Promise.resolve(new ArrayBuffer(1024)),
+    // Mock Twilio SDK request for recording fetch
+    mockTwilioRequest.mockResolvedValue({
+      statusCode: 200,
+      body: Buffer.from("fake audio data"),
     });
 
     // Mock transcription
@@ -232,14 +227,12 @@ describe("Twilio webhook POST handler", () => {
     };
 
     // The $transaction receives a callback function
-    (db.$transaction as any).mockImplementation(
-      async (cbOrArray: any) => {
-        if (typeof cbOrArray === "function") {
-          return cbOrArray(mockTx);
-        }
-        return cbOrArray;
-      },
-    );
+    (db.$transaction as any).mockImplementation(async (cbOrArray: any) => {
+      if (typeof cbOrArray === "function") {
+        return cbOrArray(mockTx);
+      }
+      return cbOrArray;
+    });
 
     (setConversationStatus as any).mockResolvedValue(undefined);
     (deleteConversationState as any).mockResolvedValue(undefined);
@@ -250,7 +243,7 @@ describe("Twilio webhook POST handler", () => {
       CallSid: "CA_test",
       CallStatus: "completed",
       CallDuration: "120",
-      RecordingUrl: "https://api.twilio.com/recording.wav",
+      RecordingUrl: "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123",
       RecordingDuration: "115",
     });
 
@@ -287,17 +280,16 @@ describe("Twilio webhook POST handler", () => {
 
   it("should handle completed call without recording (RecordingUrl null)", async () => {
     const { db } = await import("@/server/db");
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
 
     (getConversationState as any).mockResolvedValue({
-      messages: [
-        { role: "user", content: "Hello" },
-      ],
+      messages: [{ role: "user", content: "Hello" }],
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -339,16 +331,18 @@ describe("Twilio webhook POST handler", () => {
     expect(response.status).toBe(200);
 
     // Verify recording was not fetched
+    expect(mockTwilioRequest).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("should handle no call record found for completed call", async () => {
     const { db } = await import("@/server/db");
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
 
     (getConversationState as any).mockResolvedValue(null);
-    (db.call.findFirst as any).mockResolvedValue(null);
+    (db.call.findUnique as any).mockResolvedValue(null);
     (setConversationStatus as any).mockResolvedValue(undefined);
     (deleteConversationState as any).mockResolvedValue(undefined);
 
@@ -374,15 +368,16 @@ describe("Twilio webhook POST handler", () => {
 
   it("should debit additional credits when cost increased (creditDiff > 0)", async () => {
     const { db } = await import("@/server/db");
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
 
     (getConversationState as any).mockResolvedValue({
       messages: Array(10).fill({ role: "user", content: "test" }),
       turnCount: 10,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -431,15 +426,16 @@ describe("Twilio webhook POST handler", () => {
 
   it("should refund credits when cost decreased (creditDiff < 0)", async () => {
     const { db } = await import("@/server/db");
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
 
     (getConversationState as any).mockResolvedValue({
       messages: [{ role: "user", content: "Hi" }],
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -488,15 +484,16 @@ describe("Twilio webhook POST handler", () => {
 
   it("should handle failed additional debit gracefully (insufficient balance)", async () => {
     const { db } = await import("@/server/db");
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
 
     (getConversationState as any).mockResolvedValue({
       messages: Array(10).fill({ role: "user", content: "test" }),
       turnCount: 10,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -545,15 +542,16 @@ describe("Twilio webhook POST handler", () => {
 
   it("should abort transaction if call status already COMPLETED (double-check)", async () => {
     const { db } = await import("@/server/db");
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
 
     (getConversationState as any).mockResolvedValue({
       messages: [{ role: "user", content: "Hello" }],
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE", // First check passes
@@ -605,74 +603,70 @@ describe("Twilio webhook POST handler", () => {
   // Call status: busy, no-answer, failed, canceled
   // -----------------------------------------------------------------------
 
-  it.each(["busy", "no-answer", "failed", "canceled"])(
-    "should handle %s status by failing the call",
-    async (status) => {
-      const { db } = await import("@/server/db");
-      const { failCall } = await import(
-        "@/server/services/telephony/callLifecycle"
-      );
-      const { setConversationStatus } = await import(
-        "@/server/services/telephony/conversationState"
-      );
+  it.each([
+    "busy",
+    "no-answer",
+    "failed",
+    "canceled",
+  ])("should handle %s status by failing the call", async (status) => {
+    const { db } = await import("@/server/db");
+    const { failCall } = await import("@/server/services/telephony/callLifecycle");
+    const { setConversationStatus } = await import("@/server/services/telephony/conversationState");
 
-      (db.call.findFirst as any).mockResolvedValue({
-        id: "call-1",
-        twilioCallSid: "CA_test",
-      });
-      (failCall as any).mockResolvedValue(undefined);
-      (setConversationStatus as any).mockResolvedValue(undefined);
+    (db.call.findUnique as any).mockResolvedValue({
+      id: "call-1",
+      twilioCallSid: "CA_test",
+    });
+    (failCall as any).mockResolvedValue(undefined);
+    (setConversationStatus as any).mockResolvedValue(undefined);
 
-      const { POST } = await import("../route");
+    const { POST } = await import("../route");
 
-      const req = createFormDataRequest({
-        CallSid: "CA_test",
-        CallStatus: status,
-        CallDuration: "45",
-      });
+    const req = createFormDataRequest({
+      CallSid: "CA_test",
+      CallStatus: status,
+      CallDuration: "45",
+    });
 
-      const response = await POST(req);
-      expect(response.status).toBe(200);
+    const response = await POST(req);
+    expect(response.status).toBe(200);
 
-      expect(db.call.findFirst).toHaveBeenCalledWith({
-        where: { twilioCallSid: "CA_test" },
-      });
-      expect(failCall).toHaveBeenCalledWith("call-1", 45);
-      expect(setConversationStatus).toHaveBeenCalledWith("CA_test", "failed");
-    },
-  );
+    expect(db.call.findUnique).toHaveBeenCalledWith({
+      where: { twilioCallSid: "CA_test" },
+    });
+    expect(failCall).toHaveBeenCalledWith("call-1", 45);
+    expect(setConversationStatus).toHaveBeenCalledWith("CA_test", "failed");
+  });
 
-  it.each(["busy", "no-answer", "failed", "canceled"])(
-    "should handle %s status when no call record exists",
-    async (status) => {
-      const { db } = await import("@/server/db");
-      const { failCall } = await import(
-        "@/server/services/telephony/callLifecycle"
-      );
-      const { setConversationStatus } = await import(
-        "@/server/services/telephony/conversationState"
-      );
+  it.each([
+    "busy",
+    "no-answer",
+    "failed",
+    "canceled",
+  ])("should handle %s status when no call record exists", async (status) => {
+    const { db } = await import("@/server/db");
+    const { failCall } = await import("@/server/services/telephony/callLifecycle");
+    const { setConversationStatus } = await import("@/server/services/telephony/conversationState");
 
-      (db.call.findFirst as any).mockResolvedValue(null);
-      (failCall as any).mockResolvedValue(undefined);
-      (setConversationStatus as any).mockResolvedValue(undefined);
+    (db.call.findUnique as any).mockResolvedValue(null);
+    (failCall as any).mockResolvedValue(undefined);
+    (setConversationStatus as any).mockResolvedValue(undefined);
 
-      const { POST } = await import("../route");
+    const { POST } = await import("../route");
 
-      const req = createFormDataRequest({
-        CallSid: "CA_test_no_record",
-        CallStatus: status,
-      });
+    const req = createFormDataRequest({
+      CallSid: "CA_test_no_record",
+      CallStatus: status,
+    });
 
-      const response = await POST(req);
-      expect(response.status).toBe(200);
+    const response = await POST(req);
+    expect(response.status).toBe(200);
 
-      // failCall should not be called if no record
-      expect(failCall).not.toHaveBeenCalled();
-      // But should still update conversation status
-      expect(setConversationStatus).toHaveBeenCalledWith("CA_test_no_record", "failed");
-    },
-  );
+    // failCall should not be called if no record
+    expect(failCall).not.toHaveBeenCalled();
+    // But should still update conversation status
+    expect(setConversationStatus).toHaveBeenCalledWith("CA_test_no_record", "failed");
+  });
 
   // -----------------------------------------------------------------------
   // Call status: ringing, in-progress
@@ -681,29 +675,26 @@ describe("Twilio webhook POST handler", () => {
   it.each([
     ["ringing", "RINGING"],
     ["in-progress", "ACTIVE"],
-  ] as const)(
-    "should update status to %s when CallStatus is %s",
-    async (callStatus, expectedStatus) => {
-      const { db } = await import("@/server/db");
+  ] as const)("should update status to %s when CallStatus is %s", async (callStatus, expectedStatus) => {
+    const { db } = await import("@/server/db");
 
-      (db.call.updateMany as any).mockResolvedValue({ count: 1 });
+    (db.call.updateMany as any).mockResolvedValue({ count: 1 });
 
-      const { POST } = await import("../route");
+    const { POST } = await import("../route");
 
-      const req = createFormDataRequest({
-        CallSid: "CA_test",
-        CallStatus: callStatus,
-      });
+    const req = createFormDataRequest({
+      CallSid: "CA_test",
+      CallStatus: callStatus,
+    });
 
-      const response = await POST(req);
-      expect(response.status).toBe(200);
+    const response = await POST(req);
+    expect(response.status).toBe(200);
 
-      expect(db.call.updateMany).toHaveBeenCalledWith({
-        where: { twilioCallSid: "CA_test" },
-        data: { status: expectedStatus },
-      });
-    },
-  );
+    expect(db.call.updateMany).toHaveBeenCalledWith({
+      where: { twilioCallSid: "CA_test" },
+      data: { status: expectedStatus },
+    });
+  });
 
   it("should ignore initiated status (no update)", async () => {
     const { db } = await import("@/server/db");
@@ -731,8 +722,9 @@ describe("Twilio webhook POST handler", () => {
   // -----------------------------------------------------------------------
 
   it("should fetch recording from valid Twilio URL", async () => {
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -740,7 +732,7 @@ describe("Twilio webhook POST handler", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -754,11 +746,12 @@ describe("Twilio webhook POST handler", () => {
     // hostname === "api.twilio.com"
     // pathname starts with "/2010-04-01/Accounts/"
     // pathname includes "/Recordings/"
-    const validUrl =
-      "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
-    mockFetch.mockResolvedValue({
-      ok: true,
-      arrayBuffer: () => Promise.resolve(new ArrayBuffer(256)),
+    const validUrl = "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
+
+    // The route now uses twilioClient.request() instead of raw fetch
+    mockTwilioRequest.mockResolvedValue({
+      statusCode: 200,
+      body: Buffer.from("fake audio data"),
     });
 
     const mockTx = {
@@ -799,8 +792,7 @@ describe("Twilio webhook POST handler", () => {
   });
 
   it("should reject non-Twilio recording URLs (SSRF protection)", async () => {
-    const { getConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState } = await import("@/server/services/telephony/conversationState");
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -808,7 +800,7 @@ describe("Twilio webhook POST handler", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -820,8 +812,6 @@ describe("Twilio webhook POST handler", () => {
 
     // A malicious recording URL pointing to internal service
     const maliciousUrl = "http://169.254.169.254/latest/meta-data/";
-    // Reset fetch mock to ensure it's not called
-    mockFetch.mockClear();
 
     const mockTx = {
       call: {
@@ -851,13 +841,13 @@ describe("Twilio webhook POST handler", () => {
     const response = await POST(req);
     expect(response.status).toBe(200);
 
-    // Should NOT have made any fetch call for SSRF prevention
+    // Should NOT have made any fetch or twilioClient.request calls for SSRF prevention
+    expect(mockTwilioRequest).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("should reject internal Twilio-like recording URLs (SSRF protection)", async () => {
-    const { getConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState } = await import("@/server/services/telephony/conversationState");
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -865,7 +855,7 @@ describe("Twilio webhook POST handler", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -876,9 +866,7 @@ describe("Twilio webhook POST handler", () => {
     });
 
     // Internal URL that mimics Twilio path structure but on private IP
-    const internalUrl =
-      "http://10.0.0.1/2010-04-01/Accounts/AC_test/Recordings/RE123";
-    mockFetch.mockClear();
+    const internalUrl = "http://10.0.0.1/2010-04-01/Accounts/AC_test/Recordings/RE123";
 
     const mockTx = {
       call: {
@@ -908,13 +896,15 @@ describe("Twilio webhook POST handler", () => {
     const response = await POST(req);
     expect(response.status).toBe(200);
 
-    // Should NOT have made any fetch call
+    // Should NOT have made any fetch or twilioClient.request calls
+    expect(mockTwilioRequest).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("should handle recording fetch failure gracefully (valid URL but network error)", async () => {
-    const { getConversationState, setConversationStatus, deleteConversationState } =
-      await import("@/server/services/telephony/conversationState");
+    const { getConversationState, setConversationStatus, deleteConversationState } = await import(
+      "@/server/services/telephony/conversationState"
+    );
     const { db } = await import("@/server/db");
 
     (getConversationState as any).mockResolvedValue({
@@ -922,7 +912,7 @@ describe("Twilio webhook POST handler", () => {
       turnCount: 1,
     });
 
-    (db.call.findFirst as any).mockResolvedValue({
+    (db.call.findUnique as any).mockResolvedValue({
       id: "call-1",
       twilioCallSid: "CA_test",
       status: "ACTIVE",
@@ -932,9 +922,8 @@ describe("Twilio webhook POST handler", () => {
       user: { id: "user-1" },
     });
 
-    // Valid URL but fetch fails
-    const validUrl =
-      "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
+    // Valid URL but Twilio SDK request fails
+    const validUrl = "https://api.twilio.com/2010-04-01/Accounts/AC_test/Recordings/RE123";
     mockTwilioRequest.mockRejectedValue(new Error("Network error"));
 
     const mockTx = {

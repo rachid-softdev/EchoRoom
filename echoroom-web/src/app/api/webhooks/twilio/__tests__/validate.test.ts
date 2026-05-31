@@ -17,10 +17,7 @@ vi.mock("@/lib/env", () => ({
 // Mock the twilio SDK's validateRequest to control responses
 const mockValidateRequest = vi.fn();
 vi.mock("twilio", () => ({
-  default: Object.assign(
-    vi.fn(),
-    { validateRequest: mockValidateRequest },
-  ),
+  default: Object.assign(vi.fn(), { validateRequest: mockValidateRequest }),
 }));
 
 function createMockReq(headers: Record<string, string | null>): NextRequest {
@@ -152,7 +149,7 @@ describe("validateTwilioRequest", () => {
     );
   });
 
-  it("should accept optional url override", async () => {
+  it("should use req.url for signature validation", async () => {
     mockValidateRequest.mockReturnValue(true);
 
     const { validateTwilioRequest } = await import("../validate");
@@ -160,18 +157,14 @@ describe("validateTwilioRequest", () => {
     const req = createMockReq({
       "x-twilio-signature": "sig",
     });
-    const result = validateTwilioRequest(
-      req,
-      { CallSid: "CA_test" },
-      "https://custom.url/webhook",
-    );
+    const result = validateTwilioRequest(req, { CallSid: "CA_test" });
 
     expect(result).toBe(true);
-    // Should use the provided URL instead of req.url
+    // Should use req.url for validation
     expect(mockValidateRequest).toHaveBeenCalledWith(
       "test_auth_token",
       "sig",
-      "https://custom.url/webhook",
+      "https://api.echoroom.app/api/webhooks/twilio",
       { CallSid: "CA_test" },
     );
   });

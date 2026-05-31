@@ -1,77 +1,76 @@
-import { redis } from '@/lib/redis'
-import { CONVERSATION_TTL_S } from './constants'
-import { createLogger } from '@/server/lib/logger'
-import { encryptPhoneNumber, decryptPhoneNumber } from "@/server/lib/encryption";
+import { redis } from "@/lib/redis";
+import { db } from "@/server/db";
+import { decryptPhoneNumber, encryptPhoneNumber } from "@/server/lib/encryption";
+import { createLogger } from "@/server/lib/logger";
+import { CONVERSATION_TTL_S } from "./constants";
 
-const log = createLogger('conversation-state')
+const log = createLogger("conversation-state");
 
 export interface ConversationMessage {
-  role: 'system' | 'assistant' | 'user'
-  content: string
+  role: "system" | "assistant" | "user";
+  content: string;
 }
 
 export interface ConversationState {
-  callSid: string
-  callId: string       // DB UUID of the Call record
-  scenarioId: string
-  characterId: string
-  callerNumber: string
-  messages: ConversationMessage[]  // NEVER contains role: 'system'
-  systemPrompt?: string            // Stored separately for prompt injection defense
-  turnCount: number
-  lastActiveAt: string
-  status: 'active' | 'completed' | 'timed_out' | 'failed'
+  callSid: string;
+  callId: string; // DB UUID of the Call record
+  scenarioId: string;
+  characterId: string;
+  callerNumber: string;
+  messages: ConversationMessage[]; // NEVER contains role: 'system'
+  systemPrompt?: string; // Stored separately for prompt injection defense
+  turnCount: number;
+  lastActiveAt: string;
+  status: "active" | "completed" | "timed_out" | "failed";
 }
 
-type InitData = Omit<ConversationState, 'turnCount' | 'lastActiveAt' | 'status'>
+type InitData = Omit<ConversationState, "turnCount" | "lastActiveAt" | "status">;
 
 function redisKey(callSid: string): string {
-  return `conversation:${callSid}`
+  return `conversation:${callSid}`;
 }
 
 export async function initConversationState(
   callSid: string,
   data: InitData,
 ): Promise<ConversationState | null> {
-  if (!redis) return null
+  if (!redis) return null;
 
   const state: ConversationState = {
     ...data,
     callerNumber: data.callerNumber ? encryptPhoneNumber(data.callerNumber) : "",
     turnCount: 0,
     lastActiveAt: new Date().toISOString(),
-    status: 'active',
-  }
+    status: "active",
+  };
 
   try {
     await redis.set(redisKey(callSid), JSON.stringify(state), {
       ex: CONVERSATION_TTL_S,
-    })
-    return state
+    });
+    return state;
   } catch (error) {
-    log.error('Redis initConversationState error', { error })
-    return null
+    log.error("Redis initConversationState error", { error });
+    return null;
   }
 }
 
-export async function getConversationState(
-  callSid: string,
-): Promise<ConversationState | null> {
-  if (!redis) return null
+export async function getConversationState(callSid: string): Promise<ConversationState | null> {
+  if (!redis) return null;
 
   try {
-    const raw = await redis.get<string>(redisKey(callSid))
-    if (!raw) return null
+    const raw = await redis.get<string>(redisKey(callSid));
+    if (!raw) return null;
 
-    const state: ConversationState = JSON.parse(raw)
+    const state: ConversationState = JSON.parse(raw);
 
     // Refresh TTL on access
-    await redis.expire(redisKey(callSid), CONVERSATION_TTL_S).catch(() => {})
+    await redis.expire(redisKey(callSid), CONVERSATION_TTL_S).catch(() => {});
 
-    return state
+    return state;
   } catch (error) {
-    log.error('Redis getConversationState error', { error })
-    return null
+    log.error("Redis getConversationState error", { error });
+    return null;
   }
 }
 
@@ -79,82 +78,78 @@ export async function appendMessage(
   callSid: string,
   message: ConversationMessage,
 ): Promise<ConversationState | null> {
-  if (!redis) return null
+  if (!redis) return null;
 
   try {
-    const state = await getConversationState(callSid)
-    if (!state) return null
+    const state = await getConversationState(callSid);
+    if (!state) return null;
 
-    state.messages.push(message)
-    state.lastActiveAt = new Date().toISOString()
+    state.messages.push(message);
+    state.lastActiveAt = new Date().toISOString();
 
     await redis.set(redisKey(callSid), JSON.stringify(state), {
       ex: CONVERSATION_TTL_S,
-    })
+    });
 
-    return state
+    return state;
   } catch (error) {
-    log.error('Redis appendMessage error', { error })
-    return null
+    log.error("Redis appendMessage error", { error });
+    return null;
   }
 }
 
-export async function incrementTurn(
-  callSid: string,
-): Promise<ConversationState | null> {
-  if (!redis) return null
+export async function incrementTurn(callSid: string): Promise<ConversationState | null> {
+  if (!redis) return null;
 
   try {
-    const state = await getConversationState(callSid)
-    if (!state) return null
+    const state = await getConversationState(callSid);
+    if (!state) return null;
 
-    state.turnCount += 1
-    state.lastActiveAt = new Date().toISOString()
+    state.turnCount += 1;
+    state.lastActiveAt = new Date().toISOString();
 
     await redis.set(redisKey(callSid), JSON.stringify(state), {
       ex: CONVERSATION_TTL_S,
-    })
+    });
 
-    return state
+    return state;
   } catch (error) {
-    log.error('Redis incrementTurn error', { error })
-    return null
+    log.error("Redis incrementTurn error", { error });
+    return null;
   }
 }
 
 export async function setConversationStatus(
   callSid: string,
-  status: ConversationState['status'],
+  status: ConversationState["status"],
 ): Promise<ConversationState | null> {
-  if (!redis) return null
+  if (!redis) return null;
 
   try {
-    const state = await getConversationState(callSid)
-    if (!state) return null
+    const state = await getConversationState(callSid);
+    if (!state) return null;
 
-    state.status = status
-    state.lastActiveAt = new Date().toISOString()
+    state.status = status;
+    state.lastActiveAt = new Date().toISOString();
 
     await redis.set(redisKey(callSid), JSON.stringify(state), {
       ex: CONVERSATION_TTL_S,
-    })
+    });
 
-    return state
+    return state;
   } catch (error) {
-    log.error('Redis setConversationStatus error', { error })
-    return null
+    log.error("Redis setConversationStatus error", { error });
+    return null;
   }
 }
 
-export async function deleteConversationState(
-  callSid: string,
-): Promise<void> {
-  if (!redis) return
+export async function deleteConversationState(callSid: string): Promise<void> {
+  if (!redis) return;
 
   try {
-    await redis.del(redisKey(callSid))
+    await redis.del(redisKey(callSid));
   } catch (error) {
-    log.error('Redis deleteConversationState error', { error })
+    log.error("Redis deleteConversationState error", { error });
   }
 }
 
@@ -190,42 +185,38 @@ export function getCallId(state: ConversationState): string {
  *
  * @returns The system prompt string, or a safe default if not found.
  */
-export async function getSystemPromptFromState(
-  state: ConversationState,
-): Promise<string> {
+export async function getSystemPromptFromState(state: ConversationState): Promise<string> {
   // New format: dedicated systemPrompt field
   if (state.systemPrompt) return state.systemPrompt;
 
   // Legacy format: system message in messages array
-  const systemMessage = state.messages.find((m) => m.role === 'system');
+  const systemMessage = state.messages.find((m) => m.role === "system");
   if (systemMessage) return systemMessage.content;
 
   // Fallback: try to load from database using scenarioId
-  if (state.scenarioId && state.scenarioId !== 'unknown') {
+  if (state.scenarioId && state.scenarioId !== "unknown") {
     try {
-      const { db } = await import('@/server/db');
       const scenario = await db.scenario.findUnique({
         where: { id: state.scenarioId },
         include: { character: true },
       });
       if (scenario) {
         return [
-          `Tu es ${scenario.character.name}. ${scenario.character.description || ''}`,
+          `Tu es ${scenario.character.name}. ${scenario.character.description || ""}`,
           scenario.character.promptSystem,
           scenario.aiInstructions,
-          `Contexte du scénario: ${scenario.description || ''}`,
-          'Réponds en français de manière naturelle et parlée, comme dans une conversation téléphonique.',
-          'Garde tes réponses concises (2-3 phrases max) adaptées à un appel vocal.',
+          `Contexte du scénario: ${scenario.description || ""}`,
+          "Réponds en français de manière naturelle et parlée, comme dans une conversation téléphonique.",
+          "Garde tes réponses concises (2-3 phrases max) adaptées à un appel vocal.",
         ]
           .filter(Boolean)
-          .join('\n');
+          .join("\n");
       }
     } catch (error) {
-      const log = (await import('@/server/lib/logger')).createLogger('getSystemPrompt');
-      log.error('Failed to load scenario for system prompt', { error });
+      log.error("Failed to load scenario for system prompt", { error });
     }
   }
 
   // Ultimate fallback
-  return 'Tu es un assistant IA amical. Réponds en français de manière naturelle.';
+  return "Tu es un assistant IA amical. Réponds en français de manière naturelle.";
 }

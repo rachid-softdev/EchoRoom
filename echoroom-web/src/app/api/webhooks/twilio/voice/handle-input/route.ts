@@ -1,32 +1,29 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import twilio from 'twilio'
-import { db } from '@/server/db'
-import { generateResponse } from '@/server/services/ai/conversationEngine'
-import { ttsClient } from '@/server/services/audio/tts'
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import twilio from "twilio";
+import { db } from "@/server/db";
+import { createLogger } from "@/server/lib/logger";
+import { createTwilioToken, verifyTwilioToken } from "@/server/lib/twilioToken";
+import { generateResponse } from "@/server/services/ai/conversationEngine";
+import { checkContent } from "@/server/services/ai/moderation";
+import { uploadAudioBuffer } from "@/server/services/audio/r2";
+import { ttsClient } from "@/server/services/audio/tts";
+import { ELEVENLABS_MODEL, MAX_TURNS } from "@/server/services/telephony/constants";
 import {
-  getConversationState,
   appendMessage,
+  getCallId,
+  getConversationState,
+  getSystemPromptFromState,
   incrementTurn,
   setConversationStatus,
-  getSystemPromptFromState,
-  getCallId,
-} from '@/server/services/telephony/conversationState'
-import { detectGoodbye } from '@/server/services/telephony/goodbyeDetector'
-import {
-  MAX_TURNS,
-  ELEVENLABS_MODEL,
-} from '@/server/services/telephony/constants'
-import { uploadAudioBuffer } from '@/server/services/audio/r2'
-import { createLogger } from '@/server/lib/logger'
-import { validateTwilioRequest, extractParams } from '../../validate'
-import { checkContent } from '@/server/services/ai/moderation'
-import { verifyTwilioToken, createTwilioToken } from '@/server/lib/twilioToken'
-import { checkWebhookRateLimit } from '../../../rateLimit'
+} from "@/server/services/telephony/conversationState";
+import { detectGoodbye } from "@/server/services/telephony/goodbyeDetector";
+import { checkWebhookRateLimit } from "../../../rateLimit";
+import { extractParams, validateTwilioRequest } from "../../validate";
 
-const log = createLogger('handle-input')
+const log = createLogger("handle-input");
 
-const VoiceResponse = twilio.twiml.VoiceResponse
+const VoiceResponse = twilio.twiml.VoiceResponse;
 
 /**
  * POST handler — called by Twilio <Gather> when the user speaks.
@@ -35,14 +32,15 @@ const VoiceResponse = twilio.twiml.VoiceResponse
  */
 export async function POST(req: NextRequest) {
   // Enforce body size limit (50KB for Twilio webhooks)
-  const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+  const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
   if (contentLength > 50_000) {
-    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+    return NextResponse.json({ error: "Request too large" }, { status: 413 });
   }
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? req.headers.get("x-real-ip")
-    ?? "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
 
   if (!(await checkWebhookRateLimit("twilio:voice:input", ip))) {
     return NextResponse.json(
@@ -51,52 +49,52 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { searchParams } = new URL(req.url)
-  const formData = await req.formData()
-  const params = extractParams(formData)
+  const { searchParams } = new URL(req.url);
+  const formData = await req.formData();
+  const params = extractParams(formData);
 
   // Twilio webhook signature validation
   if (!validateTwilioRequest(req, params)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 403 })
+    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
   }
 
-  const callSid = (formData.get('CallSid') as string) ?? ''
-  const speechResult = (formData.get('SpeechResult') as string) ?? ''
+  const callSid = (formData.get("CallSid") as string) ?? "";
+  const speechResult = (formData.get("SpeechResult") as string) ?? "";
 
   // Résoudre scenario et character depuis le token HMAC
-  let scenarioId = 'unknown'
-  let characterId = 'unknown'
-  const token = searchParams.get('token')
+  let scenarioId = "unknown";
+  let characterId = "unknown";
+  const token = searchParams.get("token");
 
   if (token) {
-    const payload = verifyTwilioToken(token)
+    const payload = verifyTwilioToken(token);
     if (payload) {
-      scenarioId = payload.scenarioId
-      characterId = payload.characterId  // Maintenant fourni directement dans le token
+      scenarioId = payload.scenarioId;
+      characterId = payload.characterId; // Maintenant fourni directement dans le token
     } else {
-      log.warn('Invalid or expired token in handle-input', { callSid })
+      log.warn("Invalid or expired token in handle-input", { callSid });
     }
   }
 
   // Get conversation state from Redis
-  const state = await getConversationState(callSid)
+  const state = await getConversationState(callSid);
 
   if (!state) {
     // Conversation expired or not found — hang up
-    const twiml = new VoiceResponse()
+    const twiml = new VoiceResponse();
     twiml.say(
-      { voice: 'alice', language: 'fr-FR' },
-      'Désolé, la conversation a expiré. Veuillez rappeler pour continuer.',
-    )
-    twiml.hangup()
+      { voice: "alice", language: "fr-FR" },
+      "Désolé, la conversation a expiré. Veuillez rappeler pour continuer.",
+    );
+    twiml.hangup();
     return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'text/xml' },
-    })
+      headers: { "Content-Type": "text/xml" },
+    });
   }
 
   // Consistency check: verify token/query-param scenarioId matches Redis state
-  if (state.scenarioId && scenarioId !== 'unknown' && state.scenarioId !== scenarioId) {
-    log.error('CRITICAL: ScenarioId mismatch between token and Redis state — possible tampering', {
+  if (state.scenarioId && scenarioId !== "unknown" && state.scenarioId !== scenarioId) {
+    log.error("CRITICAL: ScenarioId mismatch between token and Redis state — possible tampering", {
       callSid,
       tokenScenarioId: scenarioId,
       redisScenarioId: state.scenarioId,
@@ -104,28 +102,25 @@ export async function POST(req: NextRequest) {
 
     // Reject the request — inconsistent state suggests tampering or a bug
     const twiml = new VoiceResponse();
-    twiml.say(
-      { voice: 'alice', language: 'fr-FR' },
-      'Erreur de conversation. Veuillez rappeler.',
-    );
+    twiml.say({ voice: "alice", language: "fr-FR" }, "Erreur de conversation. Veuillez rappeler.");
     twiml.hangup();
     return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'text/xml' },
+      headers: { "Content-Type": "text/xml" },
     });
   }
 
   // Check if call exceeded limits
   if (
     state.turnCount >= MAX_TURNS ||
-    state.status === 'completed' ||
-    state.status === 'timed_out' ||
-    state.status === 'failed'
+    state.status === "completed" ||
+    state.status === "timed_out" ||
+    state.status === "failed"
   ) {
-    const twiml = new VoiceResponse()
-    twiml.hangup()
+    const twiml = new VoiceResponse();
+    twiml.hangup();
     return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'text/xml' },
-    })
+      headers: { "Content-Type": "text/xml" },
+    });
   }
 
   // Content-moderation on user input (defense-in-depth against prompt injection)
@@ -133,7 +128,10 @@ export async function POST(req: NextRequest) {
   try {
     const moderationResult = await checkContent(speechResult);
     if (!moderationResult.approved) {
-      log.warn("User speech blocked by moderation", { reason: moderationResult.reason, contentLength: speechResult.length });
+      log.warn("User speech blocked by moderation", {
+        reason: moderationResult.reason,
+        contentLength: speechResult.length,
+      });
       moderatedSpeech = "[Contenu non autorisé]";
     }
   } catch (error) {
@@ -141,39 +139,39 @@ export async function POST(req: NextRequest) {
   }
 
   // Append user message to conversation state
-  await appendMessage(callSid, { role: 'user', content: moderatedSpeech })
+  await appendMessage(callSid, { role: "user", content: moderatedSpeech });
 
   // Detect goodbye intent
-  const isGoodbye = detectGoodbye(speechResult)
+  const isGoodbye = detectGoodbye(speechResult);
   if (isGoodbye) {
-    await setConversationStatus(callSid, 'completed')
+    await setConversationStatus(callSid, "completed");
 
     // Generate a farewell response
-    let farewell = 'Merci pour cette conversation. Au revoir!'
+    let farewell = "Merci pour cette conversation. Au revoir!";
     try {
       // Use system prompt via helper (supports new + legacy formats)
-      const systemPrompt = await getSystemPromptFromState(state)
+      const systemPrompt = await getSystemPromptFromState(state);
       const result = await generateResponse({
         systemPrompt,
         messages: [
-          ...state.messages.filter((m) => m.role !== 'system'),
-          { role: 'user', content: moderatedSpeech },
+          ...state.messages.filter((m) => m.role !== "system"),
+          { role: "user", content: moderatedSpeech },
           {
-            role: 'system',
+            role: "system",
             content:
               "L'utilisateur a dit au revoir. Réponds par un message d'au revoir chaleureux et termine la conversation. Sois bref (1-2 phrases).",
           },
         ],
         maxTokens: 100,
-      })
-      farewell = result.response
+      });
+      farewell = result.response;
     } catch (error) {
-      log.error('Failed to generate farewell', { error })
+      log.error("Failed to generate farewell", { error });
     }
 
     // Synthesize farewell and upload
-    let audioUrl = ''
-    const voiceId = await resolveVoiceId(characterId)
+    let audioUrl = "";
+    const voiceId = await resolveVoiceId(characterId);
     if (ttsClient && voiceId) {
       try {
         audioUrl = await synthesizeAndUpload(
@@ -182,64 +180,61 @@ export async function POST(req: NextRequest) {
           farewell,
           callSid,
           state.turnCount + 1,
-        )
+        );
       } catch (error) {
-        log.error('Failed to synthesize farewell', { error })
+        log.error("Failed to synthesize farewell", { error });
       }
     }
 
-    const twiml = new VoiceResponse()
+    const twiml = new VoiceResponse();
     if (audioUrl) {
-      twiml.play({}, audioUrl)
+      twiml.play({}, audioUrl);
     } else {
-      twiml.say(
-        { voice: 'alice', language: 'fr-FR' },
-        farewell,
-      )
+      twiml.say({ voice: "alice", language: "fr-FR" }, farewell);
     }
-    twiml.hangup()
+    twiml.hangup();
 
     return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'text/xml' },
-    })
+      headers: { "Content-Type": "text/xml" },
+    });
   }
 
   // Check if this is the last allowed turn
-  const isLastTurn = state.turnCount + 1 >= MAX_TURNS
+  const isLastTurn = state.turnCount + 1 >= MAX_TURNS;
 
   // Run conversation engine with full history
-  let aiResponse = 'Je n\'ai rien à dire...'
+  let aiResponse = "Je n'ai rien à dire...";
   try {
     // Use system prompt via helper (supports new + legacy formats)
-    const systemPrompt = await getSystemPromptFromState(state)
+    const systemPrompt = await getSystemPromptFromState(state);
     const result = await generateResponse({
       systemPrompt,
       messages: [
-        ...state.messages.filter((m) => m.role !== 'system'),
-        { role: 'user', content: moderatedSpeech },
+        ...state.messages.filter((m) => m.role !== "system"),
+        { role: "user", content: moderatedSpeech },
       ],
       maxTokens: 200,
-    })
-    aiResponse = result.response
+    });
+    aiResponse = result.response;
   } catch (error) {
-    log.error('Failed to generate response', { error })
+    log.error("Failed to generate response", { error });
   }
 
   // If it's the last turn, inform the user
   if (isLastTurn) {
-    aiResponse = `${aiResponse} ${'Ce sera notre dernier échange. Merci d\'avoir appelé!'}`
+    aiResponse = `${aiResponse} ${"Ce sera notre dernier échange. Merci d'avoir appelé!"}`;
   }
 
   // Append assistant response to history
   await appendMessage(callSid, {
-    role: 'assistant',
+    role: "assistant",
     content: aiResponse,
-  })
-  await incrementTurn(callSid)
+  });
+  await incrementTurn(callSid);
 
   // Synthesize response with ElevenLabs and upload to R2
-  let audioUrl = ''
-  const voiceId = await resolveVoiceId(characterId)
+  let audioUrl = "";
+  const voiceId = await resolveVoiceId(characterId);
   if (ttsClient && voiceId) {
     try {
       audioUrl = await synthesizeAndUpload(
@@ -248,63 +243,58 @@ export async function POST(req: NextRequest) {
         aiResponse,
         callSid,
         state.turnCount + 1,
-      )
+      );
     } catch (error) {
-      log.error('Failed to synthesize response', { error })
+      log.error("Failed to synthesize response", { error });
     }
   }
 
   // Use the DB call ID from conversation state (supports new + legacy formats)
   const resolvedCallId = getCallId(state);
-  const handleInputToken = createTwilioToken(resolvedCallId, scenarioId || 'unknown', characterId)
-  const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`
+  const handleInputToken = createTwilioToken(resolvedCallId, scenarioId || "unknown", characterId);
+  const actionUrl = `/api/webhooks/twilio/voice/handle-input?token=${encodeURIComponent(handleInputToken)}`;
 
-  const twiml = new VoiceResponse()
+  const twiml = new VoiceResponse();
 
   if (audioUrl) {
-    twiml.play({}, audioUrl)
+    twiml.play({}, audioUrl);
   } else {
-    twiml.say(
-      { voice: 'alice', language: 'fr-FR' },
-      aiResponse,
-    )
+    twiml.say({ voice: "alice", language: "fr-FR" }, aiResponse);
   }
 
   if (isLastTurn) {
     // Set status to completed before hangup
-    await setConversationStatus(callSid, 'completed')
-    twiml.hangup()
+    await setConversationStatus(callSid, "completed");
+    twiml.hangup();
   } else {
     twiml.gather({
-      input: ['speech'],
-      speechTimeout: 'auto',
-      speechModel: 'experimental_utterances',
+      input: ["speech"],
+      speechTimeout: "auto",
+      speechModel: "experimental_utterances",
       enhanced: true,
       action: actionUrl,
-      method: 'POST',
-    })
+      method: "POST",
+    });
   }
 
   return new NextResponse(twiml.toString(), {
-    headers: { 'Content-Type': 'text/xml' },
-  })
+    headers: { "Content-Type": "text/xml" },
+  });
 }
 
 // -- Helpers --
 
-async function resolveVoiceId(
-  characterId: string,
-): Promise<string> {
-  if (!characterId || characterId === 'unknown') return ''
+async function resolveVoiceId(characterId: string): Promise<string> {
+  if (!characterId || characterId === "unknown") return "";
 
   try {
     const character = await db.character.findUnique({
       where: { id: characterId },
       select: { elevenLabsVoiceId: true },
-    })
-    return character?.elevenLabsVoiceId ?? ''
+    });
+    return character?.elevenLabsVoiceId ?? "";
   } catch {
-    return ''
+    return "";
   }
 }
 
@@ -318,28 +308,20 @@ async function synthesizeAndUpload(
   const audioStream = await client.textToSpeech.convert(voiceId, {
     text,
     model_id: ELEVENLABS_MODEL,
-    output_format: 'ulaw_8000',
-  })
+    output_format: "ulaw_8000",
+  });
 
-  const chunks: Uint8Array[] = []
+  const chunks: Uint8Array[] = [];
   for await (const chunk of audioStream) {
-    chunks.push(chunk)
+    chunks.push(chunk);
   }
-  const totalLength = chunks.reduce(
-    (acc, chunk) => acc + chunk.length,
-    0,
-  )
-  const combined = new Uint8Array(totalLength)
-  let offset = 0
+  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
   for (const chunk of chunks) {
-    combined.set(chunk, offset)
-    offset += chunk.length
+    combined.set(chunk, offset);
+    offset += chunk.length;
   }
 
-  return await uploadAudioBuffer(
-    callSid,
-    turnNumber,
-    Buffer.from(combined),
-    'audio/mulaw',
-  )
+  return await uploadAudioBuffer(callSid, turnNumber, Buffer.from(combined), "audio/mulaw");
 }

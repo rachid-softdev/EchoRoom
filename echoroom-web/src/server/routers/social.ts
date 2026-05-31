@@ -1,16 +1,16 @@
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  router,
-  publicProcedure,
-  protectedProcedure,
-  withRateLimit,
-  withIPRateLimit,
-} from "../trpc";
+import { z } from "zod";
 import { db } from "../db";
 import { checkAndAwardBadges } from "../services/social/badges";
-import { getTopScenarios, getTopCreators } from "../services/social/leaderboard";
-import { createClip, getClips, deleteClip } from "../services/social/clips";
+import { createClip, deleteClip, getClips } from "../services/social/clips";
+import { getTopCreators, getTopScenarios } from "../services/social/leaderboard";
+import {
+  protectedProcedure,
+  publicProcedure,
+  router,
+  withIPRateLimit,
+  withRateLimit,
+} from "../trpc";
 
 export const socialRouter = router({
   toggleLike: protectedProcedure
@@ -47,17 +47,17 @@ export const socialRouter = router({
           });
         }
 
-        await db.$transaction([
-          db.reaction.delete({ where: { id: existing.id } }),
-          db.scenario.update({
+        await db.$transaction(async (tx) => {
+          await tx.reaction.delete({ where: { id: existing.id } });
+          await tx.scenario.update({
             where: { id: input.scenarioId },
             data: { likeCount: { decrement: 1 } },
-          }),
-          db.user.update({
+          });
+          await tx.user.update({
             where: { id: scenario.creatorId },
             data: { totalLikesReceived: { decrement: 1 } },
-          }),
-        ]);
+          });
+        });
 
         return { reacted: false, emoji: input.emoji, newBadge: null };
       }
@@ -74,19 +74,19 @@ export const socialRouter = router({
         });
       }
 
-      await db.$transaction([
-        db.reaction.create({
+      await db.$transaction(async (tx) => {
+        await tx.reaction.create({
           data: { userId, scenarioId: input.scenarioId, emoji: input.emoji },
-        }),
-        db.scenario.update({
+        });
+        await tx.scenario.update({
           where: { id: input.scenarioId },
           data: { likeCount: { increment: 1 } },
-        }),
-        db.user.update({
+        });
+        await tx.user.update({
           where: { id: scenario.creatorId },
           data: { totalLikesReceived: { increment: 1 } },
-        }),
-      ]);
+        });
+      });
 
       // Check if the scenario creator earned a badge (outside transaction)
       const newBadge = await checkAndAwardBadges(scenario.creatorId, "LIKE_RECEIVED");
@@ -200,9 +200,7 @@ export const socialRouter = router({
       return { items };
     }),
 
-  getBadges: publicProcedure
-    .use(withIPRateLimit({ limit: 60, window: 60 }))
-    .query(async () => {
+  getBadges: publicProcedure.use(withIPRateLimit({ limit: 60, window: 60 })).query(async () => {
     return db.badge.findMany({
       orderBy: { name: "asc" },
     });
@@ -227,9 +225,7 @@ export const socialRouter = router({
       }));
     }),
 
-  getFeatured: publicProcedure
-    .use(withIPRateLimit({ limit: 60, window: 60 }))
-    .query(async () => {
+  getFeatured: publicProcedure.use(withIPRateLimit({ limit: 60, window: 60 })).query(async () => {
     const featured = await db.featuredScenario.findFirst({
       orderBy: { featuredAt: "desc" },
       include: {

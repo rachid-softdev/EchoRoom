@@ -5,7 +5,7 @@ const nextConfig = {
   async headers() {
     const cspHeader = [
       `default-src 'self'`,
-      `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.posthog.com https://js.stripe.com`,
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://app.posthog.com https://js.stripe.com`,
       `style-src 'self' 'unsafe-inline'`,
       `img-src 'self' https: data: blob:`,
       `connect-src 'self' https://app.posthog.com https://api.stripe.com https://us.i.posthog.com wss://us.i.posthog.com`,

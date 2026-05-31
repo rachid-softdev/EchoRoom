@@ -34,8 +34,7 @@ export async function generateResponse(
 ): Promise<ConversationEngineResult> {
   if (!openai) {
     return {
-      response:
-        "Désolé, le moteur de conversation n'est pas disponible actuellement.",
+      response: "Désolé, le moteur de conversation n'est pas disponible actuellement.",
       tokensUsed: 0,
     };
   }
@@ -52,9 +51,7 @@ export async function generateResponse(
     temperature: 0.8,
   });
 
-  const response =
-    completion.choices[0]?.message?.content ??
-    "Je n'ai rien à dire...";
+  const response = completion.choices[0]?.message?.content ?? "Je n'ai rien à dire...";
 
   // Centralized output moderation — catches ALL AI-generated content
   // Moderation will timeout after 2s and allow content through (fail-open)
@@ -66,12 +63,7 @@ export async function generateResponse(
   };
 }
 
-export { detectGoodbye } from '../telephony/goodbyeDetector'
-
-export async function generateScript(
-  characterPrompt: string,
-  userInput: string,
-): Promise<string> {
+export async function generateScript(characterPrompt: string, userInput: string): Promise<string> {
   if (!openai) {
     return "Moteur IA indisponible.";
   }

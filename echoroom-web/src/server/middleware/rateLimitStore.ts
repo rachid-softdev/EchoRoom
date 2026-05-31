@@ -18,7 +18,7 @@ interface RateLimitEntry {
 class InMemoryRateLimitStore {
   private store = new Map<string, RateLimitEntry>();
   private lastCleanup = Date.now();
-  private readonly CLEANUP_INTERVAL_MS = 60_000;
+  private readonly CLEANUP_INTERVAL_MS = 30_000;
 
   /**
    * Checks and increments the counter for a given key.
@@ -31,6 +31,10 @@ class InMemoryRateLimitStore {
     const entry = this.store.get(key);
 
     if (!entry || entry.resetAt <= now) {
+      // Delete expired entry before creating a new one
+      if (entry && entry.resetAt <= now) {
+        this.store.delete(key);
+      }
       // Nouvelle fenêtre alignée sur l'horloge (comportement déterministe)
       const windowStart = now - (now % (windowSec * 1000));
       this.store.set(key, {
@@ -61,8 +65,7 @@ class InMemoryRateLimitStore {
 
     // If store is too large, evict oldest 25% of entries
     if (this.store.size > 100_000) {
-      const sorted = [...this.store.entries()]
-        .sort(([, a], [, b]) => a.resetAt - b.resetAt);
+      const sorted = [...this.store.entries()].sort(([, a], [, b]) => a.resetAt - b.resetAt);
       const toDelete = Math.floor(sorted.length * 0.25);
       for (let i = 0; i < toDelete; i++) {
         this.store.delete(sorted[i][0]);

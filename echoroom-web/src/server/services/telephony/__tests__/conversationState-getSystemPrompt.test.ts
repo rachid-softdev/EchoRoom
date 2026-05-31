@@ -40,6 +40,15 @@ vi.mock("@/server/lib/logger", () => ({
   })),
 }));
 
+// Mock db for the static import in conversationState.ts (H-3 change from dynamic to static import)
+vi.mock("@/server/db", () => ({
+  db: {
+    scenario: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+  },
+}));
+
 import type { ConversationState } from "../conversationState";
 
 function createState(overrides: Partial<ConversationState> = {}): ConversationState {
@@ -121,30 +130,21 @@ describe("M-1: getSystemPromptFromState", () => {
 
     const result = await getSystemPromptFromState(state);
     // Should return the ultimate fallback
-    expect(result).toBe(
-      "Tu es un assistant IA amical. Réponds en français de manière naturelle.",
-    );
+    expect(result).toBe("Tu es un assistant IA amical. Réponds en français de manière naturelle.");
   });
 
   it("should try DB fallback when scenarioId is set but no prompt exists", async () => {
     const { db } = await import("@/server/db");
-    // Mock db from the dynamic import inside getSystemPromptFromState
-    // We need to mock the dynamic import path
-    vi.doMock("@/server/db", () => ({
-      db: {
-        scenario: {
-          findUnique: vi.fn().mockResolvedValue({
-            character: {
-              name: "TestBot",
-              description: "A test character",
-              promptSystem: "Follow the rules",
-            },
-            aiInstructions: "Be helpful",
-            description: "Test scenario context",
-          }),
-        },
+    // Configure the existing mock to return a scenario with character data
+    (db.scenario.findUnique as any).mockResolvedValue({
+      character: {
+        name: "TestBot",
+        description: "A test character",
+        promptSystem: "Follow the rules",
       },
-    }));
+      aiInstructions: "Be helpful",
+      description: "Test scenario context",
+    });
 
     const { getSystemPromptFromState } = await import("../conversationState");
 

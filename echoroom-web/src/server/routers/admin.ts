@@ -1,18 +1,17 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import type { Prisma } from "@prisma/client";
 import { createHmac, randomUUID } from "node:crypto";
+import type { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { env } from "@/lib/env";
-import { router, adminProcedure } from "../trpc";
+import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
+import { adminProcedure, router } from "../trpc";
 
 function hashPhoneForAudit(phone: string): string {
   // HMAC avec AUDIT_HASH_SECRET comme sel pour empêcher les rainbow tables
-  const hash = createHmac("sha256", env.AUDIT_HASH_SECRET)
-    .update(phone)
-    .digest("hex");
+  const hash = createHmac("sha256", env.AUDIT_HASH_SECRET).update(phone).digest("hex");
   return `blocked-${hash.substring(0, 16)}`;
 }
 
@@ -391,10 +390,6 @@ export const adminRouter = router({
       // Generate a valid bcrypt hash of a random UUID as the sentinel password.
       const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
 
-      const { anonymizePersonalData: loadAnonymize } = await import(
-        "@/server/services/user/anonymization"
-      );
-
       await db.$transaction(async (tx) => {
         const result = await tx.user.updateMany({
           where: { id: input.userId, deletedAt: null },
@@ -419,7 +414,7 @@ export const adminRouter = router({
           });
         }
 
-        await loadAnonymize(tx, input.userId);
+        await anonymizePersonalData(tx, input.userId);
       });
 
       await db.auditLog.create({
@@ -434,43 +429,41 @@ export const adminRouter = router({
       return { success: true };
     }),
 
-  getUserDetail: adminProcedure
-    .input(z.object({ userId: z.string() }))
-    .query(async ({ input }) => {
-      const user = await db.user.findUnique({
-        where: { id: input.userId },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          displayName: true,
-          role: true,
-          credits: true,
-          totalLikesReceived: true,
-          totalCallsMade: true,
-          consentAcceptedAt: true,
-          deletedAt: true,
-          createdAt: true,
-          _count: {
-            select: {
-              scenarios: true,
-              calls: true,
-              comments: true,
-              reactions: true,
-            },
+  getUserDetail: adminProcedure.input(z.object({ userId: z.string() })).query(async ({ input }) => {
+    const user = await db.user.findUnique({
+      where: { id: input.userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        role: true,
+        credits: true,
+        totalLikesReceived: true,
+        totalCallsMade: true,
+        consentAcceptedAt: true,
+        deletedAt: true,
+        createdAt: true,
+        _count: {
+          select: {
+            scenarios: true,
+            calls: true,
+            comments: true,
+            reactions: true,
           },
         },
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Utilisateur introuvable",
       });
+    }
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Utilisateur introuvable",
-        });
-      }
-
-      return user;
-    }),
+    return user;
+  }),
 
   listUsers: adminProcedure
     .input(

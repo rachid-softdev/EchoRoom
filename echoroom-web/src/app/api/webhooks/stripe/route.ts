@@ -1,9 +1,9 @@
+import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { Prisma } from "@prisma/client";
-import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
+import { stripe } from "@/lib/stripe";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
 import { checkWebhookRateLimit } from "../rateLimit";
@@ -12,14 +12,15 @@ const log = createLogger("stripe-webhook");
 
 export async function POST(req: NextRequest) {
   // Enforce body size limit (100KB for Stripe webhooks)
-  const contentLength = parseInt(req.headers.get('content-length') ?? '0', 10);
+  const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
   if (contentLength > 100_000) {
-    return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+    return NextResponse.json({ error: "Request too large" }, { status: 413 });
   }
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? req.headers.get("x-real-ip")
-    ?? "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
 
   if (!(await checkWebhookRateLimit("stripe:checkout", ip))) {
     return NextResponse.json(
@@ -32,19 +33,12 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("stripe-signature");
 
   if (!signature) {
-    return NextResponse.json(
-      { error: "Missing stripe-signature header" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
   }
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      env.STRIPE_WEBHOOK_SECRET,
-    );
+    event = stripe.webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     log.error("Stripe webhook signature verification failed", { message });
@@ -95,10 +89,7 @@ export async function POST(req: NextRequest) {
           });
         });
       } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === "P2002"
-        ) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           // Duplicate stripePaymentId — already processed
           log.info("Duplicate checkout.session.completed, skipped", {
             sessionId: session.id,
@@ -136,37 +127,39 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      for (const purchase of purchases) {
-        // Revoke credits atomically — may go negative if already spent
-        await db.$transaction(async (tx) => {
-          // Check idempotency: skip if already refunded
-          const current = await tx.purchase.findUnique({
-            where: { id: purchase.id },
-            select: { refundedAt: true },
-          });
+      // stripePaymentId is @unique — at most 1 row
+      const purchase = purchases[0];
+      if (!purchase) break;
 
-          if (current?.refundedAt) {
-            log.info("Duplicate refund event, skipping", { purchaseId: purchase.id });
-            return;
-          }
-
-          await tx.user.update({
-            where: { id: purchase.userId },
-            data: { credits: { decrement: purchase.creditsPurchased } },
-          });
-
-          await tx.purchase.update({
-            where: { id: purchase.id },
-            data: { refundedAt: new Date() },
-          });
+      // Revoke credits atomically — may go negative if already spent
+      await db.$transaction(async (tx) => {
+        // Check idempotency: skip if already refunded
+        const current = await tx.purchase.findUnique({
+          where: { id: purchase.id },
+          select: { refundedAt: true },
         });
 
-        log.info("Credits revoked after refund", {
-          userId: purchase.userId,
-          credits: purchase.creditsPurchased,
-          chargeId: charge.id,
+        if (current?.refundedAt) {
+          log.info("Duplicate refund event, skipping", { purchaseId: purchase.id });
+          return;
+        }
+
+        await tx.user.update({
+          where: { id: purchase.userId },
+          data: { credits: { decrement: purchase.creditsPurchased } },
         });
-      }
+
+        await tx.purchase.update({
+          where: { id: purchase.id },
+          data: { refundedAt: new Date() },
+        });
+      });
+
+      log.info("Credits revoked after refund", {
+        userId: purchase.userId,
+        credits: purchase.creditsPurchased,
+        chargeId: charge.id,
+      });
       break;
     }
 
