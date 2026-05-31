@@ -12,8 +12,27 @@ export interface PriceTier {
 }
 
 function resolveStripePriceId(tierId: string): string {
-  if (tierId === "starter") return env.STRIPE_PRICE_STARTER || `price_dev_starter`;
-  if (tierId === "pro") return env.STRIPE_PRICE_PRO || `price_dev_pro`;
+  if (tierId === "starter") {
+    if (!env.STRIPE_PRICE_STARTER) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(`Missing STRIPE_PRICE_STARTER env var for ${tierId}`);
+      }
+      return `price_dev_starter`;
+    }
+    return env.STRIPE_PRICE_STARTER;
+  }
+  if (tierId === "pro") {
+    if (!env.STRIPE_PRICE_PRO) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(`Missing STRIPE_PRICE_PRO env var for ${tierId}`);
+      }
+      return `price_dev_pro`;
+    }
+    return env.STRIPE_PRICE_PRO;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`Unknown tier: ${tierId}`);
+  }
   return `price_dev_${tierId}`;
 }
 

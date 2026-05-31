@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
-import { Save, User, Download, Trash2 } from "lucide-react";
+import { User, Download, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -114,14 +114,10 @@ export default function SettingsPageClient() {
               placeholder="vous@exemple.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled
             />
           </div>
-          <span title="Bientôt disponible">
-            <Button className="gap-2" disabled>
-              <Save className="w-4 h-4" />
-              Sauvegarder
-            </Button>
-          </span>
+          {/* TODO: wire updateProfile mutation */}
         </CardContent>
       </Card>
 

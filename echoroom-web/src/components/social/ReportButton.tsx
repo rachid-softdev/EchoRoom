@@ -60,7 +60,7 @@ export function ReportButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {variant === "icon" ? (
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+          <Button variant="ghost" size="icon" aria-label="Signaler" className="text-muted-foreground hover:text-destructive">
             <Flag className="w-4 h-4" />
           </Button>
         ) : (

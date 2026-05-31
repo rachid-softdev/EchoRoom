@@ -1,22 +1,12 @@
 import { Badge } from '@/components/ui'
 import { Phone, Clock, Calendar } from 'lucide-react'
+import { STATUS_LABELS, formatDuration } from '@/lib/constants'
 
 interface ReplayHeaderProps {
   scenarioTitle?: string
   characterName?: string
   durationSeconds?: number
   status?: string
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return m > 0 ? `${m} min ${s}s` : `${s}s`
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  COMPLETED: 'Terminé',
-  FAILED: 'Échoué',
 }
 
 export function ReplayHeader({

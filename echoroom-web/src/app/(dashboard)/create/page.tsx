@@ -5,22 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
+import { Textarea } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { useApiToast } from "@/lib/trpc-error";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  ROMANTIC: "Romantique",
-  CHAOTIC: "Chaotique",
-  CORPORATE: "Corporate",
-  NPC: "NPC",
-  HORROR: "Horreur",
-  CRINGE: "Cringe",
-  GAMER: "Gamer",
-  WEIRD: "Weird",
-};
+import { CATEGORY_LABELS } from "@/lib/constants";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -130,9 +121,8 @@ export default function CreatePage() {
             <label htmlFor="description" className="text-sm font-medium">
               Description
             </label>
-            <textarea
+            <Textarea
               id="description"
-              className="flex w-full rounded-xl border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[80px] resize-y"
               placeholder="Décrivez le contexte du scénario..."
               maxLength={300}
               value={description}
@@ -145,9 +135,8 @@ export default function CreatePage() {
             <label htmlFor="openingMessage" className="text-sm font-medium">
               Message d&apos;ouverture
             </label>
-            <textarea
+            <Textarea
               id="openingMessage"
-              className="flex w-full rounded-xl border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[80px] resize-y"
               placeholder="Ce que le personnage dit au début de l'appel..."
               maxLength={300}
               value={openingMessage}
@@ -160,13 +149,13 @@ export default function CreatePage() {
             <label htmlFor="aiInstructions" className="text-sm font-medium">
               Instructions IA
             </label>
-            <textarea
+            <Textarea
               id="aiInstructions"
-              className="flex w-full rounded-xl border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[120px] resize-y"
               placeholder="Instructions détaillées pour le comportement de l'IA..."
               maxLength={3000}
               value={aiInstructions}
               onChange={(e) => setAiInstructions(e.target.value)}
+              className="min-h-[120px]"
             />
             <p className="text-xs text-muted-foreground">
               {aiInstructions.length}/3000 caractères

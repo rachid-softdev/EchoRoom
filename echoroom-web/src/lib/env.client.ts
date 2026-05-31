@@ -58,22 +58,7 @@ function getClientEnv(): z.infer<typeof clientEnvSchema> {
   return result.data;
 }
 
-const env = new Proxy({} as z.infer<typeof clientEnvSchema>, {
-  get(_target, prop: string) {
-    return getClientEnv()[prop as keyof z.infer<typeof clientEnvSchema>];
-  },
-  has(_target, prop: string) {
-    return prop in getClientEnv();
-  },
-  ownKeys() {
-    return Reflect.ownKeys(getClientEnv());
-  },
-  getOwnPropertyDescriptor() {
-    return {
-      enumerable: true,
-      configurable: true,
-    };
-  },
-});
+const env: z.infer<typeof clientEnvSchema> = getClientEnv();
+Object.freeze(env);
 
 export { env, getClientEnv };

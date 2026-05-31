@@ -123,7 +123,7 @@ function Toast({
           className="ml-4 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">Fermer</span>
         </button>
       )}
     </div>

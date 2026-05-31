@@ -31,6 +31,17 @@ export function formatDate(date: string | Date): string {
   }).format(d);
 }
 
+export const CATEGORY_LABELS: Record<string, string> = {
+  ROMANTIC: "Romantique",
+  CHAOTIC: "Chaotique",
+  CORPORATE: "Corporate",
+  NPC: "NPC",
+  HORROR: "Horreur",
+  CRINGE: "Cringe",
+  GAMER: "Gamer",
+  WEIRD: "Weird",
+};
+
 export function formatDuration(seconds: number): string {
   if (seconds === 0) return "-";
   const mins = Math.floor(seconds / 60);

@@ -1,83 +1,92 @@
-'use client'
+"use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from "react";
 
 interface PaginatedResult<T> {
-  items: T[]
-  nextCursor?: string
+  items: T[];
+  nextCursor?: string;
 }
 
-/**
- * Simple cursor-based pagination hook.
- * Works with any tRPC query that returns { items: T[], nextCursor?: string }.
- * 
- * FIXED: Uses useEffect to accumulate items when query.data changes,
- * avoiding stale closure issues in loadMore.
- */
+interface UsePaginatedQueryOptions<T> {
+  getKey?: (item: T) => string | number;
+}
+
 export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
   fetcher: (args: TArgs) => {
-    data?: PaginatedResult<T>
-    isLoading: boolean
-    isFetching?: boolean
-    isError: boolean
-    error?: { message?: string } | null
-    refetch: (opts?: Record<string, unknown>) => void
+    data?: PaginatedResult<T>;
+    isLoading: boolean;
+    isFetching?: boolean;
+    isError: boolean;
+    error?: { message?: string } | null;
+    refetch: (opts?: Record<string, unknown>) => void;
   },
-  initialArgs: Omit<TArgs, 'cursor'> & { limit: number },
+  initialArgs: Omit<TArgs, "cursor"> & { limit: number },
+  options?: UsePaginatedQueryOptions<T>,
 ) {
-  const [cursor, setCursor] = useState<string | undefined>(undefined)
-  const [allItems, setAllItems] = useState<T[]>([])
-  const [isFetchingMore, setIsFetchingMore] = useState(false)
-  const lastDataRef = useRef<PaginatedResult<T> | undefined>(undefined)
+  const getKey =
+    options?.getKey ??
+    ((item: T) =>
+      (item as unknown as Record<string, unknown>).id as string);
+
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [allItems, setAllItems] = useState<T[]>([]);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const lastDataRef = useRef<PaginatedResult<T> | undefined>(undefined);
+
+  const nextCursorRef = useRef<string | undefined>(undefined);
+  const isFetchingMoreRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   const query = fetcher({
     ...initialArgs,
     cursor,
-  } as unknown as TArgs)
+  } as unknown as TArgs);
 
-  const nextCursor = query.data?.nextCursor
+  const nextCursor = query.data?.nextCursor;
 
-  // Accumulate items when data changes (new page loaded)
+  nextCursorRef.current = nextCursor;
+  isFetchingMoreRef.current = isFetchingMore;
+  isLoadingRef.current = query.isLoading;
+
   useEffect(() => {
-    const data = query.data
-    if (!data) return
-
-    // Skip if data hasn't changed (prevents duplicate accumulation)
-    if (lastDataRef.current === data) return
-    lastDataRef.current = data
+    const data = query.data;
+    if (!data) return;
+    if (lastDataRef.current === data) return;
+    lastDataRef.current = data;
 
     if (!cursor) {
-      // First page: replace all items
-      setAllItems(data.items)
+      setAllItems(data.items);
     } else {
-      // Subsequent pages: append only new items (dedup by id if available)
       setAllItems((prev) => {
-        const existingIds = new Set(
-          prev.map((item) => (item as Record<string, unknown>).id as string).filter(Boolean)
-        )
+        const existingKeys = new Set(prev.map(getKey));
         const newItems = data.items.filter(
-          (item) => !existingIds.has((item as Record<string, unknown>).id as string)
-        )
-        return [...prev, ...newItems]
-      })
+          (item) => !existingKeys.has(getKey(item)),
+        );
+        return [...prev, ...newItems];
+      });
     }
 
-    setIsFetchingMore(false)
-  }, [query.data, cursor])
+    setIsFetchingMore(false);
+  }, [query.data, cursor, getKey]);
 
   const loadMore = useCallback(() => {
-    if (!nextCursor || isFetchingMore || query.isLoading) return
-    setIsFetchingMore(true)
-    setCursor(nextCursor)
-  }, [nextCursor, isFetchingMore, query.isLoading])
+    if (
+      !nextCursorRef.current ||
+      isFetchingMoreRef.current ||
+      isLoadingRef.current
+    )
+      return;
+    setIsFetchingMore(true);
+    setCursor(nextCursorRef.current);
+  }, []);
 
   const refetch = useCallback(() => {
-    setCursor(undefined)
-    setAllItems([])
-    setIsFetchingMore(false)
-    lastDataRef.current = undefined
-    query.refetch()
-  }, [query.refetch])
+    setCursor(undefined);
+    setAllItems([]);
+    setIsFetchingMore(false);
+    lastDataRef.current = undefined;
+    query.refetch();
+  }, [query.refetch]);
 
   return {
     items: allItems,
@@ -88,5 +97,5 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
     hasMore: !!nextCursor,
     loadMore,
     refetch,
-  }
+  };
 }

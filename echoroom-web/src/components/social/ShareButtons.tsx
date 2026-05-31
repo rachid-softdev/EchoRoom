@@ -44,12 +44,11 @@ export function ShareButtons({
 
   function copyLink(platform: "DISCORD" | "TIKTOK" | "COPY_LINK" | "WEB_SHARE") {
     navigator.clipboard.writeText(url).then(() => {
-      toast({
-        title: "Lien copié !",
-        variant: "default",
-      })
-    })
-    handleShare(platform)
+      toast({ title: "Lien copié !", variant: "default" });
+      handleShare(platform);
+    }).catch(() => {
+      toast({ title: "Échec de la copie", variant: "destructive" });
+    });
   }
 
   async function shareNative() {
@@ -79,7 +78,7 @@ export function ShareButtons({
         disabled={trackMutation.isPending}
       >
         <ExternalLink className="w-4 h-4" />
-        <span className="hidden sm:inline">Twitter / X</span>
+        <span className="sr-only sm:not-sr-only">Twitter / X</span>
       </Button>
       <Button
         variant="outline"
@@ -89,7 +88,7 @@ export function ShareButtons({
         disabled={trackMutation.isPending}
       >
         <MessageCircle className="w-4 h-4" />
-        <span className="hidden sm:inline">Discord</span>
+        <span className="sr-only sm:not-sr-only">Discord</span>
       </Button>
       <Button
         variant="outline"
@@ -99,7 +98,7 @@ export function ShareButtons({
         disabled={trackMutation.isPending}
       >
         <Music className="w-4 h-4" />
-        <span className="hidden sm:inline">TikTok</span>
+        <span className="sr-only sm:not-sr-only">TikTok</span>
       </Button>
       <Button
         variant="outline"
@@ -109,7 +108,7 @@ export function ShareButtons({
         disabled={trackMutation.isPending}
       >
         <Share2 className="w-4 h-4" />
-        <span className="hidden sm:inline">Partager</span>
+        <span className="sr-only sm:not-sr-only">Partager</span>
       </Button>
     </div>
   )

@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Shield, Phone, Users, Activity, TrendingUp } from "lucide-react";
+import { Phone, Users, Activity, TrendingUp } from "lucide-react";
 
 const stats = [
   { label: "Utilisateurs total", value: "—", icon: Users },
@@ -21,16 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function AnalyticsPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <span className="font-semibold">Admin — Analytics</span>
-        </div>
-        <Badge variant="secondary">Admin</Badge>
-      </nav>
-
-      <section className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
+    <section className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
         <h1 className="text-3xl font-bold mb-8">Analytiques</h1>
 
         <div className="grid md:grid-cols-4 gap-4 mb-8">
@@ -61,6 +51,5 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </section>
-    </div>
-  );
-}
+    );
+  }

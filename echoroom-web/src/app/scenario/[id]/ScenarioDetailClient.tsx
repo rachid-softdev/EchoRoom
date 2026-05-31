@@ -26,7 +26,6 @@ import { useSession } from "next-auth/react"
 import { ReactionBar } from "@/components/social/ReactionBar"
 import { ShareButtons } from "@/components/social/ShareButtons"
 import { ReportButton } from "@/components/social/ReportButton"
-import { ClipCreator } from "@/components/social/ClipCreator"
 import { ScenarioCard } from "@/components/shared/ScenarioCard"
 import { useState } from "react"
 import { toast } from "@/components/ui"
@@ -252,9 +251,8 @@ export function ScenarioDetailClient({
 
         {/* Clip creator (placeholder — would need user's calls) */}
         {isAuthenticated && (
-          <div>
-            <ClipCreator callId="" durationSeconds={0} />
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="rounded-xl border-2 border-dashed border-muted-foreground/30 p-8 text-center">
+            <p className="text-sm text-muted-foreground">
               Sélectionnez un appel dans votre historique pour créer un clip
             </p>
           </div>
