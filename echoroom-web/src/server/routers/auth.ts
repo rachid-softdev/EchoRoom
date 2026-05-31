@@ -69,23 +69,15 @@ export const authRouter = router({
         }
       }
 
-      const existingEmail = await db.user.findUnique({
-        where: { email: input.email },
-      });
-      if (existingEmail) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Cet email est déjà utilisé",
-        });
-      }
+      const [existingEmail, existingUsername] = await Promise.all([
+        db.user.findUnique({ where: { email: input.email }, select: { id: true } }),
+        db.user.findUnique({ where: { username: input.username }, select: { id: true } }),
+      ]);
 
-      const existingUsername = await db.user.findUnique({
-        where: { username: input.username },
-      });
-      if (existingUsername) {
+      if (existingEmail || existingUsername) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Ce nom d'utilisateur est déjà pris",
+          message: "Cet email ou ce nom d'utilisateur est déjà utilisé",
         });
       }
 

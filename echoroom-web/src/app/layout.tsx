@@ -42,7 +42,7 @@ export default function RootLayout({
         <TRPCReactProvider>
           <SessionProvider>
             <ToastProvider>
-              <div id="main-content" className="flex flex-col min-h-screen">
+              <div id="main-content" tabIndex={-1} className="flex flex-col min-h-screen">
                 {children}
                 <Footer />
               </div>

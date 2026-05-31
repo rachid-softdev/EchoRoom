@@ -243,3 +243,88 @@ describe("checkWebhookRateLimit — unknown endpoint keys", () => {
     expect(await checkWebhookRateLimit("twilio:voice:init", "10.0.0.2")).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// WEBHOOK_RATE_LIMITS configuration validation
+// ---------------------------------------------------------------------------
+
+describe("WEBHOOK_RATE_LIMITS configuration", () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("should contain all known webhook endpoint keys", async () => {
+    const { WEBHOOK_RATE_LIMITS } = await import("../rateLimit");
+
+    const knownKeys = [
+      "twilio:status",
+      "twilio:voice:init",
+      "twilio:voice:input",
+      "twilio:voice:stream",
+      "stripe:checkout",
+    ];
+
+    for (const key of knownKeys) {
+      expect(WEBHOOK_RATE_LIMITS).toHaveProperty(key);
+    }
+  });
+
+  it("should have all limits > 0 and all windowSec > 0", async () => {
+    const { WEBHOOK_RATE_LIMITS } = await import("../rateLimit");
+
+    for (const [key, config] of Object.entries(WEBHOOK_RATE_LIMITS)) {
+      expect(config.limit, `limit for ${key} must be > 0`).toBeGreaterThan(0);
+      expect(config.windowSec, `windowSec for ${key} must be > 0`).toBeGreaterThan(0);
+    }
+  });
+
+  it("should have perIp boolean for all keys (not undefined/null)", async () => {
+    const { WEBHOOK_RATE_LIMITS } = await import("../rateLimit");
+
+    for (const [key, config] of Object.entries(WEBHOOK_RATE_LIMITS)) {
+      expect(typeof config.perIp, `perIp for ${key} must be boolean`).toBe("boolean");
+    }
+  });
+
+  it("should have at least one perIp:true and one perIp:false key", async () => {
+    const { WEBHOOK_RATE_LIMITS } = await import("../rateLimit");
+
+    const perIpKeys = Object.values(WEBHOOK_RATE_LIMITS).filter((c) => c.perIp);
+    const globalKeys = Object.values(WEBHOOK_RATE_LIMITS).filter((c) => !c.perIp);
+
+    expect(perIpKeys.length).toBeGreaterThan(0);
+    expect(globalKeys.length).toBeGreaterThan(0);
+  });
+
+  it("should have matching keys between WEBHOOK_RATE_LIMITS and known routes", async () => {
+    const { WEBHOOK_RATE_LIMITS } = await import("../rateLimit");
+
+    // These are the keys used by the webhook route handlers
+    const routeKeys = [
+      "twilio:status",        // src/app/api/webhooks/twilio/route.ts
+      "twilio:voice:init",    // src/app/api/webhooks/twilio/voice/route.ts
+      "twilio:voice:input",   // src/app/api/webhooks/twilio/voice/handle-input/route.ts
+      "twilio:voice:stream",  // src/app/api/webhooks/twilio/voice/stream/route.ts
+      "stripe:checkout",      // src/app/api/webhooks/stripe/route.ts
+    ];
+
+    for (const key of routeKeys) {
+      expect(WEBHOOK_RATE_LIMITS).toHaveProperty(key);
+    }
+
+    // Every key in WEBHOOK_RATE_LIMITS should be a known route key (no orphans)
+    for (const key of Object.keys(WEBHOOK_RATE_LIMITS)) {
+      expect(routeKeys).toContain(key);
+    }
+  });
+
+  it("should deny unknown keys even after resetting modules", async () => {
+    const { checkWebhookRateLimit } = await import("../rateLimit");
+
+    // Test a few different unknown patterns
+    expect(await checkWebhookRateLimit("unknown:endpoint", "127.0.0.1")).toBe(false);
+    expect(await checkWebhookRateLimit("", "127.0.0.1")).toBe(false);
+    expect(await checkWebhookRateLimit("stripe:unknown", "127.0.0.1")).toBe(false);
+  });
+});
