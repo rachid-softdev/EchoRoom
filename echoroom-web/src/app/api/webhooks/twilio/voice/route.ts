@@ -9,6 +9,7 @@ import { uploadAudioBuffer } from "@/server/services/audio/r2";
 import { ttsClient } from "@/server/services/audio/tts";
 import { ELEVENLABS_MODEL } from "@/server/services/telephony/constants";
 import { initConversationState } from "@/server/services/telephony/conversationState";
+import { buildSystemPrompt } from "@/server/services/telephony/prompts";
 import { checkWebhookRateLimit } from "../../rateLimit";
 import { extractParams, validateTwilioRequest } from "../validate";
 
@@ -24,31 +25,6 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  */
 export async function GET(_req: NextRequest) {
   return NextResponse.json({ active: false });
-}
-
-/**
- * Build system prompt from a resolved scenario with character data.
- */
-function buildSystemPrompt(scenario: {
-  character: {
-    name: string;
-    description: string | null;
-    promptSystem: string;
-    elevenLabsVoiceId: string;
-  };
-  aiInstructions: string;
-  description: string | null;
-}): string {
-  return [
-    `Tu es ${scenario.character.name}. ${scenario.character.description || ""}`,
-    scenario.character.promptSystem,
-    scenario.aiInstructions,
-    `Contexte du scénario: ${scenario.description || ""}`,
-    "Réponds en français de manière naturelle et parlée, comme dans une conversation téléphonique.",
-    "Garde tes réponses concises (2-3 phrases max) adaptées à un appel vocal.",
-  ]
-    .filter(Boolean)
-    .join("\n");
 }
 
 /**

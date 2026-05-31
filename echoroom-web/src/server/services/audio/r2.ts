@@ -118,7 +118,8 @@ export async function deleteAudioFile(storedUrl: string): Promise<void> {
 if (typeof window === "undefined" && process.env.NODE_ENV === "production") {
   import("./r2Check").then(({ ensureBucketPrivacy }) => {
     ensureBucketPrivacy();
-  }).catch(() => {
-    // Silently fail — the check is non-critical
+  }).catch((err) => {
+    const message = err instanceof Error ? err.message : String(err);
+    log.warn("R2 startup privacy check failed (non-critical)", { error: message });
   });
 }

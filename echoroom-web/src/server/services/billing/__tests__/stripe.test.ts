@@ -15,9 +15,15 @@ vi.mock("@/lib/stripe", () => ({
   },
 }));
 
+// Set price IDs that match the pricing config tiers
+const STARTER_PRICE_ID = "price_tier_starter";
+const PRO_PRICE_ID = "price_tier_pro";
+
 describe("createCheckoutSession", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.STRIPE_PRICE_STARTER = STARTER_PRICE_ID;
+    process.env.STRIPE_PRICE_PRO = PRO_PRICE_ID;
   });
 
   it("should create a checkout session with correct parameters", async () => {
@@ -31,7 +37,7 @@ describe("createCheckoutSession", () => {
     const result = await createCheckoutSession({
       userId: "user-abc",
       credits: 50,
-      priceId: "price_2_credits_50",
+      priceId: STARTER_PRICE_ID,
       successUrl: "https://echoroom.app/billing/success",
       cancelUrl: "https://echoroom.app/billing/cancel",
     });
@@ -43,7 +49,7 @@ describe("createCheckoutSession", () => {
 
     expect(mockSessionsCreate).toHaveBeenCalledWith({
       mode: "payment",
-      line_items: [{ price: "price_2_credits_50", quantity: 1 }],
+      line_items: [{ price: STARTER_PRICE_ID, quantity: 1 }],
       metadata: {
         userId: "user-abc",
         credits: "50",
@@ -60,8 +66,8 @@ describe("createCheckoutSession", () => {
 
     await createCheckoutSession({
       userId: "user-xyz",
-      credits: 10,
-      priceId: "price_1_credits_10",
+      credits: 200,
+      priceId: PRO_PRICE_ID,
       successUrl: "https://example.com/success",
       cancelUrl: "https://example.com/cancel",
     });
@@ -70,7 +76,7 @@ describe("createCheckoutSession", () => {
       expect.objectContaining({
         metadata: {
           userId: "user-xyz",
-          credits: "10", // Must be string
+          credits: "200", // Must be string
         },
       }),
     );
@@ -87,7 +93,7 @@ describe("createCheckoutSession", () => {
         successUrl: "https://example.com/success",
         cancelUrl: "https://example.com/cancel",
       }),
-    ).rejects.toThrow("Unknown priceId: price_unknown");
+    ).rejects.toThrow("Identifiant de tarif inconnu : price_unknown");
 
     expect(mockSessionsCreate).not.toHaveBeenCalled();
   });

@@ -43,7 +43,7 @@ const features = [
 ];
 
 export default function HomePage() {
-  const featuredQuery = api.scenarios.feed.useQuery({ limit: 3 })
+  const featuredQuery = api.scenarios.feed.useQuery({ limit: 3 });
   return (
     <div className="flex flex-col min-h-screen">
       {/* ─── Nav ────────────────────────────────────────────── */}

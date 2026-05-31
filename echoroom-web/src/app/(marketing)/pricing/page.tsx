@@ -9,6 +9,7 @@ import { Check, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
+import { PRICING_CONFIG } from "@/config/pricing";
 
 interface Plan {
   name: string
@@ -20,52 +21,15 @@ interface Plan {
   highlighted: boolean
 }
 
-const plans: Plan[] = [
-  {
-    name: "Découverte",
-    price: "Gratuit",
-    credits: 5,
-    priceId: "",
-    features: [
-      "5 crédits offerts",
-      "8 personnages IA",
-      "Accès à la bibliothèque",
-      "Feed communautaire",
-    ],
-    cta: "Commencer",
-    highlighted: false,
-  },
-  {
-    name: "Starter",
-    price: "9,99 €",
-    credits: 50,
-    priceId: "price_starter",
-    features: [
-      "50 crédits",
-      "Tous les personnages",
-      "Création de scénarios illimitée",
-      "Replay des appels",
-      "Partage viral",
-    ],
-    cta: "Choisir Starter",
-    highlighted: true,
-  },
-  {
-    name: "Pro",
-    price: "24,99 €",
-    credits: 200,
-    priceId: "price_pro",
-    features: [
-      "200 crédits",
-      "Tout le starter",
-      "Scénarios en avant-première",
-      "Badge créateur",
-      "Support prioritaire",
-    ],
-    cta: "Choisir Pro",
-    highlighted: false,
-  },
-];
+const plans: Plan[] = PRICING_CONFIG.map((tier) => ({
+  name: tier.label,
+  price: tier.priceCents === 0 ? "Gratuit" : `${(tier.priceCents / 100).toFixed(2).replace(".", ",")} €`,
+  credits: tier.credits,
+  priceId: tier.stripePriceId,
+  features: tier.features,
+  cta: tier.cta,
+  highlighted: tier.highlighted,
+}));
 
 export default function PricingPage() {
   const router = useRouter();

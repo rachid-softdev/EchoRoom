@@ -20,7 +20,7 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
     isLoading: boolean
     isFetching?: boolean
     isError: boolean
-    error?: { message?: string }
+    error?: { message?: string } | null
     refetch: (opts?: Record<string, unknown>) => void
   },
   initialArgs: Omit<TArgs, 'cursor'> & { limit: number },

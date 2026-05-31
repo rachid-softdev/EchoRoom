@@ -388,7 +388,7 @@ export const adminRouter = router({
     .mutation(async ({ input, ctx }) => {
       const anonId = randomUUID();
       // Generate a valid bcrypt hash of a random UUID as the sentinel password.
-      const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
+      const deletedHash = await bcrypt.hash(randomUUID(), 12);
 
       await db.$transaction(async (tx) => {
         const result = await tx.user.updateMany({

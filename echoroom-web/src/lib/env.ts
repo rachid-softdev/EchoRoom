@@ -28,6 +28,12 @@ const envSchema = z.object({
   PHONE_ENCRYPTION_KEY: z.string().min(32),
   TWILIO_TOKEN_SECRET: z.string().min(16),
   AUDIT_HASH_SECRET: z.string().min(16),
+  STRIPE_PRICE_STARTER: z.string().optional().default("price_dev_starter"),
+  STRIPE_PRICE_PRO: z.string().optional().default("price_dev_pro"),
+  MODERATION_FAIL_OPEN: z
+    .string()
+    .transform((v) => v !== "false" && v !== "0")
+    .default("true"),
 });
 
 type EnvType = z.infer<typeof envSchema>;
@@ -126,9 +132,13 @@ function loadEnv(): EnvType {
 export const env: Readonly<EnvType> = Object.freeze(loadEnv());
 
 /**
- * No-op kept for backward compatibility.
- * Validation now happens at module import time.
+ * Validates production-specific environment variables.
+ * Called explicitly in production deployment to check for missing config.
  */
 export function validateProductionEnv(): void {
-  // Validation already performed in loadEnv() during module initialization
+  const required = ["STRIPE_PRICE_STARTER", "STRIPE_PRICE_PRO"] as const;
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    console.warn(`[ENV] Missing production env vars: ${missing.join(", ")}`);
+  }
 }

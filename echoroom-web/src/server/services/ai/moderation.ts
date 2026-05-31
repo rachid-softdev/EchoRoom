@@ -1,16 +1,8 @@
-import OpenAI from "openai";
+import { getOpenAIClient } from "@/lib/openai";
 import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
 
 const log = createLogger("moderation");
-
-let openai: OpenAI | null = null;
-
-try {
-  openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-} catch {
-  log.warn("OpenAI unavailable — moderation disabled");
-}
 
 const forbiddenPatterns = [
   /celebrity/i,
@@ -101,6 +93,7 @@ export async function checkContent(
   }
 
   // Step 2: AI-based check if OpenAI is available
+  const openai = getOpenAIClient();
   if (openai) {
     try {
       const response = await openai.moderations.create(
@@ -156,8 +149,12 @@ export async function moderateOutput(
     return text;
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      log.warn("Moderation timed out — allowing content through", { contentLength: text.length });
-      return text; // Fail-open for safety (better than no response on a call)
+      log.warn("Moderation timed out", { contentLength: text.length });
+      if (env.MODERATION_FAIL_OPEN) {
+        log.warn("Fail-open — allowing content through");
+        return text;
+      }
+      return "Je ne peux pas répondre à cela. Passons à autre chose.";
     }
     throw error;
   } finally {

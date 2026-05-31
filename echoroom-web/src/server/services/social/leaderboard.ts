@@ -62,12 +62,24 @@ export async function getTopScenarios(params: GetTopScenariosParams) {
 }
 
 export async function getTopCreators(params: GetTopCreatorsParams) {
+  const sinceDate = getPeriodDate(params.period);
   const orderBy =
     params.sort === "LIKES"
       ? { totalLikesReceived: "desc" as const }
       : { totalCallsMade: "desc" as const };
 
+  const where: import("@prisma/client").Prisma.UserWhereInput = {};
+
+  if (sinceDate) {
+    // LIMITATION: Cumulative counters can't be period-filtered precisely.
+    // This approximates by finding users active during the period.
+    where.scenarios = {
+      some: { createdAt: { gte: sinceDate } },
+    };
+  }
+
   return db.user.findMany({
+    where,
     orderBy,
     take: 20,
     select: {
