@@ -56,14 +56,11 @@ export const callsRouter = router({
             case "USER_NOT_FOUND":
               throw new TRPCError({ code: "UNAUTHORIZED", message: "Utilisateur introuvable" });
             case "INSUFFICIENT_CREDITS":
-            case "CREDIT_DEBIT_FAILED":
               throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Crédits insuffisants" });
             case "TWILIO_ERROR":
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Échec de l'appel" });
             case "DAILY_LIMIT_EXCEEDED":
               throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Limite quotidienne d'appels atteinte" });
-            case "NUMBER_BLOCKED":
-              throw new TRPCError({ code: "FORBIDDEN", message: "Ce numéro a été bloqué" });
             default:
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
           }

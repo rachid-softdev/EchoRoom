@@ -2,7 +2,7 @@ import { twilioClient, TWILIO_PHONE } from "./twilio";
 import { db } from "@/server/db";
 import { env } from "@/lib/env";
 import { AppError } from "@/server/lib/errors";
-import { atomicDebit, atomicRefund } from "@/server/services/billing/creditOps";
+import { atomicDebit } from "@/server/services/billing/creditOps";
 import { atomicIncrementDailyLimit } from "@/server/services/billing/dailyLimitOps";
 import { createLogger } from "@/server/lib/logger";
 import { encryptPhoneNumber } from "@/server/lib/encryption";
@@ -117,25 +117,33 @@ export async function initiateCall(params: StartCallParams) {
 
     return { callId: call.id, estimatedCredits: 1 };
   } catch (error) {
-    // Step 3: Atomic refund on failure — only if still CALLING
-    const refundResult = await db.call.updateMany({
-      where: { id: call.id, status: "CALLING" },
-      data: { status: "FAILED" },
+    // Step 3: Atomic refund on failure — wrapped in $transaction to ensure
+    // status update + credit refund are committed atomically.
+    // Uses the call's actual costCredits (not hardcoded 1) for correctness.
+    await db.$transaction(async (tx) => {
+      const refundResult = await tx.call.updateMany({
+        where: { id: call.id, status: "CALLING" },
+        data: { status: "FAILED" },
+      });
+
+      if (refundResult.count > 0) {
+        const failedCall = await tx.call.findUnique({
+          where: { id: call.id },
+          select: { costCredits: true },
+        });
+        if (failedCall) {
+          await tx.user.update({
+            where: { id: params.userId },
+            data: { credits: { increment: failedCall.costCredits } },
+          });
+        }
+      }
     });
 
-    if (refundResult.count > 0) {
-      await db.user.update({
-        where: { id: params.userId },
-        data: { credits: { increment: 1 } },
-      });
-    }
-
-    // Log and throw with original error context
+    // Log server-side with full error context
     log.error("Twilio call initiation failed", { error });
-    throw new AppError(
-      "TWILIO_ERROR",
-      `Échec de l'appel : ${error instanceof Error ? error.message : "Erreur inconnue"}`,
-    );
+    // Sanitize error message — don't leak Twilio internals to the client
+    throw new AppError("TWILIO_ERROR", "Échec de l'appel");
   }
 }
 

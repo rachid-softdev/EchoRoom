@@ -41,7 +41,7 @@ export async function atomicIncrementDailyLimit(
       });
     } catch (e) {
       // P2002 = unique constraint violation means another tx created the row first
-      if ((e as { code?: string }).code === "P2002") {
+      if (e && typeof e === "object" && "code" in e && (e as { code: string }).code === "P2002") {
         const retry = await tx.dailyCallLimit.updateMany({
           where: {
             userId: params.userId,
