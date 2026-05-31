@@ -18,7 +18,7 @@ try {
 
     redis = new Redis({
       url: env.REDIS_URL,
-      token: env.REDIS_TOKEN ?? url.password || undefined,
+      token: env.REDIS_TOKEN ?? (url.password || undefined),
     });
 
     log.info("Redis configured");

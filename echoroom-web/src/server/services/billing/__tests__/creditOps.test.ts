@@ -256,3 +256,187 @@ describe("atomicRefund", () => {
     ).rejects.toThrow("Record not found");
   });
 });
+
+// ---------------------------------------------------------------------------
+// atomicSafeDecrement — safe credit decrement that throws on failure
+// ---------------------------------------------------------------------------
+
+describe("atomicSafeDecrement", () => {
+  let mockUpdateMany: ReturnType<typeof vi.fn>;
+  let mockFindUnique: ReturnType<typeof vi.fn>;
+  let mockTx: Partial<PrismaClient>;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockUpdateMany = vi.fn();
+    mockFindUnique = vi.fn();
+
+    mockTx = {
+      user: {
+        updateMany: mockUpdateMany,
+        findUnique: mockFindUnique,
+      } as unknown as PrismaClient["user"],
+    } as unknown as Partial<PrismaClient>;
+  });
+
+  it("should decrement credits when user has sufficient credits", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+    await atomicSafeDecrement(mockTx as any, {
+      userId: "user-abc",
+      amount: 5,
+    });
+
+    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: "user-abc", credits: { gte: 5 } },
+      data: { credits: { decrement: 5 } },
+    });
+    // Should NOT call findUnique on success
+    expect(mockFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("should throw INSUFFICIENT_CREDITS when credits are insufficient", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+    mockFindUnique.mockResolvedValue({ id: "user-abc" }); // User exists
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+    await expect(
+      atomicSafeDecrement(mockTx as any, {
+        userId: "user-abc",
+        amount: 999,
+      }),
+    ).rejects.toThrow("Crédits insuffisants");
+
+    expect(mockFindUnique).toHaveBeenCalledWith({
+      where: { id: "user-abc" },
+      select: { id: true },
+    });
+  });
+
+  it("should throw USER_NOT_FOUND when user does not exist", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+    mockFindUnique.mockResolvedValue(null);
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+    await expect(
+      atomicSafeDecrement(mockTx as any, {
+        userId: "nonexistent-user",
+        amount: 5,
+      }),
+    ).rejects.toThrow("Utilisateur introuvable");
+
+    expect(mockFindUnique).toHaveBeenCalledWith({
+      where: { id: "nonexistent-user" },
+      select: { id: true },
+    });
+  });
+
+  it("should throw AppError with INSUFFICIENT_CREDITS code", async () => {
+    const { atomicSafeDecrement } = await import("../creditOps");
+    const { AppError } = await import("@/server/lib/errors");
+
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+    mockFindUnique.mockResolvedValue({ id: "user-abc" });
+
+    try {
+      await atomicSafeDecrement(mockTx as any, {
+        userId: "user-abc",
+        amount: 999,
+      });
+      expect.unreachable("Should have thrown");
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AppError);
+      expect(e.code).toBe("INSUFFICIENT_CREDITS");
+    }
+  });
+
+  it("should throw AppError with USER_NOT_FOUND code", async () => {
+    const { atomicSafeDecrement } = await import("../creditOps");
+    const { AppError } = await import("@/server/lib/errors");
+
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+    mockFindUnique.mockResolvedValue(null);
+
+    try {
+      await atomicSafeDecrement(mockTx as any, {
+        userId: "nonexistent",
+        amount: 5,
+      });
+      expect.unreachable("Should have thrown");
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(AppError);
+      expect(e.code).toBe("USER_NOT_FOUND");
+    }
+  });
+
+  it("should handle decrement of 1 credit", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+    await atomicSafeDecrement(mockTx as any, {
+      userId: "user-abc",
+      amount: 1,
+    });
+
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: "user-abc", credits: { gte: 1 } },
+      data: { credits: { decrement: 1 } },
+    });
+  });
+
+  it("should handle large decrement amounts", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+    await atomicSafeDecrement(mockTx as any, {
+      userId: "user-abc",
+      amount: 50000,
+    });
+
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: "user-abc", credits: { gte: 50000 } },
+      data: { credits: { decrement: 50000 } },
+    });
+  });
+
+  it("should prevent negative credits via WHERE credits gte guard", async () => {
+    // Simulate race condition: user has 3 credits, two concurrent decrements of 2
+    mockUpdateMany
+      .mockResolvedValueOnce({ count: 1 }) // First succeeds (credits: 3 >= 2)
+      .mockResolvedValueOnce({ count: 0 }); // Second fails (credits now: 1 < 2)
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+
+    // First decrement
+    await atomicSafeDecrement(mockTx as any, {
+      userId: "user-abc",
+      amount: 2,
+    });
+
+    // Second decrement should fail
+    mockFindUnique.mockResolvedValue({ id: "user-abc" });
+    await expect(
+      atomicSafeDecrement(mockTx as any, {
+        userId: "user-abc",
+        amount: 2,
+      }),
+    ).rejects.toThrow("Crédits insuffisants");
+  });
+
+  it("should not throw if credits exactly equal the amount (gte check)", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+
+    const { atomicSafeDecrement } = await import("../creditOps");
+    await atomicSafeDecrement(mockTx as any, {
+      userId: "user-abc",
+      amount: 0,
+    });
+
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: "user-abc", credits: { gte: 0 } },
+      data: { credits: { decrement: 0 } },
+    });
+  });
+});

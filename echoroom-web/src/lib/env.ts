@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { randomBytes } from "node:crypto";
+import { randomBytes } from "crypto";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

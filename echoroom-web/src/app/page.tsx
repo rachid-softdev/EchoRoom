@@ -1,14 +1,10 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui";
-import { Sparkles, Phone, Users, Globe, ArrowRight, Zap, Shield, Share2, Headphones, Menu, X } from "lucide-react";
-import { api } from "@/lib/trpc";
-import { DataLoader } from "@/components/shared/DataLoader";
-import { ScenarioCard } from "@/components/shared/ScenarioCard";
+import { Sparkles, Phone, Users, Globe, ArrowRight, Zap, Shield, Share2, Headphones } from "lucide-react";
+import { MobileNav } from "@/components/landing/MobileNav";
+import { FeaturedScenariosSection } from "@/components/landing/FeaturedScenariosSection";
 
 const features = [
   {
@@ -44,8 +40,6 @@ const features = [
 ];
 
 export default function HomePage() {
-  const featuredQuery = api.scenarios.feed.useQuery({ limit: 3 });
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="flex flex-col min-h-screen">
       {/* ─── Nav ────────────────────────────────────────────── */}
@@ -69,32 +63,8 @@ export default function HomePage() {
             <Button size="sm">S&apos;inscrire</Button>
           </Link>
         </div>
-        {/* Mobile burger */}
-        <div className="md:hidden">
-          <Button variant="ghost" size="icon" aria-label="Menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
-        </div>
+        <MobileNav />
       </nav>
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border bg-card px-4 py-4 flex flex-col gap-3">
-          <Link href="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2" onClick={() => setMobileMenuOpen(false)}>
-            Explorer
-          </Link>
-          <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2" onClick={() => setMobileMenuOpen(false)}>
-            Tarifs
-          </Link>
-          <div className="flex gap-3 pt-2 border-t border-border">
-            <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="ghost" size="sm" className="w-full">Connexion</Button>
-            </Link>
-            <Link href="/register" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-              <Button size="sm" className="w-full">S&apos;inscrire</Button>
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* ─── Hero ───────────────────────────────────────────── */}
       <section className="relative flex flex-col items-center justify-center px-6 pt-24 pb-16 text-center overflow-hidden">
@@ -170,36 +140,7 @@ export default function HomePage() {
         </div>
       </section>
 
-        {/* ─── Featured Scenarios ─────────────────────────────── */}
-        <section className="px-6 py-20 max-w-6xl mx-auto w-full border-t border-border">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h2 className="text-3xl font-bold">
-                Scénarios <span className="text-primary">populaires</span>
-              </h2>
-              <p className="text-muted-foreground mt-2">
-                Découvrez ce que la communauté crée
-              </p>
-            </div>
-            <Link href="/explore">
-              <Button variant="ghost" className="gap-2">
-                Voir tout <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-          <DataLoader
-            query={featuredQuery}
-            isEmpty={(data) => data.items.length === 0}
-          >
-            {(data) => (
-              <div className="grid md:grid-cols-3 gap-6">
-                {data.items.map((scenario) => (
-                  <ScenarioCard key={scenario.id} scenario={scenario} />
-                ))}
-              </div>
-            )}
-          </DataLoader>
-        </section>
+        <FeaturedScenariosSection />
 
       {/* ─── CTA ─────────────────────────────────────────────── */}
       <section className="px-6 py-20 text-center border-t border-border">

@@ -268,6 +268,40 @@ describe("failCall", () => {
       data: { credits: { increment: 10 } },
     });
   });
+
+  it("should not refund if call status is already COMPLETED (status guard)", async () => {
+    const { db } = await import("@/server/db");
+    // Simulate call that is already COMPLETED — updateMany returns 0
+    // because the WHERE status NOT IN (FAILED, COMPLETED) clause prevents
+    // updating a COMPLETED call.
+    const mockTx = {
+      call: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+      },
+      user: {
+        update: vi.fn(),
+      },
+    };
+
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+
+    const { failCall } = await import("../callLifecycle");
+    await failCall("call-completed", 60);
+
+    // Should NOT refund since the call is already completed
+    expect(mockTx.user.update).not.toHaveBeenCalled();
+    expect(mockTx.call.findUnique).not.toHaveBeenCalled();
+
+    // Verify the status guard was applied
+    expect(mockTx.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-completed", status: { notIn: ["FAILED", "COMPLETED"] } },
+      data: expect.objectContaining({
+        status: "FAILED",
+      }),
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

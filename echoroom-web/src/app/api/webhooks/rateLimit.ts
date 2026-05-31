@@ -68,6 +68,9 @@ export async function checkWebhookRateLimit(
   }
 
   // In-memory fallback using the existing rate limit store
-  const inMemKey = `${endpointKey}:${ip}`;
+  // Align with Redis key strategy: respect config.perIp
+  const inMemKey = config.perIp
+    ? `${endpointKey}:${ip}`
+    : endpointKey;
   return inMemoryRateLimitStore.check(inMemKey, config.limit, config.windowSec);
 }
