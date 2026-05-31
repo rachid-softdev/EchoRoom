@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
@@ -35,19 +35,27 @@ const CATEGORY_TO_ENUM: Record<string, string> = {
 export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
-  const feedQuery = api.scenarios.feed.useQuery({ limit: 12 });
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const feedQuery = api.scenarios.feed.useQuery({ limit: 50 });
 
-  const filteredItems =
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const filteredItems = useMemo(() =>
     feedQuery.data?.items.filter((scenario) => {
       const matchesCategory =
         activeCategory === "Tous" ||
         scenario.character?.category === CATEGORY_TO_ENUM[activeCategory];
       const matchesSearch =
-        searchQuery === "" ||
-        scenario.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        scenario.description.toLowerCase().includes(searchQuery.toLowerCase());
+        debouncedQuery === "" ||
+        scenario.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+        scenario.description.toLowerCase().includes(debouncedQuery.toLowerCase());
       return matchesCategory && matchesSearch;
-    }) ?? [];
+    }) ?? [],
+    [feedQuery.data, activeCategory, debouncedQuery]
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -89,6 +97,7 @@ export default function ExplorePage() {
               key={category}
               type="button"
               onClick={() => setActiveCategory(category)}
+              aria-pressed={activeCategory === category}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activeCategory === category
                   ? "bg-primary text-primary-foreground"

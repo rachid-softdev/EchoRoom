@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui'
-import { Play, Pause, Download, Clock } from 'lucide-react'
+import { Play, Pause, Download, Clock, Loader2, AlertTriangle } from 'lucide-react'
 
 interface AudioPlayerProps {
   recordingUrl: string | null | undefined
@@ -15,6 +15,13 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
+
+  // Reset states when recordingUrl changes
+  useEffect(() => {
+    setHasError(false);
+    setIsLoaded(false);
+  }, [recordingUrl]);
 
   useEffect(() => {
     return () => {
@@ -47,6 +54,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
 
       audio.addEventListener('error', () => {
         setIsLoaded(false)
+        setHasError(true)
       })
 
       audioRef.current = audio
@@ -95,6 +103,27 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
     )
   }
 
+  if (!isLoaded && recordingUrl !== null && !hasError) {
+    return (
+      <div className="flex flex-col items-center py-6">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+        </div>
+        <p className="text-xs text-muted-foreground">Préparation de l'audio...</p>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center py-6 text-center">
+        <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+        <p className="text-sm text-destructive font-medium mb-1">Chargement impossible</p>
+        <p className="text-xs text-muted-foreground">L'audio n'est pas accessible. Réessayez.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center py-6">
       {title && (
@@ -105,7 +134,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
         size="lg"
         className="rounded-full w-16 h-16 mb-4"
         onClick={handleTogglePlay}
-        disabled={!isLoaded && recordingUrl !== null}
+        disabled={!isLoaded}
       >
         {isPlaying ? (
           <Pause className="w-6 h-6" />

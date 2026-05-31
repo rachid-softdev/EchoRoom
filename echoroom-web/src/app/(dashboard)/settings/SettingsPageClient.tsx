@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
-import { User, Download, Trash2 } from "lucide-react";
+import { Skeleton } from "@/components/ui";
+import { User, Download, Trash2, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -18,6 +19,17 @@ export default function SettingsPageClient() {
   const [email, setEmail] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const updateProfile = api.user.updateProfile.useMutation({
+    onSuccess: () => {
+      toast({ title: "Profil mis à jour", variant: "success" });
+      setHasChanges(false);
+    },
+    onError: (err) => {
+      toast({ title: err.message ?? "Erreur lors de la mise à jour", variant: "destructive" });
+    },
+  });
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -80,7 +92,7 @@ export default function SettingsPageClient() {
 
   return (
     <DashboardShell title="Paramètres">
-      <Card className="border-border/50 mb-6">
+      <Card className="mb-6">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
@@ -101,7 +113,10 @@ export default function SettingsPageClient() {
               id="username"
               placeholder="Votre pseudo"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setHasChanges(true);
+              }}
             />
           </div>
           <div className="space-y-2">
@@ -117,11 +132,23 @@ export default function SettingsPageClient() {
               disabled
             />
           </div>
-          {/* TODO: wire updateProfile mutation */}
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={() => updateProfile.mutate({ username })}
+              disabled={!hasChanges || updateProfile.isPending}
+              className="gap-2"
+            >
+              {updateProfile.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Enregistrer"
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      <Card className="border-border/50">
+      <Card>
         <CardHeader>
           <CardTitle>Apparence</CardTitle>
           <CardDescription>Personnalisez votre expérience</CardDescription>

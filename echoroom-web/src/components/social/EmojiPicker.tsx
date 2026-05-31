@@ -28,6 +28,7 @@ export function EmojiPicker({
             className={cn(
               "flex items-center justify-center w-8 h-8 rounded-md text-sm transition-all",
               "hover:bg-primary/10 hover:scale-110",
+              "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
               "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-transparent",
               isSelected && "bg-primary/20 ring-1 ring-primary scale-110",
             )}

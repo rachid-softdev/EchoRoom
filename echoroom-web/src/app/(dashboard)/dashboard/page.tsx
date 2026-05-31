@@ -51,6 +51,7 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
+  // TODO: Optimize — batch into single tRPC query
   const creditsQuery = api.billing.getCredits.useQuery();
   const callsQuery = api.calls.history.useQuery({ limit: 5 });
   const todayCountQuery = api.calls.todayCount.useQuery();
@@ -67,7 +68,7 @@ export default function DashboardPage() {
 
       {/* ─── Stats ─────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <Card className="border-border/50">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Crédits restants
@@ -78,7 +79,7 @@ export default function DashboardPage() {
             <p className="text-3xl font-bold">{credits}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/50">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Appels aujourd&apos;hui
@@ -89,7 +90,7 @@ export default function DashboardPage() {
             <p className="text-3xl font-bold">{todayCountQuery.data?.count ?? 0}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/50">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Scénarios créés
@@ -100,7 +101,7 @@ export default function DashboardPage() {
             <p className="text-3xl font-bold">{scenarios.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/50">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Vues totales
@@ -120,7 +121,7 @@ export default function DashboardPage() {
           const Icon = action.icon;
           return (
             <Link key={action.href} href={action.href}>
-              <Card className="border-border/50 cursor-pointer hover:border-primary/30 transition-colors h-full">
+              <Card className="cursor-pointer hover:border-primary/30 transition-colors h-full">
                 <CardHeader>
                   <Icon className={`w-8 h-8 mb-2 ${action.color}`} />
                   <CardTitle className="text-base">{action.label}</CardTitle>
@@ -134,7 +135,7 @@ export default function DashboardPage() {
 
       {/* ─── Recent Activity ───────────────────────── */}
       <h2 className="text-xl font-semibold mb-4">Activité récente</h2>
-      <Card className="border-border/50">
+      <Card>
         <CardContent className="p-6">
           {calls.length > 0 ? (
             <div className="space-y-3">

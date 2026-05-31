@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui";
-import { Sparkles, Phone, Users, Globe, ArrowRight, Zap, Shield, Share2, Headphones } from "lucide-react";
+import { Sparkles, Phone, Users, Globe, ArrowRight, Zap, Shield, Share2, Headphones, Menu, X } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { ScenarioCard } from "@/components/shared/ScenarioCard";
@@ -44,15 +45,17 @@ const features = [
 
 export default function HomePage() {
   const featuredQuery = api.scenarios.feed.useQuery({ limit: 3 });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="flex flex-col min-h-screen">
       {/* ─── Nav ────────────────────────────────────────────── */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <nav className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Phone className="w-6 h-6 text-primary" />
           <span className="text-xl font-bold tracking-tight">EchoRoom</span>
         </div>
-        <div className="flex items-center gap-4">
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-4">
           <Link href="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Explorer
           </Link>
@@ -60,15 +63,38 @@ export default function HomePage() {
             Tarifs
           </Link>
           <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Connexion
-            </Button>
+            <Button variant="ghost" size="sm">Connexion</Button>
           </Link>
           <Link href="/register">
             <Button size="sm">S&apos;inscrire</Button>
           </Link>
         </div>
+        {/* Mobile burger */}
+        <div className="md:hidden">
+          <Button variant="ghost" size="icon" aria-label="Menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
       </nav>
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-b border-border bg-card px-4 py-4 flex flex-col gap-3">
+          <Link href="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2" onClick={() => setMobileMenuOpen(false)}>
+            Explorer
+          </Link>
+          <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2" onClick={() => setMobileMenuOpen(false)}>
+            Tarifs
+          </Link>
+          <div className="flex gap-3 pt-2 border-t border-border">
+            <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="ghost" size="sm" className="w-full">Connexion</Button>
+            </Link>
+            <Link href="/register" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+              <Button size="sm" className="w-full">S&apos;inscrire</Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ─── Hero ───────────────────────────────────────────── */}
       <section className="relative flex flex-col items-center justify-center px-6 pt-24 pb-16 text-center overflow-hidden">
@@ -103,7 +129,7 @@ export default function HomePage() {
 
       {/* ─── Stats ──────────────────────────────────────────── */}
       <section className="border-y border-border">
-        <div className="grid grid-cols-3 divide-x divide-border max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-border max-w-2xl mx-auto">
           <div className="flex flex-col items-center py-8">
             <span className="text-3xl font-bold text-primary">50K+</span>
             <span className="text-sm text-muted-foreground mt-1">Appels générés</span>
@@ -194,7 +220,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── Demo Audio ───────────────────────────────────────── */}
-      <section className="px-6 py-16 text-center border-t border-border bg-muted/30">
+      <section className="hidden md:block px-6 py-16 text-center border-t border-border bg-muted/30">
         <div className="max-w-lg mx-auto">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Headphones className="w-7 h-7 text-primary" />

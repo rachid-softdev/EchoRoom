@@ -49,7 +49,7 @@ export default function LoginPage() {
         <span className="text-xl font-bold">EchoRoom</span>
       </div>
 
-      <Card className="w-full max-w-sm border-border/50">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle>Connexion</CardTitle>
           <CardDescription>
@@ -69,6 +69,8 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
             <div className="space-y-2">
@@ -82,11 +84,18 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                aria-describedby={error ? "login-error" : undefined}
               />
+              <div className="flex justify-end">
+                <Link href="/auth/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Mot de passe oublié ?
+                </Link>
+              </div>
             </div>
 
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p id="login-error" className="text-sm text-destructive" role="alert">{error}</p>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>

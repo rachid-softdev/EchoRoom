@@ -23,8 +23,9 @@ export default function Error({
           <p className="text-xs text-muted-foreground font-mono">
             Erreur #{error.digest}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               navigator.clipboard.writeText(error.digest ?? "").then(() => {
                 toast({ title: "Copié !", variant: "default" });
@@ -32,11 +33,10 @@ export default function Error({
                 toast({ title: "Échec de la copie", variant: "destructive" });
               });
             }}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Copier l'identifiant d'erreur"
           >
             <Copy className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       )}
       <Button onClick={reset} className="gap-2">

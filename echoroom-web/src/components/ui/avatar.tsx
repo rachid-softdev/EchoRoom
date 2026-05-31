@@ -54,10 +54,11 @@ const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
         alt={alt}
         className={cn(
           "aspect-square h-full w-full object-cover",
-          status === "loading" && "opacity-0",
-          status === "loaded" && "opacity-100",
+          status !== "loaded" && "hidden",
+          status === "loaded" && "block",
           className
         )}
+        loading="lazy"
         onLoad={() => setStatus("loaded")}
         onError={() => setStatus("error")}
         {...props}

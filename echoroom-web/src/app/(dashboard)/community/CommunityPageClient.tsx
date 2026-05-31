@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui";
@@ -44,65 +45,67 @@ export default function CommunityPageClient() {
         {(data) => (
           <div className="space-y-4">
             {data.items.map((scenario) => (
-              <Card key={scenario.id} className="border-border/50">
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                      {scenario.creator?.username?.charAt(0).toUpperCase() ?? "?"}
+              <Link key={scenario.id} href={`/scenario/${scenario.id}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
+                <Card className="border-border/50 hover:border-primary/30 transition-colors cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                        {scenario.creator?.username?.charAt(0).toUpperCase() ?? "?"}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {scenario.creator?.username ?? "Anonyme"}
+                        </p>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {CATEGORY_LABELS[scenario.character?.slug?.toUpperCase() ?? ""] ??
+                            "Scénario"}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {scenario.creator?.username ?? "Anonyme"}
-                      </p>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {CATEGORY_LABELS[scenario.character?.slug?.toUpperCase() ?? ""] ??
-                          "Scénario"}
-                      </Badge>
+                    <CardTitle className="text-base">{scenario.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <ReactionBar scenarioId={scenario.id} />
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {scenario._count?.comments ?? 0}
+                      </button>
                     </div>
-                  </div>
-                  <CardTitle className="text-base">{scenario.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <ReactionBar scenarioId={scenario.id} />
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 hover:text-primary transition-colors"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      {scenario._count?.comments ?? 0}
-                    </button>
-                  </div>
 
-                  {/* Comment input */}
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-                    <Input
-                      placeholder="Ajouter un commentaire..."
-                      value={commentInputs[scenario.id] ?? ""}
-                      onChange={(e) =>
-                        setCommentInputs((prev) => ({
-                          ...prev,
-                          [scenario.id]: e.target.value,
-                        }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleComment(scenario.id);
+                    {/* Comment input */}
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+                      <Input
+                        placeholder="Ajouter un commentaire..."
+                        value={commentInputs[scenario.id] ?? ""}
+                        onChange={(e) =>
+                          setCommentInputs((prev) => ({
+                            ...prev,
+                            [scenario.id]: e.target.value,
+                          }))
                         }
-                      }}
-                      className="text-sm"
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleComment(scenario.id)}
-                      disabled={!commentInputs[scenario.id]?.trim()}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleComment(scenario.id);
+                          }
+                        }}
+                        className="text-sm"
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleComment(scenario.id)}
+                        disabled={!commentInputs[scenario.id]?.trim()}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

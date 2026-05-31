@@ -67,7 +67,7 @@ export function CallDisclaimerDialog({
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
-          <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+          <div className="p-4 rounded-xl border border-border/40 bg-muted/30">
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <span className="text-primary shrink-0 mt-0.5">•</span>

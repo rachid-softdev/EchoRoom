@@ -34,20 +34,36 @@ let toastCounter = 0;
 
 function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastItem[]>([]);
+  const timeoutRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const addToast = React.useCallback(
     (toast: Omit<ToastItem, "id">) => {
       const id = `toast-${++toastCounter}`;
       setToasts((prev) => [...prev, { ...toast, id }]);
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
+        timeoutRefs.current.delete(id);
       }, toast.duration);
+      timeoutRefs.current.set(id, timeout);
     },
     []
   );
 
   const removeToast = React.useCallback((id: string) => {
+    const timeout = timeoutRefs.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutRefs.current.delete(id);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Cleanup timeouts on unmount
+  React.useEffect(() => {
+    return () => {
+      timeoutRefs.current.forEach((t) => clearTimeout(t));
+      timeoutRefs.current.clear();
+    };
   }, []);
 
   // Listen for global toast events dispatched by the standalone toast() function
@@ -134,14 +150,15 @@ function Toaster() {
   const { toasts, removeToast } = useToast();
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-[calc(100vw-2rem)] sm:max-w-sm">
       {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          variant={toast.variant}
-          onClose={() => removeToast(toast.id)}
-        />
+        <div key={toast.id} className="animate-slide-in-right">
+          <Toast
+            message={toast.message}
+            variant={toast.variant}
+            onClose={() => removeToast(toast.id)}
+          />
+        </div>
       ))}
     </div>
   );
