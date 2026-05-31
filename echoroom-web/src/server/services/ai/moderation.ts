@@ -78,6 +78,7 @@ export async function checkContent(
   text: string,
   signal?: AbortSignal,
 ): Promise<ModerationResult> {
+  const resolvedSignal = signal ?? AbortSignal.timeout(5000);
   // Normalisation Unicode NFKC — empêche les homoglyphes
   // Also truncate to MAX_MODERATION_INPUT_LENGTH to prevent resource exhaustion
   const normalized = text.normalize("NFKC").substring(0, MAX_MODERATION_INPUT_LENGTH);
@@ -101,7 +102,7 @@ export async function checkContent(
           model: "omni-moderation-latest",
           input: normalized,
         },
-        { signal },
+        { signal: resolvedSignal },
       );
 
       const result = response.results[0];

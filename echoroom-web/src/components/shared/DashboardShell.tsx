@@ -35,7 +35,7 @@ export function DashboardShell({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Persistent top navigation */}
-      <nav className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-background">
+      <nav className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-background/80 backdrop-blur-sm shadow-sm">
         <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
           <Phone className="w-5 h-5 text-primary" />
           <span className="text-lg font-bold tracking-tight hidden sm:inline">EchoRoom</span>

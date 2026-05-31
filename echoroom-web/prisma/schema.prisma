@@ -152,8 +152,8 @@ model Call {
   userId          String
   user            User       @relation(fields: [userId], references: [id])
 
-  scenarioId      String
-  scenario        Scenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  scenarioId      String?    // Nullable: if the linked scenario is deleted, the call is preserved
+  scenario        Scenario?  @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
 
   phoneNumber     String
 

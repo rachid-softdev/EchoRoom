@@ -9,6 +9,7 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   REDIS_URL: z.string().url().optional(),
+  REDIS_TOKEN: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   TWILIO_ACCOUNT_SID: z.string().min(1),

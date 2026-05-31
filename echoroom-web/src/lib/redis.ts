@@ -18,8 +18,10 @@ try {
 
     redis = new Redis({
       url: env.REDIS_URL,
-      token: url.password || undefined,
+      token: env.REDIS_TOKEN ?? url.password || undefined,
     });
+
+    log.info("Redis configured");
   }
 } catch {
   log.warn("Redis unavailable — rate limiting using in-memory fallback");

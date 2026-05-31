@@ -32,50 +32,58 @@ export async function transcribeAudio(
   }
 
   const fileBuffer = Buffer.from(audioBuffer);
-  const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-    fileBuffer,
-    {
-      model: "nova-2",
-      language: "fr",
-      mimetype,  // Passer le type MIME pour une meilleure précision
-      punctuate: true,
-      paragraphs: true,
-    },
-  );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (error || !result) {
-    log.error("Deepgram transcription error", { error });
+  try {
+    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+      fileBuffer,
+      {
+        model: "nova-2",
+        language: "fr",
+        mimetype,  // Passer le type MIME pour une meilleure précision
+        punctuate: true,
+        paragraphs: true,
+      },
+      { signal: controller.signal },
+    );
+
+    if (error || !result) {
+      log.error("Deepgram transcription error", { error });
+      return {
+        transcript: "",
+        confidence: 0,
+        words: [],
+      };
+    }
+
+    const channel = result.results?.channels[0];
+    const alternative = channel?.alternatives[0];
+
+    if (!alternative) {
+      return {
+        transcript: "",
+        confidence: 0,
+        words: [],
+      };
+    }
+
     return {
-      transcript: "",
-      confidence: 0,
-      words: [],
+      transcript: alternative.transcript,
+      confidence: alternative.confidence,
+      words:
+        alternative.words?.map(
+          (w: { word: string; start: number; end: number; confidence: number }) => ({
+            word: w.word,
+            start: w.start,
+            end: w.end,
+            confidence: w.confidence,
+          }),
+        ) ?? [],
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const channel = result.results?.channels[0];
-  const alternative = channel?.alternatives[0];
-
-  if (!alternative) {
-    return {
-      transcript: "",
-      confidence: 0,
-      words: [],
-    };
-  }
-
-  return {
-    transcript: alternative.transcript,
-    confidence: alternative.confidence,
-    words:
-      alternative.words?.map(
-        (w: { word: string; start: number; end: number; confidence: number }) => ({
-          word: w.word,
-          start: w.start,
-          end: w.end,
-          confidence: w.confidence,
-        }),
-      ) ?? [],
-  };
 }
 
 export { deepgram };

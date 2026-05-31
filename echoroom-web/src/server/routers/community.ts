@@ -27,6 +27,7 @@ export const communityRouter = router({
           userId: ctx.session.user.id,
           scenarioId: input.scenarioId,
           content: input.content,
+          moderationStatus: "APPROVED",
         },
         include: {
           user: {
@@ -49,7 +50,7 @@ export const communityRouter = router({
     )
     .query(async ({ input }) => {
       const comments = await db.comment.findMany({
-        where: { scenarioId: input.scenarioId },
+        where: { scenarioId: input.scenarioId, moderationStatus: "APPROVED" },
         take: input.limit + 1,
         ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
         orderBy: { createdAt: "desc" },
