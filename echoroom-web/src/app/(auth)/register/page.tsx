@@ -68,6 +68,18 @@ export default function RegisterPage() {
     }
   }
 
+  function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    const labels = ["Très faible", "Faible", "Moyen", "Fort", "Très fort"];
+    const colors = ["bg-destructive", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500"];
+    return { score, label: labels[score] ?? "", color: colors[score] ?? "" };
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="mb-8 flex items-center gap-2">
@@ -75,7 +87,7 @@ export default function RegisterPage() {
         <span className="text-xl font-bold">EchoRoom</span>
       </div>
 
-      <Card className="w-full max-w-sm border-border/50">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle>Créer un compte</CardTitle>
           <CardDescription>
@@ -95,6 +107,8 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                aria-describedby={error ? "register-error" : undefined}
               />
             </div>
             <div className="space-y-2">
@@ -110,6 +124,8 @@ export default function RegisterPage() {
                 maxLength={20}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+                aria-describedby={error ? "register-error" : undefined}
               />
             </div>
             <div className="space-y-2">
@@ -124,11 +140,26 @@ export default function RegisterPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                aria-describedby={error ? "register-error" : undefined}
               />
+              {password.length > 0 && (
+                <div className="space-y-1">
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${getPasswordStrength(password).color}`}
+                      style={{ width: `${(getPasswordStrength(password).score / 5) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Force : {getPasswordStrength(password).label}
+                  </p>
+                </div>
+              )}
             </div>
 
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p id="register-error" className="text-sm text-destructive" role="alert">{error}</p>
             )}
 
             <div className="flex items-start gap-3">

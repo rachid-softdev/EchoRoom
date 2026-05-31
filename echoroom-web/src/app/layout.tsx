@@ -33,10 +33,16 @@ export default function RootLayout({
     // Ceci est intentionnel et ne masque pas de vrais problèmes d'hydratation.
     <html lang="fr" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-xl focus:text-sm focus:font-medium"
+        >
+          Aller au contenu principal
+        </a>
         <TRPCReactProvider>
           <SessionProvider>
             <ToastProvider>
-              <div className="flex flex-col min-h-screen">
+              <div id="main-content" className="flex flex-col min-h-screen">
                 {children}
                 <Footer />
               </div>

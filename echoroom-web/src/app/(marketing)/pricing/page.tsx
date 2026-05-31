@@ -83,7 +83,7 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={`relative border-border/50 ${
+              className={`relative ${
                 plan.highlighted
                   ? "border-primary/50 ring-1 ring-primary/20"
                   : ""

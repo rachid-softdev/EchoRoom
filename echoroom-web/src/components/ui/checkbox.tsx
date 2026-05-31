@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Check } from "lucide-react";
 import { cn } from "./lib";
 
 interface CheckboxProps
@@ -24,16 +25,16 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           />
           <span
             className={cn(
-              "w-5 h-5 rounded-md border-2 border-border bg-background",
+              "w-5 h-5 rounded-md border-2 border-border bg-background relative flex items-center justify-center",
               "peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground",
               "peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
               "transition-colors",
-              "flex items-center justify-center",
-              "after:content-['✓'] after:text-xs after:font-bold after:opacity-0 peer-checked:after:opacity-100",
               "group-hover:border-primary/50",
               className,
             )}
-          />
+          >
+            <Check className="w-3 h-3 opacity-0 peer-checked:opacity-100 transition-opacity" />
+          </span>
         </span>
         {label && (
           <span className="text-sm text-muted-foreground peer-checked:text-foreground transition-colors">

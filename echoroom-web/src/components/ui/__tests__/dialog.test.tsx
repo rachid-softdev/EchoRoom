@@ -131,8 +131,8 @@ describe("Dialog", () => {
     await user.click(screen.getByText("Open"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    // Click the close button (X icon button)
-    const closeButton = screen.getByRole("button", { name: /close/i });
+    // Click the close button (X icon button with aria-label "Fermer")
+    const closeButton = screen.getByRole("button", { name: /fermer/i });
     await user.click(closeButton);
 
     // Dialog should close

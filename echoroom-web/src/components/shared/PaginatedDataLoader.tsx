@@ -51,7 +51,7 @@ export function PaginatedDataLoader<T>({
     );
   }
 
-  if (query.items.length === 0) {
+  if (!query.items || query.items.length === 0) {
     return <>{empty}</>;
   }
 

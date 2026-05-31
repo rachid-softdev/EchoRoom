@@ -49,11 +49,11 @@ export default function BillingPage() {
       </p>
 
       <h2 className="text-xl font-semibold mb-4">Acheter des crédits</h2>
-      <div className="grid md:grid-cols-4 gap-4 mb-10">
+      <div id="credit-packs" className="grid md:grid-cols-4 gap-4 mb-10">
         {creditPacks.map((pack) => (
           <Card
             key={pack.credits}
-            className={`relative border-border/50 ${
+            className={`relative ${
               pack.popular ? "border-primary/50 ring-1 ring-primary/20" : ""
             }`}
           >
@@ -88,10 +88,16 @@ export default function BillingPage() {
 
       {/* Payment history */}
       <h2 className="text-xl font-semibold mb-4">Historique des achats</h2>
-      <Card className="border-border/50">
+      <Card>
         <CardContent className="py-12 text-center">
           <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Aucun achat pour le moment</p>
+          <p className="text-muted-foreground mb-4">Aucun achat pour le moment</p>
+          <Button variant="outline" size="sm" onClick={() => {
+            const el = document.getElementById("credit-packs");
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          }}>
+            Acheter des crédits
+          </Button>
         </CardContent>
       </Card>
     </DashboardShell>

@@ -87,7 +87,8 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
             min={0}
             max={durationSeconds}
             value={startTime}
-            onChange={(e) => setStartTime(Math.max(0, Number(e.target.value)))}
+            step={1}
+            onChange={(e) => setStartTime(Math.max(0, Math.round(Number(e.target.value))))}
             className="text-sm"
           />
         </div>
@@ -104,9 +105,10 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
             min={0}
             max={durationSeconds}
             value={endTime}
+            step={1}
             onChange={(e) =>
               setEndTime(
-                Math.min(durationSeconds, Math.max(0, Number(e.target.value))),
+                Math.min(durationSeconds, Math.max(0, Math.round(Number(e.target.value)))),
               )
             }
             className="text-sm"

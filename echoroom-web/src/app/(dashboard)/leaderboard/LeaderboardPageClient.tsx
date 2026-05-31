@@ -22,10 +22,14 @@ export default function LeaderboardPageClient() {
   const scenariosQuery = api.social.getLeaderboardScenarios.useQuery({
     period,
     sort: "LIKES",
+  }, {
+    enabled: activeTab === "SCENARIOS",
   })
   const creatorsQuery = api.social.getLeaderboardCreators.useQuery({
     period,
     sort: "LIKES",
+  }, {
+    enabled: activeTab === "CREATORS",
   })
 
   const scenarioEntries =

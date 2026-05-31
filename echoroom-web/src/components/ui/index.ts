@@ -56,3 +56,5 @@ export type {
   AvatarImageProps,
   AvatarFallbackProps,
 } from "./avatar";
+
+export { SegmentedControl } from "./segmented-control";

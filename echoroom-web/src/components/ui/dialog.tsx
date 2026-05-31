@@ -70,17 +70,24 @@ function DialogContent({
 }: React.HTMLAttributes<HTMLDivElement>) {
   const { open, onOpenChange } = useDialog();
   const contentRef = React.useRef<HTMLDivElement>(null);
+  const titleId = React.useId();
+  const descId = React.useId();
   useFocusTrap(contentRef, open);
 
+  // Body scroll lock
   React.useEffect(() => {
     if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
 
+  // Keyboard: Escape
+  React.useEffect(() => {
+    if (!open) return;
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        onOpenChange(false);
-      }
+      if (e.key === "Escape") onOpenChange(false);
     }
-
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onOpenChange]);
@@ -88,9 +95,9 @@ function DialogContent({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" data-state="open">
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
       />
@@ -98,8 +105,10 @@ function DialogContent({
         ref={contentRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
         className={cn(
-          "relative z-50 w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-lg",
+          "relative z-50 w-full max-w-[calc(100vw-2rem)] sm:max-w-lg rounded-2xl border border-border bg-card p-6 shadow-lg animate-zoom-in",
           className
         )}
         {...props}
@@ -108,11 +117,19 @@ function DialogContent({
           type="button"
           onClick={() => onOpenChange(false)}
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          aria-label="Fermer"
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Fermer</span>
         </button>
-        {children}
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement(child) && child.type === DialogTitle) {
+            return React.cloneElement(child as React.ReactElement, { id: titleId });
+          }
+          if (React.isValidElement(child) && child.type === DialogDescription) {
+            return React.cloneElement(child as React.ReactElement, { id: descId });
+          }
+          return child;
+        })}
       </div>
     </div>
   );

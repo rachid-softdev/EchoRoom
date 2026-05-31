@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { Badge } from '@/components/ui'
 import { Button } from '@/components/ui'
+import { toast } from "@/components/ui";
 import { Heart, MessageCircle, Play, Share2 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
 
@@ -36,8 +37,8 @@ export function ScenarioCard({
     CATEGORY_LABELS[scenario.character?.category ?? ''] ?? 'Scénario'
 
   return (
-    <Link href={href}>
-      <Card className="border-border/50 group cursor-pointer hover:border-primary/30 transition-colors h-full">
+    <Link href={href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
+      <Card className="group cursor-pointer hover:border-primary/30 transition-colors h-full">
         <CardHeader>
           <div className="flex items-center justify-between mb-2">
             <Badge variant="secondary">{categoryLabel}</Badge>
@@ -50,10 +51,10 @@ export function ScenarioCard({
               </div>
             )}
           </div>
-          <CardTitle className="text-base group-hover:text-primary transition-colors">
+          <CardTitle className="text-base group-hover:text-primary transition-colors" title={scenario.title}>
             {scenario.title}
           </CardTitle>
-          <CardDescription className="line-clamp-2">
+          <CardDescription className="line-clamp-2" title={scenario.description}>
             {scenario.description}
           </CardDescription>
         </CardHeader>
@@ -86,6 +87,7 @@ export function ScenarioCard({
                     const url = `${window.location.origin}/scenario/${scenario.id}`
                     try {
                       await navigator.clipboard.writeText(url)
+                      toast({ title: "Lien copié !", variant: "success" });
                     } catch {
                       // Clipboard access denied — fail silently
                     }

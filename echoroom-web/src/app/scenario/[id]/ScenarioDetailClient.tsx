@@ -242,7 +242,7 @@ export function ScenarioDetailClient({
             </Button>
           </Link>
         ) : (
-          <Link href="/auth/login">
+          <Link href={`/login?redirect=/scenario/${scenarioId}`}>
             <Button variant="outline" className="gap-2">
               Connectez-vous pour lancer l&apos;appel
             </Button>
@@ -363,7 +363,7 @@ export function ScenarioDetailClient({
             </div>
           ) : (
             <Link
-              href="/auth/login"
+              href={`/login?redirect=/scenario/${scenarioId}`}
               className="text-sm text-primary hover:underline"
             >
               Connectez-vous pour commenter
