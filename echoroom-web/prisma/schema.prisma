@@ -178,6 +178,7 @@ model Call {
   @@index([userId])
   @@index([scenarioId])
   @@index([twilioCallSid])
+  @@index([status])
 }
 
 model Reaction {
@@ -234,6 +235,7 @@ model Comment {
 
   @@index([scenarioId, userId])
   @@index([moderationStatus])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Purchase {

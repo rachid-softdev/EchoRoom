@@ -1,4 +1,4 @@
-import { twilioClient, TWILIO_PHONE } from "./twilio";
+import { twilioClient, TWILIO_PHONE, twilioCircuitBreaker } from "./twilio";
 import { db } from "@/server/db";
 import { env } from "@/lib/env";
 import { AppError } from "@/server/lib/errors";
@@ -99,15 +99,23 @@ export async function initiateCall(params: StartCallParams) {
     // to prevent internal ID leakage in Twilio console logs.
     const token = createTwilioToken(call.id, scenario.id, scenario.characterId);
 
-    const twilioCall = await twilioClient.calls.create({
-      to: params.phoneNumber,
-      from: TWILIO_PHONE,
-      url: `${appUrl}/api/webhooks/twilio/voice?token=${encodeURIComponent(token)}`,
-      statusCallback: `${appUrl}/api/webhooks/twilio`,
-      statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
-      statusCallbackMethod: "POST",
-      timeout: params.maxDurationSeconds,
-    });
+    const twilioCall = await twilioCircuitBreaker.call(() =>
+      withRetry(
+        () =>
+          twilioClient.calls.create({
+            to: params.phoneNumber,
+            from: TWILIO_PHONE,
+            url: `${appUrl}/api/webhooks/twilio/voice?token=${encodeURIComponent(token)}`,
+            statusCallback: `${appUrl}/api/webhooks/twilio`,
+            statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
+            statusCallbackMethod: "POST",
+            timeout: params.maxDurationSeconds,
+          }),
+        2,
+        1000,
+        5000,
+      ),
+    );
 
     // Update call with Twilio SID and status — only if still CALLING
     await db.call.updateMany({

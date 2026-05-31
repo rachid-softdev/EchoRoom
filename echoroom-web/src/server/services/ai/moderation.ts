@@ -1,8 +1,10 @@
 import { getOpenAIClient } from "@/lib/openai";
 import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
+import { createOpenAICircuitBreaker } from "@/server/lib/circuitBreaker";
 
 const log = createLogger("moderation");
+const openaiCircuitBreaker = createOpenAICircuitBreaker();
 
 const forbiddenPatterns = [
   /celebrity/i,
@@ -74,16 +76,13 @@ interface ModerationResult {
 // and avoids excessive OpenAI API costs from character-based billing.
 const MAX_MODERATION_INPUT_LENGTH = 10_000;
 
-export async function checkContent(
-  text: string,
-  signal?: AbortSignal,
-): Promise<ModerationResult> {
-  const resolvedSignal = signal ?? AbortSignal.timeout(5000);
-  // Normalisation Unicode NFKC — empêche les homoglyphes
-  // Also truncate to MAX_MODERATION_INPUT_LENGTH to prevent resource exhaustion
+/**
+ * Synchronous blocklist-only check — no API call.
+ * Returns a ModerationResult based solely on the forbidden patterns list.
+ */
+export function checkContentBlocklist(text: string): ModerationResult {
   const normalized = text.normalize("NFKC").substring(0, MAX_MODERATION_INPUT_LENGTH);
 
-  // Step 1: Blocklist check (sur le texte normalisé)
   for (const pattern of forbiddenPatterns) {
     if (pattern.test(normalized)) {
       return {
@@ -93,16 +92,35 @@ export async function checkContent(
     }
   }
 
+  return { approved: true };
+}
+
+export async function checkContent(
+  text: string,
+  signal?: AbortSignal,
+): Promise<ModerationResult> {
+  const resolvedSignal = signal ?? AbortSignal.timeout(5000);
+
+  // Normalisation Unicode NFKC — empêche les homoglyphes
+  // Also truncate to MAX_MODERATION_INPUT_LENGTH to prevent resource exhaustion
+  const normalized = text.normalize("NFKC").substring(0, MAX_MODERATION_INPUT_LENGTH);
+
+  // Step 1: Blocklist check (synchronous)
+  const blocklistResult = checkContentBlocklist(text);
+  if (!blocklistResult.approved) return blocklistResult;
+
   // Step 2: AI-based check if OpenAI is available
   const openai = getOpenAIClient();
   if (openai) {
     try {
-      const response = await openai.moderations.create(
-        {
-          model: "omni-moderation-latest",
-          input: normalized,
-        },
-        { signal: resolvedSignal },
+      const response = await openaiCircuitBreaker.call(() =>
+        openai.moderations.create(
+          {
+            model: "omni-moderation-latest",
+            input: normalized,
+          },
+          { signal: resolvedSignal },
+        ),
       );
 
       const result = response.results[0];

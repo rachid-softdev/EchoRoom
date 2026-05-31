@@ -46,6 +46,7 @@ vi.mock("@/server/trpc", () => {
 
 vi.mock("@/server/services/ai/moderation", () => ({
   checkContent: vi.fn().mockResolvedValue({ approved: true }),
+  checkContentBlocklist: vi.fn(() => ({ approved: true })),
 }));
 
 vi.mock("@/server/lib/logger", () => ({

@@ -9,11 +9,16 @@ import {
   withContentModeration,
   withIPRateLimit,
 } from "../trpc";
+import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
-import { checkContent } from "../services/ai/moderation";
+import { checkContentBlocklist } from "../services/ai/moderation";
+import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
+import { getCachedFeed, setCachedFeed, invalidateFeedCache } from "../services/cache/scenarioCache";
+import { redis } from "@/lib/redis";
 
 export const scenariosRouter = router({
   create: protectedProcedure
+    .use(withREDMetrics)
     .use(withRateLimit({ limit: 10, window: 3600 }))
     .use(withContentModeration)
     .input(
@@ -39,10 +44,19 @@ export const scenariosRouter = router({
         },
       });
 
+      void invalidateFeedCache();
+
+      // Schedule async AI moderation (fire-and-forget)
+      const changedText = [input.title, input.description, input.openingMessage, input.aiInstructions]
+        .filter(Boolean)
+        .join(" ");
+      void scheduleAsyncModeration(changedText, { type: "scenario", id: scenario.id });
+
       return { scenarioId: scenario.id };
     }),
 
   feed: publicProcedure
+    .use(withREDMetrics)
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
@@ -52,6 +66,16 @@ export const scenariosRouter = router({
       }),
     )
     .query(async ({ input }) => {
+      // Check cache for first page (no cursor)
+      if (!input.cursor && redis) {
+        const cacheParams = { sort: input.sort, limit: input.limit };
+        const cached = await getCachedFeed<{
+          items: Array<Record<string, unknown>>;
+          nextCursor: string | undefined;
+        }>(cacheParams);
+        if (cached) return cached;
+      }
+
       const orderBy =
         input.sort === "TOP" ? { likeCount: "desc" as const } : { createdAt: "desc" as const };
 
@@ -101,6 +125,12 @@ export const scenariosRouter = router({
 
       const nextCursor =
         scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
+
+      // Cache first page (no cursor) for subsequent requests
+      if (!input.cursor && redis) {
+        const cacheParams = { sort: input.sort, limit: input.limit };
+        void setCachedFeed(cacheParams, { items, nextCursor });
+      }
 
       return { items, nextCursor };
     }),
@@ -160,6 +190,7 @@ export const scenariosRouter = router({
     }),
 
   update: protectedProcedure
+    .use(withREDMetrics)
     .use(withRateLimit({ limit: 30, window: 3600 }))
     .input(
       z
@@ -217,7 +248,7 @@ export const scenariosRouter = router({
           .filter((f) => input[f] !== undefined)
           .map((f) => input[f] as string)
           .join(" ");
-        const moderation = await checkContent(changedText);
+        const moderation = checkContentBlocklist(changedText);
         if (!moderation.approved)
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -230,10 +261,23 @@ export const scenariosRouter = router({
         where: { id: input.id },
         data: updateData,
       });
+
+      void invalidateFeedCache();
+
+      // Schedule async AI moderation if content changed
+      if (contentChanged) {
+        const changedText = contentFields
+          .filter((f) => input[f] !== undefined)
+          .map((f) => input[f] as string)
+          .join(" ");
+        void scheduleAsyncModeration(changedText, { type: "scenario", id: input.id });
+      }
+
       return { scenarioId: input.id };
     }),
 
   delete: protectedProcedure
+    .use(withREDMetrics)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const scenario = await db.scenario.findUnique({
@@ -250,6 +294,7 @@ export const scenariosRouter = router({
           message: "Vous n'êtes pas le créateur",
         });
       await db.scenario.delete({ where: { id: input.id } });
+      void invalidateFeedCache();
       return { success: true };
     }),
 

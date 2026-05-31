@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "./db";
 import { checkRateLimit } from "./middleware/rateLimit";
-import { checkContent } from "./services/ai/moderation";
+import { checkContentBlocklist } from "./services/ai/moderation";
 import { validateCSRF, CSRFFailure } from "./middleware/csrf";
 import { createLogger } from "./lib/logger";
 export { withIPRateLimit } from "./middleware/ipRateLimit";
@@ -193,7 +193,7 @@ export function extractTextFromInput(input: unknown): string | null {
 }
 
 export const withContentModeration = middleware(async ({ ctx, next, input }) => {
-  // Auth guard: prevent unauthenticated DoS via expensive OpenAI moderation calls
+  // Auth guard: prevent unauthenticated DoS
   if (!ctx.session?.user?.id) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -204,11 +204,12 @@ export const withContentModeration = middleware(async ({ ctx, next, input }) => 
   const text = extractTextFromInput(input);
   if (!text) return next();
 
-  const result = await checkContent(text);
-  if (!result.approved) {
+  // Synchronous blocklist-only check — the full AI moderation runs async
+  const blocklistResult = checkContentBlocklist(text);
+  if (!blocklistResult.approved) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: result.reason ?? "Contenu refusé par la modération",
+      message: blocklistResult.reason ?? "Contenu refusé par la modération",
     });
   }
 

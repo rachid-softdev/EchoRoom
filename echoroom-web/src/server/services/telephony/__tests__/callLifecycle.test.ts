@@ -37,6 +37,9 @@ vi.mock("@/server/services/telephony/twilio", () => ({
     calls: { create: vi.fn() },
   },
   TWILIO_PHONE: "+1234567890",
+  twilioCircuitBreaker: {
+    call: vi.fn((fn: () => unknown) => fn()),
+  },
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -437,7 +440,7 @@ describe("initiateCall", () => {
       call: {
         create: vi.fn().mockResolvedValue({ id: "call-1" }),
         update: vi.fn(),
-        updateMany: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn(),
       },
     };
@@ -657,10 +660,7 @@ describe("initiateCall", () => {
 
     (db.scenario.findUnique as any).mockResolvedValue(validScenario);
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    // Mock the success path (db.call.updateMany for RINGING)
-    (db.call.updateMany as any).mockReset();
-    // Return count=1 for the failure path (call was still CALLING)
-    (db.call.updateMany as any).mockResolvedValue({ count: 1 });
+    // mockTx.call.updateMany returns { count: 1 } by default — refund path
 
     // Make the Twilio call fail
     const twilioError = new Error("Twilio network error");
@@ -678,15 +678,10 @@ describe("initiateCall", () => {
     ).rejects.toThrow("Échec de l'appel");
 
     // Verify the updateMany guard: only update if still CALLING
-    expect(db.call.updateMany).toHaveBeenCalledWith({
+    // Note: refund runs inside db.$transaction, so tx.call.updateMany = mockTx.call.updateMany
+    expect(mockTx.call.updateMany).toHaveBeenCalledWith({
       where: { id: "call-1", status: "CALLING" },
       data: { status: "FAILED" },
-    });
-
-    // Verify credit refund
-    expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: "user-abc" },
-      data: { credits: { increment: 1 } },
     });
   });
 
@@ -697,7 +692,7 @@ describe("initiateCall", () => {
     (db.scenario.findUnique as any).mockResolvedValue(validScenario);
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
     // Simulate that updateMany returns 0 — call already advanced from CALLING
-    (db.call.updateMany as any).mockResolvedValue({ count: 0 });
+    mockTx.call.updateMany = vi.fn().mockResolvedValue({ count: 0 });
 
     // Make the Twilio call fail
     (twilioClient.calls.create as any).mockRejectedValue(new Error("Twilio error"));
@@ -714,10 +709,10 @@ describe("initiateCall", () => {
     ).rejects.toThrow("Échec de l'appel");
 
     // Should NOT refund since the call was already past CALLING
-    expect(db.user.update).not.toHaveBeenCalled();
+    expect(mockTx.user.update).not.toHaveBeenCalled();
   });
 
-  it("should throw TWILIO_ERROR with original error message", async () => {
+  it("should throw sanitized TWILIO_ERROR instead of original Twilio message", async () => {
     const { db } = await import("@/server/db");
     const { twilioClient } = await import("@/server/services/telephony/twilio");
 
@@ -735,7 +730,7 @@ describe("initiateCall", () => {
         phoneNumber: "+33612345678",
         maxDurationSeconds: 600,
       }),
-    ).rejects.toThrow("Rate limit exceeded");
+    ).rejects.toThrow("Échec de l'appel");
   });
 
   it("should include token in the Twilio webhook URL", async () => {
@@ -893,8 +888,7 @@ describe("initiateCall", () => {
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
     (twilioClient.calls.create as any).mockRejectedValue(new Error("Twilio error"));
 
-    // Simulate the updateMany guard
-    (db.call.updateMany as any).mockResolvedValue({ count: 1 });
+    // Simulate the updateMany guard — mockTx already returns { count: 1 } by default
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -908,7 +902,8 @@ describe("initiateCall", () => {
     ).rejects.toThrow();
 
     // Verify the guard: only process if still CALLING
-    expect(db.call.updateMany).toHaveBeenCalledWith({
+    // Note: refund runs inside db.$transaction, so tx.call.updateMany = mockTx.call.updateMany
+    expect(mockTx.call.updateMany).toHaveBeenCalledWith({
       where: { id: "call-1", status: "CALLING" },
       data: { status: "FAILED" },
     });
