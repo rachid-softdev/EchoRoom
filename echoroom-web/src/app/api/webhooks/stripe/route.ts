@@ -117,47 +117,38 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // Find the purchase associated with this payment
-      const purchases = await db.purchase.findMany({
-        where: { stripePaymentId: paymentIntentId },
+      // Atomic: only one concurrent webhook will match this WHERE
+      // Using updateMany with refundedAt: null ensures idempotency
+      // even under concurrent Stripe webhook delivery.
+      const updated = await db.purchase.updateMany({
+        where: {
+          stripePaymentId: paymentIntentId,
+          refundedAt: null,
+        },
+        data: {
+          refundedAt: new Date(),
+        },
       });
 
-      if (purchases.length === 0) {
-        log.warn("No purchase found for refunded payment", { paymentIntentId });
+      if (updated.count === 0) {
+        log.info("Duplicate or no purchase for refund", { paymentIntentId });
         break;
       }
 
-      // stripePaymentId is @unique — at most 1 row
-      const purchase = purchases[0];
-      if (!purchase) break;
+      const purchase = await db.purchase.findUnique({
+        where: { stripePaymentId: paymentIntentId },
+        select: { userId: true, creditsPurchased: true },
+      });
 
-      // Revoke credits atomically — may go negative if already spent
-      await db.$transaction(async (tx) => {
-        // Check idempotency: skip if already refunded
-        const current = await tx.purchase.findUnique({
-          where: { id: purchase.id },
-          select: { refundedAt: true },
-        });
-
-        if (current?.refundedAt) {
-          log.info("Duplicate refund event, skipping", { purchaseId: purchase.id });
-          return;
-        }
-
-        await tx.user.update({
+      if (purchase) {
+        await db.user.update({
           where: { id: purchase.userId },
           data: { credits: { decrement: purchase.creditsPurchased } },
         });
-
-        await tx.purchase.update({
-          where: { id: purchase.id },
-          data: { refundedAt: new Date() },
-        });
-      });
+      }
 
       log.info("Credits revoked after refund", {
-        userId: purchase.userId,
-        credits: purchase.creditsPurchased,
+        paymentIntentId,
         chargeId: charge.id,
       });
       break;
@@ -172,21 +163,23 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // Flag the purchase as disputed (don't revoke credits yet)
-      const disputePurchases = await db.purchase.findMany({
-        where: { stripePaymentId: disputePaymentIntent },
+      // Atomic idempotent flag — only one webhook will match
+      const updated = await db.purchase.updateMany({
+        where: {
+          stripePaymentId: disputePaymentIntent,
+          disputedAt: null,
+        },
+        data: { disputedAt: new Date() },
       });
 
-      for (const purchase of disputePurchases) {
-        await db.purchase.update({
-          where: { id: purchase.id },
-          data: { disputedAt: new Date() },
-        });
-
+      if (updated.count > 0) {
         log.warn("Chargeback/dispute on purchase", {
-          userId: purchase.userId,
-          purchaseId: purchase.id,
+          paymentIntent: disputePaymentIntent,
           disputeId: dispute.id,
+        });
+      } else {
+        log.info("Duplicate or no purchase for dispute", {
+          paymentIntent: disputePaymentIntent,
         });
       }
       break;
@@ -201,59 +194,52 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      const closedPurchases = await db.purchase.findMany({
-        where: { stripePaymentId: disputePaymentIntent },
-      });
+      if (dispute.status === "lost" || dispute.status === "warning_closed") {
+        // Atomic: only one concurrent webhook will match this WHERE
+        const updated = await db.purchase.updateMany({
+          where: {
+            stripePaymentId: disputePaymentIntent,
+            refundedAt: null,
+          },
+          data: { refundedAt: new Date() },
+        });
 
-      if (closedPurchases.length === 0) {
-        log.warn("No purchase found for closed dispute", { disputePaymentIntent });
-        break;
-      }
-
-      for (const purchase of closedPurchases) {
-        if (dispute.status === "lost" || dispute.status === "warning_closed") {
-          // Dispute perdu contre le marchand — révoquer les crédits
-          // Peut passer en négatif si déjà dépensés (même pattern que charge.refunded)
-          await db.$transaction(async (tx) => {
-            // Vérifier l'idempotence : ignorer si déjà refunded
-            const current = await tx.purchase.findUnique({
-              where: { id: purchase.id },
-              select: { refundedAt: true },
-            });
-
-            if (current?.refundedAt) {
-              log.info("Already refunded, skipping dispute loss revocation", {
-                purchaseId: purchase.id,
-              });
-              return;
-            }
-
-            await tx.user.update({
-              where: { id: purchase.userId },
-              data: { credits: { decrement: purchase.creditsPurchased } },
-            });
-
-            await tx.purchase.update({
-              where: { id: purchase.id },
-              data: { refundedAt: new Date() },
-            });
+        if (updated.count === 0) {
+          log.info("Duplicate or no purchase for dispute loss", {
+            paymentIntent: disputePaymentIntent,
           });
+          break;
+        }
 
-          log.error("Credits revoked after dispute lost", {
-            userId: purchase.userId,
-            credits: purchase.creditsPurchased,
-            disputeId: dispute.id,
-          });
-        } else if (dispute.status === "won") {
-          // Dispute gagné — effacer le flag disputedAt
-          await db.purchase.update({
-            where: { id: purchase.id },
-            data: { disputedAt: null },
-          });
+        const purchase = await db.purchase.findUnique({
+          where: { stripePaymentId: disputePaymentIntent },
+          select: { userId: true, creditsPurchased: true },
+        });
 
+        if (purchase) {
+          await db.user.update({
+            where: { id: purchase.userId },
+            data: { credits: { decrement: purchase.creditsPurchased } },
+          });
+        }
+
+        log.error("Credits revoked after dispute lost", {
+          paymentIntent: disputePaymentIntent,
+          disputeId: dispute.id,
+        });
+      } else if (dispute.status === "won") {
+        // Atomic: clear disputedAt flag (only if currently set)
+        const updated = await db.purchase.updateMany({
+          where: {
+            stripePaymentId: disputePaymentIntent,
+            disputedAt: { not: null },
+          },
+          data: { disputedAt: null },
+        });
+
+        if (updated.count > 0) {
           log.info("Dispute won, cleared disputedAt flag", {
-            userId: purchase.userId,
-            purchaseId: purchase.id,
+            paymentIntent: disputePaymentIntent,
             disputeId: dispute.id,
           });
         }

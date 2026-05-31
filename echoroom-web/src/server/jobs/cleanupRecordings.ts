@@ -10,22 +10,21 @@ export async function cleanupOldRecordings(maxAgeDays = 90): Promise<number> {
   cutoff.setDate(cutoff.getDate() - maxAgeDays);
 
   let totalDeleted = 0;
-  let hasMore = true;
+  let cursor: string | undefined;
 
-  while (hasMore) {
+  while (true) {
     const oldCalls = await db.call.findMany({
       where: {
         endedAt: { lte: cutoff },
         recordingUrl: { not: null },
       },
       take: BATCH_SIZE,
-      select: { id: true, recordingUrl: true },
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      orderBy: { createdAt: "asc" },
+      select: { id: true, recordingUrl: true, createdAt: true },
     });
 
-    if (oldCalls.length === 0) {
-      hasMore = false;
-      break;
-    }
+    if (oldCalls.length === 0) break;
 
     for (const call of oldCalls) {
       if (call.recordingUrl) {
@@ -42,9 +41,10 @@ export async function cleanupOldRecordings(maxAgeDays = 90): Promise<number> {
       }
     }
 
-    if (oldCalls.length < BATCH_SIZE) {
-      hasMore = false;
-    }
+    // Set cursor to the last item for next page
+    const lastItem = oldCalls[oldCalls.length - 1];
+    if (!lastItem || oldCalls.length < BATCH_SIZE) break;
+    cursor = lastItem.id;
   }
 
   log.info("Old recordings cleanup complete", { deleted: totalDeleted, maxAgeDays });

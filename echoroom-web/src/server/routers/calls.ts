@@ -33,26 +33,6 @@ export const callsRouter = router({
         });
       }
 
-      // Daily call limit check
-      const { todayStart } = getUTCDayRange();
-
-      const dailyLimit = await db.dailyCallLimit.findUnique({
-        where: {
-          userId_date: {
-            userId: ctx.session.user.id,
-            date: todayStart,
-          },
-        },
-      });
-
-      const currentCount = dailyLimit?.callCount ?? 0;
-      if (currentCount >= 10) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Limite quotidienne d'appels atteinte (10/jour)",
-        });
-      }
-
       try {
         const result = await initiateCall({
           scenarioId: input.scenarioId,
@@ -65,24 +45,6 @@ export const callsRouter = router({
         await db.scenario.update({
           where: { id: input.scenarioId },
           data: { playCount: { increment: 1 } },
-        });
-
-        // Upsert daily call limit
-        await db.dailyCallLimit.upsert({
-          where: {
-            userId_date: {
-              userId: ctx.session.user.id,
-              date: todayStart,
-            },
-          },
-          create: {
-            userId: ctx.session.user.id,
-            date: todayStart,
-            callCount: 1,
-          },
-          update: {
-            callCount: { increment: 1 },
-          },
         });
 
         return result;
