@@ -2,10 +2,12 @@ import { twilioClient, TWILIO_PHONE } from "./twilio";
 import { db } from "@/server/db";
 import { env } from "@/lib/env";
 import { AppError } from "@/server/lib/errors";
-import { atomicDebit, atomicRefund } from "@/server/services/billing/creditOps";
+import { atomicDebit } from "@/server/services/billing/creditOps";
+import { atomicIncrementDailyLimit } from "@/server/services/billing/dailyLimitOps";
 import { createLogger } from "@/server/lib/logger";
 import { encryptPhoneNumber } from "@/server/lib/encryption";
 import { createTwilioToken } from "@/server/lib/twilioToken";
+import { getUTCDayRange } from "@/server/lib/date";
 
 const log = createLogger("call-lifecycle");
 
@@ -51,8 +53,17 @@ export async function initiateCall(params: StartCallParams) {
     throw new AppError("SCENARIO_NOT_FOUND", "Scénario introuvable");
   }
 
-  // Step 1: Atomic debit + create call record in a single transaction
+  const { todayStart } = getUTCDayRange();
+
+  // Step 1: Single transaction — atomic daily limit + atomic debit + create call
   const { call } = await db.$transaction(async (tx) => {
+    // Atomically increment daily limit (throws DAILY_LIMIT_EXCEEDED if at max)
+    await atomicIncrementDailyLimit(tx, {
+      userId: params.userId,
+      date: todayStart,
+      maxLimit: 10,
+    });
+
     // Atomically debit the user
     const debitResult = await atomicDebit(tx, {
       userId: params.userId,
@@ -66,13 +77,13 @@ export async function initiateCall(params: StartCallParams) {
       throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
     }
 
-    // Create the call record within the same transaction
+    // Create the call record with CALLING status within the same transaction
     const newCall = await tx.call.create({
       data: {
         userId: params.userId,
         scenarioId: params.scenarioId,
         phoneNumber: encryptPhoneNumber(params.phoneNumber),
-        status: "PENDING",
+        status: "CALLING",
         costCredits: 1,
       },
     });
@@ -98,29 +109,41 @@ export async function initiateCall(params: StartCallParams) {
       timeout: params.maxDurationSeconds,
     });
 
-    // Update call with Twilio SID and status
-    await db.call.update({
-      where: { id: call.id },
+    // Update call with Twilio SID and status — only if still CALLING
+    await db.call.updateMany({
+      where: { id: call.id, status: "CALLING" },
       data: { status: "RINGING", twilioCallSid: twilioCall.sid },
     });
 
     return { callId: call.id, estimatedCredits: 1 };
   } catch (error) {
-    // Step 3: Atomic refund on failure
+    // Step 3: Atomic refund on failure — wrapped in $transaction to ensure
+    // status update + credit refund are committed atomically.
+    // Uses the call's actual costCredits (not hardcoded 1) for correctness.
     await db.$transaction(async (tx) => {
-      await atomicRefund(tx, { userId: params.userId, amount: 1 });
-      await tx.call.update({
-        where: { id: call.id },
+      const refundResult = await tx.call.updateMany({
+        where: { id: call.id, status: "CALLING" },
         data: { status: "FAILED" },
       });
+
+      if (refundResult.count > 0) {
+        const failedCall = await tx.call.findUnique({
+          where: { id: call.id },
+          select: { costCredits: true },
+        });
+        if (failedCall) {
+          await tx.user.update({
+            where: { id: params.userId },
+            data: { credits: { increment: failedCall.costCredits } },
+          });
+        }
+      }
     });
 
-    // Log and throw with original error context
+    // Log server-side with full error context
     log.error("Twilio call initiation failed", { error });
-    throw new AppError(
-      "TWILIO_ERROR",
-      `Échec de l'appel : ${error instanceof Error ? error.message : "Erreur inconnue"}`,
-    );
+    // Sanitize error message — don't leak Twilio internals to the client
+    throw new AppError("TWILIO_ERROR", "Échec de l'appel");
   }
 }
 

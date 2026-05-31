@@ -20,6 +20,7 @@ enum CallStatus {
   COMPLETED
   FAILED
   BLOCKED
+  CALLING
 }
 
 enum Visibility {
@@ -144,6 +145,7 @@ model Scenario {
   @@index([likeCount(sort: Desc)])
   @@index([playCount(sort: Desc)])
   @@index([createdAt(sort: Desc)])
+  @@index([visibility, moderationStatus, createdAt(sort: Desc)])
 }
 
 model Call {
@@ -192,6 +194,7 @@ model Reaction {
   createdAt DateTime @default(now())
 
   @@unique([userId, scenarioId, emoji])
+  @@index([scenarioId])
 }
 
 model ShareEvent {
@@ -228,6 +231,9 @@ model Comment {
   scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+
+  @@index([scenarioId, userId])
+  @@index([moderationStatus])
 }
 
 model Purchase {
@@ -295,7 +301,7 @@ model FeaturedScenario {
   id          String   @id @default(cuid())
   scenarioId  String
   featuredAt  DateTime @default(now())
-  featuredDate String
+  featuredDate DateTime
   featureType String   @default("AUTOMATED")
 
   scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)

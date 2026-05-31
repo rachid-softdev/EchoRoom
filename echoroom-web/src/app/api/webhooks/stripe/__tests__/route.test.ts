@@ -45,6 +45,7 @@ vi.mock("@/server/db", () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     user: {
       update: vi.fn(),
@@ -475,7 +476,227 @@ describe("Stripe webhook POST handler", () => {
   });
 
   // -----------------------------------------------------------------------
-  // charge.dispute.closed handler
+  // charge.refunded — atomic idempotency via updateMany
+  // -----------------------------------------------------------------------
+
+  describe("charge.refunded", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should process first refund and revoke credits", async () => {
+      const charge = {
+        id: "ch_refund_123",
+        payment_intent: "pi_refund_123",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.refunded",
+        data: { object: charge },
+      });
+
+      const { db } = await import("@/server/db");
+      // updateMany returns count=1 (first time)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
+      (db.purchase.findUnique as any).mockResolvedValue({
+        id: "purchase-1",
+        userId: "user-1",
+        creditsPurchased: 50,
+      });
+      (db.user.update as any).mockResolvedValue({});
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toEqual({ received: true });
+
+      // Atomic update: only matches where refundedAt IS NULL
+      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+        where: {
+          stripePaymentId: "pi_refund_123",
+          refundedAt: null,
+        },
+        data: { refundedAt: expect.any(Date) },
+      });
+
+      // Fetch purchase to get user and credit amount
+      expect(db.purchase.findUnique).toHaveBeenCalledWith({
+        where: { stripePaymentId: "pi_refund_123" },
+        select: { userId: true, creditsPurchased: true },
+      });
+
+      // Revoke credits
+      expect(db.user.update).toHaveBeenCalledWith({
+        where: { id: "user-1" },
+        data: { credits: { decrement: 50 } },
+      });
+    });
+
+    it("should be idempotent — duplicate charge.refunded events skip processing", async () => {
+      const charge = {
+        id: "ch_refund_dup",
+        payment_intent: "pi_refund_dup",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.refunded",
+        data: { object: charge },
+      });
+
+      const { db } = await import("@/server/db");
+      // updateMany returns count=0 (already refunded — refundedAt IS NOT NULL)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+
+      // Should not proceed to findUnique or user.update
+      expect(db.purchase.findUnique).not.toHaveBeenCalled();
+      expect(db.user.update).not.toHaveBeenCalled();
+    });
+
+    it("should handle refund without payment_intent gracefully", async () => {
+      const charge = {
+        id: "ch_no_pi",
+        payment_intent: null as any,
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.refunded",
+        data: { object: charge },
+      });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it("should handle refund with no matching purchase gracefully", async () => {
+      const charge = {
+        id: "ch_no_match",
+        payment_intent: "pi_no_match",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.refunded",
+        data: { object: charge },
+      });
+
+      const { db } = await import("@/server/db");
+      // updateMany returns count=0 (no purchase with that payment_intent)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+      expect(db.purchase.findUnique).not.toHaveBeenCalled();
+      expect(db.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // charge.dispute.created — atomic idempotency via updateMany
+  // -----------------------------------------------------------------------
+
+  describe("charge.dispute.created", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should set disputedAt on first dispute notification", async () => {
+      const dispute = {
+        id: "dp_create_123",
+        payment_intent: "pi_dispute_123",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.created",
+        data: { object: dispute },
+      });
+
+      const { db } = await import("@/server/db");
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+
+      // Atomic update: only matches where disputedAt IS NULL
+      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+        where: {
+          stripePaymentId: "pi_dispute_123",
+          disputedAt: null,
+        },
+        data: { disputedAt: expect.any(Date) },
+      });
+    });
+
+    it("should be idempotent — duplicate dispute.created does not re-set disputedAt", async () => {
+      const dispute = {
+        id: "dp_create_dup",
+        payment_intent: "pi_dispute_dup",
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.created",
+        data: { object: dispute },
+      });
+
+      const { db } = await import("@/server/db");
+      // updateMany returns count=0 (disputedAt already set)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+      // Still called — but returned 0, so no action beyond logging
+      expect(db.purchase.updateMany).toHaveBeenCalled();
+    });
+
+    it("should handle dispute without payment_intent gracefully", async () => {
+      const dispute = {
+        id: "dp_no_pi",
+        payment_intent: null as any,
+      };
+
+      mockConstructEvent.mockReturnValue({
+        type: "charge.dispute.created",
+        data: { object: dispute },
+      });
+
+      const { POST } = await import("../route");
+
+      const req = createNextRequest(JSON.stringify({}), "valid_sig");
+      const response = await POST(req);
+
+      expect(response.status).toBe(200);
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // charge.dispute.closed — atomic idempotency via updateMany
   // -----------------------------------------------------------------------
 
   describe("charge.dispute.closed", () => {
@@ -483,7 +704,7 @@ describe("Stripe webhook POST handler", () => {
       vi.clearAllMocks();
     });
 
-    it("should revoke credits when dispute is lost", async () => {
+    it("should revoke credits when dispute is lost (updateMany guard)", async () => {
       const dispute = {
         id: "dp_lost_123",
         payment_intent: "pi_lost_123",
@@ -495,28 +716,15 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      // The route code calls db.purchase.findMany directly (not in a transaction)
-      // for the initial lookup. Set up the direct mock.
       const { db } = await import("@/server/db");
-      (db.purchase.findMany as any).mockResolvedValue([
-        { id: "purchase-dp-1", userId: "user-1", creditsPurchased: 50 },
-      ]);
-
-      // For the lost branch, it calls db.$transaction with a callback.
-      // Inside the transaction, tx.purchase.findUnique, tx.user.update, tx.purchase.update
-      const txFindUnique = vi.fn().mockResolvedValue({ refundedAt: null });
-      const txUserUpdate = vi.fn();
-      const txPurchaseUpdate = vi.fn();
-
-      mockTransaction.mockImplementation(async (cb: any) => cb({
-        purchase: {
-          findUnique: txFindUnique,
-          update: txPurchaseUpdate,
-        },
-        user: {
-          update: txUserUpdate,
-        },
-      }));
+      // updateMany returns count=1 (first time processing)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
+      (db.purchase.findUnique as any).mockResolvedValue({
+        id: "purchase-lost-1",
+        userId: "user-1",
+        creditsPurchased: 50,
+      });
+      (db.user.update as any).mockResolvedValue({});
 
       const { POST } = await import("../route");
 
@@ -524,34 +732,30 @@ describe("Stripe webhook POST handler", () => {
       const response = await POST(req);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body).toEqual({ received: true });
 
-      // Verify purchase.findMany was called to find disputed purchases
-      expect(db.purchase.findMany).toHaveBeenCalledWith({
+      // Atomic update: only matches where refundedAt IS NULL
+      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+        where: {
+          stripePaymentId: "pi_lost_123",
+          refundedAt: null,
+        },
+        data: { refundedAt: expect.any(Date) },
+      });
+
+      // Fetch purchase details
+      expect(db.purchase.findUnique).toHaveBeenCalledWith({
         where: { stripePaymentId: "pi_lost_123" },
+        select: { userId: true, creditsPurchased: true },
       });
 
-      // Verify idempotency check inside transaction
-      expect(txFindUnique).toHaveBeenCalledWith({
-        where: { id: "purchase-dp-1" },
-        select: { refundedAt: true },
-      });
-
-      // Verify credits were decremented inside transaction
-      expect(txUserUpdate).toHaveBeenCalledWith({
+      // Revoke credits
+      expect(db.user.update).toHaveBeenCalledWith({
         where: { id: "user-1" },
         data: { credits: { decrement: 50 } },
       });
-
-      // Verify purchase was marked as refunded inside transaction
-      expect(txPurchaseUpdate).toHaveBeenCalledWith({
-        where: { id: "purchase-dp-1" },
-        data: { refundedAt: expect.any(Date) },
-      });
     });
 
-    it("should clear disputedAt when dispute is won", async () => {
+    it("should clear disputedAt when dispute is won (updateMany guard)", async () => {
       const dispute = {
         id: "dp_won_123",
         payment_intent: "pi_won_123",
@@ -564,12 +768,8 @@ describe("Stripe webhook POST handler", () => {
       });
 
       const { db } = await import("@/server/db");
-      (db.purchase.findMany as any).mockResolvedValue([
-        { id: "purchase-won-1", userId: "user-1", creditsPurchased: 50 },
-      ]);
-
-      // For "won" branch, db.purchase.update is called directly (not in a transaction)
-      (db.purchase.update as any).mockResolvedValue({ id: "purchase-won-1" });
+      // updateMany returns count=1 (disputedAt was set, now cleared)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
 
       const { POST } = await import("../route");
 
@@ -578,9 +778,12 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
 
-      // Verify disputedAt was set to null
-      expect(db.purchase.update).toHaveBeenCalledWith({
-        where: { id: "purchase-won-1" },
+      // Atomic update: only matches where disputedAt IS NOT NULL
+      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+        where: {
+          stripePaymentId: "pi_won_123",
+          disputedAt: { not: null },
+        },
         data: { disputedAt: null },
       });
     });
@@ -598,17 +801,15 @@ describe("Stripe webhook POST handler", () => {
       });
 
       const { db } = await import("@/server/db");
-      (db.purchase.findMany as any).mockResolvedValue([
-        { id: "purchase-won-2", userId: "user-2", creditsPurchased: 100 },
-      ]);
-      (db.purchase.update as any).mockResolvedValue({ id: "purchase-won-2" });
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
 
       const { POST } = await import("../route");
 
       const req = createNextRequest(JSON.stringify({}), "valid_sig");
       await POST(req);
 
-      // For "won" status, the $transaction is NOT called (no credit revocation)
+      // No user update or $transaction — only updateMany for clearing disputedAt
+      expect(db.user.update).not.toHaveBeenCalled();
       expect(mockTransaction).not.toHaveBeenCalled();
     });
 
@@ -629,12 +830,10 @@ describe("Stripe webhook POST handler", () => {
       const req = createNextRequest(JSON.stringify({}), "valid_sig");
       const response = await POST(req);
 
-      // Should still return 200 (event acknowledged, but no action taken)
       expect(response.status).toBe(200);
       const body = await response.json();
       expect(body).toEqual({ received: true });
 
-      // No transaction should be called since there's no payment_intent
       expect(mockTransaction).not.toHaveBeenCalled();
     });
 
@@ -651,7 +850,8 @@ describe("Stripe webhook POST handler", () => {
       });
 
       const { db } = await import("@/server/db");
-      (db.purchase.findMany as any).mockResolvedValue([]);
+      // updateMany returns 0 (no purchase with that payment_intent)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
 
       const { POST } = await import("../route");
 
@@ -659,11 +859,8 @@ describe("Stripe webhook POST handler", () => {
       const response = await POST(req);
 
       expect(response.status).toBe(200);
-
-      // findMany was called but returned empty — no further action
-      expect(db.purchase.findMany).toHaveBeenCalledWith({
-        where: { stripePaymentId: "pi_no_match" },
-      });
+      expect(db.purchase.findUnique).not.toHaveBeenCalled();
+      expect(db.user.update).not.toHaveBeenCalled();
     });
 
     it("should be idempotent — duplicate dispute.lost events don't double-revoke", async () => {
@@ -679,24 +876,8 @@ describe("Stripe webhook POST handler", () => {
       });
 
       const { db } = await import("@/server/db");
-      (db.purchase.findMany as any).mockResolvedValue([
-        { id: "purchase-dup-1", userId: "user-dup", creditsPurchased: 75 },
-      ]);
-
-      // Inside transaction: simulate that the purchase was ALREADY refunded
-      const txFindUnique = vi.fn().mockResolvedValue({ refundedAt: new Date("2026-01-01") });
-      const txUserUpdate = vi.fn();
-      const txPurchaseUpdate = vi.fn();
-
-      mockTransaction.mockImplementation(async (cb: any) => cb({
-        purchase: {
-          findUnique: txFindUnique,
-          update: txPurchaseUpdate,
-        },
-        user: {
-          update: txUserUpdate,
-        },
-      }));
+      // updateMany returns 0 (already refunded — refundedAt IS NOT NULL)
+      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
 
       const { POST } = await import("../route");
 
@@ -705,15 +886,9 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
 
-      // Idempotency check: refundedAt is set, so skip revocation
-      expect(txFindUnique).toHaveBeenCalledWith({
-        where: { id: "purchase-dup-1" },
-        select: { refundedAt: true },
-      });
-
-      // No credit revocation or update since already refunded
-      expect(txUserUpdate).not.toHaveBeenCalled();
-      expect(txPurchaseUpdate).not.toHaveBeenCalled();
+      // updateMany was called but returned 0 — no further action
+      expect(db.purchase.findUnique).not.toHaveBeenCalled();
+      expect(db.user.update).not.toHaveBeenCalled();
     });
   });
 });

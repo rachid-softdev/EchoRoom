@@ -7,6 +7,7 @@ export const LOCALE = "fr-FR";
 
 export const STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",
+  CALLING: "Appel en cours",
   RINGING: "Sonnerie",
   ACTIVE: "Actif",
   COMPLETED: "Terminé",
@@ -16,6 +17,7 @@ export const STATUS_LABELS: Record<string, string> = {
 
 export const STATUS_VARIANTS: Record<string, BadgeVariant> = {
   PENDING: "outline",
+  CALLING: "default",
   RINGING: "secondary",
   ACTIVE: "default",
   COMPLETED: "secondary",

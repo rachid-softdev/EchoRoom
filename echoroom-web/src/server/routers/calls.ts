@@ -33,26 +33,6 @@ export const callsRouter = router({
         });
       }
 
-      // Daily call limit check
-      const { todayStart } = getUTCDayRange();
-
-      const dailyLimit = await db.dailyCallLimit.findUnique({
-        where: {
-          userId_date: {
-            userId: ctx.session.user.id,
-            date: todayStart,
-          },
-        },
-      });
-
-      const currentCount = dailyLimit?.callCount ?? 0;
-      if (currentCount >= 10) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Limite quotidienne d'appels atteinte (10/jour)",
-        });
-      }
-
       try {
         const result = await initiateCall({
           scenarioId: input.scenarioId,
@@ -67,24 +47,6 @@ export const callsRouter = router({
           data: { playCount: { increment: 1 } },
         });
 
-        // Upsert daily call limit
-        await db.dailyCallLimit.upsert({
-          where: {
-            userId_date: {
-              userId: ctx.session.user.id,
-              date: todayStart,
-            },
-          },
-          create: {
-            userId: ctx.session.user.id,
-            date: todayStart,
-            callCount: 1,
-          },
-          update: {
-            callCount: { increment: 1 },
-          },
-        });
-
         return result;
       } catch (error) {
         if (error instanceof AppError) {
@@ -94,14 +56,11 @@ export const callsRouter = router({
             case "USER_NOT_FOUND":
               throw new TRPCError({ code: "UNAUTHORIZED", message: "Utilisateur introuvable" });
             case "INSUFFICIENT_CREDITS":
-            case "CREDIT_DEBIT_FAILED":
               throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Crédits insuffisants" });
             case "TWILIO_ERROR":
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Échec de l'appel" });
             case "DAILY_LIMIT_EXCEEDED":
               throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Limite quotidienne d'appels atteinte" });
-            case "NUMBER_BLOCKED":
-              throw new TRPCError({ code: "FORBIDDEN", message: "Ce numéro a été bloqué" });
             default:
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
           }

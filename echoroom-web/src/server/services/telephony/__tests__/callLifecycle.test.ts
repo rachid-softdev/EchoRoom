@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Call Lifecycle tests: failCall idempotency, initiateCall, withRetry
@@ -9,11 +9,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 //   3. If updateMany count = 0: skip (already finalised)
 // Uses updateMany instead of read-then-check to prevent TOCTOU race conditions.
 //
-// initiateCall orchestrates:
+// initiateCall orchestrates (Sprint 2):
 //   1. Scenario lookup
-//   2. Atomic debit + call record creation in a $transaction
-//   3. Twilio call initiation
-//   4. Refund + failure marking on Twilio error
+//   2. Single $transaction — atomic daily limit + atomic debit + CALLING call
+//   3. Twilio call initiation (outside transaction)
+//   4. On success: updateMany WHERE status=CALLING → RINGING (idempotent guard)
+//   5. On Twilio error: updateMany WHERE status=CALLING → FAILED + refund
 //
 // withRetry provides exponential backoff with jitter.
 
@@ -21,7 +22,13 @@ vi.mock("@/server/db", () => ({
   db: {
     $transaction: vi.fn(),
     scenario: { findUnique: vi.fn() },
-    call: { update: vi.fn() },
+    call: {
+      updateMany: vi.fn(),
+      update: vi.fn(),
+    },
+    user: {
+      update: vi.fn(),
+    },
   },
 }));
 
@@ -382,8 +389,12 @@ describe("initiateCall", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Default transaction mock — happy path: sufficient credits
+    // Default transaction mock — happy path: sufficient credits + daily limit ok
     mockTx = {
+      dailyCallLimit: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        create: vi.fn(),
+      },
       user: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn(),
@@ -442,7 +453,7 @@ describe("initiateCall", () => {
         userId: "user-abc",
         scenarioId: "scenario-1",
         phoneNumber: "encrypted:+33612345678",
-        status: "PENDING",
+        status: "CALLING",
         costCredits: 1,
       },
     });
@@ -508,9 +519,38 @@ describe("initiateCall", () => {
       maxDurationSeconds: 600,
     });
 
-    expect(db.call.update).toHaveBeenCalledWith({
-      where: { id: "call-1" },
+    // Uses updateMany with status guard to prevent TOCTOU races
+    expect(db.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-1", status: "CALLING" },
       data: { status: "RINGING", twilioCallSid: "CA_mock_ringing" },
+    });
+  });
+
+  it("should use updateMany status=CALLING guard on Twilio success (idempotent)", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+
+    // Simulate that updateMany with CALLING guard already matched nothing
+    // (e.g., another process already advanced the status)
+    (db.call.updateMany as any).mockResolvedValue({ count: 0 });
+
+    const { initiateCall } = await import("../callLifecycle");
+    const result = await initiateCall({
+      scenarioId: "scenario-1",
+      userId: "user-abc",
+      phoneNumber: "+33612345678",
+      maxDurationSeconds: 600,
+    });
+
+    // Still returns the callId — the status guard is for crash recovery
+    expect(result).toEqual({ callId: "call-1", estimatedCredits: 1 });
+    expect(db.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-1", status: "CALLING" },
+      data: { status: "RINGING", twilioCallSid: "CA_mock_sid" },
     });
   });
 
@@ -583,20 +623,14 @@ describe("initiateCall", () => {
 
     (db.scenario.findUnique as any).mockResolvedValue(validScenario);
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    // Mock the success path (db.call.updateMany for RINGING)
+    (db.call.updateMany as any).mockReset();
+    // Return count=1 for the failure path (call was still CALLING)
+    (db.call.updateMany as any).mockResolvedValue({ count: 1 });
 
     // Make the Twilio call fail
     const twilioError = new Error("Twilio network error");
     (twilioClient.calls.create as any).mockRejectedValue(twilioError);
-
-    // Mock the refund transaction — it uses a separate $transaction call
-    const refundTx = {
-      user: { update: vi.fn().mockResolvedValue({}) },
-      call: { update: vi.fn().mockResolvedValue({}) },
-    };
-    // The second call to $transaction is for the refund
-    (db.$transaction as any)
-      .mockResolvedValueOnce({ call: { id: "call-1" } }) // First call returns from the outer await
-      .mockImplementationOnce(async (cb: any) => cb(refundTx)); // Second call is the refund transaction
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -609,16 +643,44 @@ describe("initiateCall", () => {
       }),
     ).rejects.toThrow("Échec de l'appel");
 
-    // Verify the refund was processed
-    expect(refundTx.user.update).toHaveBeenCalledWith({
+    // Verify the updateMany guard: only update if still CALLING
+    expect(db.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-1", status: "CALLING" },
+      data: { status: "FAILED" },
+    });
+
+    // Verify credit refund
+    expect(db.user.update).toHaveBeenCalledWith({
       where: { id: "user-abc" },
       data: { credits: { increment: 1 } },
     });
+  });
 
-    expect(refundTx.call.update).toHaveBeenCalledWith({
-      where: { id: "call-1" },
-      data: { status: "FAILED" },
-    });
+  it("should NOT refund credits if call was already advanced from CALLING (race condition)", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    // Simulate that updateMany returns 0 — call already advanced from CALLING
+    (db.call.updateMany as any).mockResolvedValue({ count: 0 });
+
+    // Make the Twilio call fail
+    (twilioClient.calls.create as any).mockRejectedValue(new Error("Twilio error"));
+
+    const { initiateCall } = await import("../callLifecycle");
+
+    await expect(
+      initiateCall({
+        scenarioId: "scenario-1",
+        userId: "user-abc",
+        phoneNumber: "+33612345678",
+        maxDurationSeconds: 600,
+      }),
+    ).rejects.toThrow("Échec de l'appel");
+
+    // Should NOT refund since the call was already past CALLING
+    expect(db.user.update).not.toHaveBeenCalled();
   });
 
   it("should throw TWILIO_ERROR with original error message", async () => {
@@ -626,12 +688,7 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
 
     (db.scenario.findUnique as any).mockResolvedValue(validScenario);
-    (db.$transaction as any)
-      .mockResolvedValueOnce({ call: { id: "call-1" } })
-      .mockImplementationOnce(async (cb: any) => cb({
-        user: { update: vi.fn().mockResolvedValue({}) },
-        call: { update: vi.fn().mockResolvedValue({}) },
-      }));
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
 
     (twilioClient.calls.create as any).mockRejectedValue(new Error("Rate limit exceeded"));
 
@@ -698,5 +755,164 @@ describe("initiateCall", () => {
       statusCallbackMethod: "POST",
       timeout: 600,
     });
+  });
+
+  // -----------------------------------------------------------------------
+  // Sprint 2: Daily limit integration via atomicIncrementDailyLimit
+  // -----------------------------------------------------------------------
+
+  it("should call atomicIncrementDailyLimit inside the transaction", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+
+    const { initiateCall } = await import("../callLifecycle");
+    await initiateCall({
+      scenarioId: "scenario-1",
+      userId: "user-abc",
+      phoneNumber: "+33612345678",
+      maxDurationSeconds: 600,
+    });
+
+    // Verify dailyCallLimit.updateMany was called inside the transaction
+    expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalledTimes(1);
+    expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-abc",
+        date: expect.any(Date),
+        callCount: { lt: 10 },
+      },
+      data: { callCount: { increment: 1 } },
+    });
+  });
+
+  it("should throw DAILY_LIMIT_EXCEEDED when atomicIncrementDailyLimit fails", async () => {
+    const { db } = await import("@/server/db");
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+
+    // Simulate daily limit exceeded inside the transaction.
+    // atomicIncrementDailyLimit throws AppError("DAILY_LIMIT_EXCEEDED", ...)
+    // which propagates up through the $transaction callback.
+    mockTx.dailyCallLimit = {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      create: vi.fn().mockRejectedValue(
+        Object.assign(new Error("Unique constraint"), { code: "P2002" }),
+      ),
+    };
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+
+    const { initiateCall } = await import("../callLifecycle");
+
+    // The AppError propagates up from the transaction callback
+    await expect(
+      initiateCall({
+        scenarioId: "scenario-1",
+        userId: "user-abc",
+        phoneNumber: "+33612345678",
+        maxDurationSeconds: 600,
+      }),
+    ).rejects.toThrow();
+  });
+
+  // -----------------------------------------------------------------------
+  // Sprint 2: Call created with CALLING status for crash recovery
+  // -----------------------------------------------------------------------
+
+  it("should create call with CALLING status for crash recovery", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+
+    const { initiateCall } = await import("../callLifecycle");
+    await initiateCall({
+      scenarioId: "scenario-1",
+      userId: "user-abc",
+      phoneNumber: "+33612345678",
+      maxDurationSeconds: 600,
+    });
+
+    // Call created with CALLING — not PENDING
+    expect(mockTx.call.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "CALLING",
+        }),
+      }),
+    );
+  });
+
+  // -----------------------------------------------------------------------
+  // Sprint 2: UpdateMany status guard on Twilio error
+  // -----------------------------------------------------------------------
+
+  it("should use updateMany status=CALLING guard on Twilio failure", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (twilioClient.calls.create as any).mockRejectedValue(new Error("Twilio error"));
+
+    // Simulate the updateMany guard
+    (db.call.updateMany as any).mockResolvedValue({ count: 1 });
+
+    const { initiateCall } = await import("../callLifecycle");
+
+    await expect(
+      initiateCall({
+        scenarioId: "scenario-1",
+        userId: "user-abc",
+        phoneNumber: "+33612345678",
+        maxDurationSeconds: 600,
+      }),
+    ).rejects.toThrow();
+
+    // Verify the guard: only process if still CALLING
+    expect(db.call.updateMany).toHaveBeenCalledWith({
+      where: { id: "call-1", status: "CALLING" },
+      data: { status: "FAILED" },
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Sprint 2: Transaction includes daily limit + debit + call creation
+  // -----------------------------------------------------------------------
+
+  it("should perform daily limit, debit, and call creation in a single transaction", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+
+    (db.scenario.findUnique as any).mockResolvedValue(validScenario);
+
+    // Track transaction callback to inspect what happens inside
+    let capturedTx: any = null;
+    (db.$transaction as any).mockImplementation(async (cb: any) => {
+      capturedTx = cb;
+      return cb(mockTx);
+    });
+    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+
+    const { initiateCall } = await import("../callLifecycle");
+    await initiateCall({
+      scenarioId: "scenario-1",
+      userId: "user-abc",
+      phoneNumber: "+33612345678",
+      maxDurationSeconds: 600,
+    });
+
+    // Verify that a single $transaction was used for all three operations
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    // dailyCallLimit.updateMany = daily limit check
+    expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalled();
+    // user.updateMany = atomic debit
+    expect(mockTx.user.updateMany).toHaveBeenCalled();
+    // call.create = call record
+    expect(mockTx.call.create).toHaveBeenCalled();
   });
 });

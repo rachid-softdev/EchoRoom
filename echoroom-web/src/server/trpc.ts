@@ -192,7 +192,15 @@ export function extractTextFromInput(input: unknown): string | null {
   return textParts.length > 0 ? textParts.join(" ") : null;
 }
 
-export const withContentModeration = middleware(async ({ next, input }) => {
+export const withContentModeration = middleware(async ({ ctx, next, input }) => {
+  // Auth guard: prevent unauthenticated DoS via expensive OpenAI moderation calls
+  if (!ctx.session?.user?.id) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Authentication required for content moderation",
+    });
+  }
+
   const text = extractTextFromInput(input);
   if (!text) return next();
 
