@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Phone, Settings } from 'lucide-react'
-import { Badge } from '@/components/ui'
+import { ArrowLeft, Settings } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { useCreditBalance } from '@/hooks/useCreditBalance'
+import { CreditDisplay } from './CreditDisplay'
 
 interface DashboardShellProps {
   title: string
@@ -21,8 +20,6 @@ export function DashboardShell({
   actions,
   children,
 }: DashboardShellProps) {
-  const { credits } = useCreditBalance()
-
   return (
     <div className="flex flex-col min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -34,13 +31,10 @@ export function DashboardShell({
           Retour
         </Link>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="text-xs">
-            <Phone className="w-3 h-3 mr-1" />
-            {credits ?? '?'} crédits
-          </Badge>
+          <CreditDisplay />
           {actions}
           <Link href="/settings">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" aria-label="Paramètres">
               <Settings className="w-4 h-4" />
             </Button>
           </Link>

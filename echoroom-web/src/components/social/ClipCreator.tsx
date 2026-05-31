@@ -114,7 +114,7 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
         </div>
       </div>
 
-      {!isValid && startTime > 0 && endTime > 0 && (
+      {!isValid && (startTime > 0 || endTime > 0) && (
         <p className="text-xs text-destructive">
           La fin doit être après le début et dans la durée de l&apos;appel
         </p>

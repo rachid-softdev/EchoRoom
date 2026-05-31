@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "./lib";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+
 
 interface DialogContextValue {
   open: boolean;
@@ -41,12 +44,22 @@ function Dialog({
   );
 }
 
-function DialogTrigger({ children }: { children: React.ReactNode; asChild?: boolean }) {
+function DialogTrigger({
+  children,
+  asChild = false,
+}: {
+  children: React.ReactNode;
+  asChild?: boolean;
+}) {
   const { onOpenChange } = useDialog();
+  const Comp = asChild ? Slot : "button";
   return (
-    <button type="button" onClick={() => onOpenChange(true)}>
+    <Comp
+      type={asChild ? undefined : "button"}
+      onClick={() => onOpenChange(true)}
+    >
       {children}
-    </button>
+    </Comp>
   );
 }
 
@@ -56,6 +69,8 @@ function DialogContent({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   const { open, onOpenChange } = useDialog();
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  useFocusTrap(contentRef, open);
 
   React.useEffect(() => {
     if (!open) return;
@@ -80,6 +95,7 @@ function DialogContent({
         aria-hidden="true"
       />
       <div
+        ref={contentRef}
         role="dialog"
         aria-modal="true"
         className={cn(
@@ -94,7 +110,7 @@ function DialogContent({
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">Fermer</span>
         </button>
         {children}
       </div>

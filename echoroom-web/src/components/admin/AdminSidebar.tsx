@@ -3,16 +3,17 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  LayoutDashboard,
+  Shield,
   Flag,
   ScrollText,
   Ban,
   Users,
   BarChart3,
+  LayoutDashboard,
 } from "lucide-react"
 
 const navItems = [
-  { href: "/admin/moderation", label: "Modération", icon: LayoutDashboard },
+  { href: "/admin/moderation", label: "Modération", icon: Shield },
   { href: "/admin/reports", label: "Signalements", icon: Flag },
   { href: "/admin/audit", label: "Journal d'audit", icon: ScrollText },
   { href: "/admin/blocked-numbers", label: "Numéros bloqués", icon: Ban },
@@ -42,6 +43,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 isActive
                   ? "bg-primary/10 text-primary font-medium"

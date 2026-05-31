@@ -11,17 +11,7 @@ import { DataLoader } from "@/components/shared/DataLoader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { api } from "@/lib/trpc";
 import { ReactionBar } from "@/components/social/ReactionBar";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  ROMANTIC: "Romantique",
-  CHAOTIC: "Chaotique",
-  CORPORATE: "Corporate",
-  NPC: "NPC",
-  HORROR: "Horreur",
-  CRINGE: "Cringe",
-  GAMER: "Gamer",
-  WEIRD: "Weird",
-};
+import { CATEGORY_LABELS } from "@/lib/constants";
 
 export default function CommunityPageClient() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});

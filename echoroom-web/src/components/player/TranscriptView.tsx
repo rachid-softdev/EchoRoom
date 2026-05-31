@@ -1,5 +1,3 @@
-'use client'
-
 import { Skeleton } from '@/components/ui'
 import { MessageSquare } from 'lucide-react'
 

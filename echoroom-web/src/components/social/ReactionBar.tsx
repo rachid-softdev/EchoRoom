@@ -55,6 +55,7 @@ export function ReactionBar({ scenarioId }: ReactionBarProps) {
           type="button"
           onClick={() => setShowPicker(!showPicker)}
           disabled={toggleMutation.isPending}
+          aria-label="Ajouter une réaction"
           className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm border border-dashed border-border/50 hover:border-primary/30 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
         >
           <span className="text-base leading-none">+</span>
@@ -63,7 +64,6 @@ export function ReactionBar({ scenarioId }: ReactionBarProps) {
         {showPicker && (
           <div className="absolute top-full left-0 mt-2 p-2 bg-card border border-border rounded-xl shadow-xl z-10">
             <EmojiPicker
-              scenarioId={scenarioId}
               onSelect={(emoji) => {
                 handleToggle(emoji)
                 setShowPicker(false)

@@ -1,8 +1,11 @@
+"use client"
+
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { Badge } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { Heart, MessageCircle, Play, Share2 } from 'lucide-react'
+import { CATEGORY_LABELS } from '@/lib/constants'
 
 interface ScenarioCardData {
   id: string
@@ -21,17 +24,6 @@ interface ScenarioCardProps {
   href?: string
   showCreator?: boolean
   showShare?: boolean
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  ROMANTIC: 'Romantique',
-  CHAOTIC: 'Chaotique',
-  CORPORATE: 'Corporate',
-  NPC: 'NPC',
-  HORROR: 'Horreur',
-  CRINGE: 'Cringe',
-  GAMER: 'Gamer',
-  WEIRD: 'Weird',
 }
 
 export function ScenarioCard({
@@ -88,11 +80,15 @@ export function ScenarioCard({
                   variant="ghost"
                   size="icon"
                   className="w-6 h-6"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault()
                     e.stopPropagation()
                     const url = `${window.location.origin}/scenario/${scenario.id}`
-                    navigator.clipboard.writeText(url)
+                    try {
+                      await navigator.clipboard.writeText(url)
+                    } catch {
+                      // Clipboard access denied — fail silently
+                    }
                   }}
                 >
                   <Share2 className="w-3 h-3" />

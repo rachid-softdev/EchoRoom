@@ -5,7 +5,6 @@ import { cn } from "@/components/ui"
 const EMOJIS = ["❤️", "😂", "😮", "🔥", "😭", "🤯", "💀", "👀"]
 
 interface EmojiPickerProps {
-  scenarioId: string
   selectedEmoji?: string
   onSelect: (emoji: string) => void
   disabled?: boolean

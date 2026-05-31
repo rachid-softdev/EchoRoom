@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { Skeleton } from '@/components/ui'
-import { AlertTriangle, RotateCcw } from 'lucide-react'
-import { Button } from '@/components/ui'
+import { Skeleton } from "@/components/ui";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui";
 
 interface DataLoaderProps<T> {
   query: {
@@ -33,7 +33,7 @@ export function DataLoader<T>({
         <div className="grid md:grid-cols-3 gap-4">
           {Array.from({ length: skeletonCount }).map((_, i) => (
             <div
-              key={`skel-${i}-${skeletonCount}`}
+              key={`skel-${i}`}
               className="rounded-xl border border-border p-4 space-y-3"
             >
               <Skeleton className="h-4 w-1/3" />
@@ -67,35 +67,15 @@ export function DataLoader<T>({
     )
   }
 
-  if (!query.data) {
-    return (
-      empty ?? (
-        <div className="text-center py-16 text-muted-foreground">
-          Aucune donnée disponible
-        </div>
-      )
-    )
-  }
-
-  if (isEmpty?.(query.data)) {
+  if (!query.data || isEmpty?.(query.data)) {
     return (
       empty ?? (
         <div className="text-center py-16 text-muted-foreground">
           Aucun résultat
         </div>
       )
-    )
+    );
   }
 
-  if (Array.isArray(query.data) && query.data.length === 0) {
-    return (
-      empty ?? (
-        <div className="text-center py-16 text-muted-foreground">
-          Aucun élément
-        </div>
-      )
-    )
-  }
-
-  return <>{children(query.data as NonNullable<T>)}</>
+  return <>{children(query.data as NonNullable<T>)}</>;
 }

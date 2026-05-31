@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { toast } from "@/components/ui";
+import { AlertTriangle, Copy, RotateCcw } from "lucide-react";
 
 export default function Error({
   error,
@@ -18,9 +19,25 @@ export default function Error({
         Désolés, quelque chose s&apos;est mal passé. Notre équipe a été notifiée.
       </p>
       {error.digest && (
-        <p className="text-xs text-muted-foreground mb-6 font-mono">
-          Erreur #{error.digest}
-        </p>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <p className="text-xs text-muted-foreground font-mono">
+            Erreur #{error.digest}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(error.digest ?? "").then(() => {
+                toast({ title: "Copié !", variant: "default" });
+              }).catch(() => {
+                toast({ title: "Échec de la copie", variant: "destructive" });
+              });
+            }}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Copier l'identifiant d'erreur"
+          >
+            <Copy className="w-3 h-3" />
+          </button>
+        </div>
       )}
       <Button onClick={reset} className="gap-2">
         <RotateCcw className="w-4 h-4" />
