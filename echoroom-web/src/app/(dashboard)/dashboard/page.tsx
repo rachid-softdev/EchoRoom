@@ -17,6 +17,7 @@ import {
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { api } from "@/lib/trpc";
 import { FeaturedScenario } from "@/components/social/FeaturedScenario";
+import { STATUS_LABELS, formatDate } from "@/lib/constants";
 
 const quickActions = [
   {
@@ -48,25 +49,6 @@ const quickActions = [
     color: "text-foreground",
   },
 ];
-
-function formatDate(date: string | Date): string {
-  const d = new Date(date);
-  return d.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: "En attente",
-  RINGING: "Sonnerie",
-  ACTIVE: "Actif",
-  COMPLETED: "Terminé",
-  FAILED: "Échoué",
-  BLOCKED: "Bloqué",
-};
 
 export default function DashboardPage() {
   const creditsQuery = api.billing.getCredits.useQuery();

@@ -1,17 +1,5 @@
-import OpenAI from "openai";
-import { env } from "@/lib/env";
-import { createLogger } from "@/server/lib/logger";
+import { getOpenAIClient } from "@/lib/openai";
 import { moderateOutput } from "./moderation";
-
-const log = createLogger("conversation-engine");
-
-let openai: OpenAI | null = null;
-
-try {
-  openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-} catch {
-  log.warn("OpenAI unavailable — conversation engine disabled");
-}
 
 interface ConversationMessage {
   role: "user" | "assistant" | "system";
@@ -32,6 +20,7 @@ interface ConversationEngineResult {
 export async function generateResponse(
   options: ConversationEngineOptions,
 ): Promise<ConversationEngineResult> {
+  const openai = getOpenAIClient();
   if (!openai) {
     return {
       response: "Désolé, le moteur de conversation n'est pas disponible actuellement.",
@@ -64,6 +53,7 @@ export async function generateResponse(
 }
 
 export async function generateScript(characterPrompt: string, userInput: string): Promise<string> {
+  const openai = getOpenAIClient();
   if (!openai) {
     return "Moteur IA indisponible.";
   }

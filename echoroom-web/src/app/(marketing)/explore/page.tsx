@@ -21,15 +21,15 @@ const categories = [
   "Weird",
 ];
 
-const CATEGORY_TO_SLUG: Record<string, string | undefined> = {
-  Romantique: "romantic",
-  Chaotique: "chaotic",
-  Corporate: "corporate",
-  NPC: "npc",
-  Horreur: "horror",
-  Cringe: "cringe",
-  Gamer: "gamer",
-  Weird: "weird",
+const CATEGORY_TO_ENUM: Record<string, string> = {
+  Romantique: "ROMANTIC",
+  Chaotique: "CHAOTIC",
+  Corporate: "CORPORATE",
+  NPC: "NPC",
+  Horreur: "HORROR",
+  Cringe: "CRINGE",
+  Gamer: "GAMER",
+  Weird: "WEIRD",
 };
 
 export default function ExplorePage() {
@@ -41,7 +41,7 @@ export default function ExplorePage() {
     feedQuery.data?.items.filter((scenario) => {
       const matchesCategory =
         activeCategory === "Tous" ||
-        scenario.character?.slug === CATEGORY_TO_SLUG[activeCategory];
+        scenario.character?.category === CATEGORY_TO_ENUM[activeCategory];
       const matchesSearch =
         searchQuery === "" ||
         scenario.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

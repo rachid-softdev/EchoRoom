@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import { decryptPhoneNumber, encryptPhoneNumber } from "@/server/lib/encryption";
 import { createLogger } from "@/server/lib/logger";
 import { CONVERSATION_TTL_S } from "./constants";
+import { buildSystemPrompt } from "@/server/services/telephony/prompts";
 
 const log = createLogger("conversation-state");
 
@@ -201,16 +202,7 @@ export async function getSystemPromptFromState(state: ConversationState): Promis
         include: { character: true },
       });
       if (scenario) {
-        return [
-          `Tu es ${scenario.character.name}. ${scenario.character.description || ""}`,
-          scenario.character.promptSystem,
-          scenario.aiInstructions,
-          `Contexte du scénario: ${scenario.description || ""}`,
-          "Réponds en français de manière naturelle et parlée, comme dans une conversation téléphonique.",
-          "Garde tes réponses concises (2-3 phrases max) adaptées à un appel vocal.",
-        ]
-          .filter(Boolean)
-          .join("\n");
+        return buildSystemPrompt(scenario);
       }
     } catch (error) {
       log.error("Failed to load scenario for system prompt", { error });

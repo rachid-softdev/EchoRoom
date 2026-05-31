@@ -48,7 +48,7 @@ export async function initiateCall(params: StartCallParams) {
   });
 
   if (!scenario) {
-    throw new AppError("SCENARIO_NOT_FOUND", "Scenario not found");
+    throw new AppError("SCENARIO_NOT_FOUND", "Scénario introuvable");
   }
 
   // Step 1: Atomic debit + create call record in a single transaction
@@ -61,9 +61,9 @@ export async function initiateCall(params: StartCallParams) {
 
     if (!debitResult.debited) {
       if (debitResult.reason === "USER_NOT_FOUND") {
-        throw new AppError("USER_NOT_FOUND", "User not found");
+        throw new AppError("USER_NOT_FOUND", "Utilisateur introuvable");
       }
-      throw new AppError("INSUFFICIENT_CREDITS", "Insufficient credits");
+      throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
     }
 
     // Create the call record within the same transaction
@@ -119,7 +119,7 @@ export async function initiateCall(params: StartCallParams) {
     log.error("Twilio call initiation failed", { error });
     throw new AppError(
       "TWILIO_ERROR",
-      `Failed to initiate call: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Échec de l'appel : ${error instanceof Error ? error.message : "Erreur inconnue"}`,
     );
   }
 }

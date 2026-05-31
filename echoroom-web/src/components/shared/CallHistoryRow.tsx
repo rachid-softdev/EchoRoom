@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { Phone, Play } from 'lucide-react'
+import { STATUS_LABELS, STATUS_VARIANTS, formatDate, formatDuration } from '@/lib/constants'
 
 interface CallData {
   id: string
@@ -16,44 +17,6 @@ interface CallData {
 
 interface CallHistoryRowProps {
   call: CallData
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'En attente',
-  RINGING: 'Sonnerie',
-  ACTIVE: 'Actif',
-  COMPLETED: 'Terminé',
-  FAILED: 'Échoué',
-  BLOCKED: 'Bloqué',
-}
-
-const STATUS_VARIANTS: Record<
-  string,
-  'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-  PENDING: 'outline',
-  RINGING: 'secondary',
-  ACTIVE: 'default',
-  COMPLETED: 'secondary',
-  FAILED: 'destructive',
-  BLOCKED: 'destructive',
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds === 0) return '-'
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`
-}
-
-function formatDate(date: string | Date): string {
-  const d = new Date(date)
-  return d.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 export function CallHistoryRow({ call }: CallHistoryRowProps) {

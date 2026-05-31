@@ -1,10 +1,5 @@
 import { stripe } from "@/lib/stripe";
-
-const PRICE_TIERS: Record<string, number> = {
-  "price_1_credits_10": 10,
-  "price_2_credits_50": 50,
-  "price_3_credits_200": 200,
-};
+import { PRICING_CONFIG } from "@/config/pricing";
 
 export async function createCheckoutSession(params: {
   userId: string;
@@ -13,13 +8,13 @@ export async function createCheckoutSession(params: {
   successUrl: string;
   cancelUrl: string;
 }) {
-  const expectedCredits = PRICE_TIERS[params.priceId];
-  if (expectedCredits === undefined) {
-    throw new Error(`Unknown priceId: ${params.priceId}`);
+  const tier = PRICING_CONFIG.find((t) => t.stripePriceId === params.priceId);
+  if (!tier) {
+    throw new Error(`Identifiant de tarif inconnu : ${params.priceId}`);
   }
-  if (expectedCredits !== params.credits) {
+  if (tier.credits !== params.credits) {
     throw new Error(
-      `Credit amount ${params.credits} doesn't match price tier ${params.priceId} (expected ${expectedCredits})`,
+      `Le montant de crédits ${params.credits} ne correspond pas au palier ${params.priceId} (attendu ${tier.credits})`,
     );
   }
 
