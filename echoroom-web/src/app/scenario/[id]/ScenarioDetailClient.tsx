@@ -27,7 +27,7 @@ import { ReactionBar } from "@/components/social/ReactionBar"
 import { ShareButtons } from "@/components/social/ShareButtons"
 import { ReportButton } from "@/components/social/ReportButton"
 import { ScenarioCard } from "@/components/shared/ScenarioCard"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { toast } from "@/components/ui"
 
 interface ScenarioDetailClientProps {
@@ -82,6 +82,47 @@ export function ScenarioDetailClient({
       })
     },
   })
+
+  // Clip creator state
+  const [selectedCallId, setSelectedCallId] = useState<string | null>(null)
+  const [clipStartTime, setClipStartTime] = useState(0)
+  const [clipEndTime, setClipEndTime] = useState(30)
+  const [clipTitle, setClipTitle] = useState("")
+
+  const callsQuery = api.calls.listByScenario.useQuery(
+    { scenarioId, limit: 20 },
+    { enabled: isAuthenticated },
+  )
+
+  const createClipMutation = api.clips.create.useMutation({
+    onSuccess: () => {
+      toast({
+        title: "Clip créé",
+        message: "L'extraction audio a commencé en arrière-plan.",
+        variant: "default",
+      })
+      setSelectedCallId(null)
+      setClipStartTime(0)
+      setClipEndTime(30)
+      setClipTitle("")
+    },
+    onError: (err) => {
+      toast({
+        title: err.message ?? "Erreur lors de la création du clip",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const handleCreateClip = useCallback(() => {
+    if (!selectedCallId) return
+    createClipMutation.mutate({
+      callId: selectedCallId,
+      startTime: clipStartTime,
+      endTime: clipEndTime,
+      title: clipTitle || undefined,
+    })
+  }, [selectedCallId, clipStartTime, clipEndTime, clipTitle, createClipMutation])
 
   if (scenarioQuery.isLoading) {
     return (
@@ -249,12 +290,91 @@ export function ScenarioDetailClient({
           </Link>
         )}
 
-        {/* Clip creator (placeholder — would need user's calls) */}
+        {/* Clip creator */}
         {isAuthenticated && (
-          <div className="rounded-xl border-2 border-dashed border-muted-foreground/30 p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Sélectionnez un appel dans votre historique pour créer un clip
-            </p>
+          <div className="rounded-xl border border-border/50 p-6 space-y-4">
+            <h3 className="font-semibold">Créer un clip</h3>
+            {callsQuery.isLoading ? (
+              <Skeleton className="h-24" />
+            ) : (callsQuery.data?.items ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Aucun appel avec enregistrement trouvé pour ce scénario
+              </p>
+            ) : (
+              <>
+                {/* Call selector */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Appel</label>
+                  <select
+                    value={selectedCallId ?? ""}
+                    onChange={(e) => setSelectedCallId(e.target.value || null)}
+                    className="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Sélectionner un appel</option>
+                    {callsQuery.data?.items.map((call) => (
+                      <option key={call.id} value={call.id}>
+                        {new Date(call.createdAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        — {call.durationSeconds}s
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Start / End time inputs */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Début (s)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={clipStartTime}
+                      onChange={(e) => setClipStartTime(Math.max(0, Number(e.target.value)))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Fin (s)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={clipEndTime}
+                      onChange={(e) => setClipEndTime(Math.max(0, Number(e.target.value)))}
+                      placeholder="30"
+                    />
+                  </div>
+                </div>
+
+                {/* Title input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Titre (optionnel)</label>
+                  <Input
+                    value={clipTitle}
+                    onChange={(e) => setClipTitle(e.target.value)}
+                    placeholder="Mon clip"
+                  />
+                </div>
+
+                {/* Create button */}
+                <Button
+                  onClick={handleCreateClip}
+                  disabled={!selectedCallId || clipEndTime <= clipStartTime || createClipMutation.isPending}
+                  className="w-full gap-2"
+                >
+                  {createClipMutation.isPending ? "Création en cours..." : "Créer le clip"}
+                </Button>
+
+                {createClipMutation.data && (
+                  <p className="text-xs text-green-600">
+                    Clip créé avec succès — l&apos;extraction est lancée en arrière-plan.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
 

@@ -2,8 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
+import { Button, Input, SegmentedControl } from "@/components/ui";
 import { Search, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";
@@ -21,6 +20,12 @@ const categories = [
   "Weird",
 ];
 
+const sortOptions = [
+  { value: "CHRONOLOGICAL" as const, label: "Chronologique" },
+  { value: "TRENDING" as const, label: "Tendance" },
+  { value: "TOP" as const, label: "Top" },
+];
+
 const CATEGORY_TO_ENUM: Record<string, string> = {
   Romantique: "ROMANTIC",
   Chaotique: "CHAOTIC",
@@ -36,7 +41,8 @@ export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const feedQuery = api.scenarios.feed.useQuery({ limit: 50 });
+  const [sort, setSort] = useState<"CHRONOLOGICAL" | "TRENDING" | "TOP">("CHRONOLOGICAL");
+  const feedQuery = api.scenarios.feed.useQuery({ limit: 50, sort });
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -87,6 +93,15 @@ export default function ExplorePage() {
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Sort */}
+        <div className="mb-6">
+          <SegmentedControl
+            options={sortOptions}
+            value={sort}
+            onChange={setSort}
           />
         </div>
 

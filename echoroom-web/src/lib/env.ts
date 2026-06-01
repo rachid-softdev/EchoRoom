@@ -31,6 +31,7 @@ const envSchema = z.object({
   AUDIT_HASH_SECRET: z.string().min(16),
   STRIPE_PRICE_STARTER: z.string().optional().default("price_dev_starter"),
   STRIPE_PRICE_PRO: z.string().optional().default("price_dev_pro"),
+  CRON_SECRET: z.string().min(16),
   MODERATION_FAIL_OPEN: z
     .string()
     .transform((v) => v !== "false" && v !== "0")
@@ -60,6 +61,7 @@ const DEV_DEFAULTS: Record<string, string> = {
   PHONE_ENCRYPTION_KEY: "dev_phone_key_32_chars_minimum_here___",
   TWILIO_TOKEN_SECRET: "dev_twilio_token_secret_16_chars",
   AUDIT_HASH_SECRET: "audit_hash_dev_secret_16ch!",
+  CRON_SECRET: "dev_cron_secret_at_least_16_chars!!",
 };
 
 function loadEnv(): EnvType {
@@ -79,6 +81,7 @@ function loadEnv(): EnvType {
       { key: "PHONE_ENCRYPTION_KEY", label: "PHONE_ENCRYPTION_KEY (encryption)" },
       { key: "TWILIO_TOKEN_SECRET", label: "TWILIO_TOKEN_SECRET (Twilio tokens)" },
       { key: "AUDIT_HASH_SECRET", label: "AUDIT_HASH_SECRET (audit hashing)" },
+      { key: "CRON_SECRET", label: "CRON_SECRET (cron jobs)" },
     ];
     for (const { key, label } of criticalKeys) {
       const value = process.env[key] ?? "";

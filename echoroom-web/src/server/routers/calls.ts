@@ -115,6 +115,40 @@ export const callsRouter = router({
       return { count };
     }),
 
+  listByScenario: protectedProcedure
+    .use(withREDMetrics)
+    .input(
+      z.object({
+        scenarioId: z.string(),
+        cursor: z.string().optional(),
+        limit: z.number().int().min(1).max(20).default(10),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const calls = await db.call.findMany({
+        where: {
+          userId: ctx.session.user.id,
+          scenarioId: input.scenarioId,
+          recordingUrl: { not: null },
+        },
+        take: input.limit + 1,
+        ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          durationSeconds: true,
+          createdAt: true,
+          status: true,
+        },
+      });
+
+      const items = calls.slice(0, input.limit);
+      const nextCursor =
+        calls.length > input.limit ? items[items.length - 1]?.id : undefined;
+
+      return { items, nextCursor };
+    }),
+
   replay: protectedProcedure
     .input(z.object({ callId: z.string() }))
     .query(async ({ input, ctx }) => {

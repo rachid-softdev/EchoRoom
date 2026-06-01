@@ -79,6 +79,32 @@ export const adminRouter = router({
       return { success: true };
     }),
 
+  getFeaturedScenario: adminProcedure.query(async () => {
+    const today = getUTCDateString();
+    const featured = await db.featuredScenario.findUnique({
+      where: { featuredDate: today },
+      include: {
+        scenario: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            playCount: true,
+            likeCount: true,
+            character: {
+              select: { name: true, avatarUrl: true },
+            },
+            creator: {
+              select: { id: true, username: true },
+            },
+          },
+        },
+      },
+    });
+
+    return featured;
+  }),
+
   moderationQueue: adminProcedure
     .input(
       z

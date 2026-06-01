@@ -1,6 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "@/server/db";
 import { getPresignedUrl } from "@/server/services/audio/r2";
+import { createLogger } from "@/server/lib/logger";
+import { extractAndUploadClip } from "./clipExtractor";
+
+const log = createLogger("clips");
 
 interface CreateClipParams {
   callId: string;
@@ -8,6 +12,18 @@ interface CreateClipParams {
   title?: string;
   startTime: number;
   endTime: number;
+}
+
+/**
+ * Schedule an async clip extraction in the background.
+ * Uses queueMicrotask to defer the work without blocking the response.
+ */
+function scheduleClipExtraction(clipId: string): void {
+  queueMicrotask(() => {
+    extractAndUploadClip(clipId).catch((error) => {
+      log.error("Échec de l'extraction en arrière-plan", { clipId, error });
+    });
+  });
 }
 
 export async function createClip(params: CreateClipParams) {
@@ -39,6 +55,9 @@ export async function createClip(params: CreateClipParams) {
       endTime: params.endTime,
     },
   });
+
+  // Fire-and-forget: extract the audio segment and upload to R2
+  scheduleClipExtraction(clip.id);
 
   return { clipId: clip.id };
 }

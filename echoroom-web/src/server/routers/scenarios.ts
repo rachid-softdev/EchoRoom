@@ -13,6 +13,7 @@ import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { checkContentBlocklist } from "../services/ai/moderation";
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
+import { generateScenarioScript } from "../services/ai/generateScript";
 import { getCachedFeed, setCachedFeed, invalidateFeedCache } from "../services/cache/scenarioCache";
 import { redis } from "@/lib/redis";
 
@@ -38,7 +39,7 @@ export const scenariosRouter = router({
     .use(withContentModeration)
     .input(
       z.object({
-        characterId: z.string(),
+        characterId: z.string().min(1),
         title: z.string().min(3).max(80),
         description: z.string().max(300),
         openingMessage: z.string().max(300),
@@ -70,13 +71,47 @@ export const scenariosRouter = router({
       return { scenarioId: scenario.id };
     }),
 
+  generateScript: protectedProcedure
+    .use(withRateLimit({ limit: 20, window: 3600 }))
+    .input(
+      z.object({
+        characterId: z.string().min(1),
+        title: z.string().min(1).max(200),
+        description: z.string().min(1).max(500),
+        openingMessage: z.string().min(1).max(500),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const character = await db.character.findUnique({
+        where: { id: input.characterId },
+        select: { name: true, promptSystem: true },
+      });
+
+      if (!character) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Personnage introuvable",
+        });
+      }
+
+      const result = await generateScenarioScript({
+        characterName: character.name,
+        characterPrompt: character.promptSystem,
+        title: input.title,
+        description: input.description,
+        openingMessage: input.openingMessage,
+      });
+
+      return result;
+    }),
+
   feed: publicProcedure
     .use(withREDMetrics)
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
-        cursor: z.string().optional(),
-        limit: z.number().min(1).max(20).default(10),
+        cursor: z.string().min(1).optional(),
+        limit: z.number().int().min(1).max(20).default(10),
         sort: z.enum(["CHRONOLOGICAL", "TRENDING", "TOP"]).default("CHRONOLOGICAL"),
       }),
     )
@@ -149,7 +184,7 @@ export const scenariosRouter = router({
 
   getById: publicProcedure
     .use(withIPRateLimit({ limit: 120, window: 60 }))
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().min(1) }))
     .query(async ({ input, ctx }) => {
       // Single query with permissions baked into the WHERE clause.
       // Unlike the previous implementation (findUnique + post-filter), this
@@ -207,7 +242,7 @@ export const scenariosRouter = router({
     .input(
       z
         .object({
-          id: z.string(),
+          id: z.string().min(1),
           title: z.string().min(3).max(80).optional(),
           description: z.string().max(300).optional(),
           openingMessage: z.string().max(300).optional(),
@@ -290,7 +325,8 @@ export const scenariosRouter = router({
 
   delete: protectedProcedure
     .use(withREDMetrics)
-    .input(z.object({ id: z.string() }))
+    .use(withRateLimit({ limit: 10, window: 3600 }))
+    .input(z.object({ id: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
       const scenario = await db.scenario.findUnique({
         where: { id: input.id },
@@ -311,10 +347,11 @@ export const scenariosRouter = router({
     }),
 
   myScenarios: protectedProcedure
+    .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
-        cursor: z.string().optional(),
-        limit: z.number().min(1).max(20).default(10),
+        cursor: z.string().min(1).optional(),
+        limit: z.number().int().min(1).max(20).default(10),
       }),
     )
     .query(async ({ input, ctx }) => {

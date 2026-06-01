@@ -10,9 +10,10 @@ const nextConfig = {
       `frame-src 'self' https://js.stripe.com https://hooks.stripe.com`,
       `media-src 'self' https: blob:`,
       `font-src 'self' data:`,
-      `form-action 'self' https://hooks.stripe.com`,
-      `base-uri 'self'`,
-      `worker-src 'self' blob:`,
+       `form-action 'self' https://hooks.stripe.com`,
+       `base-uri 'self'`,
+       `frame-ancestors 'none'`,
+       `worker-src 'self' blob:`,
     ].join("; ");
 
     return [
