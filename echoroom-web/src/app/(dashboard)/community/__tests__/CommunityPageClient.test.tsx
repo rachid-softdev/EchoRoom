@@ -11,15 +11,7 @@ import userEvent from "@testing-library/user-event";
 //   - isPending guard prevents double submissions
 //   - Empty/whitespace content is prevented
 
-// Shared mutable state so the mock persists across renders within a test
-let currentMutationState: {
-  mutate: (...args: any[]) => void;
-  isPending: boolean;
-  onSuccess: Function | undefined;
-  onError: Function | undefined;
-} = null!;
-
-const mockMutate = vi.fn();
+const mockMutate = vi.fn<(...args: any[]) => void>();
 const mockRefetch = vi.fn();
 const mockToast = vi.fn();
 
@@ -32,7 +24,6 @@ function createMutationObj() {
     onSuccess: undefined as Function | undefined,
     onError: undefined as Function | undefined,
   };
-  currentMutationState = obj;
   return obj;
 }
 
@@ -43,12 +34,12 @@ vi.mock("@/lib/trpc", () => ({
   api: {
     scenarios: {
       feed: {
-        useQuery: (...args: any[]) => mockUseQuery(...args),
+        useQuery: (...args: any[]) => (mockUseQuery as any)(...args),
       },
     },
     community: {
       comment: {
-        useMutation: (...args: any[]) => mockUseMutation(...args),
+        useMutation: (...args: any[]) => (mockUseMutation as any)(...args),
       },
     },
   },
@@ -132,11 +123,9 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Reset currentMutationState for each test
-    currentMutationState = null!;
-
     // Default useMutation: fresh mutation with proper callbacks
-    mockUseMutation.mockImplementation((opts: any) => {
+    mockUseMutation.mockImplementation((...args: any[]) => {
+      const opts = args[0];
       const obj = createMutationObj();
       obj.onSuccess = opts.onSuccess;
       obj.onError = opts.onError;
@@ -179,8 +168,8 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
 
   it("should NOT call mutation when isPending is true (prevent double submit)", async () => {
     // Set isPending before render
-    currentMutationState = null!;
-    mockUseMutation.mockImplementation((opts: any) => {
+    mockUseMutation.mockImplementation((...args: any[]) => {
+      const opts = args[0];
       const obj = createMutationObj();
       obj.isPending = true;
       obj.onSuccess = opts.onSuccess;
@@ -215,7 +204,8 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
 
   it("should show success toast and refetch feed on successful comment", async () => {
     let capturedOnSuccess: Function | undefined;
-    mockUseMutation.mockImplementation((opts: any) => {
+    mockUseMutation.mockImplementation((...args: any[]) => {
+      const opts = args[0];
       capturedOnSuccess = opts.onSuccess;
       const obj = createMutationObj();
       obj.onSuccess = opts.onSuccess;
@@ -243,7 +233,8 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
 
   it("should show error toast with error message on failed comment", async () => {
     let capturedOnError: Function | undefined;
-    mockUseMutation.mockImplementation((opts: any) => {
+    mockUseMutation.mockImplementation((...args: any[]) => {
+      const opts = args[0];
       capturedOnError = opts.onError;
       const obj = createMutationObj();
       obj.onSuccess = opts.onSuccess;
@@ -268,7 +259,8 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
 
   it("should show generic error toast when error has no message", async () => {
     let capturedOnError: Function | undefined;
-    mockUseMutation.mockImplementation((opts: any) => {
+    mockUseMutation.mockImplementation((...args: any[]) => {
+      const opts = args[0];
       capturedOnError = opts.onError;
       const obj = createMutationObj();
       obj.onSuccess = opts.onSuccess;
@@ -309,7 +301,8 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
     // Verify the structure: handleComment does NOT clear the input field.
     // This is a contract test — the input state management is in the component.
     let capturedOnError: Function | undefined;
-    mockUseMutation.mockImplementation((opts: any) => {
+    mockUseMutation.mockImplementation((...args: any[]) => {
+      const opts = args[0];
       capturedOnError = opts.onError;
       const obj = createMutationObj();
       obj.onSuccess = opts.onSuccess;

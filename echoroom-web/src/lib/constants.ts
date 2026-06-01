@@ -1,6 +1,12 @@
 /** Minimum character length for an abuse report reason */
 export const MIN_REPORT_REASON_LENGTH = 10;
 
+export const DAILY_LIMITS = {
+  MAX_CALLS: 10,
+  MAX_DURATION_SECONDS: 3600,
+  DEFAULT_MAX_DAILY_DURATION_SECONDS: 3600,
+} as const;
+
 export type BadgeVariant = "default" | "secondary" | "outline" | "destructive";
 
 export const LOCALE = "fr-FR";

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 // ---------------------------------------------------------------------------
 // GDPR Export Tests — N4 atomic rate limiting
@@ -51,7 +52,7 @@ vi.mock("@/server/lib/logger", () => ({
   })),
 }));
 
-function createMockRequest(headers?: Record<string, string>): Request {
+function createMockRequest(headers?: Record<string, string>): NextRequest {
   return {
     headers: {
       get: (name: string) => {
@@ -62,7 +63,7 @@ function createMockRequest(headers?: Record<string, string>): Request {
         return headerMap[name] ?? null;
       },
     },
-  } as unknown as Request;
+  } as unknown as NextRequest;
 }
 
 const mockUserData = {
@@ -225,7 +226,7 @@ describe("POST /api/user/export — N4 atomic rate limiting", () => {
           return null;
         },
       },
-    } as unknown as Request;
+    } as unknown as NextRequest;
 
     const response = await POST(req);
     expect(response.status).toBe(403);

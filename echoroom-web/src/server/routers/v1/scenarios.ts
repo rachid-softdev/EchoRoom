@@ -1,6 +1,8 @@
 /**
  * v1 Scenarios Router — frozen API contract.
  *
+ * @deprecated Use the unversioned `scenariosRouter` router instead.
+ *
  * This router is a snapshot of the scenarios router at the time of versioning.
  * It maintains backward compatibility for clients that depend on the v1 shapes.
  * Changes and improvements should go into v2+ routers.

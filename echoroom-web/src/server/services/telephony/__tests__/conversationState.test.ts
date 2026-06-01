@@ -39,6 +39,13 @@ vi.mock("@/server/lib/logger", () => ({
   })),
 }));
 
+// Mock scenarioRepository to avoid the expensive @/server/repositories import chain
+vi.mock("@/server/repositories", () => ({
+  scenarioRepository: {
+    findByIdWithCharacter: vi.fn(),
+  },
+}));
+
 describe("initConversationState — N1 encryption", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,6 +56,7 @@ describe("initConversationState — N1 encryption", () => {
     const { initConversationState } = await import("../conversationState");
 
     const result = await initConversationState("CA_test_encrypt", {
+      callId: "test-call-id",
       callSid: "CA_test_encrypt",
       scenarioId: "scenario-1",
       characterId: "char-1",
@@ -69,6 +77,7 @@ describe("initConversationState — N1 encryption", () => {
     const { initConversationState } = await import("../conversationState");
 
     const result = await initConversationState("CA_test_empty", {
+      callId: "test-call-id",
       callSid: "CA_test_empty",
       scenarioId: "scenario-1",
       characterId: "char-1",
@@ -98,7 +107,7 @@ describe("getCallerNumber — N1 decryption", () => {
   it("should return decrypted number when state has encrypted callerNumber", async () => {
     const { redis } = await import("@/lib/redis");
     // Mock getConversationState via Redis to return encrypted callerNumber
-    vi.mocked(redis.get).mockResolvedValue(
+    vi.mocked(redis!.get).mockResolvedValue(
       JSON.stringify({
         callSid: "CA_test",
         scenarioId: "scenario-1",
@@ -120,7 +129,7 @@ describe("getCallerNumber — N1 decryption", () => {
   it("should return plaintext for legacy unencrypted callerNumber", async () => {
     const { redis } = await import("@/lib/redis");
     // Mock Redis to return plaintext callerNumber (legacy data)
-    vi.mocked(redis.get).mockResolvedValue(
+    vi.mocked(redis!.get).mockResolvedValue(
       JSON.stringify({
         callSid: "CA_test_legacy",
         scenarioId: "scenario-1",
@@ -142,7 +151,7 @@ describe("getCallerNumber — N1 decryption", () => {
 
   it("should return null when conversation state does not exist", async () => {
     const { redis } = await import("@/lib/redis");
-    vi.mocked(redis.get).mockResolvedValue(null);
+    vi.mocked(redis!.get).mockResolvedValue(null);
 
     const { getCallerNumber } = await import("../conversationState");
     const result = await getCallerNumber("CA_test_nonexistent");
@@ -152,7 +161,7 @@ describe("getCallerNumber — N1 decryption", () => {
 
   it("should return null when callerNumber is empty", async () => {
     const { redis } = await import("@/lib/redis");
-    vi.mocked(redis.get).mockResolvedValue(
+    vi.mocked(redis!.get).mockResolvedValue(
       JSON.stringify({
         callSid: "CA_test_empty",
         scenarioId: "scenario-1",
@@ -183,6 +192,7 @@ describe("conversationState lifecycle", () => {
 
     // init should encrypt and store
     const initialState = await initConversationState("CA_test_lifecycle", {
+      callId: "test-call-id",
       callSid: "CA_test_lifecycle",
       scenarioId: "scenario-1",
       characterId: "char-1",
@@ -194,7 +204,7 @@ describe("conversationState lifecycle", () => {
     expect(initialState!.callerNumber).toBe("v1:encrypted:+33698765432");
 
     // Simulate Redis having the encrypted data
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(initialState));
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(initialState));
 
     const retrieved = await getConversationState("CA_test_lifecycle");
     expect(retrieved).not.toBeNull();
@@ -222,8 +232,8 @@ describe("appendMessage", () => {
       lastActiveAt: new Date().toISOString(),
       status: "active",
     };
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
-    vi.mocked(redis.set).mockResolvedValue("OK");
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis!.set).mockResolvedValue("OK");
 
     const result = await appendMessage("CA_test_append", {
       role: "assistant",
@@ -242,7 +252,7 @@ describe("appendMessage", () => {
 
   it("should return null when conversation state does not exist", async () => {
     const { redis } = await import("@/lib/redis");
-    vi.mocked(redis.get).mockResolvedValue(null);
+    vi.mocked(redis!.get).mockResolvedValue(null);
 
     const { appendMessage } = await import("../conversationState");
     const result = await appendMessage("CA_test_nonexistent", {
@@ -268,12 +278,12 @@ describe("appendMessage", () => {
       lastActiveAt: new Date().toISOString(),
       status: "active",
     };
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
-    vi.mocked(redis.set).mockResolvedValue("OK");
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis!.set).mockResolvedValue("OK");
 
     await appendMessage("CA_test_persist", { role: "user", content: "Test" });
 
-    expect(redis.set).toHaveBeenCalledWith(
+    expect(redis!.set).toHaveBeenCalledWith(
       "conversation:CA_test_persist",
       expect.any(String),
       { ex: CONVERSATION_TTL_S },
@@ -300,8 +310,8 @@ describe("incrementTurn", () => {
       lastActiveAt: new Date().toISOString(),
       status: "active",
     };
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
-    vi.mocked(redis.set).mockResolvedValue("OK");
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis!.set).mockResolvedValue("OK");
 
     const result = await incrementTurn("CA_test_turn");
 
@@ -311,7 +321,7 @@ describe("incrementTurn", () => {
 
   it("should return null when state does not exist", async () => {
     const { redis } = await import("@/lib/redis");
-    vi.mocked(redis.get).mockResolvedValue(null);
+    vi.mocked(redis!.get).mockResolvedValue(null);
 
     const { incrementTurn } = await import("../conversationState");
     const result = await incrementTurn("CA_test_nonexistent");
@@ -333,7 +343,7 @@ describe("incrementTurn", () => {
       lastActiveAt: new Date().toISOString(),
       status: "active",
     };
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(existingState));
 
     const result = await incrementTurn("CA_test_zero");
     expect(result!.turnCount).toBe(1);
@@ -359,8 +369,8 @@ describe("setConversationStatus", () => {
       lastActiveAt: new Date().toISOString(),
       status: "active",
     };
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
-    vi.mocked(redis.set).mockResolvedValue("OK");
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis!.set).mockResolvedValue("OK");
 
     const result = await setConversationStatus("CA_test_status", "completed");
 
@@ -370,7 +380,7 @@ describe("setConversationStatus", () => {
 
   it("should return null when state does not exist", async () => {
     const { redis } = await import("@/lib/redis");
-    vi.mocked(redis.get).mockResolvedValue(null);
+    vi.mocked(redis!.get).mockResolvedValue(null);
 
     const { setConversationStatus } = await import("../conversationState");
     const result = await setConversationStatus("CA_test_nonexistent", "completed");
@@ -393,15 +403,15 @@ describe("setConversationStatus", () => {
       status: "active",
     };
 
-    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(baseState));
-    vi.mocked(redis.set).mockResolvedValue("OK");
+    vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(baseState));
+    vi.mocked(redis!.set).mockResolvedValue("OK");
 
     const statuses: Array<"active" | "completed" | "timed_out" | "failed"> = [
       "active", "completed", "timed_out", "failed",
     ];
 
     for (const s of statuses) {
-      vi.mocked(redis.get).mockResolvedValue(JSON.stringify(baseState));
+      vi.mocked(redis!.get).mockResolvedValue(JSON.stringify(baseState));
       const result = await setConversationStatus("CA_test_transitions", s);
       expect(result!.status).toBe(s);
     }
@@ -417,19 +427,19 @@ describe("deleteConversationState", () => {
     const { redis } = await import("@/lib/redis");
     const { deleteConversationState } = await import("../conversationState");
 
-    vi.mocked(redis.del).mockResolvedValue(1);
+    vi.mocked(redis!.del).mockResolvedValue(1);
 
     await deleteConversationState("CA_test_delete");
 
-    expect(redis.del).toHaveBeenCalledWith("conversation:CA_test_delete");
-    expect(redis.del).toHaveBeenCalledTimes(1);
+    expect(redis!.del).toHaveBeenCalledWith("conversation:CA_test_delete");
+    expect(redis!.del).toHaveBeenCalledTimes(1);
   });
 
   it("should not throw when deleting a non-existent key", async () => {
     const { redis } = await import("@/lib/redis");
     const { deleteConversationState } = await import("../conversationState");
 
-    vi.mocked(redis.del).mockResolvedValue(0);
+    vi.mocked(redis!.del).mockResolvedValue(0);
 
     await expect(
       deleteConversationState("CA_test_nonexistent"),

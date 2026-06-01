@@ -43,8 +43,8 @@ vi.mock("@/server/lib/twilioToken", () => ({
 vi.mock("twilio", async () => {
   const actual = await vi.importActual<typeof import("twilio")>("twilio");
   const mockFn = vi.fn(() => ({}));
-  mockFn.validateRequest = vi.fn().mockReturnValue(true);
-  mockFn.twiml = actual.twiml;
+  (mockFn as any).validateRequest = vi.fn().mockReturnValue(true);
+  (mockFn as any).twiml = actual.twiml;
   return { default: mockFn };
 });
 
@@ -87,6 +87,7 @@ import type { ConversationState } from "@/server/services/telephony/conversation
 function createBaseState(overrides: Partial<ConversationState> = {}): ConversationState {
   return {
     callSid: "CA_test",
+    callId: "test-call-id",
     scenarioId: "scenario-redis-123",
     characterId: "char-1",
     callerNumber: "",

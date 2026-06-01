@@ -150,10 +150,8 @@ describe("Stripe webhook POST handler", () => {
     // Mock successful transaction
     const mockTxUpsert = vi.fn().mockResolvedValue({ id: "billing-1", credits: 150 });
     mockTxCreate.mockResolvedValue({ id: "purchase-new", stripePaymentId: "pi_test_new" });
-    mockTxUpdate.mockResolvedValue({ id: "user-123", credits: 150 });
     const mockTx = {
       purchase: { create: mockTxCreate },
-      user: { update: mockTxUpdate },
       userBilling: { upsert: mockTxUpsert },
     };
     mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -180,13 +178,7 @@ describe("Stripe webhook POST handler", () => {
       },
     });
 
-    // Verify credits were added inside the transaction
-    expect(mockTxUpdate).toHaveBeenCalledWith({
-      where: { id: "user-123" },
-      data: { credits: { increment: 50 } },
-    });
-
-    // Verify UserBilling sub-aggregate was also updated
+    // Verify UserBilling sub-aggregate upsert was called
     expect(mockTxUpsert).toHaveBeenCalledWith({
       where: { userId: "user-123" },
       create: { userId: "user-123", credits: 50 },
@@ -211,10 +203,8 @@ describe("Stripe webhook POST handler", () => {
 
     const mockTxUpsert = vi.fn().mockResolvedValue({});
     mockTxCreate.mockResolvedValue({ id: "purchase-1" });
-    mockTxUpdate.mockResolvedValue({});
     const mockTx = {
       purchase: { create: mockTxCreate },
-      user: { update: mockTxUpdate },
       userBilling: { upsert: mockTxUpsert },
     };
     mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -224,13 +214,7 @@ describe("Stripe webhook POST handler", () => {
     const req = createNextRequest(JSON.stringify({}), "valid_sig");
     await POST(req);
 
-    // Verify correct increment inside transaction
-    expect(mockTxUpdate).toHaveBeenCalledWith({
-      where: { id: "user-123" },
-      data: { credits: { increment: 100 } },
-    });
-
-    // Verify UserBilling sub-aggregate was also updated
+    // Verify UserBilling sub-aggregate upsert was called with correct increment
     expect(mockTxUpsert).toHaveBeenCalledWith({
       where: { userId: "user-123" },
       create: { userId: "user-123", credits: 100 },
@@ -271,7 +255,6 @@ describe("Stripe webhook POST handler", () => {
     mockTxCreate.mockRejectedValue(p2002Error);
     const mockTx = {
       purchase: { create: mockTxCreate },
-      user: { update: mockTxUpdate },
       userBilling: { upsert: mockTxUpsert },
     };
     mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -524,14 +507,14 @@ describe("Stripe webhook POST handler", () => {
         userId: "user-1",
         creditsPurchased: 50,
       });
-      const mockTxUserUpdate = vi.fn().mockResolvedValue({});
+      const mockTxBillingUpsert = vi.fn().mockResolvedValue({});
       const mockTx = {
         purchase: {
           updateMany: mockTxUpdateMany,
           findUnique: mockTxFindUnique,
         },
-        user: {
-          update: mockTxUserUpdate,
+        userBilling: {
+          upsert: mockTxBillingUpsert,
         },
       };
       mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -560,10 +543,11 @@ describe("Stripe webhook POST handler", () => {
         select: { userId: true, creditsPurchased: true },
       });
 
-      // Revoke credits
-      expect(mockTxUserUpdate).toHaveBeenCalledWith({
-        where: { id: "user-1" },
-        data: { credits: { decrement: 50 } },
+      // Revoke credits via UserBilling upsert
+      expect(mockTxBillingUpsert).toHaveBeenCalledWith({
+        where: { userId: "user-1" },
+        create: { userId: "user-1" },
+        update: { credits: { decrement: 50 } },
       });
     });
 
@@ -581,14 +565,14 @@ describe("Stripe webhook POST handler", () => {
       // updateMany returns count=0 (already refunded — refundedAt IS NOT NULL)
       const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
       const mockTxFindUnique = vi.fn();
-      const mockTxUserUpdate = vi.fn();
+      const mockTxBillingUpsert = vi.fn();
       const mockTx = {
         purchase: {
           updateMany: mockTxUpdateMany,
           findUnique: mockTxFindUnique,
         },
-        user: {
-          update: mockTxUserUpdate,
+        userBilling: {
+          upsert: mockTxBillingUpsert,
         },
       };
       mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -600,9 +584,9 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
 
-      // Should not proceed to findUnique or user.update (returned early since count=0)
+      // Should not proceed to findUnique or userBilling.upsert (returned early since count=0)
       expect(mockTxFindUnique).not.toHaveBeenCalled();
-      expect(mockTxUserUpdate).not.toHaveBeenCalled();
+      expect(mockTxBillingUpsert).not.toHaveBeenCalled();
     });
 
     it("should handle refund without payment_intent gracefully", async () => {
@@ -639,14 +623,14 @@ describe("Stripe webhook POST handler", () => {
       // updateMany returns count=0 (no purchase with that payment_intent)
       const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
       const mockTxFindUnique = vi.fn();
-      const mockTxUserUpdate = vi.fn();
+      const mockTxBillingUpsert = vi.fn();
       const mockTx = {
         purchase: {
           updateMany: mockTxUpdateMany,
           findUnique: mockTxFindUnique,
         },
-        user: {
-          update: mockTxUserUpdate,
+        userBilling: {
+          upsert: mockTxBillingUpsert,
         },
       };
       mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -658,7 +642,7 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
       expect(mockTxFindUnique).not.toHaveBeenCalled();
-      expect(mockTxUserUpdate).not.toHaveBeenCalled();
+      expect(mockTxBillingUpsert).not.toHaveBeenCalled();
     });
   });
 
@@ -783,14 +767,14 @@ describe("Stripe webhook POST handler", () => {
         userId: "user-1",
         creditsPurchased: 50,
       });
-      const mockTxUserUpdate = vi.fn().mockResolvedValue({});
+      const mockTxBillingUpsert = vi.fn().mockResolvedValue({});
       const mockTx = {
         purchase: {
           updateMany: mockTxUpdateMany,
           findUnique: mockTxFindUnique,
         },
-        user: {
-          update: mockTxUserUpdate,
+        userBilling: {
+          upsert: mockTxBillingUpsert,
         },
       };
       mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -817,10 +801,11 @@ describe("Stripe webhook POST handler", () => {
         select: { userId: true, creditsPurchased: true },
       });
 
-      // Revoke credits
-      expect(mockTxUserUpdate).toHaveBeenCalledWith({
-        where: { id: "user-1" },
-        data: { credits: { decrement: 50 } },
+      // Revoke credits via UserBilling upsert
+      expect(mockTxBillingUpsert).toHaveBeenCalledWith({
+        where: { userId: "user-1" },
+        create: { userId: "user-1" },
+        update: { credits: { decrement: 50 } },
       });
     });
 
@@ -877,14 +862,19 @@ describe("Stripe webhook POST handler", () => {
       };
       mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
-      const { db } = await import("@/server/db");
       const { POST } = await import("../route");
 
       const req = createNextRequest(JSON.stringify({}), "valid_sig");
       await POST(req);
 
-      // No user update — only updateMany inside $transaction for clearing disputedAt
-      expect(db.user.update).not.toHaveBeenCalled();
+      // No billing upsert — only updateMany inside $transaction for clearing disputedAt
+      expect(mockTxUpdateMany).toHaveBeenCalledWith({
+        where: {
+          stripePaymentId: "pi_won_456",
+          disputedAt: { not: null },
+        },
+        data: { disputedAt: null },
+      });
       expect(mockTransaction).toHaveBeenCalled();
     });
 
@@ -964,14 +954,14 @@ describe("Stripe webhook POST handler", () => {
       // updateMany returns 0 (already refunded — refundedAt IS NOT NULL)
       const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
       const mockTxFindUnique = vi.fn();
-      const mockTxUserUpdate = vi.fn();
+      const mockTxBillingUpsert = vi.fn();
       const mockTx = {
         purchase: {
           updateMany: mockTxUpdateMany,
           findUnique: mockTxFindUnique,
         },
-        user: {
-          update: mockTxUserUpdate,
+        userBilling: {
+          upsert: mockTxBillingUpsert,
         },
       };
       mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -985,7 +975,7 @@ describe("Stripe webhook POST handler", () => {
 
       // updateMany was called but returned 0 — no further action
       expect(mockTxFindUnique).not.toHaveBeenCalled();
-      expect(mockTxUserUpdate).not.toHaveBeenCalled();
+      expect(mockTxBillingUpsert).not.toHaveBeenCalled();
     });
   });
 });

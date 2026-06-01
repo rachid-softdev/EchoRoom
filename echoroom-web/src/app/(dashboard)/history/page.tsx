@@ -42,7 +42,7 @@ export default function HistoryPage() {
         {(items) => (
           <div>
             <div className="space-y-2">
-              {items.map((call) => (
+              {items.map((call: any) => (
                 <CallHistoryRow key={call.id} call={call as any} />
               ))}
             </div>

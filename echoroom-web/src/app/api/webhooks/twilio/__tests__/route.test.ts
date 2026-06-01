@@ -75,7 +75,7 @@ vi.mock("twilio", () => {
   const mockFn = vi.fn(() => ({
     request: mockTwilioRequest,
   }));
-  mockFn.validateRequest = vi.fn().mockReturnValue(true);
+  (mockFn as any).validateRequest = vi.fn().mockReturnValue(true);
   return { default: mockFn };
 });
 

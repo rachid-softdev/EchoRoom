@@ -11,7 +11,7 @@ import {
   Button,
   Checkbox,
 } from "@/components/ui";
-import { Phone } from "lucide-react";
+import { Phone, Loader2 } from "lucide-react";
 
 const STORAGE_KEY = "echoroom-call-disclaimer-accepted";
 
@@ -19,12 +19,14 @@ interface CallDisclaimerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAccept: () => void;
+  isPending?: boolean;
 }
 
 export function CallDisclaimerDialog({
   open,
   onOpenChange,
   onAccept,
+  isPending = false,
 }: CallDisclaimerDialogProps) {
   const [mounted, setMounted] = useState(false);
   const [accepted, setAccepted] = useState(false);
@@ -116,8 +118,15 @@ export function CallDisclaimerDialog({
           >
             Annuler
           </Button>
-          <Button onClick={handleAccept} disabled={!accepted}>
-            Démarrer l&apos;appel
+          <Button onClick={handleAccept} disabled={!accepted || isPending}>
+            {isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Appel en cours...
+              </>
+            ) : (
+              "Démarrer l'appel"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

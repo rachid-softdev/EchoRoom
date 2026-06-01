@@ -15,7 +15,13 @@ export default function CallReplayPage() {
   const replayQuery = api.calls.replay.useQuery({ callId });
   const callsQuery = api.calls.history.useQuery({ limit: 1 });
 
-  const matchingCall = callsQuery.data?.items?.find((c) => c.id === callId);
+  const matchingCall = callsQuery.data?.items?.find((c: any) => c.id === callId) as
+    | {
+        scenario?: { title?: string; character?: { name?: string } };
+        durationSeconds?: number;
+        status?: string;
+      }
+    | undefined;
 
   return (
     <DashboardShell

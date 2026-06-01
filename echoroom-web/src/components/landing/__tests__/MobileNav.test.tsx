@@ -52,22 +52,31 @@ describe("MobileNav", () => {
     expect(screen.queryByTestId("x-icon")).not.toBeInTheDocument();
   });
 
-  it("does not show the mobile menu links by default", () => {
-    render(<MobileNav />);
+  it("renders the mobile menu closed by default", () => {
+    const { container } = render(<MobileNav />);
 
-    expect(screen.queryByText("Explorer")).not.toBeInTheDocument();
-    expect(screen.queryByText("Tarifs")).not.toBeInTheDocument();
-    expect(screen.queryByText("Connexion")).not.toBeInTheDocument();
+    // The menu container is the second child (after the button wrapper)
+    const menuContainer = container.firstElementChild!.nextElementSibling!;
+    expect(menuContainer).toHaveClass("max-h-0");
+    expect(menuContainer).toHaveClass("opacity-0");
+
+    // Links exist in DOM but are visually hidden
+    expect(screen.getByText("Explorer")).toBeInTheDocument();
+    expect(screen.queryByTestId("menu-icon")).toBeInTheDocument();
+    expect(screen.queryByTestId("x-icon")).not.toBeInTheDocument();
   });
 
   it("toggles the mobile menu when burger button is clicked", async () => {
-    render(<MobileNav />);
+    const { container } = render(<MobileNav />);
 
     const user = userEvent.setup();
     const button = screen.getByRole("button", { name: /menu/i });
+    const menuContainer = container.firstElementChild!.nextElementSibling!;
 
     // Click to open
     await user.click(button);
+    expect(menuContainer).toHaveClass("max-h-96");
+    expect(menuContainer).toHaveClass("opacity-100");
     expect(screen.getByText("Explorer")).toBeInTheDocument();
     expect(screen.getByText("Tarifs")).toBeInTheDocument();
     expect(screen.getByText("Connexion")).toBeInTheDocument();
@@ -77,7 +86,9 @@ describe("MobileNav", () => {
     expect(screen.getByTestId("x-icon")).toBeInTheDocument();
 
     await user.click(button);
-    expect(screen.queryByText("Explorer")).not.toBeInTheDocument();
+    // Container has max-h-0 opacity-0 (CSS-hidden)
+    expect(menuContainer).toHaveClass("max-h-0");
+    expect(menuContainer).toHaveClass("opacity-0");
     expect(screen.queryByTestId("x-icon")).not.toBeInTheDocument();
     expect(screen.getByTestId("menu-icon")).toBeInTheDocument();
   });

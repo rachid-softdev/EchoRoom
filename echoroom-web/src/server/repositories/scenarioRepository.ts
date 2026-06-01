@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, Scenario, Character } from "@prisma/client";
+import type { Prisma, PrismaClient, Scenario, Character, $Enums } from "@prisma/client";
 
 export interface IScenarioRepository {
   findById(id: string): Promise<Scenario | null>;
@@ -89,7 +89,7 @@ export class PrismaScenarioRepository implements IScenarioRepository {
   async updateModerationStatus(id: string, status: string): Promise<void> {
     await this.db.scenario.updateMany({
       where: { id },
-      data: { moderationStatus: status },
+      data: { moderationStatus: status as $Enums.ModerationStatus },
     });
   }
 }

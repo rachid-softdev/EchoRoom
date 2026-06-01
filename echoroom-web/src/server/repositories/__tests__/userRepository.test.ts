@@ -175,9 +175,7 @@ describe("PrismaUserRepository — atomicDebit", () => {
       user: { findUnique: mockUserFindUnique, update: mockUserUpdate },
     };
     const { PrismaUserRepository } = await import("../userRepository");
-    const { PrismaClient } = await import("@prisma/client");
-    // @ts-expect-error - partial mock for testing
-    repo = new PrismaUserRepository({} as PrismaClient);
+    repo = new PrismaUserRepository({} as import("@prisma/client").PrismaClient);
   });
 
   let repo: any;
@@ -257,9 +255,7 @@ describe("PrismaUserRepository — atomicRefund", () => {
       user: { update: mockUserUpdate },
     };
     const { PrismaUserRepository } = await import("../userRepository");
-    const { PrismaClient } = await import("@prisma/client");
-    // @ts-expect-error - partial mock for testing
-    repo = new PrismaUserRepository({} as PrismaClient);
+    repo = new PrismaUserRepository({} as import("@prisma/client").PrismaClient);
   });
 
   it("should refund to UserBilling when record exists", async () => {
@@ -309,9 +305,7 @@ describe("PrismaUserRepository — anonymize", () => {
       call: { updateMany: mockCallUpdateMany },
     };
     const { PrismaUserRepository } = await import("../userRepository");
-    const { PrismaClient } = await import("@prisma/client");
-    // @ts-expect-error - partial mock for testing
-    repo = new PrismaUserRepository({} as PrismaClient);
+    repo = new PrismaUserRepository({} as import("@prisma/client").PrismaClient);
   });
 
   it("should upsert UserProfile to clear displayName, bio, image", async () => {

@@ -218,7 +218,7 @@ describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
       (call: any[]) => call[0]?.data?.tokenVersion,
     );
     expect(tokenVersionCall).toBeDefined();
-    expect(tokenVersionCall[0].data.tokenVersion).toEqual({ increment: 1 });
+    expect(tokenVersionCall![0].data.tokenVersion).toEqual({ increment: 1 });
   });
 
   it("should include all deletion fields alongside tokenVersion", async () => {
@@ -238,7 +238,7 @@ describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
     );
     expect(tokenVersionCall).toBeDefined();
 
-    const data = tokenVersionCall[0].data;
+    const data = tokenVersionCall![0].data;
     expect(data).toHaveProperty("deletedAt");
     expect(data).toHaveProperty("anonymizedAt");
     expect(data).toHaveProperty("email");
@@ -302,7 +302,7 @@ describe("userRouter.withdrawConsent — N2 regression test", () => {
       (call: any[]) => call[0]?.data?.tokenVersion,
     );
     expect(tokenVersionCall).toBeDefined();
-    expect(tokenVersionCall[0].data.tokenVersion).toEqual({ increment: 1 });
+    expect(tokenVersionCall![0].data.tokenVersion).toEqual({ increment: 1 });
   });
 
   it("should call anonymizePersonalData inside the transaction", async () => {

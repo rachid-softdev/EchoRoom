@@ -7,6 +7,8 @@ import { stripe } from "@/lib/stripe";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
 import { checkWebhookRateLimit } from "../rateLimit";
+import { checkIdempotency } from "@/server/middleware/webhookIdempotency";
+import { pushToDLQ } from "@/server/middleware/webhookDLQ";
 
 const log = createLogger("stripe-webhook");
 
@@ -42,10 +44,21 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     log.error("Stripe webhook signature verification failed", { message });
+    await pushToDLQ("stripe", "unknown", "signature_verification", { bodyLength: body.length }, message);
     return NextResponse.json({ error: "Signature invalide" }, { status: 400 });
   }
 
-  switch (event.type) {
+  // Idempotency check — Redis-backed SET NX with 24h TTL.
+  // Prevents double-processing of the same Stripe event.
+  // Graceful degradation: if Redis is down, the check returns false
+  // (allows processing), and downstream DB constraints still protect
+  // against duplicates.
+  if (await checkIdempotency(event.id)) {
+    return NextResponse.json({ received: true });
+  }
+
+  try {
+    switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
       const userId = session.metadata?.userId;
@@ -83,11 +96,7 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          await tx.user.update({
-            where: { id: userId },
-            data: { credits: { increment: credits } },
-          });
-          // Also update UserBilling sub-aggregate
+          // Update UserBilling sub-aggregate only (legacy User.credits is deprecated)
           await tx.userBilling.upsert({
             where: { userId },
             create: { userId, credits },
@@ -150,9 +159,10 @@ export async function POST(req: NextRequest) {
         });
 
         if (purchase) {
-          await tx.user.update({
-            where: { id: purchase.userId },
-            data: { credits: { decrement: purchase.creditsPurchased } },
+          await tx.userBilling.upsert({
+            where: { userId: purchase.userId },
+            create: { userId: purchase.userId },
+            update: { credits: { decrement: purchase.creditsPurchased } },
           });
         }
 
@@ -231,9 +241,10 @@ export async function POST(req: NextRequest) {
           });
 
           if (purchase) {
-            await tx.user.update({
-              where: { id: purchase.userId },
-              data: { credits: { decrement: purchase.creditsPurchased } },
+            await tx.userBilling.upsert({
+              where: { userId: purchase.userId },
+              create: { userId: purchase.userId },
+              update: { credits: { decrement: purchase.creditsPurchased } },
             });
           }
 
@@ -267,6 +278,12 @@ export async function POST(req: NextRequest) {
     default: {
       log.info("Unhandled Stripe event type", { eventType: event.type });
     }
+  }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error("Unhandled error processing Stripe webhook", { eventType: event.type, error: message });
+    await pushToDLQ("stripe", event.id, event.type, event, message);
+    return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

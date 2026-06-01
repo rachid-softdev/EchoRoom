@@ -20,8 +20,12 @@ export function MobileNav() {
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </Button>
       </div>
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border bg-card px-4 py-4 flex flex-col gap-3">
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="border-b border-border bg-card px-4 py-4 flex flex-col gap-4">
           <Link
             href="/explore"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
@@ -45,7 +49,7 @@ export function MobileNav() {
             </Link>
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 }

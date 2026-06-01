@@ -11,7 +11,20 @@ import { clipsRouter } from "./routers/clips";
 import { profileRouter } from "./routers/profile";
 import { userRouter } from "./routers/user";
 import { dashboardRouter } from "./routers/dashboard";
-import { scenariosV1Router } from "./routers/v1";
+import {
+  scenariosV1Router,
+  authV1Router,
+  charactersV1Router,
+  callsV1Router,
+  billingV1Router,
+  communityV1Router,
+  adminV1Router,
+  socialV1Router,
+  clipsV1Router,
+  profileV1Router,
+  userV1Router,
+  dashboardV1Router,
+} from "./routers/v1";
 
 /**
  * Versioned API namespace — frozen v1 contracts for backward compatibility.
@@ -43,6 +56,17 @@ export const appRouter = router({
   // Versioned API namespace
   v1: router({
     scenarios: scenariosV1Router,
+    auth: authV1Router,
+    characters: charactersV1Router,
+    calls: callsV1Router,
+    billing: billingV1Router,
+    community: communityV1Router,
+    admin: adminV1Router,
+    social: socialV1Router,
+    clips: clipsV1Router,
+    profile: profileV1Router,
+    user: userV1Router,
+    dashboard: dashboardV1Router,
   }),
 });
 

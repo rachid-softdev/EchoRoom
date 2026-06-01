@@ -95,7 +95,7 @@ describe("PrismaCallRepository — findWithDetails", () => {
     };
     mockFindUnique.mockResolvedValue(fullCall);
 
-    const result = await repo.findWithDetails("call-1");
+    await repo.findWithDetails("call-1");
 
     // Verify only the selected fields are in the Prisma query
     expect(mockFindUnique).toHaveBeenCalledWith({
@@ -201,8 +201,7 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
       userId: "user-1",
       costCredits: 5,
     });
-    const mockBillingFindUnique = vi.fn().mockResolvedValue({ id: "billing-1" });
-    const mockBillingUpdate = vi.fn();
+    const mockBillingUpsert = vi.fn().mockResolvedValue({ id: "billing-1" });
 
     mockTransaction.mockImplementation(async (cb: (tx: any) => Promise<void>) => {
       await cb({
@@ -211,8 +210,7 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
           findUnique: mockCallFindUnique,
         },
         userBilling: {
-          findUnique: mockBillingFindUnique,
-          update: mockBillingUpdate,
+          upsert: mockBillingUpsert,
         },
       });
     });
@@ -230,24 +228,20 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
         endedAt: expect.any(Date),
       },
     });
-    expect(mockBillingFindUnique).toHaveBeenCalledWith({
+    expect(mockBillingUpsert).toHaveBeenCalledWith({
       where: { userId: "user-1" },
-      select: { id: true },
-    });
-    expect(mockBillingUpdate).toHaveBeenCalledWith({
-      where: { userId: "user-1" },
-      data: { credits: { increment: 5 } },
+      create: { userId: "user-1", credits: 5 },
+      update: { credits: { increment: 5 } },
     });
   });
 
-  it("should fall back to legacy User.credits when UserBilling not found", async () => {
+  it("should refund via UserBilling when call is active (no legacy fallback)", async () => {
     const mockCallUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const mockCallFindUnique = vi.fn().mockResolvedValue({
       userId: "user-1",
       costCredits: 5,
     });
-    const mockBillingFindUnique = vi.fn().mockResolvedValue(null);
-    const mockUserUpdate = vi.fn();
+    const mockBillingUpsert = vi.fn().mockResolvedValue({ id: "billing-1" });
 
     mockTransaction.mockImplementation(async (cb: (tx: any) => Promise<void>) => {
       await cb({
@@ -256,24 +250,25 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
           findUnique: mockCallFindUnique,
         },
         userBilling: {
-          findUnique: mockBillingFindUnique,
+          upsert: mockBillingUpsert,
         },
-        user: { update: mockUserUpdate },
       });
     });
 
     await repo.markAsFailedWithRefund("call-1", 30);
 
-    expect(mockUserUpdate).toHaveBeenCalledWith({
-      where: { id: "user-1" },
-      data: { credits: { increment: 5 } },
+    // UserBilling upsert should always be called — no legacy fallback
+    expect(mockBillingUpsert).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      create: { userId: "user-1", credits: 5 },
+      update: { credits: { increment: 5 } },
     });
   });
 
   it("should NOT refund when call is already FAILED or COMPLETED", async () => {
     const mockCallUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
     const mockCallFindUnique = vi.fn();
-    const mockBillingFindUnique = vi.fn();
+    const mockBillingUpsert = vi.fn();
 
     mockTransaction.mockImplementation(async (cb: (tx: any) => Promise<void>) => {
       await cb({
@@ -281,7 +276,7 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
           updateMany: mockCallUpdateMany,
           findUnique: mockCallFindUnique,
         },
-        userBilling: { findUnique: mockBillingFindUnique },
+        userBilling: { upsert: mockBillingUpsert },
       });
     });
 
@@ -290,12 +285,13 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
     expect(mockCallUpdateMany).toHaveBeenCalled();
     // Should not attempt refund if no rows updated
     expect(mockCallFindUnique).not.toHaveBeenCalled();
-    expect(mockBillingFindUnique).not.toHaveBeenCalled();
+    expect(mockBillingUpsert).not.toHaveBeenCalled();
   });
 
   it("should handle missing call record gracefully (no crash)", async () => {
     const mockCallUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const mockCallFindUnique = vi.fn().mockResolvedValue(null);
+    const mockBillingUpsert = vi.fn();
 
     mockTransaction.mockImplementation(async (cb: (tx: any) => Promise<void>) => {
       await cb({
@@ -303,7 +299,7 @@ describe("PrismaCallRepository — markAsFailedWithRefund", () => {
           updateMany: mockCallUpdateMany,
           findUnique: mockCallFindUnique,
         },
-        userBilling: { findUnique: vi.fn() },
+        userBilling: { upsert: mockBillingUpsert },
       });
     });
 
