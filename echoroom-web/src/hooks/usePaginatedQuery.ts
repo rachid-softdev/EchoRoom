@@ -58,11 +58,17 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
       setAllItems(data.items);
     } else {
       setAllItems((prev) => {
+        // Only dedup if getKey returns a defined value for all items
+        const newKeys = data.items.map(getKey);
+        const hasUndefinedKey = newKeys.some((k) => k === undefined);
+        if (hasUndefinedKey) {
+          return [...prev, ...data.items];
+        }
         const existingKeys = new Set(prev.map(getKey));
-        const newItems = data.items.filter(
-          (item) => !existingKeys.has(getKey(item)),
+        const filteredItems = data.items.filter(
+          (_item, i) => !existingKeys.has(newKeys[i]),
         );
-        return [...prev, ...newItems];
+        return [...prev, ...filteredItems];
       });
     }
 

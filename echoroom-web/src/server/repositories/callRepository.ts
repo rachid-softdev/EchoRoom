@@ -62,10 +62,22 @@ export class PrismaCallRepository implements ICallRepository {
 
       if (!call) return;
 
-      await tx.user.update({
-        where: { id: call.userId },
-        data: { credits: { increment: call.costCredits } },
+      // Refund via UserBilling (preferred) or legacy User.credits
+      const billing = await tx.userBilling.findUnique({
+        where: { userId: call.userId },
+        select: { id: true },
       });
+      if (billing) {
+        await tx.userBilling.update({
+          where: { userId: call.userId },
+          data: { credits: { increment: call.costCredits } },
+        });
+      } else {
+        await tx.user.update({
+          where: { id: call.userId },
+          data: { credits: { increment: call.costCredits } },
+        });
+      }
     });
   }
 }

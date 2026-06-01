@@ -16,6 +16,21 @@ import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { getCachedFeed, setCachedFeed, invalidateFeedCache } from "../services/cache/scenarioCache";
 import { redis } from "@/lib/redis";
 
+/** Shape of a feed item returned by the scenarios.feed procedure */
+type FeedItem = Prisma.ScenarioGetPayload<{
+  include: {
+    creator: { select: { id: true; username: true; image: true } };
+    character: { select: { id: true; name: true; slug: true; avatarUrl: true; category: true } };
+    _count: { select: { reactions: true; comments: true } };
+  };
+}>;
+
+/** Feed response shape */
+interface FeedResponse {
+  items: FeedItem[];
+  nextCursor: string | undefined;
+}
+
 export const scenariosRouter = router({
   create: protectedProcedure
     .use(withREDMetrics)
@@ -65,14 +80,11 @@ export const scenariosRouter = router({
         sort: z.enum(["CHRONOLOGICAL", "TRENDING", "TOP"]).default("CHRONOLOGICAL"),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input }): Promise<FeedResponse> => {
       // Check cache for first page (no cursor)
       if (!input.cursor && redis) {
         const cacheParams = { sort: input.sort, limit: input.limit };
-        const cached = await getCachedFeed<{
-          items: Array<Record<string, unknown>>;
-          nextCursor: string | undefined;
-        }>(cacheParams);
+        const cached = await getCachedFeed<FeedResponse>(cacheParams);
         if (cached) return cached;
       }
 

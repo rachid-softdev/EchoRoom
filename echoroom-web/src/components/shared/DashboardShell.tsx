@@ -28,7 +28,6 @@ interface DashboardShellProps {
 export function DashboardShell({
   title,
   subtitle,
-  backHref = '/dashboard',
   actions,
   children,
 }: DashboardShellProps) {

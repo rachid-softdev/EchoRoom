@@ -18,6 +18,7 @@ interface CreateContextOptions {
   req?: NextRequest;
   resHeaders?: Headers;
   info?: { remoteAddress?: string; connectionType?: string };
+  apiVersion?: string;
 }
 
 export async function createTRPCContext(opts?: CreateContextOptions) {
@@ -57,6 +58,7 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
     requestId: sanitizeRequestId(opts?.req?.headers.get("x-request-id")) ?? randomUUID(),
     headers: opts?.req?.headers ?? new Headers(),
     req: opts?.req,
+    apiVersion: opts?.apiVersion,
   };
 }
 
@@ -233,8 +235,48 @@ export const withContentModeration = middleware(async ({ ctx, next, input }) => 
   return next();
 });
 
+/**
+ * API version negotiation middleware.
+ *
+ * Reads the X-API-Version header and sets ctx.apiVersion for procedures
+ * that need to branch behavior based on the requested API version.
+ *
+ * Version resolution (highest priority first):
+ * 1. X-API-Version header explicit value
+ * 2. Path-based version (e.g., 'v1.scenarios.feed' -> 'v1')
+ * 3. Default: 'latest'
+ *
+ * Usage in a procedure:
+ * ```typescript
+ * myProc: publicProcedure
+ *   .use(withVersioning)
+ *   .query(({ ctx }) => {
+ *     if (ctx.apiVersion === 'v1') { handleLegacyBehavior(); }
+ *   })
+ * ```
+ */
+export const withVersioning = middleware(({ ctx, next, path }) => {
+  // Detect version from path (e.g. 'v1.scenarios.feed' -> 'v1')
+  const pathVersion = path.startsWith("v1.") ? "v1" : null;
+
+  // Allow header override for testing/compatibility
+  const headerVersion = ctx.headers?.get("x-api-version")?.toLowerCase() ?? null;
+
+  const apiVersion = headerVersion ?? pathVersion ?? "latest";
+
+  return next({
+    ctx: {
+      ...ctx,
+      apiVersion,
+    },
+  });
+});
+
 export const publicProcedure = t.procedure.use(withTracing);
-export const protectedProcedure = t.procedure.use(isAuthenticated).use(withTracing);
-export const adminProcedure = t.procedure.use(isAuthenticated).use(isAdmin).use(withTracing);
+// Order: withTracing BEFORE isAuthenticated so the return type of the last
+// middleware (isAuthenticated/isAdmin) propagates to the procedure handler.
+// tRPC v11 beta does not carry narrowed context types through subsequent .use() calls.
+export const protectedProcedure = t.procedure.use(withTracing).use(isAuthenticated);
+export const adminProcedure = t.procedure.use(withTracing).use(isAuthenticated).use(isAdmin);
 
 export { withTracing };

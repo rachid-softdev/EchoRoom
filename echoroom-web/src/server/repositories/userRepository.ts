@@ -35,6 +35,24 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async atomicDebit(tx: PrismaTx, userId: string, cost: number): Promise<AtomicDebitResult> {
+    // Prefer UserBilling sub-aggregate, fall back to legacy User.credits
+    const billing = await tx.userBilling.findUnique({
+      where: { userId },
+      select: { credits: true },
+    });
+
+    if (billing) {
+      if (billing.credits < cost) {
+        return { debited: false, reason: "INSUFFICIENT_CREDITS" };
+      }
+      await tx.userBilling.update({
+        where: { userId },
+        data: { credits: { decrement: cost } },
+      });
+      return { debited: true };
+    }
+
+    // Legacy fallback: User.credits
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: { id: true, credits: true },
@@ -57,6 +75,20 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async atomicRefund(tx: PrismaTx, userId: string, amount: number): Promise<void> {
+    // Prefer UserBilling sub-aggregate, fall back to legacy User.credits
+    const billing = await tx.userBilling.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (billing) {
+      await tx.userBilling.update({
+        where: { userId },
+        data: { credits: { increment: amount } },
+      });
+      return;
+    }
+
     await tx.user.update({
       where: { id: userId },
       data: { credits: { increment: amount } },
@@ -64,12 +96,23 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async anonymize(tx: PrismaTx, userId: string): Promise<void> {
+    // Anonymize sub-aggregates
+    await tx.userProfile.upsert({
+      where: { userId },
+      create: { userId },
+      update: {
+        image: null,
+        displayName: null,
+        bio: null,
+      },
+    });
+
     await tx.user.update({
       where: { id: userId },
       data: {
+        image: null,
         displayName: null,
         bio: null,
-        image: null,
       },
     });
 

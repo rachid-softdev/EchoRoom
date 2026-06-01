@@ -148,11 +148,13 @@ describe("Stripe webhook POST handler", () => {
     });
 
     // Mock successful transaction
+    const mockTxUpsert = vi.fn().mockResolvedValue({ id: "billing-1", credits: 150 });
     mockTxCreate.mockResolvedValue({ id: "purchase-new", stripePaymentId: "pi_test_new" });
     mockTxUpdate.mockResolvedValue({ id: "user-123", credits: 150 });
     const mockTx = {
       purchase: { create: mockTxCreate },
       user: { update: mockTxUpdate },
+      userBilling: { upsert: mockTxUpsert },
     };
     mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
@@ -183,6 +185,13 @@ describe("Stripe webhook POST handler", () => {
       where: { id: "user-123" },
       data: { credits: { increment: 50 } },
     });
+
+    // Verify UserBilling sub-aggregate was also updated
+    expect(mockTxUpsert).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      create: { userId: "user-123", credits: 50 },
+      update: { credits: { increment: 50 } },
+    });
   });
 
   it("should add correct credits amount from metadata", async () => {
@@ -200,11 +209,13 @@ describe("Stripe webhook POST handler", () => {
       data: { object: session },
     });
 
+    const mockTxUpsert = vi.fn().mockResolvedValue({});
     mockTxCreate.mockResolvedValue({ id: "purchase-1" });
     mockTxUpdate.mockResolvedValue({});
     const mockTx = {
       purchase: { create: mockTxCreate },
       user: { update: mockTxUpdate },
+      userBilling: { upsert: mockTxUpsert },
     };
     mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
@@ -217,6 +228,13 @@ describe("Stripe webhook POST handler", () => {
     expect(mockTxUpdate).toHaveBeenCalledWith({
       where: { id: "user-123" },
       data: { credits: { increment: 100 } },
+    });
+
+    // Verify UserBilling sub-aggregate was also updated
+    expect(mockTxUpsert).toHaveBeenCalledWith({
+      where: { userId: "user-123" },
+      create: { userId: "user-123", credits: 100 },
+      update: { credits: { increment: 100 } },
     });
 
     // Verify purchase record created inside transaction
@@ -249,10 +267,12 @@ describe("Stripe webhook POST handler", () => {
       "Unique constraint failed on stripePaymentId",
       { code: "P2002", clientVersion: "5.22.0", meta: { target: ["stripePaymentId"] } },
     );
+    const mockTxUpsert = vi.fn();
     mockTxCreate.mockRejectedValue(p2002Error);
     const mockTx = {
       purchase: { create: mockTxCreate },
       user: { update: mockTxUpdate },
+      userBilling: { upsert: mockTxUpsert },
     };
     mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
@@ -269,6 +289,8 @@ describe("Stripe webhook POST handler", () => {
     expect(mockTransaction).toHaveBeenCalledTimes(1);
     // user.update should NOT have been called (transaction aborted before)
     expect(mockTxUpdate).not.toHaveBeenCalled();
+    // userBilling.upsert should NOT have been called (aborted before)
+    expect(mockTxUpsert).not.toHaveBeenCalled();
   });
 
   it("should return 400 when metadata.userId is missing", async () => {

@@ -51,17 +51,18 @@ model User {
   email        String   @unique
   username     String   @unique
   passwordHash String
-  image        String?
   role         UserRole @default(USER)
+
+  // Legacy fields — kept for backward compatibility during partition migration.
+  // New code should access these through UserProfile, UserSocial, UserBilling.
+  image        String?
   displayName  String?
   bio          String?
-
-  credits   Int @default(5)
-
-  tokenVersion      Int  @default(0)  // Incremented on password change to invalidate JWT
-
+  credits      Int @default(5)
   totalLikesReceived Int @default(0)
   totalCallsMade     Int @default(0)
+
+  tokenVersion      Int  @default(0)  // Incremented on password change to invalidate JWT
 
   consentAcceptedAt DateTime?
   consentWithdrawnAt DateTime?
@@ -71,6 +72,11 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // One-to-one sub-aggregates (partitioned User god object)
+  profile UserProfile?
+  social  UserSocial?
+  billing UserBilling?
 
   shareEvents     ShareEvent[]
   calls           Call[]
@@ -89,6 +95,38 @@ model User {
 
   @@index([totalLikesReceived(sort: Desc)])
   @@index([totalCallsMade(sort: Desc)])
+}
+
+model UserProfile {
+  id          String @id @default(cuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  image       String?
+  displayName String?
+  bio         String?
+
+  @@index([userId])
+}
+
+model UserSocial {
+  id                 String @id @default(cuid())
+  userId             String @unique
+  user               User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalLikesReceived Int    @default(0)
+  totalCallsMade     Int    @default(0)
+
+  @@index([userId])
+  @@index([totalLikesReceived(sort: Desc)])
+  @@index([totalCallsMade(sort: Desc)])
+}
+
+model UserBilling {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credits Int    @default(5)
+
+  @@index([userId])
 }
 
 model Character {

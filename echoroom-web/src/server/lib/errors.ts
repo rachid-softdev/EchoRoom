@@ -2,6 +2,7 @@
 // Allows tRPC routers to map domain errors to TRPCError codes.
 
 export type AppErrorCode =
+  | "BAD_REQUEST"
   | "SCENARIO_NOT_FOUND"
   | "USER_NOT_FOUND"
   | "INSUFFICIENT_CREDITS"

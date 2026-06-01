@@ -131,6 +131,9 @@ vi.mock("@/server/db", () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
     },
+    userBilling: {
+      upsert: vi.fn(),
+    },
   },
 }));
 

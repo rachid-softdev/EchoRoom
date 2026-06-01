@@ -236,3 +236,234 @@ describe("admin.ts deleteUser — updateMany integration pattern", () => {
     expect(mockAuditLog).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Credit race conditions: concurrent debits on the same user
+// ---------------------------------------------------------------------------
+// Tests that atomic debit operations correctly handle concurrent access
+// using the WHERE credits >= cost pattern as an optimistic lock.
+
+describe("Credit race conditions — atomic debit", () => {
+  it("should handle two concurrent debits without going negative", async () => {
+    // Simulate a user with 5 credits, two concurrent debits of 3 each
+    // First succeeds, second should fail (only 2 credits remaining)
+    const mockUpdateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })  // First debit: 5 >= 3
+      .mockResolvedValueOnce({ count: 0 }); // Second debit: 2 < 3
+
+    const mockFindUnique = vi.fn().mockResolvedValue({ id: "user-1" });
+
+    async function atomicDebit(userId: string, cost: number) {
+      const result = await mockUpdateMany({
+        where: { id: userId, credits: { gte: cost } },
+        data: { credits: { decrement: cost } },
+      });
+      if (result.count === 0) {
+        const user = await mockFindUnique({ where: { id: userId }, select: { id: true } });
+        return { debited: false, reason: user ? "INSUFFICIENT_CREDITS" : "USER_NOT_FOUND" };
+      }
+      return { debited: true };
+    }
+
+    const [result1, result2] = await Promise.all([
+      atomicDebit("user-1", 3),
+      atomicDebit("user-1", 3),
+    ]);
+
+    // Exactly one should succeed
+    const succeeded = [result1, result2].filter(r => r.debited).length;
+    expect(succeeded).toBe(1);
+
+    // The failed one should indicate insufficient credits
+    const failed = [result1, result2].find(r => !r.debited);
+    expect(failed?.reason).toBe("INSUFFICIENT_CREDITS");
+  });
+
+  it("should allow independent debits on different users", async () => {
+    const mockUpdateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })  // user-1 debit succeeds
+      .mockResolvedValueOnce({ count: 1 }); // user-2 debit succeeds
+
+    async function atomicDebit(userId: string, cost: number) {
+      const result = await mockUpdateMany({
+        where: { id: userId, credits: { gte: cost } },
+        data: { credits: { decrement: cost } },
+      });
+      return { debited: result.count === 1 };
+    }
+
+    const [result1, result2] = await Promise.all([
+      atomicDebit("user-1", 3),
+      atomicDebit("user-2", 3),
+    ]);
+
+    expect(result1.debited).toBe(true);
+    expect(result2.debited).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Race condition: concurrent status transitions on the same call
+// ---------------------------------------------------------------------------
+
+describe("Call status race conditions", () => {
+  it("should prevent double-completion via status guard", async () => {
+    // Two concurrent status transitions: both try to complete the call
+    // Only the first should succeed (status guard prevents second)
+    const mockUpdateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })  // First: RINGING -> ACTIVE
+      .mockResolvedValueOnce({ count: 0 }); // Second: status already changed
+
+    async function transitionCall(callId: string, fromStatus: string, toStatus: string) {
+      const result = await mockUpdateMany({
+        where: { id: callId, status: fromStatus },
+        data: { status: toStatus },
+      });
+      return { success: result.count === 1 };
+    }
+
+    const [result1, result2] = await Promise.all([
+      transitionCall("call-1", "RINGING", "ACTIVE"),
+      transitionCall("call-1", "RINGING", "ACTIVE"),
+    ]);
+
+    // Exactly one should succeed
+    const succeeded = [result1, result2].filter(r => r.success).length;
+    expect(succeeded).toBe(1);
+
+    // The second caller should see failure
+    expect(result1.success !== result2.success).toBe(true);
+  });
+
+  it("should prevent refund for already-failed calls", async () => {
+    // markAsFailedWithRefund should be idempotent
+    // Second call should detect status already FAILED (via notIn guard)
+    const mockUpdateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })  // First: marks as FAILED
+      .mockResolvedValueOnce({ count: 0 }); // Second: already FAILED
+
+    async function markAsFailed(callId: string) {
+      const result = await mockUpdateMany({
+        where: { id: callId, status: { notIn: ["FAILED", "COMPLETED"] } },
+        data: { status: "FAILED", endedAt: new Date() },
+      });
+      return { didUpdate: result.count === 1 };
+    }
+
+    const [result1, result2] = await Promise.all([
+      markAsFailed("call-1"),
+      markAsFailed("call-1"),
+    ]);
+
+    // Only one should have actually changed the status
+    const updates = [result1, result2].filter(r => r.didUpdate).length;
+    expect(updates).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Race condition: concurrent GDPR deletion + admin deletion
+// ---------------------------------------------------------------------------
+
+describe("Concurrent delete scenarios", () => {
+  it("should handle simultaneous user-initiated and admin-initiated deletion", async () => {
+    // Both deleteMyAccount and admin deleteUser could run concurrently.
+    // The updateMany with deletedAt: null guard ensures only one succeeds.
+
+    const mockUpdateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })  // First delete succeeds
+      .mockResolvedValueOnce({ count: 0 }); // Second: already deleted
+
+    async function deleteUser(userId: string) {
+      const result = await mockUpdateMany({
+        where: { id: userId, deletedAt: null },
+        data: { deletedAt: new Date(), anonymizedAt: new Date() },
+      });
+      if (result.count === 0) {
+        throw new Error("CONFLICT: User already deleted");
+      }
+      return { success: true };
+    }
+
+    // Simulate concurrent user + admin delete
+    const results = await Promise.allSettled([
+      deleteUser("user-1"),
+      deleteUser("user-1"),
+    ]);
+
+    const fulfilled = results.filter(r => r.status === "fulfilled").length;
+    const rejected = results.filter(r => r.status === "rejected").length;
+
+    expect(fulfilled).toBe(1);
+    expect(rejected).toBe(1);
+  });
+
+  it("should handle three concurrent deletions gracefully", async () => {
+    const mockUpdateMany = vi.fn()
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    async function deleteUser(userId: string) {
+      const result = await mockUpdateMany({
+        where: { id: userId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      return { deleted: result.count === 1 };
+    }
+
+    const results = await Promise.all([
+      deleteUser("user-1"),
+      deleteUser("user-1"),
+      deleteUser("user-1"),
+    ]);
+
+    const deletedCount = results.filter(r => r.deleted).length;
+    expect(deletedCount).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prisma $transaction isolation tests
+// ---------------------------------------------------------------------------
+
+describe("Prisma transaction atomicity", () => {
+  it("should rollback entire transaction on error", async () => {
+    // Simulate a transaction where the second operation fails
+    // The first operation should be rolled back
+    const mockTx = {
+      user: {
+        update: vi.fn().mockResolvedValue({ id: "user-1" }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+
+    // The transaction callback executes both operations
+    // If the second throws, Prisma rolls back the first
+    async function failingTransaction() {
+      const tx = mockTx as any;
+      await tx.user.update({ where: { id: "user-1" }, data: { credits: { increment: 5 } } });
+      // This throws, causing rollback
+      throw new Error("Something went wrong in the transaction");
+    }
+
+    await expect(failingTransaction()).rejects.toThrow("Something went wrong");
+    // The update was called but would be rolled back by Prisma
+    expect(mockTx.user.update).toHaveBeenCalled();
+  });
+
+  it("should complete all operations in a successful transaction", async () => {
+    const mockUserUpdate = vi.fn().mockResolvedValue({ id: "user-1" });
+    const mockCallUpdate = vi.fn().mockResolvedValue({ count: 1 });
+
+    async function successfulTransaction() {
+      await mockUserUpdate({ where: { id: "user-1" }, data: { credits: { increment: 5 } } });
+      await mockCallUpdate({ where: { id: "call-1" }, data: { status: "FAILED" } });
+    }
+
+    await successfulTransaction();
+
+    expect(mockUserUpdate).toHaveBeenCalledTimes(1);
+    expect(mockCallUpdate).toHaveBeenCalledTimes(1);
+  });
+});

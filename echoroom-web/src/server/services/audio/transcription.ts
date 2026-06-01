@@ -32,8 +32,6 @@ export async function transcribeAudio(
   }
 
   const fileBuffer = Buffer.from(audioBuffer);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
@@ -45,7 +43,6 @@ export async function transcribeAudio(
         punctuate: true,
         paragraphs: true,
       },
-      { signal: controller.signal },
     );
 
     if (error || !result) {
@@ -81,8 +78,8 @@ export async function transcribeAudio(
           }),
         ) ?? [],
     };
-  } finally {
-    clearTimeout(timeoutId);
+    } finally {
+    // No cleanup needed — request timeout is handled by Deepgram SDK internally
   }
 }
 

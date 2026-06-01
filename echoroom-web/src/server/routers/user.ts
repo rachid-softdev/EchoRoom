@@ -7,6 +7,31 @@ import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
 
 export const userRouter = router({
+  updateProfile: protectedProcedure
+    .use(withRateLimit({ limit: 10, window: 3600 }))
+    .input(
+      z.object({
+        username: z.string().min(3).max(30),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+      await db.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            username: input.username,
+          },
+        });
+        await tx.userProfile.upsert({
+          where: { userId },
+          create: { userId, displayName: input.username },
+          update: { displayName: input.username },
+        });
+      });
+      return { success: true };
+    }),
+
   exportMyData: protectedProcedure
     .use(withRateLimit({ limit: 2, window: 3600 }))
     .mutation(async ({ ctx }) => {
@@ -18,18 +43,23 @@ export const userRouter = router({
           id: true,
           email: true,
           username: true,
-          displayName: true,
-          bio: true,
-          image: true,
           role: true,
-          credits: true,
-          totalLikesReceived: true,
-          totalCallsMade: true,
           consentAcceptedAt: true,
           gdprDataExportedAt: true,
           deletedAt: true,
           anonymizedAt: true,
           createdAt: true,
+          // Sub-aggregates
+          profile: { select: { image: true, displayName: true, bio: true } },
+          social: { select: { totalLikesReceived: true, totalCallsMade: true } },
+          billing: { select: { credits: true } },
+          // Legacy fields (backward compat)
+          image: true,
+          displayName: true,
+          bio: true,
+          credits: true,
+          totalLikesReceived: true,
+          totalCallsMade: true,
         },
       });
 

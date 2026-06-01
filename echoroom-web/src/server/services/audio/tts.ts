@@ -24,7 +24,8 @@ export async function synthesizeSpeech(
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const response = await ttsClient.textToSpeech.convert(voiceId, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK RequestOptions doesn't expose signal
+    const response = await (ttsClient.textToSpeech.convert as any)(voiceId, {
       text,
       model_id: "eleven_flash_v2_5",
       output_format: "ulaw_8000",
