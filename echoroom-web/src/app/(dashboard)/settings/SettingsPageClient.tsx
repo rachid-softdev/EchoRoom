@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
-import { User, Download, Trash2, Loader2 } from "lucide-react";
+import { User, Download, Trash2, Loader2, ShieldX } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -18,9 +18,11 @@ export default function SettingsPageClient() {
   const [email, setEmail] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false);
+  const [consentConfirmation, setConsentConfirmation] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
-  const updateProfile = api.user.updateProfile.useMutation({
+  const updateProfile = api.profile.updateProfile.useMutation({
     onSuccess: () => {
       toast({ title: "Profil mis à jour", variant: "success" });
       setHasChanges(false);
@@ -66,7 +68,7 @@ export default function SettingsPageClient() {
     }
   };
 
-  const deleteMutation = api.user.deleteMyAccount.useMutation({
+  const deleteMutation = api.profile.deleteMyAccount.useMutation({
     onSuccess: () => {
       toast({
         title: "Compte supprimé",
@@ -77,6 +79,23 @@ export default function SettingsPageClient() {
     onError: (err) => {
       toast({
         title: err.message ?? "Erreur lors de la suppression",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const withdrawConsentMutation = api.user.withdrawConsent.useMutation({
+    onSuccess: () => {
+      toast({
+        title: "Consentement retiré",
+        message: "Vos données personnelles ont été anonymisées.",
+        variant: "success",
+      });
+      signOut({ callbackUrl: "/" });
+    },
+    onError: (err) => {
+      toast({
+        title: err.message ?? "Erreur lors du retrait du consentement",
         variant: "destructive",
       });
     },
@@ -186,6 +205,26 @@ export default function SettingsPageClient() {
           </div>
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
             <div>
+              <p className="font-medium text-sm">Retirer le consentement</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Anonymisez vos données personnelles (RGPD Art. 7)
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                setConsentConfirmation("")
+                setConsentDialogOpen(true)
+              }}
+            >
+              <ShieldX className="w-4 h-4" />
+              Retirer
+            </Button>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+            <div>
               <p className="font-medium text-sm">Supprimer mon compte</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Supprimez définitivement votre compte et toutes vos données
@@ -237,6 +276,38 @@ export default function SettingsPageClient() {
           deleteMutation.mutate({ confirmation: "SUPPRIMER" })
         }}
         loading={deleteMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={consentDialogOpen}
+        onOpenChange={(open) => {
+          setConsentDialogOpen(open)
+          if (!open) setConsentConfirmation("")
+        }}
+        title="Retirer le consentement"
+        description={
+          <div className="space-y-3">
+            <p>Vos données personnelles seront anonymisées conformément au RGPD (Art. 7). Cette action est réversible via un nouveau consentement.</p>
+            <div className="space-y-2">
+              <label htmlFor="consent-confirm" className="text-sm font-medium">
+                Tapez <strong>RETIRER</strong> pour confirmer
+              </label>
+              <Input
+                id="consent-confirm"
+                placeholder="RETIRER"
+                value={consentConfirmation}
+                onChange={(e) => setConsentConfirmation(e.target.value)}
+              />
+            </div>
+          </div>
+        }
+        confirmLabel="Retirer définitivement"
+        variant="destructive"
+        confirmDisabled={consentConfirmation !== "RETIRER"}
+        onConfirm={() => {
+          withdrawConsentMutation.mutate({ confirmation: "RETIRER" })
+        }}
+        loading={withdrawConsentMutation.isPending}
       />
     </DashboardShell>
   );

@@ -58,3 +58,5 @@ export type {
 } from "./avatar";
 
 export { SegmentedControl } from "./segmented-control";
+
+export { Alert, AlertTitle, AlertDescription } from "./alert";

@@ -58,12 +58,15 @@ vi.mock("@/server/db", () => ({
 }));
 
 // Mock the twilio SDK — the route uses twilioClient.request() instead of raw fetch
+// Also validateRequest for the wrapTwilioWebhook middleware
 const mockRequest = vi.hoisted(() => vi.fn());
-vi.mock("twilio", () => ({
-  default: vi.fn(() => ({
+vi.mock("twilio", () => {
+  const mockFn = vi.fn(() => ({
     request: mockRequest,
-  })),
-}));
+  }));
+  mockFn.validateRequest = vi.fn().mockReturnValue(true);
+  return { default: mockFn };
+});
 
 // Global fetch mock (still needed for SSR protection tests where fetch should NOT be called)
 const mockFetch = vi.fn();

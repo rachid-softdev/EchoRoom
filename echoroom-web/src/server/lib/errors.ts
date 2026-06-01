@@ -10,7 +10,9 @@ export type AppErrorCode =
   | "NOT_FOUND"
   | "DAILY_LIMIT_EXCEEDED"
   | "NUMBER_BLOCKED"
-  | "CREDIT_DEBIT_FAILED";
+  | "CREDIT_DEBIT_FAILED"
+  | "USER_IN_ACTIVE_CALL"
+  | "CONSENT_ALREADY_WITHDRAWN";
 
 export class AppError extends Error {
   constructor(

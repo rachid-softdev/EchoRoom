@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const params = extractParams(formData);
 
   if (!validateTwilioRequest(req, params)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    return NextResponse.json({ error: "Signature invalide" }, { status: 403 });
   }
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   if (!(await checkWebhookRateLimit("twilio:voice:stream", ip))) {
     return NextResponse.json(
-      { error: "Too many requests" },
+      { error: "Trop de requêtes" },
       { status: 429, headers: { "Retry-After": "60" } },
     );
   }

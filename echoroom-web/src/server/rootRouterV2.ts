@@ -18,6 +18,7 @@ import { communityRouter } from "./routers/community";
 import { adminRouter } from "./routers/admin";
 import { socialRouter } from "./routers/social";
 import { clipsRouter } from "./routers/clips";
+import { profileRouter } from "./routers/profile";
 import { userRouter } from "./routers/user";
 import { dashboardRouter } from "./routers/dashboard";
 
@@ -31,6 +32,7 @@ export const appRouterV2 = router({
   admin: adminRouter,
   social: socialRouter,
   clips: clipsRouter,
+  profile: profileRouter,
   user: userRouter,
   dashboard: dashboardRouter,
 });

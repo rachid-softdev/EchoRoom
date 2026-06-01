@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   // Enforce body size limit (100KB for Stripe webhooks)
   const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
   if (contentLength > 100_000) {
-    return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    return NextResponse.json({ error: "Requête trop volumineuse" }, { status: 413 });
   }
 
   const ip =
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   if (!(await checkWebhookRateLimit("stripe:checkout", ip))) {
     return NextResponse.json(
-      { error: "Too many requests" },
+      { error: "Trop de requêtes" },
       { status: 429, headers: { "Retry-After": "60" } },
     );
   }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("stripe-signature");
 
   if (!signature) {
-    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
+    return NextResponse.json({ error: "En-tête stripe-signature manquant" }, { status: 400 });
   }
 
   let event: Stripe.Event;
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     log.error("Stripe webhook signature verification failed", { message });
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    return NextResponse.json({ error: "Signature invalide" }, { status: 400 });
   }
 
   switch (event.type) {
@@ -52,13 +52,13 @@ export async function POST(req: NextRequest) {
       const creditsStr = session.metadata?.credits;
       if (!userId || !creditsStr) {
         log.error("Missing metadata on checkout session", { sessionId: session.id });
-        return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
+        return NextResponse.json({ error: "Métadonnées manquantes" }, { status: 400 });
       }
 
       const credits = Number.parseInt(creditsStr, 10);
       if (Number.isNaN(credits) || credits <= 0) {
         log.error("Invalid credits value", { creditsStr });
-        return NextResponse.json({ error: "Invalid credits" }, { status: 400 });
+        return NextResponse.json({ error: "Crédits invalides" }, { status: 400 });
       }
 
       // Add credits to user + record the purchase (atomic transaction)
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       const paymentIntentId = session.payment_intent as string | null;
       if (!paymentIntentId) {
         log.error("No payment_intent on completed checkout session", { sessionId: session.id });
-        return NextResponse.json({ error: "Missing payment_intent" }, { status: 400 });
+        return NextResponse.json({ error: "payment_intent manquant" }, { status: 400 });
       }
 
       try {
@@ -173,25 +173,27 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // Atomic idempotent flag — only one webhook will match
-      const updated = await db.purchase.updateMany({
-        where: {
-          stripePaymentId: disputePaymentIntent,
-          disputedAt: null,
-        },
-        data: { disputedAt: new Date() },
-      });
+      // Atomic idempotent flag wrapped in $transaction for consistency
+      await db.$transaction(async (tx) => {
+        const updated = await tx.purchase.updateMany({
+          where: {
+            stripePaymentId: disputePaymentIntent,
+            disputedAt: null,
+          },
+          data: { disputedAt: new Date() },
+        });
 
-      if (updated.count > 0) {
-        log.warn("Chargeback/dispute on purchase", {
-          paymentIntent: disputePaymentIntent,
-          disputeId: dispute.id,
-        });
-      } else {
-        log.info("Duplicate or no purchase for dispute", {
-          paymentIntent: disputePaymentIntent,
-        });
-      }
+        if (updated.count > 0) {
+          log.warn("Chargeback/dispute on purchase", {
+            paymentIntent: disputePaymentIntent,
+            disputeId: dispute.id,
+          });
+        } else {
+          log.info("Duplicate or no purchase for dispute", {
+            paymentIntent: disputePaymentIntent,
+          });
+        }
+      });
       break;
     }
 
@@ -241,21 +243,23 @@ export async function POST(req: NextRequest) {
           });
         });
       } else if (dispute.status === "won") {
-        // Atomic: clear disputedAt flag (only if currently set)
-        const updated = await db.purchase.updateMany({
-          where: {
-            stripePaymentId: disputePaymentIntent,
-            disputedAt: { not: null },
-          },
-          data: { disputedAt: null },
-        });
-
-        if (updated.count > 0) {
-          log.info("Dispute won, cleared disputedAt flag", {
-            paymentIntent: disputePaymentIntent,
-            disputeId: dispute.id,
+        // Atomic: wrapped in $transaction for consistency with other dispute handlers
+        await db.$transaction(async (tx) => {
+          const updated = await tx.purchase.updateMany({
+            where: {
+              stripePaymentId: disputePaymentIntent,
+              disputedAt: { not: null },
+            },
+            data: { disputedAt: null },
           });
-        }
+
+          if (updated.count > 0) {
+            log.info("Dispute won, cleared disputedAt flag", {
+              paymentIntent: disputePaymentIntent,
+              disputeId: dispute.id,
+            });
+          }
+        });
       }
       break;
     }

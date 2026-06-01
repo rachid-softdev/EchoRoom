@@ -38,10 +38,15 @@ vi.mock("@/server/lib/twilioToken", () => ({
   createTwilioToken: vi.fn(() => "mocked_new_token"),
 }));
 
-vi.mock("../../../validate", () => ({
-  validateTwilioRequest: vi.fn(),
-  extractParams: vi.fn(),
-}));
+// Mock twilio SDK — validateRequest is used by the wrapTwilioWebhook middleware
+// Preserve real twiml.VoiceResponse for TwiML generation in route handlers
+vi.mock("twilio", async () => {
+  const actual = await vi.importActual<typeof import("twilio")>("twilio");
+  const mockFn = vi.fn(() => ({}));
+  mockFn.validateRequest = vi.fn().mockReturnValue(true);
+  mockFn.twiml = actual.twiml;
+  return { default: mockFn };
+});
 
 vi.mock("@/server/services/telephony/conversationState", () => ({
   getConversationState: vi.fn(),
@@ -114,10 +119,6 @@ function createMockRequest(
 describe("M-7: scenarioId mismatch rejection", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-
-    const { validateTwilioRequest, extractParams } = await import("../../../validate");
-    (validateTwilioRequest as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (extractParams as ReturnType<typeof vi.fn>).mockReturnValue({ CallSid: "CA_test", SpeechResult: "hello" });
 
     const { verifyTwilioToken } = await import("@/server/lib/twilioToken");
     (verifyTwilioToken as ReturnType<typeof vi.fn>).mockReturnValue({

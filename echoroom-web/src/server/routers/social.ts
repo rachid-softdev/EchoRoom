@@ -17,8 +17,8 @@ export const socialRouter = router({
     .use(withRateLimit({ limit: 60, window: 3600 }))
     .input(
       z.object({
-        scenarioId: z.string(),
-        emoji: z.string().min(1).max(10),
+        scenarioId: z.string().min(1, "Scénario requis"),
+        emoji: z.string().min(1, "Emoji requis").max(10, "Maximum 10 caractères"),
       }),
     )
     .mutation(async ({ input, ctx }) => {

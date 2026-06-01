@@ -150,33 +150,4 @@ export const authRouter = router({
       return { success: true };
     }),
 
-  me: protectedProcedure
-    .use(withRateLimit({ limit: 120, window: 60 }))
-    .query(async ({ ctx }) => {
-    const user = await db.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        role: true,
-        image: true,
-        credits: true, // Legacy field
-        billing: {
-          select: { credits: true },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Utilisateur introuvable",
-      });
-    }
-
-    // Use UserBilling credits if available, fall back to legacy
-    const credits = user.billing?.credits ?? user.credits;
-    return { ...user, credits };
-  }),
 });

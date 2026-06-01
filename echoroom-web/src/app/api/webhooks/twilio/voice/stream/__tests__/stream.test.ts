@@ -122,7 +122,7 @@ describe("C-1: stream/route — POST handler", () => {
     expect(response.status).toBe(403);
 
     const body = await response.json();
-    expect(body).toEqual({ error: "Invalid signature" });
+    expect(body).toEqual({ error: "Signature invalide" });
   });
 
   it("should return valid TwiML when signature is valid", async () => {

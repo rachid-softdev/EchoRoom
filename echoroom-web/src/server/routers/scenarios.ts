@@ -39,12 +39,12 @@ export const scenariosRouter = router({
     .use(withContentModeration)
     .input(
       z.object({
-        characterId: z.string().min(1),
-        title: z.string().min(3).max(80),
-        description: z.string().max(300),
-        openingMessage: z.string().max(300),
-        aiInstructions: z.string().max(3000),
-        visibility: z.enum(["PRIVATE", "UNLISTED", "PUBLIC"]),
+        characterId: z.string().min(1, "Personnage requis"),
+        title: z.string().min(3, "Minimum 3 caractères").max(80, "Maximum 80 caractères"),
+        description: z.string().max(300, "Maximum 300 caractères"),
+        openingMessage: z.string().max(300, "Maximum 300 caractères"),
+        aiInstructions: z.string().max(3000, "Maximum 3000 caractères"),
+        visibility: z.enum(["PRIVATE", "UNLISTED", "PUBLIC"], { message: "Visibilité invalide" }),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -75,10 +75,10 @@ export const scenariosRouter = router({
     .use(withRateLimit({ limit: 20, window: 3600 }))
     .input(
       z.object({
-        characterId: z.string().min(1),
-        title: z.string().min(1).max(200),
-        description: z.string().min(1).max(500),
-        openingMessage: z.string().min(1).max(500),
+        characterId: z.string().min(1, "Personnage requis"),
+        title: z.string().min(1, "Titre requis").max(200, "Maximum 200 caractères"),
+        description: z.string().min(1, "Description requise").max(500, "Maximum 500 caractères"),
+        openingMessage: z.string().min(1, "Message d'ouverture requis").max(500, "Maximum 500 caractères"),
       }),
     )
     .mutation(async ({ input }) => {
@@ -110,9 +110,9 @@ export const scenariosRouter = router({
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
-        cursor: z.string().min(1).optional(),
-        limit: z.number().int().min(1).max(20).default(10),
-        sort: z.enum(["CHRONOLOGICAL", "TRENDING", "TOP"]).default("CHRONOLOGICAL"),
+        cursor: z.string().min(1, "Curseur invalide").optional(),
+        limit: z.number().int().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
+        sort: z.enum(["CHRONOLOGICAL", "TRENDING", "TOP"], { message: "Tri invalide" }).default("CHRONOLOGICAL"),
       }),
     )
     .query(async ({ input }): Promise<FeedResponse> => {
@@ -184,7 +184,7 @@ export const scenariosRouter = router({
 
   getById: publicProcedure
     .use(withIPRateLimit({ limit: 120, window: 60 }))
-    .input(z.object({ id: z.string().min(1) }))
+    .input(z.object({ id: z.string().min(1, "Identifiant requis") }))
     .query(async ({ input, ctx }) => {
       // Single query with permissions baked into the WHERE clause.
       // Unlike the previous implementation (findUnique + post-filter), this
@@ -242,12 +242,12 @@ export const scenariosRouter = router({
     .input(
       z
         .object({
-          id: z.string().min(1),
-          title: z.string().min(3).max(80).optional(),
-          description: z.string().max(300).optional(),
-          openingMessage: z.string().max(300).optional(),
-          aiInstructions: z.string().max(3000).optional(),
-          visibility: z.enum(["PRIVATE", "UNLISTED", "PUBLIC"]).optional(),
+          id: z.string().min(1, "Identifiant requis"),
+          title: z.string().min(3, "Minimum 3 caractères").max(80, "Maximum 80 caractères").optional(),
+          description: z.string().max(300, "Maximum 300 caractères").optional(),
+          openingMessage: z.string().max(300, "Maximum 300 caractères").optional(),
+          aiInstructions: z.string().max(3000, "Maximum 3000 caractères").optional(),
+          visibility: z.enum(["PRIVATE", "UNLISTED", "PUBLIC"], { message: "Visibilité invalide" }).optional(),
         })
         .refine(
           (data) =>
@@ -326,7 +326,7 @@ export const scenariosRouter = router({
   delete: protectedProcedure
     .use(withREDMetrics)
     .use(withRateLimit({ limit: 10, window: 3600 }))
-    .input(z.object({ id: z.string().min(1) }))
+    .input(z.object({ id: z.string().min(1, "Identifiant requis") }))
     .mutation(async ({ input, ctx }) => {
       const scenario = await db.scenario.findUnique({
         where: { id: input.id },
@@ -350,8 +350,8 @@ export const scenariosRouter = router({
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
-        cursor: z.string().min(1).optional(),
-        limit: z.number().int().min(1).max(20).default(10),
+        cursor: z.string().min(1, "Curseur invalide").optional(),
+        limit: z.number().int().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
       }),
     )
     .query(async ({ input, ctx }) => {

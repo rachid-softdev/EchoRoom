@@ -139,7 +139,7 @@ export async function checkContent(
       log.warn("AI moderation call failed — falling back to blocklist");
       // In production, this should trigger an alert
       if (process.env.NODE_ENV === "production") {
-        console.error("[ALERT] OpenAI moderation unavailable!");
+        log.error("[ALERT] OpenAI moderation unavailable!");
       }
     }
   }
@@ -163,7 +163,7 @@ export async function moderateOutput(
     const result = await checkContent(text, controller.signal);
     if (!result.approved) {
       log.warn("AI-generated content blocked", { reason: result.reason, contentLength: text.length });
-      return "Je ne peux pas répondre à cela. Passons à autre chose.";
+      return "Je suis désolé, je n'ai pas pu générer une réponse appropriée. Puis-je vous aider avec autre chose ?";
     }
     return text;
   } catch (error) {
@@ -173,7 +173,7 @@ export async function moderateOutput(
         log.warn("Fail-open — allowing content through");
         return text;
       }
-      return "Je ne peux pas répondre à cela. Passons à autre chose.";
+      return "Je suis désolé, je n'ai pas pu générer une réponse appropriée. Puis-je vous aider avec autre chose ?";
     }
     throw error;
   } finally {

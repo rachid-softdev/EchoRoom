@@ -18,8 +18,7 @@ import {
   setConversationStatus,
 } from "@/server/services/telephony/conversationState";
 import { detectGoodbye } from "@/server/services/telephony/goodbyeDetector";
-import { checkWebhookRateLimit } from "../../../rateLimit";
-import { extractParams, validateTwilioRequest } from "../../validate";
+import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
 
 const log = createLogger("handle-input");
 
@@ -30,36 +29,11 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  * Processes the speech input, runs the conversation engine, and returns
  * TwiML for the next turn or a hangup if the conversation is done.
  */
-export async function POST(req: NextRequest) {
-  // Enforce body size limit (50KB for Twilio webhooks)
-  const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
-  if (contentLength > 50_000) {
-    return NextResponse.json({ error: "Request too large" }, { status: 413 });
-  }
-
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
-
-  if (!(await checkWebhookRateLimit("twilio:voice:input", ip))) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": "60" } },
-    );
-  }
-
+export const POST = wrapTwilioWebhook("twilio:voice:input", async (req, params) => {
   const { searchParams } = new URL(req.url);
-  const formData = await req.formData();
-  const params = extractParams(formData);
 
-  // Twilio webhook signature validation
-  if (!validateTwilioRequest(req, params)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
-  }
-
-  const callSid = (formData.get("CallSid") as string) ?? "";
-  const speechResult = (formData.get("SpeechResult") as string) ?? "";
+  const callSid = params.callSid;
+  const speechResult = params.speechResult ?? "";
 
   // Résoudre scenario et character depuis le token HMAC
   let scenarioId = "unknown";
@@ -280,7 +254,7 @@ export async function POST(req: NextRequest) {
   return new NextResponse(twiml.toString(), {
     headers: { "Content-Type": "text/xml" },
   });
-}
+});
 
 // -- Helpers --
 
