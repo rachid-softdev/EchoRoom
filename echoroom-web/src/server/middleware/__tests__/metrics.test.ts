@@ -32,9 +32,15 @@ vi.mock("@/server/services/analytics/events", () => ({
 }));
 
 // Mock tRPC middleware to just return the inner function (unwrap wrapper)
-vi.mock("@/server/trpc", () => ({
-  middleware: vi.fn((fn: Function) => fn),
-}));
+vi.mock("@/server/trpc", () => {
+  const chain = {
+    use: vi.fn(() => chain),
+  };
+  return {
+    middleware: vi.fn((fn: Function) => fn),
+    t: { procedure: chain },
+  };
+});
 
 describe("withREDMetrics", () => {
   beforeEach(() => {

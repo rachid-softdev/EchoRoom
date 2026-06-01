@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/cleanup-recordings",
       "schedule": "0 6 * * 0"
+    },
+    {
+      "path": "/api/cron/gdpr-purge",
+      "schedule": "0 4 1 * *"
     }
   ]
 }

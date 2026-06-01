@@ -683,8 +683,9 @@ describe("initiateCall", () => {
         userId: "user-abc",
         date: expect.any(Date),
         callCount: { lt: 10 },
+        totalDurationSeconds: { lt: 36000 },
       },
-      data: { callCount: { increment: 1 } },
+      data: { callCount: { increment: 1 }, totalDurationSeconds: { increment: 600 } },
     });
   });
 

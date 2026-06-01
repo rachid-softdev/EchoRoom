@@ -8,7 +8,7 @@ import {
   withRateLimit,
   withContentModeration,
   withIPRateLimit,
-} from "../trpc";
+} from "../procedures";
 import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { checkContentBlocklist } from "../services/ai/moderation";

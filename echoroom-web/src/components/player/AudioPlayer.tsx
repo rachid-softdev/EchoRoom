@@ -5,10 +5,23 @@ import { Button } from '@/components/ui'
 import { Play, Pause, Download, Clock, Loader2, AlertTriangle } from 'lucide-react'
 
 interface AudioPlayerProps {
+  /** The URL of the audio file to play, or null/undefined when unavailable */
   recordingUrl: string | null | undefined
+  /** Optional title displayed above the player controls */
   title?: string
 }
 
+/**
+ * An audio player with play/pause, seek, and download controls.
+ *
+ * @description Uses the HTML5 Audio API via useRef to manage playback state.
+ * Handles three states: no recording (empty state), loading (spinner), and
+ * error (alert with retry message). When loaded, renders play/pause toggle,
+ * a progress slider, time display, and a download button.
+ * @example
+ * <AudioPlayer recordingUrl="https://example.com/audio.mp3" title="Episode 1" />
+ * @returns A player UI or a fallback state message
+ */
 export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)

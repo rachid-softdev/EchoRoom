@@ -6,7 +6,7 @@ import {
   publicProcedure,
   protectedProcedure,
   withRateLimit,
-} from "../trpc";
+} from "../procedures";
 import { db } from "../db";
 import { userBillingRepository } from "../repositories";
 import { createLogger } from "@/server/lib/logger";

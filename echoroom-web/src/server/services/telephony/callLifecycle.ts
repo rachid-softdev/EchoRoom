@@ -60,6 +60,7 @@ export async function initiateCall(params: StartCallParams) {
       userId: params.userId,
       date: todayStart,
       maxLimit: 10,
+      currentCallDurationSeconds: params.maxDurationSeconds,
     });
 
     // Atomically debit the user

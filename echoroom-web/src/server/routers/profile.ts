@@ -5,7 +5,7 @@ import {
   router,
   protectedProcedure,
   withRateLimit,
-} from "../trpc";
+} from "../procedures";
 import { db } from "../db";
 import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";

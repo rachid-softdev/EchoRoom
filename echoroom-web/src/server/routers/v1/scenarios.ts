@@ -13,7 +13,7 @@ import {
   withRateLimit,
   withContentModeration,
   withIPRateLimit,
-} from "../../trpc";
+} from "../../procedures";
 import { withREDMetrics } from "../../middleware/metrics";
 import { db } from "../../db";
 import { scheduleAsyncModeration } from "../../services/ai/asyncModeration";

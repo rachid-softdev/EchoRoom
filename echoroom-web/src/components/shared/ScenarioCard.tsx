@@ -8,6 +8,18 @@ import { toast } from "@/components/ui";
 import { Heart, MessageCircle, Play, Share2 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
 
+/**
+ * Data shape for a scenario displayed in the card.
+ * @property id - Unique identifier of the scenario
+ * @property title - Scenario display title
+ * @property description - Short narrative description
+ * @property character - Optional associated character (name, slug, category)
+ * @property creator - Optional creator info (username)
+ * @property _count - Aggregated counts (reactions, comments)
+ * @property playCount - Total play count
+ * @property likeCount - Total like count
+ * @property visibility - Scenario visibility status
+ */
 interface ScenarioCardData {
   id: string
   title: string
@@ -21,12 +33,27 @@ interface ScenarioCardData {
 }
 
 interface ScenarioCardProps {
+  /** The scenario data to render */
   scenario: ScenarioCardData
+  /** Optional link destination (defaults to /scenario/{id}) */
   href?: string
+  /** Whether to show the creator's username */
   showCreator?: boolean
+  /** Whether to show the share button */
   showShare?: boolean
 }
 
+/**
+ * A scenario preview card with metadata and navigation.
+ *
+ * @description Renders a clickable card showing the scenario title, description,
+ * character badge, and engagement stats (plays, likes, comments). Links to the
+ * scenario detail page. Optionally displays the creator name and a clipboard
+ * share button.
+ * @example
+ * <ScenarioCard scenario={scenario} showShare />
+ * @returns A linked card element wrapping scenario metadata
+ */
 export function ScenarioCard({
   scenario,
   href = `/scenario/${scenario.id}`,

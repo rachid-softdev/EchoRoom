@@ -4,6 +4,14 @@ import { Skeleton } from "@/components/ui";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui";
 
+/**
+ * Generic query result shape accepted by DataLoader.
+ * @property data - The resolved data payload, undefined while loading
+ * @property isLoading - Whether the query is in flight
+ * @property isError - Whether the query failed
+ * @property error - Optional error object with a message
+ * @property refetch - Function to re-run the query
+ */
 interface DataLoaderProps<T> {
   query: {
     data: T | undefined
@@ -12,13 +20,32 @@ interface DataLoaderProps<T> {
     error?: { message?: string } | null
     refetch: () => void
   }
+  /** Render function called with non-null data when loaded */
   children: (data: NonNullable<T>) => React.ReactNode
+  /** Custom empty state content (replaces the default "Aucun résultat") */
   empty?: React.ReactNode
+  /** Custom function to determine if data is considered empty */
   isEmpty?: (data: T) => boolean
+  /** Number of skeleton placeholders to show while loading (default 3) */
   skeletonCount?: number
+  /** Custom skeleton content (replaces the default grid of skeletons) */
   skeleton?: React.ReactNode
 }
 
+/**
+ * A generic data-loading component handling loading, error, and empty states.
+ *
+ * @description Wraps a TanStack Query-like result object and renders the
+ * appropriate UI: a skeleton placeholder while loading, an error view with a
+ * retry button on failure, an empty state when data is absent (or passes an
+ * optional isEmpty check), or the children render function with the resolved
+ * data.
+ * @example
+ * <DataLoader query={trpcQuery} isEmpty={(d) => d.items.length === 0}>
+ *   {(data) => <List items={data.items} />}
+ * </DataLoader>
+ * @returns A React node for loading, error, empty, or the children output
+ */
 export function DataLoader<T>({
   query,
   children,

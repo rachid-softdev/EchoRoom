@@ -6,6 +6,17 @@ import { Button } from "@/components/ui";
 import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
 
+/**
+ * An alert banner shown when the user has withdrawn consent.
+ *
+ * @description Fetches the user's consent status via tRPC query. If consent
+ * has been withdrawn, renders a warning alert with a button to re-accept the
+ * terms. Returns null when consent is active, so the banner is invisible by
+ * default.
+ * @example
+ * <ConsentBanner />
+ * @returns A warning alert element, or null when consent is active
+ */
 export function ConsentBanner() {
   const [isReconsenting, setIsReconsenting] = useState(false);
   const { data: consentStatus } = api.user.getConsentStatus.useQuery(undefined, {

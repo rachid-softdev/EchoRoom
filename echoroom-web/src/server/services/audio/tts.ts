@@ -1,8 +1,11 @@
 import { ElevenLabsClient } from "elevenlabs";
 import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
+import { createElevenLabsCircuitBreaker } from "@/server/lib/circuitBreaker";
+import { getRequestId } from "@/server/lib/requestContext";
 
 const log = createLogger("tts");
+const elevenlabsCircuitBreaker = createElevenLabsCircuitBreaker();
 
 let ttsClient: ElevenLabsClient | null = null;
 
@@ -24,12 +27,16 @@ export async function synthesizeSpeech(
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
+    log.info("TTS request", { requestId: getRequestId(), textLength: text.length, voiceId });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK RequestOptions doesn't expose signal
-    const response = await (ttsClient.textToSpeech.convert as any)(voiceId, {
-      text,
-      model_id: "eleven_flash_v2_5",
-      output_format: "ulaw_8000",
-    }, { signal: controller.signal });
+    const response: any = await elevenlabsCircuitBreaker.call(() =>
+      (ttsClient!.textToSpeech.convert as any)(voiceId, {
+        text,
+        model_id: "eleven_flash_v2_5",
+        output_format: "ulaw_8000",
+      }, { signal: controller.signal })
+    );
 
     // Convert the stream to ArrayBuffer
     const chunks: Uint8Array[] = [];

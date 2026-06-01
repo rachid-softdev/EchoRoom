@@ -1,5 +1,10 @@
 import { getOpenAIClient } from "@/lib/openai";
+import { createLogger } from "@/server/lib/logger";
+import { createOpenAICircuitBreaker } from "@/server/lib/circuitBreaker";
 import { moderateOutput } from "./moderation";
+
+const log = createLogger("conversation-engine");
+const openaiCircuitBreaker = createOpenAICircuitBreaker();
 
 interface ConversationMessage {
   role: "user" | "assistant" | "system";
@@ -35,11 +40,19 @@ export async function generateResponse(
     ...options.messages,
   ];
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: allMessages,
-    max_tokens: options.maxTokens ?? 300,
-    temperature: 0.8,
+  const completion = await openaiCircuitBreaker.call(() =>
+    openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: allMessages,
+      max_tokens: options.maxTokens ?? 300,
+      temperature: 0.8,
+    }),
+  );
+
+  log.info("OpenAI completion", {
+    tokensUsed: completion.usage?.total_tokens,
+    promptTokens: completion.usage?.prompt_tokens,
+    completionTokens: completion.usage?.completion_tokens,
   });
 
   const response = completion.choices[0]?.message?.content ?? "Je n'ai rien à dire...";
@@ -62,20 +75,28 @@ export async function generateScript(characterPrompt: string, userInput: string)
     return "Moteur IA indisponible.";
   }
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `Tu génères une réplique pour un personnage IA. ${characterPrompt}. Réponds en français, de manière naturelle et parlée.`,
-      },
-      {
-        role: "user",
-        content: userInput,
-      },
-    ],
-    max_tokens: 200,
-    temperature: 0.9,
+  const completion = await openaiCircuitBreaker.call(() =>
+    openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `Tu génères une réplique pour un personnage IA. ${characterPrompt}. Réponds en français, de manière naturelle et parlée.`,
+        },
+        {
+          role: "user",
+          content: userInput,
+        },
+      ],
+      max_tokens: 200,
+      temperature: 0.9,
+    }),
+  );
+
+  log.info("OpenAI completion", {
+    tokensUsed: completion.usage?.total_tokens,
+    promptTokens: completion.usage?.prompt_tokens,
+    completionTokens: completion.usage?.completion_tokens,
   });
 
   const response = completion.choices[0]?.message?.content ?? "...";

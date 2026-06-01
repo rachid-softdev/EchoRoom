@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../trpc";
+import { router, protectedProcedure } from "../procedures";
 import { createCheckoutSession } from "../services/billing/stripe";
 import { env } from "@/lib/env";
 import { userBillingRepository } from "../repositories";

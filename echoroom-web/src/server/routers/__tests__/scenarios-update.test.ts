@@ -19,6 +19,10 @@ vi.mock("@/server/db", () => ({
 }));
 
 vi.mock("@/server/trpc", () => {
+  const tChain = {
+    use: vi.fn(() => tChain),
+  };
+
   const createChain = () => {
     const chain: any = (() => chain) as any;
     chain.input = vi.fn(() => chain);
@@ -34,6 +38,7 @@ vi.mock("@/server/trpc", () => {
   };
 
   return {
+    t: { procedure: createChain() },
     router: vi.fn((routes: Record<string, unknown>) => routes),
     publicProcedure: createChain(),
     protectedProcedure: createChain(),
@@ -41,6 +46,9 @@ vi.mock("@/server/trpc", () => {
     withRateLimit: vi.fn(() => (opts: { next: Function }) => opts.next()),
     withContentModeration: vi.fn(() => (opts: { next: Function }) => opts.next()),
     withIPRateLimit: vi.fn(() => (opts: { next: Function }) => opts.next()),
+    withTracing: vi.fn(() => tChain),
+    isAuthenticated: tChain,
+    isAdmin: tChain,
   };
 });
 

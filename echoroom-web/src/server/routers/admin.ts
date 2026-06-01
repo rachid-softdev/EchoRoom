@@ -8,7 +8,7 @@ import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
-import { adminProcedure, router } from "../trpc";
+import { adminProcedure, router } from "../procedures";
 
 function hashPhoneForAudit(phone: string): string {
   // HMAC avec AUDIT_HASH_SECRET comme sel pour empêcher les rainbow tables

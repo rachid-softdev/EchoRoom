@@ -10,7 +10,7 @@ import {
   router,
   withIPRateLimit,
   withRateLimit,
-} from "../trpc";
+} from "../procedures";
 
 export const socialRouter = router({
   toggleLike: protectedProcedure
