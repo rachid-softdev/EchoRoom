@@ -1,12 +1,16 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withRateLimit } from "../trpc";
+import { router, protectedProcedure, withRateLimit } from "../procedures";
 import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { initiateCall } from "../services/telephony/callLifecycle";
 import { getPresignedUrl } from "../services/audio/r2";
 import { AppError } from "../lib/errors";
 import { getUTCDayRange } from "../lib/date";
+import { redis } from "@/lib/redis";
+import { createLogger } from "@/server/lib/logger";
+
+const log = createLogger("calls-cache");
 
 export const callsRouter = router({
   start: protectedProcedure
@@ -49,6 +53,18 @@ export const callsRouter = router({
           data: { playCount: { increment: 1 } },
         });
 
+        // Invalidate user's history cache
+        if (redis) {
+          try {
+            const keys = await redis.keys(`cache:calls:history:${ctx.session.user.id}:*`);
+            if (keys.length > 0) {
+              await redis.del(...keys);
+            }
+          } catch (error) {
+            log.warn("History cache invalidation failed", { error });
+          }
+        }
+
         return result;
       } catch (error) {
         if (error instanceof AppError) {
@@ -80,6 +96,17 @@ export const callsRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
+      const cacheKey = `cache:calls:history:${ctx.session.user.id}:${input.cursor ?? "first"}:${input.limit}`;
+
+      if (redis) {
+        try {
+          const cached = await redis.get<{ items: unknown[]; nextCursor: string | undefined }>(cacheKey);
+          if (cached) return cached;
+        } catch (error) {
+          log.warn("History cache read failed", { error });
+        }
+      }
+
       const calls = await db.call.findMany({
         where: { userId: ctx.session.user.id },
         take: input.limit + 1,
@@ -100,7 +127,17 @@ export const callsRouter = router({
       const nextCursor =
         calls.length > input.limit ? items[items.length - 1]?.id : undefined;
 
-      return { items, nextCursor };
+      const result = { items, nextCursor };
+
+      if (redis) {
+        try {
+          await redis.set(cacheKey, JSON.stringify(result), { ex: 30 });
+        } catch (error) {
+          log.warn("History cache write failed", { error });
+        }
+      }
+
+      return result;
     }),
 
   todayCount: protectedProcedure

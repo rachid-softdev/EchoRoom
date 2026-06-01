@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
 import { Checkbox } from "@/components/ui";
 import { Phone, Loader2 } from "lucide-react";
+import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -68,17 +69,15 @@ export default function RegisterPage() {
     }
   }
 
-  function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  const passwordStrength = useMemo(() => {
     let score = 0;
     if (password.length >= 8) score++;
     if (password.length >= 12) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    const labels = ["Très faible", "Faible", "Moyen", "Fort", "Très fort"];
-    const colors = ["bg-destructive", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500"];
-    return { score, label: labels[score] ?? "", color: colors[score] ?? "" };
-  }
+    return score;
+  }, [password]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6">
@@ -144,17 +143,7 @@ export default function RegisterPage() {
                 aria-describedby={error ? "register-error" : undefined}
               />
               {password.length > 0 && (
-                <div className="space-y-1">
-                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${getPasswordStrength(password).color}`}
-                      style={{ width: `${(getPasswordStrength(password).score / 5) * 100}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Force : {getPasswordStrength(password).label}
-                  </p>
-                </div>
+                <PasswordStrengthMeter password={password} />
               )}
             </div>
 
@@ -177,7 +166,7 @@ export default function RegisterPage() {
               </label>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !consentAccepted}>
+            <Button type="submit" className="w-full" disabled={loading || !consentAccepted || passwordStrength < 4}>
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (

@@ -12,18 +12,39 @@ import { Button } from '@/components/ui'
 import { Loader2 } from 'lucide-react'
 
 interface ConfirmDialogProps {
+  /** Whether the dialog is visible */
   open: boolean
+  /** Callback to toggle dialog visibility */
   onOpenChange: (open: boolean) => void
+  /** Dialog title text */
   title: string
+  /** Dialog description body (string or rich content) */
   description: string | React.ReactNode
+  /** Label for the confirm button (default "Confirmer") */
   confirmLabel?: string
+  /** Label for the cancel button (default "Annuler") */
   cancelLabel?: string
+  /** Visual variant: "default" or "destructive" (default "default") */
   variant?: 'default' | 'destructive'
+  /** Handler invoked when the user confirms */
   onConfirm: () => void
+  /** Whether the confirm action is in progress (shows spinner) */
   loading?: boolean
+  /** Whether the confirm button is disabled */
   confirmDisabled?: boolean
 }
 
+/**
+ * A confirmation dialog built on shadcn/ui Dialog.
+ *
+ * @description Renders a modal overlay with title, description, and two action
+ * buttons (cancel / confirm). Supports a destructive variant for dangerous
+ * actions and a loading state that disables both buttons and shows a spinner
+ * on the confirm button.
+ * @example
+ * <ConfirmDialog open={isOpen} onOpenChange={setIsOpen} title="Supprimer ?" description="Cette action est irréversible." variant="destructive" onConfirm={handleDelete} />
+ * @returns A Dialog component with header, description, and footer buttons
+ */
 export function ConfirmDialog({
   open,
   onOpenChange,

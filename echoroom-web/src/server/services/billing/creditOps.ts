@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { AppError } from "@/server/lib/errors";
 
 type TransactionClient = Omit<
@@ -110,37 +111,52 @@ export async function atomicSafeDecrement(
   }
 
   // Try UserBilling first
-  const billingResult = await tx.userBilling.updateMany({
-    where: {
-      userId: params.userId,
-      credits: { gte: params.amount },
-    },
-    data: {
-      credits: { decrement: params.amount },
-    },
-  });
+  try {
+    const billingResult = await tx.userBilling.updateMany({
+      where: {
+        userId: params.userId,
+        credits: { gte: params.amount },
+      },
+      data: {
+        credits: { decrement: params.amount },
+      },
+    });
 
-  if (billingResult.count > 0) return;
+    if (billingResult.count > 0) return;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2014") {
+      throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
+    }
+    throw error;
+  }
 
   // Fallback: legacy User.credits
-  const result = await tx.user.updateMany({
-    where: {
-      id: params.userId,
-      credits: { gte: params.amount },
-    },
-    data: {
-      credits: { decrement: params.amount },
-    },
-  });
-
-  if (result.count === 0) {
-    const user = await tx.user.findUnique({
-      where: { id: params.userId },
-      select: { id: true },
+  try {
+    const result = await tx.user.updateMany({
+      where: {
+        id: params.userId,
+        credits: { gte: params.amount },
+      },
+      data: {
+        credits: { decrement: params.amount },
+      },
     });
-    if (!user) {
-      throw new AppError("USER_NOT_FOUND", "Utilisateur introuvable");
+
+    if (result.count === 0) {
+      const user = await tx.user.findUnique({
+        where: { id: params.userId },
+        select: { id: true },
+      });
+      if (!user) {
+        throw new AppError("USER_NOT_FOUND", "Utilisateur introuvable");
+      }
+      throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
     }
-    throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2014") {
+      throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
+    }
+    throw error;
   }
 }

@@ -54,12 +54,12 @@ describe("atomicIncrementDailyLimit", () => {
     expect(mockUpdateMany).toHaveBeenCalledTimes(1);
     expect(mockUpdateMany).toHaveBeenCalledWith({
       where: { userId, date, callCount: { lt: maxLimit } },
-      data: { callCount: { increment: 1 } },
+      data: { callCount: { increment: 1 }, totalDurationSeconds: { increment: 0 } },
     });
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     expect(mockCreate).toHaveBeenCalledWith({
-      data: { userId, date, callCount: 1 },
+      data: { userId, date, callCount: 1, totalDurationSeconds: 0 },
     });
   });
 
@@ -77,7 +77,7 @@ describe("atomicIncrementDailyLimit", () => {
     expect(mockUpdateMany).toHaveBeenCalledTimes(1);
     expect(mockUpdateMany).toHaveBeenCalledWith({
       where: { userId, date, callCount: { lt: maxLimit } },
-      data: { callCount: { increment: 1 } },
+      data: { callCount: { increment: 1 }, totalDurationSeconds: { increment: 0 } },
     });
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -120,7 +120,7 @@ describe("atomicIncrementDailyLimit", () => {
     } catch (e) {
       expect(e).toBeInstanceOf(AppError);
       expect((e as AppError).message).toBe(
-        "Limite quotidienne d'appels atteinte (10/jour)",
+        "Limite quotidienne de durée d'appels atteinte",
       );
     }
 
@@ -191,7 +191,7 @@ describe("atomicIncrementDailyLimit", () => {
 
     await expect(
       atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit }),
-    ).rejects.toThrow("Limite quotidienne d'appels atteinte");
+    ).rejects.toThrow("Limite quotidienne de durée d'appels atteinte");
   });
 
   // -----------------------------------------------------------------------
@@ -242,7 +242,7 @@ describe("atomicIncrementDailyLimit", () => {
     await atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit: 1 });
 
     expect(mockCreate).toHaveBeenCalledWith({
-      data: { userId, date, callCount: 1 },
+      data: { userId, date, callCount: 1, totalDurationSeconds: 0 },
     });
   });
 
@@ -258,6 +258,6 @@ describe("atomicIncrementDailyLimit", () => {
 
     await expect(
       atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit: 1 }),
-    ).rejects.toThrow("Limite quotidienne d'appels atteinte");
+    ).rejects.toThrow("Limite quotidienne de durée d'appels atteinte");
   });
 });

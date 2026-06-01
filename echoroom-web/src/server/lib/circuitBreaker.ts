@@ -136,3 +136,11 @@ export function createTwilioCircuitBreaker(): CircuitBreaker {
 export function createOpenAICircuitBreaker(): CircuitBreaker {
   return new CircuitBreaker(3, 2, 15_000, "openai");
 }
+
+export function createElevenLabsCircuitBreaker(): CircuitBreaker {
+  return new CircuitBreaker(5, 3, 15_000, "elevenlabs");
+}
+
+export function createDeepgramCircuitBreaker(): CircuitBreaker {
+  return new CircuitBreaker(5, 3, 15_000, "deepgram");
+}

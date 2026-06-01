@@ -54,12 +54,16 @@ vi.mock("@/server/trpc", () => {
   };
 
   return {
+    t: { procedure: chain },
     router: vi.fn((routes: Record<string, unknown>) => routes),
     publicProcedure: chain,
     protectedProcedure: chain,
     adminProcedure: chain,
     middleware: vi.fn((fn: Function) => fn),
     withRateLimit: vi.fn(() => (opts: { next: Function }) => opts.next()),
+    withTracing: vi.fn(() => chain),
+    isAuthenticated: chain,
+    isAdmin: chain,
   };
 });
 

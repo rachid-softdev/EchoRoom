@@ -234,6 +234,7 @@ model Reaction {
 
   @@unique([userId, scenarioId, emoji])
   @@index([scenarioId])
+  @@index([scenarioId, emoji])
 }
 
 model ShareEvent {
@@ -310,7 +311,7 @@ model Clip {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([callId])
-  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Badge {
@@ -401,13 +402,15 @@ model BlockedNumber {
 }
 
 model DailyCallLimit {
-  id        String   @id @default(cuid())
-  userId    String
-  date      DateTime
-  callCount Int      @default(0)
+  id                  String   @id @default(cuid())
+  userId              String
+  date                DateTime
+  callCount           Int      @default(0)
+  totalDurationSeconds Int     @default(0)
 
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, date])
   @@index([userId])
+  @@index([date])
 }

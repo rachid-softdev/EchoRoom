@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure } from "../procedures";
 import { db } from "../db";
+import { getCachedCharacters, setCachedCharacters } from "../services/cache/characterCache";
+import type { Character } from "@prisma/client";
+
+type CachedCharacter = Pick<Character, "id" | "name" | "slug" | "description" | "previewAudioUrl" | "avatarUrl" | "category" | "isFeatured">;
 
 export const charactersRouter = router({
   list: publicProcedure
@@ -14,6 +18,10 @@ export const charactersRouter = router({
         .optional(),
     )
     .query(async ({ input }) => {
+      const cacheParams = { category: input?.category };
+      const cached = await getCachedCharacters<CachedCharacter[]>(cacheParams);
+      if (cached) return cached;
+
       const where = input?.category ? { category: input.category } : {};
 
       const characters = await db.character.findMany({
@@ -31,6 +39,7 @@ export const charactersRouter = router({
         },
       });
 
+      await setCachedCharacters(characters, cacheParams);
       return characters;
     }),
 

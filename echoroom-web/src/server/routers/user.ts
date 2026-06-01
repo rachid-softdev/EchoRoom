@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withRateLimit } from "../trpc";
+import { router, protectedProcedure, withRateLimit } from "../procedures";
 import { db } from "../db";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
 export const userRouter = router({

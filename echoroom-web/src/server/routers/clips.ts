@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withIPRateLimit, withRateLimit, withContentModeration } from "../trpc";
+import { router, protectedProcedure, withIPRateLimit, withRateLimit, withContentModeration } from "../procedures";
 import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { createClip, deleteClip, getClips } from "../services/social/clips";

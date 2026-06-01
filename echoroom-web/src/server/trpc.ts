@@ -75,7 +75,7 @@ function sanitizeRequestId(raw: string | null | undefined): string | null {
 
 export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
-const t = initTRPC.context<TRPCContext>().create({
+export const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -126,7 +126,7 @@ export interface AdminTRPCContext extends Omit<TRPCContext, "session"> {
   session: AdminSession;
 }
 
-const isAuthenticated = middleware(({ ctx, next }) => {
+export const isAuthenticated = middleware(({ ctx, next }) => {
   if (!ctx.session?.user?.id) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -148,7 +148,7 @@ const isAuthenticated = middleware(({ ctx, next }) => {
   });
 });
 
-const isAdmin = middleware(({ ctx, next }) => {
+export const isAdmin = middleware(({ ctx, next }) => {
   if (ctx.session?.user?.role !== "ADMIN") {
     throw new TRPCError({
       code: "FORBIDDEN",

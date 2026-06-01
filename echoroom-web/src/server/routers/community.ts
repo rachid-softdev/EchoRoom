@@ -7,7 +7,7 @@ import {
   withRateLimit,
   withContentModeration,
   withIPRateLimit,
-} from "../trpc";
+} from "../procedures";
 import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
