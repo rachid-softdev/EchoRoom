@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@echoroom/ui"],
-
   async headers() {
     const cspHeader = [
       `default-src 'self'`,

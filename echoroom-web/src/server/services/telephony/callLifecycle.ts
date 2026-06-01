@@ -8,6 +8,7 @@ import { createLogger } from "@/server/lib/logger";
 import { encryptPhoneNumber } from "@/server/lib/encryption";
 import { createTwilioToken } from "@/server/lib/twilioToken";
 import { getUTCDayRange } from "@/server/lib/date";
+import { scenarioRepository, callRepository } from "@/server/repositories";
 
 const log = createLogger("call-lifecycle");
 
@@ -44,10 +45,7 @@ interface StartCallParams {
 }
 
 export async function initiateCall(params: StartCallParams) {
-  const scenario = await db.scenario.findUnique({
-    where: { id: params.scenarioId },
-    include: { character: true },
-  });
+  const scenario = await scenarioRepository.findByIdWithCharacter(params.scenarioId);
 
   if (!scenario) {
     throw new AppError("SCENARIO_NOT_FOUND", "Scénario introuvable");
@@ -118,35 +116,14 @@ export async function initiateCall(params: StartCallParams) {
     );
 
     // Update call with Twilio SID and status — only if still CALLING
-    await db.call.updateMany({
-      where: { id: call.id, status: "CALLING" },
-      data: { status: "RINGING", twilioCallSid: twilioCall.sid },
+    await callRepository.updateStatusWithGuard(call.id, "CALLING", "RINGING", {
+      twilioCallSid: twilioCall.sid,
     });
 
     return { callId: call.id, estimatedCredits: 1 };
   } catch (error) {
-    // Step 3: Atomic refund on failure — wrapped in $transaction to ensure
-    // status update + credit refund are committed atomically.
-    // Uses the call's actual costCredits (not hardcoded 1) for correctness.
-    await db.$transaction(async (tx) => {
-      const refundResult = await tx.call.updateMany({
-        where: { id: call.id, status: "CALLING" },
-        data: { status: "FAILED" },
-      });
-
-      if (refundResult.count > 0) {
-        const failedCall = await tx.call.findUnique({
-          where: { id: call.id },
-          select: { costCredits: true },
-        });
-        if (failedCall) {
-          await tx.user.update({
-            where: { id: params.userId },
-            data: { credits: { increment: failedCall.costCredits } },
-          });
-        }
-      }
-    });
+    // Step 3: Atomic refund on failure — delegates to repository for consistency
+    await callRepository.markAsFailedWithRefund(call.id, 0);
 
     // Log server-side with full error context
     log.error("Twilio call initiation failed", { error });
@@ -159,42 +136,6 @@ export async function failCall(
   callId: string,
   durationSeconds: number = 0,
 ) {
-  // Idempotent refund inside an atomic transaction.
-  // Uses updateMany with a status guard to prevent TOCTOU race conditions
-  // under PostgreSQL READ COMMITTED isolation. The read-then-check pattern
-  // would allow two concurrent transactions to both see status="PENDING"
-  // and both refund — updateMany with WHERE status NOT IN (FAILED, COMPLETED)
-  // ensures only one transaction succeeds atomically.
-  await db.$transaction(async (tx) => {
-    // Atomically claim the FAILED status — only succeeds if not already
-    // failed or completed. Returns 0 rows affected if already processed.
-    const updateResult = await tx.call.updateMany({
-      where: {
-        id: callId,
-        status: { notIn: ["FAILED", "COMPLETED"] },
-      },
-      data: {
-        status: "FAILED",
-        durationSeconds,
-        endedAt: new Date(),
-      },
-    });
-
-    // If no rows were updated, the call was already finalised — skip refund
-    if (updateResult.count === 0) return;
-
-    // Fetch the call to get userId and costCredits for the refund
-    const call = await tx.call.findUnique({
-      where: { id: callId },
-      select: { userId: true, costCredits: true },
-    });
-
-    if (!call) return; // Should never happen after a successful update, but safety check
-
-    // Refund credits to the user
-    await tx.user.update({
-      where: { id: call.userId },
-      data: { credits: { increment: call.costCredits } },
-    });
-  });
+  // Delegates to CallRepository for consistency
+  await callRepository.markAsFailedWithRefund(callId, durationSeconds);
 }

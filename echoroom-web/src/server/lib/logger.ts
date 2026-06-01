@@ -1,3 +1,5 @@
+import { getRequestId } from "./requestContext";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogEntry {
@@ -59,12 +61,18 @@ function serializeMeta(meta?: Record<string, unknown>): Record<string, unknown> 
 function writeEntry(level: LogLevel, module: string, message: string, meta?: Record<string, unknown>): void {
   if (!shouldLog(level)) return;
 
+  const serializedMeta = serializeMeta(meta);
+  const requestId = getRequestId();
+  const enhancedMeta = requestId !== "no-request-id"
+    ? { ...serializedMeta, requestId }
+    : serializedMeta;
+
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
     module,
     message,
-    meta: serializeMeta(meta),
+    meta: enhancedMeta,
   };
 
   const line = JSON.stringify(entry);

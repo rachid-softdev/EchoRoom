@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Settings, LayoutDashboard, PlusCircle, Library, Clock, Users, Trophy, CreditCard, Phone } from 'lucide-react'
 import { Button, cn } from '@/components/ui'
 import { CreditDisplay } from './CreditDisplay'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -64,6 +65,7 @@ export function DashboardShell({
         <div className="flex items-center gap-2 shrink-0">
           <CreditDisplay />
           {actions}
+          <ThemeToggle />
           <Link href="/settings">
             <Button variant="ghost" size="icon" aria-label="Paramètres">
               <Settings className="w-4 h-4" />
