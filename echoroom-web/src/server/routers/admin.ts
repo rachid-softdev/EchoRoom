@@ -472,14 +472,19 @@ export const adminRouter = router({
         id: true,
         email: true,
         username: true,
-        displayName: true,
         role: true,
-        credits: true,
-        totalLikesReceived: true,
-        totalCallsMade: true,
         consentAcceptedAt: true,
         deletedAt: true,
         createdAt: true,
+        // Legacy fields
+        displayName: true,
+        credits: true,
+        totalLikesReceived: true,
+        totalCallsMade: true,
+        // Sub-aggregates
+        profile: { select: { displayName: true, image: true, bio: true } },
+        billing: { select: { credits: true } },
+        social: { select: { totalLikesReceived: true, totalCallsMade: true } },
         _count: {
           select: {
             scenarios: true,
@@ -498,7 +503,14 @@ export const adminRouter = router({
       });
     }
 
-    return user;
+    // Merge sub-aggregate values with legacy fields for the frontend
+    return {
+      ...user,
+      displayName: user.profile?.displayName ?? user.displayName ?? null,
+      credits: user.billing?.credits ?? user.credits,
+      totalLikesReceived: user.social?.totalLikesReceived ?? user.totalLikesReceived,
+      totalCallsMade: user.social?.totalCallsMade ?? user.totalCallsMade,
+    };
   }),
 
   listUsers: adminProcedure
@@ -528,10 +540,14 @@ export const adminRouter = router({
           email: true,
           username: true,
           role: true,
-          credits: true,
-          totalCallsMade: true,
           deletedAt: true,
           createdAt: true,
+          // Legacy fields
+          credits: true,
+          totalCallsMade: true,
+          // Sub-aggregates
+          billing: { select: { credits: true } },
+          social: { select: { totalCallsMade: true } },
           _count: {
             select: {
               scenarios: true,
@@ -541,7 +557,11 @@ export const adminRouter = router({
         },
       });
 
-      const items = users.slice(0, input.limit);
+      const items = users.slice(0, input.limit).map((u) => ({
+        ...u,
+        credits: u.billing?.credits ?? u.credits,
+        totalCallsMade: u.social?.totalCallsMade ?? u.totalCallsMade,
+      }));
       const nextCursor = users.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };

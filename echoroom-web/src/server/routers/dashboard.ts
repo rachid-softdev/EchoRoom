@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
 import { db } from "../db";
+import { userBillingRepository } from "../repositories";
 import { getUTCDayRange } from "../lib/date";
 
 export const dashboardRouter = router({
@@ -24,11 +25,8 @@ export const dashboardRouter = router({
       const { todayStart, todayEnd } = getUTCDayRange();
 
       // Run all queries in parallel for optimal performance
-      const [user, recentCalls, todayCount, scenarios] = await Promise.all([
-        db.user.findUnique({
-          where: { id: userId },
-          select: { credits: true },
-        }),
+      const [billing, recentCalls, todayCount, scenarios] = await Promise.all([
+        userBillingRepository.findByUserId(userId),
         db.call.findMany({
           where: { userId },
           take: input.callsLimit + 1,
@@ -63,7 +61,7 @@ export const dashboardRouter = router({
       ]);
 
       return {
-        credits: user?.credits ?? 0,
+        credits: billing?.credits ?? 0,
         calls: recentCalls.slice(0, input.callsLimit),
         todayCount,
         scenarios: scenarios.slice(0, input.scenariosLimit),

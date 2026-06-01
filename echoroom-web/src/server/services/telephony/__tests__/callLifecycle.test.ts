@@ -16,6 +16,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 //   4. On success: updateMany WHERE status=CALLING → RINGING (idempotent guard)
 //   5. On Twilio error: updateMany WHERE status=CALLING → FAILED + refund
 //
+// Sprint 4: atomicDebit prefers UserBilling sub-aggregate (tx.userBilling.updateMany)
+//           falls back to legacy User.credits (tx.user.updateMany)
+//
 // withRetry provides exponential backoff with jitter.
 
 vi.mock("@/server/db", () => ({
@@ -249,7 +252,11 @@ describe("initiateCall", () => {
     (repos.callRepository.updateStatusWithGuard as any).mockResolvedValue(1);
 
     // Default transaction mock — happy path: sufficient credits + daily limit ok
+    // Sprint 4: atomicDebit prefers UserBilling sub-aggregate
     mockTx = {
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       dailyCallLimit: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         create: vi.fn(),
@@ -321,7 +328,7 @@ describe("initiateCall", () => {
     expect(encryptPhoneNumber).toHaveBeenCalledWith("+33612345678");
   });
 
-  it("should debit 1 credit via atomicDebit inside the transaction", async () => {
+  it("should debit 1 credit via UserBilling inside the transaction", async () => {
     const { db } = await import("@/server/db");
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
@@ -338,7 +345,35 @@ describe("initiateCall", () => {
       maxDurationSeconds: 600,
     });
 
-    // atomicDebit internally calls tx.user.updateMany with credits gte condition
+    // Sprint 4: atomicDebit prefers UserBilling sub-aggregate
+    expect(mockTx.userBilling.updateMany).toHaveBeenCalledWith({
+      where: { userId: "user-abc", credits: { gte: 1 } },
+      data: { credits: { decrement: 1 } },
+    });
+  });
+
+  it("should fall back to legacy User.credits when UserBilling has insufficient credits", async () => {
+    const { db } = await import("@/server/db");
+    const { twilioClient } = await import("@/server/services/telephony/twilio");
+    const { scenarioRepository } = await import("@/server/repositories");
+
+    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
+    // UserBilling returns 0 credits, fallback User returns 1
+    mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
+    mockTx.user.updateMany.mockResolvedValue({ count: 1 });
+    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+
+    const { initiateCall } = await import("../callLifecycle");
+    await initiateCall({
+      scenarioId: "scenario-1",
+      userId: "user-abc",
+      phoneNumber: "+33612345678",
+      maxDurationSeconds: 600,
+    });
+
+    // Should have tried UserBilling first, then fallen back to legacy
+    expect(mockTx.userBilling.updateMany).toHaveBeenCalled();
     expect(mockTx.user.updateMany).toHaveBeenCalledWith({
       where: { id: "user-abc", credits: { gte: 1 } },
       data: { credits: { decrement: 1 } },
@@ -442,13 +477,14 @@ describe("initiateCall", () => {
     expect(db.$transaction).not.toHaveBeenCalled();
   });
 
-  it("should throw INSUFFICIENT_CREDITS when atomicDebit returns insufficient credits", async () => {
+  it("should throw INSUFFICIENT_CREDITS when UserBilling debit fails and legacy also fails", async () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
 
     (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
 
-    // Transaction mock where updateMany returns 0 (insufficient credits) and user exists
+    // Both UserBilling and legacy updateMany return 0 (insufficient credits)
+    mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
     mockTx.user.updateMany.mockResolvedValue({ count: 0 });
     mockTx.user.findUnique.mockResolvedValue({ id: "user-abc" });
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
@@ -465,13 +501,14 @@ describe("initiateCall", () => {
     ).rejects.toThrow("Crédits insuffisants");
   });
 
-  it("should throw USER_NOT_FOUND when atomicDebit returns user not found", async () => {
+  it("should throw USER_NOT_FOUND when UserBilling and legacy both fail and user doesn't exist", async () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
 
     (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
 
-    // Transaction mock where updateMany returns 0 and user doesn't exist
+    // Both UserBilling and legacy updateMany return 0
+    mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
     mockTx.user.updateMany.mockResolvedValue({ count: 0 });
     mockTx.user.findUnique.mockResolvedValue(null);
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
@@ -766,8 +803,8 @@ describe("initiateCall", () => {
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     // dailyCallLimit.updateMany = daily limit check
     expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalled();
-    // user.updateMany = atomic debit
-    expect(mockTx.user.updateMany).toHaveBeenCalled();
+    // userBilling.updateMany = atomic debit (Sprint 4: prefers UserBilling)
+    expect(mockTx.userBilling.updateMany).toHaveBeenCalled();
     // call.create = call record
     expect(mockTx.call.create).toHaveBeenCalled();
   });

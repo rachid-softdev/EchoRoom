@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         include: { scenario: { include: { character: true } } },
       });
 
-      if (callRecord) {
+      if (callRecord?.scenarioId && callRecord.scenario) {
         callId = callRecord.id;
         scenarioId = callRecord.scenarioId;
         characterId = callRecord.scenario.characterId;

@@ -8,6 +8,7 @@ import {
   withRateLimit,
 } from "../trpc";
 import { db } from "../db";
+import { userBillingRepository } from "../repositories";
 import { createLogger } from "@/server/lib/logger";
 
 const log = createLogger("auth");
@@ -92,6 +93,9 @@ export const authRouter = router({
         },
       });
 
+      // Initialize UserBilling sub-aggregate with default credits
+      await userBillingRepository.upsert(user.id);
+
       return { userId: user.id };
     }),
 
@@ -156,8 +160,11 @@ export const authRouter = router({
         email: true,
         username: true,
         role: true,
-        credits: true,
         image: true,
+        credits: true, // Legacy field
+        billing: {
+          select: { credits: true },
+        },
       },
     });
 
@@ -168,6 +175,8 @@ export const authRouter = router({
       });
     }
 
-    return user;
+    // Use UserBilling credits if available, fall back to legacy
+    const credits = user.billing?.credits ?? user.credits;
+    return { ...user, credits };
   }),
 });

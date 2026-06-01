@@ -87,6 +87,12 @@ export async function POST(req: NextRequest) {
             where: { id: userId },
             data: { credits: { increment: credits } },
           });
+          // Also update UserBilling sub-aggregate
+          await tx.userBilling.upsert({
+            where: { userId },
+            create: { userId, credits },
+            update: { credits: { increment: credits } },
+          });
         });
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

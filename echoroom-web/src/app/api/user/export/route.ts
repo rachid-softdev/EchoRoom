@@ -76,25 +76,30 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Fetch user profile
+  // Fetch user profile (includes sub-aggregates)
   const userData = await db.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       email: true,
       username: true,
-      displayName: true,
-      bio: true,
-      image: true,
       role: true,
-      credits: true,
-      totalLikesReceived: true,
-      totalCallsMade: true,
       consentAcceptedAt: true,
       gdprDataExportedAt: true,
       deletedAt: true,
       anonymizedAt: true,
       createdAt: true,
+      // Legacy fields (backward compat)
+      image: true,
+      displayName: true,
+      bio: true,
+      credits: true,
+      totalLikesReceived: true,
+      totalCallsMade: true,
+      // Sub-aggregates
+      profile: { select: { image: true, displayName: true, bio: true } },
+      social: { select: { totalLikesReceived: true, totalCallsMade: true } },
+      billing: { select: { credits: true } },
     },
   })
 

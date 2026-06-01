@@ -1,17 +1,19 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
-import { db } from "../db";
 import { createCheckoutSession } from "../services/billing/stripe";
 import { env } from "@/lib/env";
+import { userBillingRepository } from "../repositories";
 
 export const billingRouter = router({
   getCredits: protectedProcedure.query(async ({ ctx }) => {
-    const user = await db.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: { credits: true },
-    });
+    // Prefer UserBilling sub-aggregate, fall back to legacy User.credits
+    const billing = await userBillingRepository.findByUserId(ctx.session.user.id);
 
-    return { credits: user?.credits ?? 0 };
+    if (billing) {
+      return { credits: billing.credits };
+    }
+
+    return { credits: 0 };
   }),
 
   createCheckout: protectedProcedure

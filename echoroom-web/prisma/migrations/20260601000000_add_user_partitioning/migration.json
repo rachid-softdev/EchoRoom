@@ -1,0 +1,17 @@
+{
+  "version": "5.22.0",
+  "steps": [
+    {
+      "tag": "CreateModel",
+      "model": "UserProfile"
+    },
+    {
+      "tag": "CreateModel",
+      "model": "UserSocial"
+    },
+    {
+      "tag": "CreateModel",
+      "model": "UserBilling"
+    }
+  ]
+}

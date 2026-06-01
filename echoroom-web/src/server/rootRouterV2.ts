@@ -1,3 +1,13 @@
+/**
+ * v2 Root Router — compatibility bridge for the v2 API contract.
+ *
+ * v2 routers are functionally identical to their unversioned counterparts
+ * at the time of the v2 freeze. They serve as a snapshot that won't receive
+ * breaking changes, allowing clients to migrate at their own pace.
+ *
+ * New features and improvements should be added to the unversioned routers
+ * (which represent "latest") and optionally backported to future versions.
+ */
 import { router } from "./trpc";
 import { authRouter } from "./routers/auth";
 import { charactersRouter } from "./routers/characters";
@@ -9,22 +19,8 @@ import { adminRouter } from "./routers/admin";
 import { socialRouter } from "./routers/social";
 import { userRouter } from "./routers/user";
 import { dashboardRouter } from "./routers/dashboard";
-import { scenariosV1Router } from "./routers/v1";
 
-/**
- * Versioned API namespace — frozen v1 contracts for backward compatibility.
- *
- * Clients can migrate to versioned endpoints by prefixing their tRPC calls
- * with "v1." (e.g. `api.v1.scenarios.feed.useQuery(...)`).
- *
- * Version negotiation:
- * - Unversioned routes (e.g. `api.scenarios.feed`) continue to work and receive
- *   the latest stable shape.
- * - Versioned routes (e.g. `api.v1.scenarios.feed`) are frozen snapshots
- *   that will never break.
- * - New versions (v2+) can be added alongside without disrupting existing clients.
- */
-export const appRouter = router({
+export const appRouterV2 = router({
   auth: authRouter,
   characters: charactersRouter,
   scenarios: scenariosRouter,
@@ -35,11 +31,6 @@ export const appRouter = router({
   social: socialRouter,
   user: userRouter,
   dashboard: dashboardRouter,
-
-  // Versioned API namespace
-  v1: router({
-    scenarios: scenariosV1Router,
-  }),
 });
 
-export type AppRouter = typeof appRouter;
+export type AppRouterV2 = typeof appRouterV2;

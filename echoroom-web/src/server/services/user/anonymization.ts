@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { userProfileRepository } from "@/server/repositories";
 
 type PrismaTx = Omit<
   PrismaClient,
@@ -8,8 +9,24 @@ type PrismaTx = Omit<
 /**
  * Shared anonymization logic used by deleteMyAccount, deleteUser (admin),
  * and withdrawConsent (GDPR). Extracted to prevent code drift.
+ *
+ * Handles both the sub-aggregate (UserProfile) and legacy User fields
+ * for backward compatibility during the partition migration.
  */
 export async function anonymizePersonalData(tx: PrismaTx, userId: string): Promise<void> {
+  // Anonymize UserProfile sub-aggregate via repository.
+  // Falls back to upsert if no UserProfile record exists yet.
+  try {
+    await userProfileRepository.anonymize(tx, userId);
+  } catch {
+    await tx.userProfile.upsert({
+      where: { userId },
+      create: { userId },
+      update: { image: null, displayName: null, bio: null },
+    });
+  }
+
+  // Legacy User fields (kept for backward compatibility)
   await tx.user.update({
     where: { id: userId },
     data: {

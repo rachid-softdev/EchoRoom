@@ -65,7 +65,8 @@ export async function getPresignedUrl(
       Key: key,
     })
 
-    return getSignedUrl(r2Client, command, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- type mismatch between @aws-sdk versions
+    return getSignedUrl(r2Client as any, command, {
       expiresIn: options?.ttlSeconds ?? 3600,
     })
   } catch (error) {

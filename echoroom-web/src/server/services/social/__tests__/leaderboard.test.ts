@@ -4,15 +4,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Leaderboard tests: getTopScenarios & getTopCreators
 // ---------------------------------------------------------------------------
 // Tests for leaderboard.ts:
-//   - getTopScenarios: filters by period and visibility/moderation, sorts correctly
-//   - getTopCreators: filters by period, sorts correctly
-//
-// Both functions query the database directly without transactions.
+//   - getTopScenarios: filters by period and visibility/moderation, sorts via Prisma
+//   - getTopCreators: filters by period, sorts in-memory using social sub-aggregate
+//     (Sprint 4: prefers UserSocial sub-aggregate, falls back to legacy fields)
 
 vi.mock("@/server/db", () => ({
   db: {
     scenario: { findMany: vi.fn() },
     user: { findMany: vi.fn() },
+    userSocial: { findMany: vi.fn() },
   },
 }));
 
@@ -169,37 +169,81 @@ describe("getTopCreators", () => {
     vi.clearAllMocks();
   });
 
-  it("should return creators sorted by totalLikesReceived descending when sort is LIKES", async () => {
+  it("should sort by UserSocial.totalLikesReceived when sort is LIKES", async () => {
     const { db } = await import("@/server/db");
-    const mockCreators = [
-      { id: "u1", username: "creator1", totalLikesReceived: 200, totalCallsMade: 50 },
-      { id: "u2", username: "creator2", totalLikesReceived: 100, totalCallsMade: 300 },
-    ];
-    (db.user.findMany as any).mockResolvedValue(mockCreators);
+    // Mock the userSocialRepository.getTopByLikes call
+    (db.userSocial.findMany as any).mockResolvedValue([
+      { userId: "u1", totalLikesReceived: 200 },
+      { userId: "u2", totalLikesReceived: 30 },
+    ]);
+    // Mock db.user.findMany to return user details
+    (db.user.findMany as any).mockResolvedValue([
+      { id: "u1", username: "top", image: null, _count: { scenarios: 5 } },
+      { id: "u2", username: "bottom", image: null, _count: { scenarios: 3 } },
+    ]);
 
     const { getTopCreators } = await import("../leaderboard");
     const result = await getTopCreators({ period: "ALL", sort: "LIKES" });
 
-    expect(result).toEqual(mockCreators);
-    expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: { totalLikesReceived: "desc" },
-      }),
-    );
+    // u1 has totalLikesReceived=200, u2 has 30 — u1 should be first
+    expect(result[0].id).toBe("u1");
+    expect(result[1].id).toBe("u2");
+    // Final values should use sub-aggregate
+    expect(result[0].totalLikesReceived).toBe(200);
+    expect(result[1].totalLikesReceived).toBe(30);
+    expect(result[0].username).toBe("top");
+    expect(result[1].username).toBe("bottom");
   });
 
-  it("should return creators sorted by totalCallsMade descending when sort is CALLS", async () => {
+  it("should sort by UserSocial.totalCallsMade when sort is CALLS", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    // Mock the userSocialRepository.getTopByCalls call
+    (db.userSocial.findMany as any).mockResolvedValue([
+      { userId: "u1", totalCallsMade: 100 },
+      { userId: "u2", totalCallsMade: 50 },
+    ]);
+    // Mock db.user.findMany to return user details
+    (db.user.findMany as any).mockResolvedValue([
+      { id: "u1", username: "few", image: null, _count: { scenarios: 2 } },
+      { id: "u2", username: "many", image: null, _count: { scenarios: 1 } },
+    ]);
 
     const { getTopCreators } = await import("../leaderboard");
-    await getTopCreators({ period: "ALL", sort: "CALLS" });
+    const result = await getTopCreators({ period: "ALL", sort: "CALLS" });
 
-    expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: { totalCallsMade: "desc" },
-      }),
-    );
+    // u1 has totalCallsMade=100, u2 has 50
+    expect(result[0].id).toBe("u1");
+    expect(result[1].id).toBe("u2");
+    expect(result[0].totalCallsMade).toBe(100);
+    expect(result[1].totalCallsMade).toBe(50);
+  });
+
+  it("should fall back to legacy fields when UserSocial is null (period-filtered path)", async () => {
+    const { db } = await import("@/server/db");
+    // This test covers the WEEK/MONTH period code path where
+    // db.user.findMany directly returns users with social relations
+    const mockCreators = [
+      {
+        id: "u1", username: "legacy", image: null,
+        totalLikesReceived: 150, totalCallsMade: 20,
+        social: null,
+        _count: { scenarios: 3 },
+      },
+      {
+        id: "u2", username: "social", image: null,
+        totalLikesReceived: 10, totalCallsMade: 5,
+        social: { totalLikesReceived: 200, totalCallsMade: 99 },
+        _count: { scenarios: 1 },
+      },
+    ];
+    (db.user.findMany as any).mockResolvedValue(mockCreators);
+
+    const { getTopCreators } = await import("../leaderboard");
+    const result = await getTopCreators({ period: "WEEK", sort: "LIKES" });
+
+    // u2 has social.totalLikesReceived=200 > u1's legacy 150
+    expect(result[0].id).toBe("u2");
+    expect(result[1].id).toBe("u1");
   });
 
   it("should filter by users active in the period for WEEK", async () => {
@@ -230,49 +274,59 @@ describe("getTopCreators", () => {
 
   it("should have empty where clause for period ALL (no filter)", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as any).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
-    await getTopCreators({ period: "ALL", sort: "LIKES" });
+    const result = await getTopCreators({ period: "ALL", sort: "LIKES" });
 
-    const callArgs = (db.user.findMany as any).mock.calls[0][0];
-    // No scenarios filter when period is ALL
-    expect(callArgs.where.scenarios).toBeUndefined();
+    // For "ALL" period, the function returns early when userSocial results are empty
+    expect(result).toEqual([]);
   });
 
-  it("should limit results to 20", async () => {
+  it("should limit results via userSocialRepository (take:20)", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as any).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     await getTopCreators({ period: "ALL", sort: "LIKES" });
 
-    expect(db.user.findMany).toHaveBeenCalledWith(
+    // The sub-aggregate query is limited to 20
+    expect(db.userSocial.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ take: 20 }),
     );
   });
 
-  it("should select the correct fields including _count for scenarios", async () => {
+  it("should select user details via db.user.findMany with correct fields", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as any).mockResolvedValue([
+      { userId: "u1", totalLikesReceived: 10 },
+    ]);
+    (db.user.findMany as any).mockResolvedValue([
+      { id: "u1", username: "user1", image: null, _count: { scenarios: 1 } },
+    ]);
 
     const { getTopCreators } = await import("../leaderboard");
     await getTopCreators({ period: "ALL", sort: "LIKES" });
 
-    const callArgs = (db.user.findMany as any).mock.calls[0][0];
-    expect(callArgs.select).toBeDefined();
-    expect(callArgs.select.id).toBe(true);
-    expect(callArgs.select.username).toBe(true);
-    expect(callArgs.select.image).toBe(true);
-    expect(callArgs.select.totalLikesReceived).toBe(true);
-    expect(callArgs.select.totalCallsMade).toBe(true);
-    expect(callArgs.select._count).toBeDefined();
-    expect(callArgs.select._count.select.scenarios).toBe(true);
+    // The userSocial query uses the sub-aggregate repository
+    const socialCallArgs = (db.userSocial.findMany as any).mock.calls[0][0];
+    expect(socialCallArgs.orderBy).toBeDefined();
+    expect(socialCallArgs.orderBy.totalLikesReceived).toBe("desc");
+    expect(socialCallArgs.take).toBe(20);
+
+    // The user query fetches details by IDs
+    const userCallArgs = (db.user.findMany as any).mock.calls[0][0];
+    expect(userCallArgs.where.id.in).toEqual(["u1"]);
+    expect(userCallArgs.select.id).toBe(true);
+    expect(userCallArgs.select.username).toBe(true);
+    expect(userCallArgs.select.image).toBe(true);
+    expect(userCallArgs.select._count).toBeDefined();
+    expect(userCallArgs.select._count.select.scenarios).toBe(true);
   });
 
-  it("should handle empty results gracefully", async () => {
+  it("should handle empty results gracefully (no social records)", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as any).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     const result = await getTopCreators({ period: "ALL", sort: "LIKES" });

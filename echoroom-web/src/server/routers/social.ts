@@ -53,9 +53,11 @@ export const socialRouter = router({
             where: { id: input.scenarioId },
             data: { likeCount: { decrement: 1 } },
           });
-          await tx.user.update({
-            where: { id: scenario.creatorId },
-            data: { totalLikesReceived: { decrement: 1 } },
+          // Update UserSocial sub-aggregate
+          await tx.userSocial.upsert({
+            where: { userId: scenario.creatorId },
+            create: { userId: scenario.creatorId },
+            update: { totalLikesReceived: { decrement: 1 } },
           });
         });
 
@@ -82,9 +84,11 @@ export const socialRouter = router({
           where: { id: input.scenarioId },
           data: { likeCount: { increment: 1 } },
         });
-        await tx.user.update({
-          where: { id: scenario.creatorId },
-          data: { totalLikesReceived: { increment: 1 } },
+        // Update UserSocial sub-aggregate
+        await tx.userSocial.upsert({
+          where: { userId: scenario.creatorId },
+          create: { userId: scenario.creatorId, totalLikesReceived: 1 },
+          update: { totalLikesReceived: { increment: 1 } },
         });
       });
 
