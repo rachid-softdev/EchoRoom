@@ -36,8 +36,9 @@ export function wrapTwilioWebhook(
       if (!(await checkWebhookRateLimit(rateLimitKey, ip))) {
         return NextResponse.json({ error: "Trop de requêtes" }, { status: 429, headers: { "Retry-After": "60" } });
       }
-    } catch {
-      /* rate limit module may not exist yet */
+    } catch (error) {
+      const log = createLogger("twilio-middleware");
+      log.warn("Webhook rate limit check failed - allowing request through", { error });
     }
 
     // 4. Parse form data

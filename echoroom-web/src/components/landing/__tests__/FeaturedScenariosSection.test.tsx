@@ -17,8 +17,8 @@ const mockUseQuery = vi.fn();
 
 vi.mock("@/lib/trpc", () => ({
   api: {
-    scenarios: {
-      feed: {
+    social: {
+      getFeatured: {
         useQuery: (...args: any[]) => mockUseQuery(...args),
       },
     },
@@ -51,6 +51,9 @@ vi.mock("@/components/shared/ScenarioCard", () => ({
 }));
 
 vi.mock("@/components/ui", () => ({
+  Badge: ({ children, ...props }: any) => (
+    <span {...props}>{children}</span>
+  ),
   Button: ({ children, ...props }: any) => (
     <button {...props}>{children}</button>
   ),
@@ -73,9 +76,9 @@ describe("FeaturedScenariosSection", () => {
     FeaturedScenariosSection = mod.FeaturedScenariosSection;
   });
 
-  it("renders the title 'Scénarios populaires'", () => {
+  it("renders the title 'Scénario à la une'", () => {
     mockUseQuery.mockReturnValue({
-      data: { items: [] },
+      data: null,
       isLoading: false,
       isError: false,
       error: null,
@@ -83,13 +86,13 @@ describe("FeaturedScenariosSection", () => {
 
     render(<FeaturedScenariosSection />);
 
-    expect(screen.getByText("Scénarios")).toBeInTheDocument();
-    expect(screen.getByText("populaires")).toBeInTheDocument();
+    expect(screen.getByText("Scénario")).toBeInTheDocument();
+    expect(screen.getByText("à la une")).toBeInTheDocument();
   });
 
-  it("renders the subtitle 'Découvrez ce que la communauté crée'", () => {
+  it("renders the subtitle 'Découvrez le scénario du jour'", () => {
     mockUseQuery.mockReturnValue({
-      data: { items: [] },
+      data: null,
       isLoading: false,
       isError: false,
       error: null,
@@ -98,13 +101,13 @@ describe("FeaturedScenariosSection", () => {
     render(<FeaturedScenariosSection />);
 
     expect(
-      screen.getByText("Découvrez ce que la communauté crée"),
+      screen.getByText("Découvrez le scénario du jour sélectionné par la communauté"),
     ).toBeInTheDocument();
   });
 
   it("renders 'Voir tout' link that points to /explore", () => {
     mockUseQuery.mockReturnValue({
-      data: { items: [] },
+      data: null,
       isLoading: false,
       isError: false,
       error: null,
@@ -118,17 +121,11 @@ describe("FeaturedScenariosSection", () => {
     expect(link).toHaveAttribute("href", "/explore");
   });
 
-  it("renders scenario cards when data is available", () => {
-    const mockData = {
-      items: [
-        { id: "1", title: "Scenario Alpha" },
-        { id: "2", title: "Scenario Beta" },
-        { id: "3", title: "Scenario Gamma" },
-      ],
-    };
+  it("renders scenario card when data is available", () => {
+    const mockScenario = { id: "1", title: "Scenario Alpha" };
 
     mockUseQuery.mockReturnValue({
-      data: mockData,
+      data: mockScenario,
       isLoading: false,
       isError: false,
       error: null,
@@ -137,10 +134,9 @@ describe("FeaturedScenariosSection", () => {
     render(<FeaturedScenariosSection />);
 
     const cards = screen.getAllByTestId("scenario-card");
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(1);
     expect(screen.getByText("Scenario Alpha")).toBeInTheDocument();
-    expect(screen.getByText("Scenario Beta")).toBeInTheDocument();
-    expect(screen.getByText("Scenario Gamma")).toBeInTheDocument();
+    expect(screen.getByText("À la une")).toBeInTheDocument();
   });
 
   it("shows loading skeleton while data is loading", () => {
@@ -169,9 +165,9 @@ describe("FeaturedScenariosSection", () => {
     expect(screen.getByTestId("error")).toBeInTheDocument();
   });
 
-  it("shows empty state when items array is empty", () => {
+  it("shows empty state when no featured scenario is set", () => {
     mockUseQuery.mockReturnValue({
-      data: { items: [] },
+      data: null,
       isLoading: false,
       isError: false,
       error: null,
@@ -182,9 +178,9 @@ describe("FeaturedScenariosSection", () => {
     expect(screen.getByTestId("empty")).toBeInTheDocument();
   });
 
-  it("passes limit:3 to the useQuery", () => {
+  it("calls useQuery with no arguments", () => {
     mockUseQuery.mockReturnValue({
-      data: { items: [] },
+      data: null,
       isLoading: false,
       isError: false,
       error: null,
@@ -192,6 +188,6 @@ describe("FeaturedScenariosSection", () => {
 
     render(<FeaturedScenariosSection />);
 
-    expect(mockUseQuery).toHaveBeenCalledWith({ limit: 3 });
+    expect(mockUseQuery).toHaveBeenCalledWith();
   });
 });

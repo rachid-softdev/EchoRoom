@@ -56,6 +56,7 @@ const DEV_DEFAULTS: Record<string, string> = {
   R2_SECRET_ACCESS_KEY: "dev_secret",
   R2_BUCKET_NAME: "dev-bucket",
   R2_ENDPOINT: "https://dev.r2.cloudflarestorage.com",
+  R2_PUBLIC_URL: "http://localhost:3000",
   POSTHOG_KEY: "phc_dev",
   POSTHOG_HOST: "https://us.i.posthog.com",
   PHONE_ENCRYPTION_KEY: "dev_phone_key_32_chars_minimum_here___",

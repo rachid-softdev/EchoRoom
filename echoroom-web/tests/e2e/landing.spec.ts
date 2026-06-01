@@ -51,7 +51,7 @@ test.describe("Landing page — comprehensive load tests", () => {
     await page.waitForLoadState("networkidle");
 
     // The featured scenarios section title
-    const sectionTitle = page.getByText("Scénarios populaires");
+    const sectionTitle = page.getByText("Scénario à la une");
     await expect(sectionTitle).toBeVisible();
   });
 

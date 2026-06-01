@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
@@ -72,7 +74,7 @@ export default function HomePage() {
         <Badge variant="secondary" className="mb-6">
           AI Social Chaos Platform
         </Badge>
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight max-w-3xl leading-tight break-words">
+        <h1 className="text-fluid-hero font-bold tracking-tight max-w-3xl leading-tight break-words">
           Les appels IA que tout{" "}
           <span className="text-primary">TikTok</span> va partager
         </h1>
@@ -117,7 +119,7 @@ export default function HomePage() {
 
       {/* ─── Features ───────────────────────────────────────── */}
       <section className="px-6 py-20 max-w-6xl mx-auto w-full">
-        <h2 className="text-3xl font-bold text-center mb-12">
+        <h2 className="text-fluid-section font-bold text-center mb-12">
           Tout ce dont vous avez besoin pour <span className="text-primary">créer le chaos</span>
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
@@ -145,7 +147,7 @@ export default function HomePage() {
       {/* ─── CTA ─────────────────────────────────────────────── */}
       <section className="px-6 py-20 text-center border-t border-border">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-fluid-section font-bold mb-4">
             Prêt à faire du <span className="text-primary">bruit</span> ?
           </h2>
           <p className="text-muted-foreground mb-8">

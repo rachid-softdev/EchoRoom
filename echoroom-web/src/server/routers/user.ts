@@ -4,6 +4,21 @@ import { router, protectedProcedure, withRateLimit } from "../procedures";
 import { db } from "../db";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
 export const userRouter = router({
+  badges: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { db } = await import("@/server/db");
+      const userBadges = await db.userBadge.findMany({
+        where: { userId: ctx.session.user.id },
+        include: { badge: true },
+        orderBy: { awardedAt: "desc" },
+      });
+      return userBadges.map(ub => ({
+        id: ub.id,
+        badge: ub.badge,
+        awardedAt: ub.awardedAt,
+      }));
+    }),
+
   myDeletionStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await db.user.findUnique({
       where: { id: ctx.session.user.id },
