@@ -54,6 +54,7 @@ import type { ConversationState } from "../conversationState";
 function createState(overrides: Partial<ConversationState> = {}): ConversationState {
   return {
     callSid: "CA_test",
+    callId: "test-call-id",
     scenarioId: "scenario-1",
     characterId: "char-1",
     callerNumber: "",
@@ -74,7 +75,6 @@ describe("M-1: getSystemPromptFromState", () => {
     const { getSystemPromptFromState } = await import("../conversationState");
 
     const state = createState({
-      // @ts-expect-error — systemPrompt is a newer field added to ConversationState
       systemPrompt: "You are a dedicated system prompt",
       messages: [
         { role: "system", content: "This should be ignored" },
@@ -105,7 +105,6 @@ describe("M-1: getSystemPromptFromState", () => {
     const { getSystemPromptFromState } = await import("../conversationState");
 
     const state = createState({
-      // @ts-expect-error
       systemPrompt: "New format prompt — should be preferred",
       messages: [
         { role: "system", content: "Legacy format prompt — should be ignored" },
@@ -170,7 +169,6 @@ describe("I-3: getCallId", () => {
     const { getCallId } = await import("../conversationState");
 
     const state = createState({
-      // @ts-expect-error
       callId: "db-call-id-123",
       callSid: "CA_twilio-sid-456",
     });
@@ -183,8 +181,8 @@ describe("I-3: getCallId", () => {
     const { getCallId } = await import("../conversationState");
 
     const state = createState({
+      callId: "",
       callSid: "CA_twilio-sid-789",
-      // No callId set
     });
 
     const result = getCallId(state);
@@ -195,7 +193,6 @@ describe("I-3: getCallId", () => {
     const { getCallId } = await import("../conversationState");
 
     const state = createState({
-      // @ts-expect-error
       callId: "",
       callSid: "CA_twilio-sid-000",
     });
@@ -208,7 +205,6 @@ describe("I-3: getCallId", () => {
     const { getCallId } = await import("../conversationState");
 
     const state = createState({
-      // @ts-expect-error
       callId: "preferred-call-id",
       callSid: "CA_secondary",
     });

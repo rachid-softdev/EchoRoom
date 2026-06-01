@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
@@ -72,7 +74,7 @@ export default function HomePage() {
         <Badge variant="secondary" className="mb-6">
           AI Social Chaos Platform
         </Badge>
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight max-w-3xl leading-tight">
+        <h1 className="text-fluid-hero font-bold tracking-tight max-w-3xl leading-tight break-words">
           Les appels IA que tout{" "}
           <span className="text-primary">TikTok</span> va partager
         </h1>
@@ -80,7 +82,7 @@ export default function HomePage() {
           Créez des scénarios absurdes, parlez à des personnages IA délirants, et
           partagez vos meilleurs moments avec le monde entier.
         </p>
-        <div className="flex items-center gap-4 mt-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
           <Link href="/register">
             <Button size="lg" className="gap-2">
               Commencer gratuitement <ArrowRight className="w-4 h-4" />
@@ -117,7 +119,7 @@ export default function HomePage() {
 
       {/* ─── Features ───────────────────────────────────────── */}
       <section className="px-6 py-20 max-w-6xl mx-auto w-full">
-        <h2 className="text-3xl font-bold text-center mb-12">
+        <h2 className="text-fluid-section font-bold text-center mb-12">
           Tout ce dont vous avez besoin pour <span className="text-primary">créer le chaos</span>
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
@@ -145,7 +147,7 @@ export default function HomePage() {
       {/* ─── CTA ─────────────────────────────────────────────── */}
       <section className="px-6 py-20 text-center border-t border-border">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-fluid-section font-bold mb-4">
             Prêt à faire du <span className="text-primary">bruit</span> ?
           </h2>
           <p className="text-muted-foreground mb-8">
@@ -161,18 +163,32 @@ export default function HomePage() {
       </section>
 
       {/* ─── Demo Audio ───────────────────────────────────────── */}
-      <section className="hidden md:block px-6 py-16 text-center border-t border-border bg-muted/30">
+      <section className="px-6 py-16 text-center border-t border-border bg-muted/30">
         <div className="max-w-lg mx-auto">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Headphones className="w-7 h-7 text-primary" />
           </div>
           <h3 className="text-xl font-semibold mb-2">
-            Écoutez un exemple d&apos;appel
+            Démonstration audio à venir
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Fonctionnalité audio disponible prochainement. En attendant, explorez
-            la bibliothèque de scénarios.
+            Soyez parmi les premiers à découvrir les appels IA EchoRoom.
+            Laissez-nous votre email pour être prévenu du lancement.
           </p>
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex flex-col sm:flex-row items-center gap-3 max-w-sm mx-auto"
+          >
+            <input
+              type="email"
+              placeholder="votre@email.com"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              required
+            />
+            <Button type="submit" size="sm" className="shrink-0">
+              Prévenir
+            </Button>
+          </form>
         </div>
       </section>
 

@@ -1,18 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure, withIPRateLimit, withRateLimit } from "../procedures";
 import { db } from "../db";
 import { AppError } from "../lib/errors";
 import { createClip, deleteClip, getClips } from "../services/social/clips";
 import { getTopCreators, getTopScenarios } from "../services/social/leaderboard";
-import {
-  protectedProcedure,
-  publicProcedure,
-  router,
-  withIPRateLimit,
-  withRateLimit,
-} from "../procedures";
+import { checkAndAwardBadges } from "../services/social/badges";
 
 export const socialRouter = router({
   toggleLike: protectedProcedure

@@ -48,7 +48,7 @@ vi.mock("@/server/lib/logger", () => ({
  */
 async function verifyBucketPrivacy(): Promise<{ isPrivate: boolean; reason: string }> {
   const { R2_PUBLIC_URL } = await import("@/lib/r2");
-  const { env } = await import("@/lib/env");
+  const { env: _env } = await import("@/lib/env");
 
   // In non-production, assume private (skip the check)
   if (process.env.NODE_ENV !== "production") {
@@ -79,11 +79,11 @@ async function verifyBucketPrivacy(): Promise<{ isPrivate: boolean; reason: stri
 describe("I-2: verifyBucketPrivacy", () => {
   beforeAll(() => {
     // Set NODE_ENV to production for tests that need to call fetch
-    process.env.NODE_ENV = "production";
+    (process.env as any).NODE_ENV = "production";
   });
 
   afterAll(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   });
 
   beforeEach(() => {
@@ -111,14 +111,14 @@ describe("I-2: verifyBucketPrivacy", () => {
   it("should return isPrivate=true when NODE_ENV is not production", async () => {
     // Temporarily override NODE_ENV to simulate non-production
     const savedEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    (process.env as any).NODE_ENV = "development";
 
     const result = await verifyBucketPrivacy();
 
     expect(result.isPrivate).toBe(true);
     expect(result.reason).toBe("non-production");
 
-    process.env.NODE_ENV = savedEnv;
+    (process.env as any).NODE_ENV = savedEnv;
   });
 
   it("should verify fetch is called with HEAD method on the public URL", async () => {

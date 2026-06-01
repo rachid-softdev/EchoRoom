@@ -79,7 +79,7 @@ describe("L-1: scenariosRouter.update — type safety", () => {
     // Since we mock tRPC, the mutation handler already has Zod validation
     // built in via the input().mutation() chain
     expect(updateMutation).toBeDefined();
-    expect(updateMutation.type).toBe("mutation");
+    expect((updateMutation as any).type).toBe("mutation");
   });
 
   it("should reject non-owners who try to update scenarios", async () => {

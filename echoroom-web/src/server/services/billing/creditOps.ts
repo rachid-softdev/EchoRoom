@@ -19,8 +19,7 @@ export interface AtomicDebitFailure {
 export type AtomicDebitResult = AtomicDebitSuccess | AtomicDebitFailure;
 
 /**
- * Atomically debits credits from a user via UserBilling.
- * Falls back to legacy User.credits if UserBilling record doesn't exist yet.
+ * Atomically debits credits from a user via UserBilling sub-aggregate only.
  *
  * Must be called inside a Prisma $transaction callback.
  */
@@ -28,7 +27,6 @@ export async function atomicDebit(
   tx: TransactionClient,
   params: { userId: string; cost: number },
 ): Promise<AtomicDebitResult> {
-  // Prefer UserBilling sub-aggregate
   const result = await tx.userBilling.updateMany({
     where: {
       userId: params.userId,
@@ -40,21 +38,6 @@ export async function atomicDebit(
   });
 
   if (result.count > 0) {
-    return { debited: true };
-  }
-
-  // Fallback: try legacy User.credits
-  const legacyResult = await tx.user.updateMany({
-    where: {
-      id: params.userId,
-      credits: { gte: params.cost },
-    },
-    data: {
-      credits: { decrement: params.cost },
-    },
-  });
-
-  if (legacyResult.count > 0) {
     return { debited: true };
   }
 
@@ -77,30 +60,17 @@ export async function atomicRefund(
     throw new AppError("BAD_REQUEST", "Le montant du remboursement doit être positif");
   }
 
-  // Prefer UserBilling sub-aggregate
-  const billing = await tx.userBilling.findUnique({
+  // Refund via UserBilling sub-aggregate only (legacy User.credits is deprecated)
+  await tx.userBilling.upsert({
     where: { userId: params.userId },
-    select: { id: true },
-  });
-
-  if (billing) {
-    await tx.userBilling.update({
-      where: { userId: params.userId },
-      data: { credits: { increment: params.amount } },
-    });
-    return;
-  }
-
-  // Fallback: legacy User.credits
-  await tx.user.update({
-    where: { id: params.userId },
-    data: { credits: { increment: params.amount } },
+    create: { userId: params.userId, credits: params.amount },
+    update: { credits: { increment: params.amount } },
   });
 }
 
 /**
  * Atomically decrements credits with safety check.
- * Prefers UserBilling sub-aggregate, falls back to legacy User.credits.
+ * Uses UserBilling sub-aggregate only (legacy User.credits is deprecated).
  */
 export async function atomicSafeDecrement(
   tx: TransactionClient,
@@ -110,7 +80,6 @@ export async function atomicSafeDecrement(
     throw new AppError("BAD_REQUEST", "Le montant du débit doit être positif");
   }
 
-  // Try UserBilling first
   try {
     const billingResult = await tx.userBilling.updateMany({
       where: {
@@ -122,27 +91,7 @@ export async function atomicSafeDecrement(
       },
     });
 
-    if (billingResult.count > 0) return;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2014") {
-      throw new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants");
-    }
-    throw error;
-  }
-
-  // Fallback: legacy User.credits
-  try {
-    const result = await tx.user.updateMany({
-      where: {
-        id: params.userId,
-        credits: { gte: params.amount },
-      },
-      data: {
-        credits: { decrement: params.amount },
-      },
-    });
-
-    if (result.count === 0) {
+    if (billingResult.count === 0) {
       const user = await tx.user.findUnique({
         where: { id: params.userId },
         select: { id: true },

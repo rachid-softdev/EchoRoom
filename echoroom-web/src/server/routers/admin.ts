@@ -4,11 +4,13 @@ import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { env } from "@/lib/env";
+import { redis } from "@/lib/redis";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
 import { adminProcedure, router } from "../procedures";
+import { type DLQEntry, retryDLQ } from "@/server/middleware/webhookDLQ";
 
 function hashPhoneForAudit(phone: string): string {
   // HMAC avec AUDIT_HASH_SECRET comme sel pour empêcher les rainbow tables
@@ -512,12 +514,7 @@ export const adminRouter = router({
         consentAcceptedAt: true,
         deletedAt: true,
         createdAt: true,
-        // Legacy fields
-        displayName: true,
-        credits: true,
-        totalLikesReceived: true,
-        totalCallsMade: true,
-        // Sub-aggregates
+        // Sub-aggregates only (legacy User fields are deprecated)
         profile: { select: { displayName: true, image: true, bio: true } },
         billing: { select: { credits: true } },
         social: { select: { totalLikesReceived: true, totalCallsMade: true } },
@@ -539,13 +536,15 @@ export const adminRouter = router({
       });
     }
 
-    // Merge sub-aggregate values with legacy fields for the frontend
+    // Return sub-aggregate values; null-safe fallbacks for missing sub-records
     return {
       ...user,
-      displayName: user.profile?.displayName ?? user.displayName ?? null,
-      credits: user.billing?.credits ?? user.credits,
-      totalLikesReceived: user.social?.totalLikesReceived ?? user.totalLikesReceived,
-      totalCallsMade: user.social?.totalCallsMade ?? user.totalCallsMade,
+      displayName: user.profile?.displayName ?? null,
+      image: user.profile?.image ?? null,
+      bio: user.profile?.bio ?? null,
+      credits: user.billing?.credits ?? 0,
+      totalLikesReceived: user.social?.totalLikesReceived ?? 0,
+      totalCallsMade: user.social?.totalCallsMade ?? 0,
     };
   }),
 
@@ -578,10 +577,7 @@ export const adminRouter = router({
           role: true,
           deletedAt: true,
           createdAt: true,
-          // Legacy fields
-          credits: true,
-          totalCallsMade: true,
-          // Sub-aggregates
+          // Sub-aggregates only (legacy User fields are deprecated)
           billing: { select: { credits: true } },
           social: { select: { totalCallsMade: true } },
           _count: {
@@ -595,8 +591,8 @@ export const adminRouter = router({
 
       const items = users.slice(0, input.limit).map((u) => ({
         ...u,
-        credits: u.billing?.credits ?? u.credits,
-        totalCallsMade: u.social?.totalCallsMade ?? u.totalCallsMade,
+        credits: u.billing?.credits ?? 0,
+        totalCallsMade: u.social?.totalCallsMade ?? 0,
       }));
       const nextCursor = users.length > input.limit ? items[items.length - 1]?.id : undefined;
 
@@ -618,12 +614,23 @@ export const adminRouter = router({
         ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
         orderBy: { createdAt: "asc" },
         include: {
-          user: { select: { id: true, username: true, image: true } },
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profile: { select: { image: true } },
+            },
+          },
           scenario: { select: { id: true, title: true } },
         },
       });
 
-      const items = comments.slice(0, input.limit);
+      // Map profile.image to image for frontend compatibility
+      const items = comments.slice(0, input.limit).map((c) => ({
+        ...c,
+        user: { ...c.user, image: c.user.profile?.image ?? null },
+      }));
+
       const nextCursor =
         comments.length > input.limit ? items[items.length - 1]?.id : undefined;
 
@@ -671,6 +678,36 @@ export const adminRouter = router({
     }))
     .mutation(async ({ input }) => {
       const result = await purgeAnonymizedUsers(input.retentionDays);
+      return result;
+    }),
+
+  // ─── Dead Letter Queue ─────────────────────────────────────────────────────
+
+  getDLQ: adminProcedure
+    .input(z.object({
+      provider: z.enum(["stripe", "twilio"]),
+    }))
+    .query(async ({ input }) => {
+      if (!redis) {
+        return { items: [], total: 0 };
+      }
+
+      const key = `dlq:${input.provider}`;
+      const entries = await redis.lrange(key, 0, -1);
+      if (!entries || entries.length === 0) {
+        return { items: [], total: 0 };
+      }
+
+      const items: DLQEntry[] = entries.map((e) => JSON.parse(e as string));
+      return { items, total: items.length };
+    }),
+
+  retryDLQ: adminProcedure
+    .input(z.object({
+      provider: z.enum(["stripe", "twilio"]),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await retryDLQ(input.provider);
       return result;
     }),
 });

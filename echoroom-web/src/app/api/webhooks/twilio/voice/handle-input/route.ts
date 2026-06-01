@@ -1,4 +1,3 @@
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import twilio from "twilio";
 import { db } from "@/server/db";

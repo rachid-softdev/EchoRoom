@@ -64,7 +64,7 @@ vi.mock("twilio", () => {
   const mockFn = vi.fn(() => ({
     request: mockRequest,
   }));
-  mockFn.validateRequest = vi.fn().mockReturnValue(true);
+  (mockFn as any).validateRequest = vi.fn().mockReturnValue(true);
   return { default: mockFn };
 });
 
@@ -78,9 +78,6 @@ describe("M-2: isValidTwilioRecordingUrl (SSRF protection)", () => {
   });
 
   it("should accept valid Twilio recording URLs", async () => {
-    // Import the route module to access isValidTwilioRecordingUrl
-    const mod = await import("../route");
-
     // Access the private function via module internals
     // We test it by sending a completed webhook with a valid URL
     // and verifying fetch was called

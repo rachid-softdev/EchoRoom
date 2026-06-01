@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // tRPC API Versioning Tests (Sprint 4 Item 19)
@@ -15,15 +15,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 //   - Legacy (unversioned) calls still work (backward compat)
 //   - Version headers are properly negotiated
 //   - Each version is an isolated router that can diverge
-
-type VersionedRouter = {
-  v1: Record<string, any>;
-  v2?: Record<string, any>;
-};
-
-type VersionedAppRouter = Record<string, Record<string, any>> & {
-  _version?: string;
-};
 
 describe("API Versioning — router structure", () => {
   it("should support versioned sub-routers alongside unversioned ones", async () => {
@@ -109,11 +100,6 @@ describe("API Versioning — backward compatibility", () => {
     const v1Behavior = {
       auth: { login: "v1-login", register: "v1-register" },
       scenarios: { list: "v1-list", get: "v1-get" },
-    };
-
-    const v2Behavior = {
-      auth: { login: "v2-login", register: "v2-register", logout: "v2-logout" },
-      scenarios: { list: "v2-list", search: "v2-search" },
     };
 
     // v1 must not get v2 features
@@ -240,7 +226,7 @@ describe("API Versioning — middleware integration", () => {
     // Auth middleware should still apply to versioned routes
     const mockAuthMiddleware = vi.fn().mockReturnValue(true);
 
-    async function versionedProcedure(version: string, procedure: string, authenticated: boolean): Promise<boolean> {
+    async function versionedProcedure(_version: string, procedure: string, authenticated: boolean): Promise<boolean> {
       if (authenticated && procedure.startsWith("protected.")) {
         return mockAuthMiddleware();
       }

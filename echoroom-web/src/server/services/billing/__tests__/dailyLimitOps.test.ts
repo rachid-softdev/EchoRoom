@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { PrismaClient } from "@prisma/client";
 import { AppError } from "@/server/lib/errors";
 
 // ---------------------------------------------------------------------------
@@ -16,7 +15,6 @@ import { AppError } from "@/server/lib/errors";
 describe("atomicIncrementDailyLimit", () => {
   let mockUpdateMany: ReturnType<typeof vi.fn>;
   let mockCreate: ReturnType<typeof vi.fn>;
-  let mockTx: Partial<PrismaClient>;
   const userId = "user-abc";
   const date = new Date("2026-05-31T00:00:00.000Z");
   const maxLimit = 10;

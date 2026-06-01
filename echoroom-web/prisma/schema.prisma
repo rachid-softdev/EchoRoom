@@ -55,11 +55,17 @@ model User {
 
   // Legacy fields — kept for backward compatibility during partition migration.
   // New code should access these through UserProfile, UserSocial, UserBilling.
+  /// @deprecated Use UserProfile.image instead
   image        String?
+  /// @deprecated Use UserProfile.displayName instead
   displayName  String?
+  /// @deprecated Use UserProfile.bio instead
   bio          String?
+  /// @deprecated Use UserBilling.credits instead
   credits      Int @default(5)
+  /// @deprecated Use UserSocial.totalLikesReceived instead
   totalLikesReceived Int @default(0)
+  /// @deprecated Use UserSocial.totalCallsMade instead
   totalCallsMade     Int @default(0)
 
   tokenVersion      Int  @default(0)  // Incremented on password change to invalidate JWT

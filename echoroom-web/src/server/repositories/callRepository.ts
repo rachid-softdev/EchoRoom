@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, Call, $Enums } from "@prisma/client";
+import type { PrismaClient, Call, $Enums } from "@prisma/client";
 
 export interface ICallRepository {
   findById(id: string): Promise<Call | null>;
@@ -54,7 +54,15 @@ export class PrismaCallRepository implements ICallRepository {
     status: string;
     costCredits: number;
   }): Promise<Call> {
-    return this.db.call.create({ data: data as Prisma.CallCreateInput });
+    return this.db.call.create({
+      data: {
+        user: { connect: { id: data.userId } },
+        scenario: data.scenarioId ? { connect: { id: data.scenarioId } } : undefined,
+        phoneNumber: data.phoneNumber,
+        status: data.status as $Enums.CallStatus,
+        costCredits: data.costCredits,
+      },
+    });
   }
 
   async countByUserStatus(userId: string, status: string): Promise<number> {
@@ -84,22 +92,12 @@ export class PrismaCallRepository implements ICallRepository {
 
       if (!call) return;
 
-      // Refund via UserBilling (preferred) or legacy User.credits
-      const billing = await tx.userBilling.findUnique({
+      // Refund via UserBilling only (legacy User.credits is deprecated)
+      await tx.userBilling.upsert({
         where: { userId: call.userId },
-        select: { id: true },
+        create: { userId: call.userId, credits: call.costCredits },
+        update: { credits: { increment: call.costCredits } },
       });
-      if (billing) {
-        await tx.userBilling.update({
-          where: { userId: call.userId },
-          data: { credits: { increment: call.costCredits } },
-        });
-      } else {
-        await tx.user.update({
-          where: { id: call.userId },
-          data: { credits: { increment: call.costCredits } },
-        });
-      }
     });
   }
 }

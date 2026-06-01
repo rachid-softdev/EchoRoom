@@ -56,7 +56,7 @@ describe("moderateOutput — N3 PII in logs", () => {
     );
     expect(blockedLogCall).toBeDefined();
 
-    const meta = blockedLogCall[1];
+    const meta = blockedLogCall![1];
     // Should NOT contain raw text (PII leak)
     expect(meta).not.toHaveProperty("text");
     // Should contain contentLength instead
@@ -99,7 +99,7 @@ describe("moderateOutput — N3 PII in logs", () => {
     expect(fallbackLogCall).toBeDefined();
 
     // The fallback log should NOT contain raw text (PII leak)
-    const meta = fallbackLogCall[1];
+    const meta = fallbackLogCall![1];
     if (meta) {
       expect(meta).not.toHaveProperty("text");
     }

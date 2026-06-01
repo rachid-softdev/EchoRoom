@@ -352,32 +352,31 @@ describe("initiateCall", () => {
     });
   });
 
-  it("should fall back to legacy User.credits when UserBilling has insufficient credits", async () => {
+  it("should throw INSUFFICIENT_CREDITS when UserBilling has insufficient credits and user exists", async () => {
     const { db } = await import("@/server/db");
-    const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
     (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    // UserBilling returns 0 credits, fallback User returns 1
+    // UserBilling returns 0 credits — no legacy fallback, atomicDebit checks user existence
     mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
-    mockTx.user.updateMany.mockResolvedValue({ count: 1 });
+    // User exists, so should get INSUFFICIENT_CREDITS (not USER_NOT_FOUND)
+    mockTx.user.findUnique.mockResolvedValue({ id: "user-abc" });
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
-    await initiateCall({
-      scenarioId: "scenario-1",
-      userId: "user-abc",
-      phoneNumber: "+33612345678",
-      maxDurationSeconds: 600,
-    });
 
-    // Should have tried UserBilling first, then fallen back to legacy
+    await expect(
+      initiateCall({
+        scenarioId: "scenario-1",
+        userId: "user-abc",
+        phoneNumber: "+33612345678",
+        maxDurationSeconds: 600,
+      }),
+    ).rejects.toThrow("Crédits insuffisants");
+
+    // Should have tried UserBilling only (legacy fallback removed in Sprint 8)
     expect(mockTx.userBilling.updateMany).toHaveBeenCalled();
-    expect(mockTx.user.updateMany).toHaveBeenCalledWith({
-      where: { id: "user-abc", credits: { gte: 1 } },
-      data: { credits: { decrement: 1 } },
-    });
+    expect(mockTx.user.updateMany).not.toHaveBeenCalled();
   });
 
   it("should create Twilio token with correct parameters", async () => {

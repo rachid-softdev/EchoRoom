@@ -1,5 +1,4 @@
 import type { Prisma } from "@prisma/client";
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import twilio from "twilio";
 import { env } from "@/lib/env";

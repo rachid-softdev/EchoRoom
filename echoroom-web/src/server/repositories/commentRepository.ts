@@ -1,4 +1,4 @@
-import type { PrismaClient, Comment } from "@prisma/client";
+import type { PrismaClient, Comment, $Enums } from "@prisma/client";
 
 export interface ICommentRepository {
   findById(id: string): Promise<Comment | null>;
@@ -40,7 +40,10 @@ export class PrismaCommentRepository implements ICommentRepository {
     where: { id: string; moderationStatus?: string },
     data: { moderationStatus: string },
   ): Promise<number> {
-    const result = await this.db.comment.updateMany({ where, data });
+    const result = await this.db.comment.updateMany({
+      where: { ...where, moderationStatus: where.moderationStatus as $Enums.ModerationStatus },
+      data: { moderationStatus: data.moderationStatus as $Enums.ModerationStatus },
+    });
     return result.count;
   }
 

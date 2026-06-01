@@ -6,6 +6,7 @@ import { Settings, LayoutDashboard, PlusCircle, Library, Clock, Users, Trophy, C
 import { Button, cn } from '@/components/ui'
 import { CreditDisplay } from './CreditDisplay'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { Breadcrumbs } from './Breadcrumbs'
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -48,6 +49,7 @@ export function DashboardShell({
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap",
                   isActive
@@ -74,6 +76,7 @@ export function DashboardShell({
       </nav>
 
       <section className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
+        <Breadcrumbs />
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{title}</h1>
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}

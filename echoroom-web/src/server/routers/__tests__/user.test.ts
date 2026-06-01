@@ -125,7 +125,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
             update: vi.fn().mockResolvedValue({}),
           },
         };
-        const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
+        const { anonymizePersonalData: _anonymizePersonalData } = await import("@/server/services/user/anonymization");
         await cb(mockTx);
         return { success: true };
       },

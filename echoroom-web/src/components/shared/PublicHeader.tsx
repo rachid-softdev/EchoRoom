@@ -18,6 +18,20 @@ export function PublicHeader() {
         <Link href="/" className="font-bold text-lg">
           EchoRoom
         </Link>
+        <nav className="flex items-center gap-6">
+          <Link
+            href="/explore"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Explorer
+          </Link>
+          <Link
+            href="/community/leaderboard"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Classement
+          </Link>
+        </nav>
         <div className="flex items-center gap-4">
           <ThemeToggle />
         </div>

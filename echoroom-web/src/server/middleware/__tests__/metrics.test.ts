@@ -57,7 +57,7 @@ describe("withREDMetrics", () => {
     const expectedResult = { data: "hello" };
     const next = vi.fn().mockResolvedValue(expectedResult);
 
-    const result = await withREDMetrics({
+    const result = await (withREDMetrics as any)({
       ctx: { session: { user: { id: "user-1" } } },
       next,
       path: "scenario.list",
@@ -73,7 +73,7 @@ describe("withREDMetrics", () => {
 
     const next = vi.fn().mockResolvedValue({ ok: true });
 
-    await withREDMetrics({
+    await (withREDMetrics as any)({
       ctx: { session: null },
       next,
       path: "test.procedure",
@@ -94,7 +94,7 @@ describe("withREDMetrics", () => {
 
     const next = vi.fn().mockResolvedValue({ ok: true });
 
-    await withREDMetrics({
+    await (withREDMetrics as any)({
       ctx: { session: { user: { id: "user-123" } } },
       next,
       path: "scenario.get",
@@ -118,7 +118,7 @@ describe("withREDMetrics", () => {
 
     const next = vi.fn().mockResolvedValue({ ok: true });
 
-    await withREDMetrics({
+    await (withREDMetrics as any)({
       ctx: { session: null },
       next,
       path: "public.endpoint",
@@ -145,7 +145,7 @@ describe("withREDMetrics", () => {
     const next = vi.fn().mockRejectedValue(testError);
 
     await expect(
-      withREDMetrics({
+      (withREDMetrics as any)({
         ctx: { session: { user: { id: "user-error" } } },
         next,
         path: "failing.endpoint",
@@ -172,7 +172,7 @@ describe("withREDMetrics", () => {
     const next = vi.fn().mockRejectedValue(testError);
 
     await expect(
-      withREDMetrics({
+      (withREDMetrics as any)({
         ctx: { session: null },
         next,
         path: "critical.path",
@@ -188,7 +188,7 @@ describe("withREDMetrics", () => {
     const next = vi.fn().mockRejectedValue(testError);
 
     await expect(
-      withREDMetrics({
+      (withREDMetrics as any)({
         ctx: { session: null },
         next,
         path: "error.path",
@@ -215,19 +215,19 @@ describe("withREDMetrics", () => {
     const nextOk = vi.fn().mockResolvedValue({ ok: true });
 
     // Make 3 successful calls
-    await withREDMetrics({
+    await (withREDMetrics as any)({
       ctx: { session: null },
       next: nextOk,
       path: "test.endpoint",
       type: "query",
     });
-    await withREDMetrics({
+    await (withREDMetrics as any)({
       ctx: { session: null },
       next: nextOk,
       path: "test.endpoint",
       type: "query",
     });
-    await withREDMetrics({
+    await (withREDMetrics as any)({
       ctx: { session: null },
       next: nextOk,
       path: "test.endpoint",
@@ -247,7 +247,7 @@ describe("withREDMetrics", () => {
     const nextErr = vi.fn().mockRejectedValue(new Error("fail"));
 
     await expect(
-      withREDMetrics({
+      (withREDMetrics as any)({
         ctx: { session: null },
         next: nextErr,
         path: "error.test",
@@ -268,13 +268,13 @@ describe("withREDMetrics", () => {
     const nextErr = vi.fn().mockRejectedValue(new Error("fail"));
 
     // Endpoint A: 2 successes
-    await withREDMetrics({ ctx: { session: null }, next: nextOk, path: "a", type: "query" });
-    await withREDMetrics({ ctx: { session: null }, next: nextOk, path: "a", type: "query" });
+    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "a", type: "query" });
+    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "a", type: "query" });
 
     // Endpoint B: 1 success, 1 error
-    await withREDMetrics({ ctx: { session: null }, next: nextOk, path: "b", type: "mutation" });
+    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "b", type: "mutation" });
     await expect(
-      withREDMetrics({ ctx: { session: null }, next: nextErr, path: "b", type: "mutation" }),
+      (withREDMetrics as any)({ ctx: { session: null }, next: nextErr, path: "b", type: "mutation" }),
     ).rejects.toThrow("fail");
 
     const metrics = getREDMetrics();
@@ -288,7 +288,7 @@ describe("withREDMetrics", () => {
     const { withREDMetrics, getREDMetrics } = await import("../metrics");
 
     const nextOk = vi.fn().mockResolvedValue({ ok: true });
-    await withREDMetrics({ ctx: { session: null }, next: nextOk, path: "snapshot.test", type: "query" });
+    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "snapshot.test", type: "query" });
 
     const snapshot = getREDMetrics();
     // Modify the snapshot
@@ -313,7 +313,7 @@ describe("withREDMetrics", () => {
 
     // Should not throw even if trackEvent fails (fire-and-forget catch)
     await expect(
-      withREDMetrics({
+      (withREDMetrics as any)({
         ctx: { session: null },
         next,
         path: "resilient.path",

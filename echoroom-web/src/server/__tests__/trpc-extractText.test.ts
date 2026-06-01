@@ -283,8 +283,6 @@ describe("withContentModeration orchestration (via extractTextFromInput + checkC
   });
 
   it("simulates auth guard rejecting unauthenticated requests", async () => {
-    const input = { content: "any content" };
-
     // These are the exact guards the middleware performs
     function authGuard(ctx: { session: any }) {
       if (!ctx.session?.user?.id) {

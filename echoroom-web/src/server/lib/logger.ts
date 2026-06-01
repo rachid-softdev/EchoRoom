@@ -77,10 +77,18 @@ function writeEntry(level: LogLevel, module: string, message: string, meta?: Rec
 
   const line = JSON.stringify(entry);
 
-  if (level === "error") {
-    process.stderr.write(line + "\n");
-  } else {
-    process.stdout.write(line + "\n");
+  try {
+    if (level === "error") {
+      if (typeof process?.stderr?.write === "function") {
+        process.stderr.write(line + "\n");
+      }
+    } else {
+      if (typeof process?.stdout?.write === "function") {
+        process.stdout.write(line + "\n");
+      }
+    }
+  } catch {
+    // Silently fail in environments without stdout/stderr (e.g. Edge Runtime)
   }
 }
 
