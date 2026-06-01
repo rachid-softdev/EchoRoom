@@ -261,7 +261,7 @@ model Comment {
 
   content    String
 
-  moderationStatus ModerationStatus @default(APPROVED)
+  moderationStatus ModerationStatus @default(PENDING)
   moderatedById    String?
   moderatedAt      DateTime?
 

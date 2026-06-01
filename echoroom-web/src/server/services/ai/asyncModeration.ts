@@ -1,5 +1,6 @@
 import { checkContent } from "./moderation";
 import { db } from "@/server/db";
+import { commentRepository } from "@/server/repositories";
 import { createLogger } from "@/server/lib/logger";
 
 const log = createLogger("async-moderation");
@@ -48,10 +49,10 @@ export async function scheduleAsyncModeration(text: string, target: ModerationTa
 
         // Uses updateMany to handle race conditions gracefully
         if (target.type === "comment") {
-          await db.comment.updateMany({
-            where: { id: target.id },
-            data: { moderationStatus: "REJECTED" },
-          });
+          await commentRepository.updateModerationStatusBulk(
+            { id: target.id },
+            { moderationStatus: "REJECTED" },
+          );
         } else {
           await db.scenario.updateMany({
             where: { id: target.id },
@@ -69,10 +70,10 @@ export async function scheduleAsyncModeration(text: string, target: ModerationTa
         // already moved the record out of PENDING — returns { count: 0 }
         // gracefully instead of throwing P2025 "Record to update not found".
         if (target.type === "comment") {
-          await db.comment.updateMany({
-            where: { id: target.id, moderationStatus: "PENDING" },
-            data: { moderationStatus: "APPROVED" },
-          });
+          await commentRepository.updateModerationStatusBulk(
+            { id: target.id, moderationStatus: "PENDING" },
+            { moderationStatus: "APPROVED" },
+          );
         } else {
           await db.scenario.updateMany({
             where: { id: target.id, moderationStatus: "PENDING" },

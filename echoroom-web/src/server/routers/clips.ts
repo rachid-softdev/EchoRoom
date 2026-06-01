@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, withIPRateLimit, withRateLimit, withContentModeration } from "../procedures";
 import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
+import { AppError } from "../lib/errors";
 import { createClip, deleteClip, getClips } from "../services/social/clips";
 
 export const clipsRouter = router({
@@ -83,13 +84,27 @@ export const clipsRouter = router({
         }),
     )
     .mutation(async ({ input, ctx }) => {
-      return createClip({
-        callId: input.callId,
-        userId: ctx.session.user.id,
-        startTime: input.startTime,
-        endTime: input.endTime,
-        title: input.title,
-      });
+      try {
+        return await createClip({
+          callId: input.callId,
+          userId: ctx.session.user.id,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          title: input.title,
+        });
+      } catch (error) {
+        if (error instanceof AppError) {
+          switch (error.code) {
+            case "NOT_FOUND":
+              throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+            case "FORBIDDEN":
+              throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+            default:
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
+          }
+        }
+        throw error;
+      }
     }),
 
   /**
@@ -99,6 +114,20 @@ export const clipsRouter = router({
     .use(withRateLimit({ limit: 10, window: 3600 }))
     .input(z.object({ clipId: z.string().min(1, "Identifiant de clip requis") }))
     .mutation(async ({ input, ctx }) => {
-      return deleteClip(input.clipId, ctx.session.user.id);
+      try {
+        return await deleteClip(input.clipId, ctx.session.user.id);
+      } catch (error) {
+        if (error instanceof AppError) {
+          switch (error.code) {
+            case "NOT_FOUND":
+              throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+            case "FORBIDDEN":
+              throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+            default:
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
+          }
+        }
+        throw error;
+      }
     }),
 });

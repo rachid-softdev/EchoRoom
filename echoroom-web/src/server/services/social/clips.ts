@@ -1,5 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import { db } from "@/server/db";
+import { AppError } from "@/server/lib/errors";
+import { clipRepository } from "@/server/repositories";
 import { getPresignedUrl } from "@/server/services/audio/r2";
 import { createLogger } from "@/server/lib/logger";
 import { extractAndUploadClip } from "./clipExtractor";
@@ -33,27 +34,19 @@ export async function createClip(params: CreateClipParams) {
   });
 
   if (!call) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Appel introuvable",
-    });
+    throw new AppError("NOT_FOUND", "Appel introuvable");
   }
 
   if (call.userId !== params.userId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Cet appel ne vous appartient pas",
-    });
+    throw new AppError("FORBIDDEN", "Cet appel ne vous appartient pas");
   }
 
-  const clip = await db.clip.create({
-    data: {
-      callId: params.callId,
-      userId: params.userId,
-      title: params.title ?? "Clip",
-      startTime: params.startTime,
-      endTime: params.endTime,
-    },
+  const clip = await clipRepository.create({
+    callId: params.callId,
+    userId: params.userId,
+    title: params.title,
+    startTime: params.startTime,
+    endTime: params.endTime,
   });
 
   // Fire-and-forget: extract the audio segment and upload to R2
@@ -63,19 +56,7 @@ export async function createClip(params: CreateClipParams) {
 }
 
 export async function getClips(callId: string) {
-  const clips = await db.clip.findMany({
-    where: { callId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      startTime: true,
-      endTime: true,
-      clipUrl: true,
-      status: true,
-      createdAt: true,
-    },
-  });
+  const clips = await clipRepository.findByCallId(callId);
 
   // Presign clip URLs for secure access
   return Promise.all(
@@ -87,26 +68,17 @@ export async function getClips(callId: string) {
 }
 
 export async function deleteClip(clipId: string, userId: string) {
-  const clip = await db.clip.findUnique({
-    where: { id: clipId },
-    select: { userId: true },
-  });
+  const clip = await clipRepository.findById(clipId);
 
   if (!clip) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Clip introuvable",
-    });
+    throw new AppError("NOT_FOUND", "Clip introuvable");
   }
 
   if (clip.userId !== userId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Ce clip ne vous appartient pas",
-    });
+    throw new AppError("FORBIDDEN", "Ce clip ne vous appartient pas");
   }
 
-  await db.clip.delete({ where: { id: clipId } });
+  await clipRepository.delete(clipId);
 
   return { success: true };
 }

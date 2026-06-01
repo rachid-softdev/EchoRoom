@@ -603,6 +603,68 @@ export const adminRouter = router({
       return { items, nextCursor };
     }),
 
+  moderationQueueComments: adminProcedure
+    .input(
+      z.object({
+        cursor: z.string().optional(),
+        limit: z.number().min(1).max(50).default(20),
+        status: z.enum(["PENDING", "REJECTED"]).optional().default("PENDING"),
+      }),
+    )
+    .query(async ({ input }) => {
+      const comments = await db.comment.findMany({
+        where: { moderationStatus: input.status },
+        take: input.limit + 1,
+        ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
+        orderBy: { createdAt: "asc" },
+        include: {
+          user: { select: { id: true, username: true, image: true } },
+          scenario: { select: { id: true, title: true } },
+        },
+      });
+
+      const items = comments.slice(0, input.limit);
+      const nextCursor =
+        comments.length > input.limit ? items[items.length - 1]?.id : undefined;
+
+      return { items, nextCursor };
+    }),
+
+  rejectComment: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const comment = await db.comment.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!comment) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Commentaire introuvable",
+        });
+      }
+
+      await db.comment.update({
+        where: { id: input.id },
+        data: {
+          moderationStatus: "REJECTED",
+          moderatedById: ctx.session.user.id,
+          moderatedAt: new Date(),
+        },
+      });
+
+      await db.auditLog.create({
+        data: {
+          action: "REJECT_COMMENT",
+          entityType: "Comment",
+          entityId: input.id,
+          adminId: ctx.session.user.id,
+        },
+      });
+
+      return { success: true };
+    }),
+
   purgeGDPR: adminProcedure
     .input(z.object({
       retentionDays: z.number().min(7).max(90).default(30),

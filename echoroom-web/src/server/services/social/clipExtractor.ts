@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import { clipRepository } from "@/server/repositories";
 import { createLogger } from "@/server/lib/logger";
 import { getPresignedUrl } from "@/server/services/audio/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -24,10 +24,7 @@ const BYTES_PER_SECOND = 8_000;
  * On any failure the clip status is set to "FAILED" and the error is logged.
  */
 export async function extractAndUploadClip(clipId: string): Promise<void> {
-  const clip = await db.clip.findUnique({
-    where: { id: clipId },
-    include: { call: { select: { recordingUrl: true } } },
-  });
+  const clip = await clipRepository.findByIdWithCall(clipId);
 
   if (!clip) {
     log.error("Clip introuvable pour l'extraction", { clipId });
@@ -39,18 +36,12 @@ export async function extractAndUploadClip(clipId: string): Promise<void> {
       clipId,
       callId: clip.callId,
     });
-    await db.clip.update({
-      where: { id: clipId },
-      data: { status: "FAILED" },
-    });
+    await clipRepository.update(clipId, { status: "FAILED" });
     return;
   }
 
   // Transition to PROCESSING before starting the potentially slow work
-  await db.clip.update({
-    where: { id: clipId },
-    data: { status: "PROCESSING" },
-  });
+  await clipRepository.update(clipId, { status: "PROCESSING" });
 
   try {
     const signedUrl = await getPresignedUrl(clip.call.recordingUrl);
@@ -98,10 +89,7 @@ export async function extractAndUploadClip(clipId: string): Promise<void> {
       // Build the clip URL — prefer public URL when configured
       const clipUrl = R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${key}` : key;
 
-      await db.clip.update({
-        where: { id: clipId },
-        data: { clipUrl, status: "READY" },
-      });
+      await clipRepository.update(clipId, { clipUrl, status: "READY" });
 
       log.info("Clip extrait et téléversé avec succès", { clipId, clipUrl });
     } finally {
@@ -109,9 +97,6 @@ export async function extractAndUploadClip(clipId: string): Promise<void> {
     }
   } catch (error) {
     log.error("L'extraction du clip a échoué", { clipId, error });
-    await db.clip.update({
-      where: { id: clipId },
-      data: { status: "FAILED" },
-    });
+    await clipRepository.update(clipId, { status: "FAILED" });
   }
 }

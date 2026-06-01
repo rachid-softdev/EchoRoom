@@ -12,7 +12,8 @@ export type AppErrorCode =
   | "NUMBER_BLOCKED"
   | "CREDIT_DEBIT_FAILED"
   | "USER_IN_ACTIVE_CALL"
-  | "CONSENT_ALREADY_WITHDRAWN";
+  | "CONSENT_ALREADY_WITHDRAWN"
+  | "FORBIDDEN";
 
 export class AppError extends Error {
   constructor(

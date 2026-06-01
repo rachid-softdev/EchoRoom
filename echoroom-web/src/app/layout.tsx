@@ -7,6 +7,7 @@ import { ToastProvider, Toaster } from "@/components/ui";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Footer } from "@/components/shared/Footer";
 import { ConsentBanner } from "@/components/shared/ConsentBanner";
+import { PublicHeader } from "@/components/shared/PublicHeader";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,6 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: "EchoRoom AI — AI Social Chaos Platform",
   description:
     "Créez des appels IA absurdes, partagez des moments viraux et explorez une communauté de scénarios sociaux générés par l'intelligence artificielle.",
@@ -44,6 +46,7 @@ export default function RootLayout({
           <TRPCReactProvider>
             <SessionProvider>
               <ToastProvider>
+              <PublicHeader />
               <div id="main-content" tabIndex={-1} className="flex flex-col min-h-screen">
                 <ConsentBanner />
                 {children}

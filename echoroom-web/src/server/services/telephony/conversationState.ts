@@ -1,5 +1,5 @@
 import { redis } from "@/lib/redis";
-import { db } from "@/server/db";
+import { scenarioRepository } from "@/server/repositories";
 import { decryptPhoneNumber, encryptPhoneNumber } from "@/server/lib/encryption";
 import { createLogger } from "@/server/lib/logger";
 import { CONVERSATION_TTL_S } from "./constants";
@@ -197,10 +197,7 @@ export async function getSystemPromptFromState(state: ConversationState): Promis
   // Fallback: try to load from database using scenarioId
   if (state.scenarioId && state.scenarioId !== "unknown") {
     try {
-      const scenario = await db.scenario.findUnique({
-        where: { id: state.scenarioId },
-        include: { character: true },
-      });
+      const scenario = await scenarioRepository.findByIdWithCharacter(state.scenarioId);
       if (scenario) {
         return buildSystemPrompt(scenario);
       }
