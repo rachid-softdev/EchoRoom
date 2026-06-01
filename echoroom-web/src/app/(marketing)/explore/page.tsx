@@ -79,7 +79,7 @@ export default function ExplorePage() {
 
       <section className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Explorer les scénarios</h1>
+          <h1 className="text-fluid-section font-bold mb-2">Explorer les scénarios</h1>
           <p className="text-muted-foreground">
             Découvrez les créations de la communauté EchoRoom
           </p>

@@ -1,7 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
 import { purgeAnonymizedUsers } from "@/server/jobs/gdprPurge";
 
@@ -19,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     // ── Authentication ──────────────────────────────────────────────
     const authHeader = request.headers.get("authorization");
-    const expected = env.CRON_SECRET;
+    const expected = process.env.CRON_SECRET ?? '';
 
     if (!authHeader || !expected) {
       return NextResponse.json(

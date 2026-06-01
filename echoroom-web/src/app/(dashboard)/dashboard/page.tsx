@@ -13,10 +13,13 @@ import {
   Users,
   Sparkles,
   TrendingUp,
+  Medal,
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { api } from "@/lib/trpc";
 import { FeaturedScenario } from "@/components/social/FeaturedScenario";
+import { BadgeGrid } from "@/components/social/BadgeGrid";
+import { useSession } from "next-auth/react";
 import { STATUS_LABELS, formatDate } from "@/lib/constants";
 
 const quickActions = [
@@ -53,6 +56,7 @@ const quickActions = [
 export default function DashboardPage() {
   // Single batch query replaces 4 separate tRPC calls
   const dashboardQuery = api.dashboard.getData.useQuery({ callsLimit: 5, scenariosLimit: 3 });
+  const { data: session } = useSession();
 
   const credits = dashboardQuery.data?.credits ?? 0;
   const calls = dashboardQuery.data?.calls ?? [];
@@ -193,6 +197,17 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ─── Badges ─────────────────────────────────── */}
+      <h2 className="text-xl font-semibold mb-4 mt-10">Vos badges</h2>
+      {session?.user?.id ? (
+        <BadgeGrid userId={session.user.id} />
+      ) : (
+        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+          <Medal className="w-4 h-4" />
+          <span>Connectez-vous pour voir vos badges</span>
+        </div>
+      )}
     </DashboardShell>
   );
 }

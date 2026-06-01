@@ -14,7 +14,7 @@ import { db } from "../db";
 import { checkContentBlocklist } from "../services/ai/moderation";
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { generateScenarioScript } from "../services/ai/generateScript";
-import { getCachedFeed, setCachedFeed, invalidateFeedCache } from "../services/cache/scenarioCache";
+import { getCachedFeed, setCachedFeed, invalidateFeedCache, getCachedTrendingFeed, setCachedTrendingFeed } from "../services/cache/scenarioCache";
 import { redis } from "@/lib/redis";
 import { detectScenarioSpam } from "../services/security/spamDetection";
 
@@ -187,6 +187,120 @@ export const scenariosRouter = router({
       if (!input.cursor && redis) {
         const cacheParams = { sort: input.sort, limit: input.limit };
         void setCachedFeed(cacheParams, { items, nextCursor });
+      }
+
+      return { items, nextCursor };
+    }),
+
+  trending: publicProcedure
+    .use(withIPRateLimit({ limit: 30, window: 60 }))
+    .input(
+      z.object({
+        cursor: z.string().min(1, "Curseur invalide").optional(),
+        limit: z.number().int().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
+      }),
+    )
+    .query(async ({ input }): Promise<FeedResponse> => {
+      // Cache first page (no cursor) for 120s
+      if (!input.cursor && redis) {
+        const cached = await getCachedTrendingFeed<FeedResponse>({
+          limit: input.limit,
+          cursor: input.cursor,
+        });
+        if (cached) return cached;
+      }
+
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+      // Batch 48h aggregate counts
+      const [reactionCounts, callCounts, commentCounts] = await Promise.all([
+        db.reaction.groupBy({
+          by: ["scenarioId"],
+          where: {
+            createdAt: { gte: fortyEightHoursAgo },
+            scenario: { visibility: "PUBLIC", moderationStatus: "APPROVED" },
+          },
+          _count: { id: true },
+        }),
+        db.call.groupBy({
+          by: ["scenarioId"],
+          where: {
+            createdAt: { gte: fortyEightHoursAgo },
+            scenarioId: { not: null },
+            scenario: { visibility: "PUBLIC", moderationStatus: "APPROVED" },
+          },
+          _count: { id: true },
+        }),
+        db.comment.groupBy({
+          by: ["scenarioId"],
+          where: {
+            createdAt: { gte: fortyEightHoursAgo },
+            scenario: { visibility: "PUBLIC", moderationStatus: "APPROVED" },
+          },
+          _count: { id: true },
+        }),
+      ]);
+
+      const reactionMap = new Map(
+        reactionCounts.map((r) => [r.scenarioId, r._count.id]),
+      );
+      const callMap = new Map(callCounts.map((c) => [c.scenarioId, c._count.id]));
+      const commentMap = new Map(
+        commentCounts.map((c) => [c.scenarioId, c._count.id]),
+      );
+
+      // Over-fetch to allow in-memory scoring
+      const FETCH_CAP = 50;
+
+      const scenarios = await db.scenario.findMany({
+        where: {
+          visibility: "PUBLIC",
+          moderationStatus: "APPROVED",
+        },
+        take: FETCH_CAP,
+        ...(input.cursor ? { skip: 1, cursor: { id: input.cursor } } : {}),
+        orderBy: { createdAt: "desc" },
+        include: {
+          creator: {
+            select: { id: true, username: true, image: true },
+          },
+          character: {
+            select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
+          },
+          _count: {
+            select: { reactions: true, comments: true },
+          },
+        },
+      });
+
+      const now = Date.now();
+      const withScore = scenarios.map((s) => {
+        const likes48h = reactionMap.get(s.id) ?? 0;
+        const plays48h = callMap.get(s.id) ?? 0;
+        const comments48h = commentMap.get(s.id) ?? 0;
+        const hoursSinceCreation =
+          (now - s.createdAt.getTime()) / (1000 * 60 * 60);
+        const score =
+          likes48h * 3 + plays48h * 1 + comments48h * 2 - hoursSinceCreation * 0.5;
+        return { ...s, score };
+      });
+      withScore.sort((a, b) => b.score - a.score);
+
+      const items: FeedItem[] = withScore
+        .slice(0, input.limit)
+        .map(({ score: _score, ...rest }) => rest);
+
+      const nextCursor =
+        scenarios.length > input.limit
+          ? items[items.length - 1]?.id
+          : undefined;
+
+      // Cache first page
+      if (!input.cursor && redis) {
+        void setCachedTrendingFeed(
+          { limit: input.limit, cursor: input.cursor },
+          { items, nextCursor },
+        );
       }
 
       return { items, nextCursor };
