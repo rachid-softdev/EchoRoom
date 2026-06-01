@@ -1,4 +1,4 @@
-import type { PrismaClient, Call, $Enums } from "@prisma/client";
+import type { Prisma, PrismaClient, Call, $Enums } from "@prisma/client";
 
 export interface ICallRepository {
   findById(id: string): Promise<Call | null>;
@@ -10,6 +10,14 @@ export interface ICallRepository {
     additionalData?: Partial<Pick<Call, "twilioCallSid" | "durationSeconds" | "endedAt">>,
   ): Promise<number>;
   markAsFailedWithRefund(callId: string, durationSeconds: number): Promise<void>;
+  createCall(data: {
+    userId: string;
+    scenarioId: string;
+    phoneNumber: string;
+    status: string;
+    costCredits: number;
+  }): Promise<Call>;
+  countByUserStatus(userId: string, status: string): Promise<number>;
 }
 
 export class PrismaCallRepository implements ICallRepository {
@@ -37,6 +45,20 @@ export class PrismaCallRepository implements ICallRepository {
       data: { status: newStatus, ...additionalData },
     });
     return result.count;
+  }
+
+  async createCall(data: {
+    userId: string;
+    scenarioId: string;
+    phoneNumber: string;
+    status: string;
+    costCredits: number;
+  }): Promise<Call> {
+    return this.db.call.create({ data: data as Prisma.CallCreateInput });
+  }
+
+  async countByUserStatus(userId: string, status: string): Promise<number> {
+    return this.db.call.count({ where: { userId, status: status as $Enums.CallStatus } });
   }
 
   async markAsFailedWithRefund(callId: string, durationSeconds: number): Promise<void> {

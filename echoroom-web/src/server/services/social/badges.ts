@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import { badgeRepository } from "@/server/repositories";
 
 type BadgeCriteria = {
   type: string;
@@ -6,23 +6,15 @@ type BadgeCriteria = {
 };
 
 async function countUserCalls(userId: string): Promise<number> {
-  return db.call.count({
-    where: { userId, status: "COMPLETED" },
-  });
+  return badgeRepository.countUserCallsByStatus(userId, "COMPLETED");
 }
 
 async function countUserScenarios(userId: string): Promise<number> {
-  return db.scenario.count({
-    where: { creatorId: userId },
-  });
+  return badgeRepository.countUserScenarios(userId);
 }
 
 async function sumLikesReceived(userId: string): Promise<number> {
-  const result = await db.scenario.aggregate({
-    where: { creatorId: userId },
-    _sum: { likeCount: true },
-  });
-  return result._sum.likeCount ?? 0;
+  return badgeRepository.sumLikesReceived(userId);
 }
 
 const TRIGGER_TO_BADGE_TYPES: Record<string, string[]> = {
@@ -56,13 +48,7 @@ export async function checkAndAwardBadges(
   // to push filtering to the database instead of fetching all rows.
   // If your Prisma version doesn't support JSON `path` filtering, fall back to in-memory
   // filtering — the badge table is a small reference set (<50 rows), so the impact is minimal.
-  const candidateBadges = await db.badge.findMany({
-    where: {
-      OR: badgeTypes.map((type) => ({
-        criteria: { path: ["type"], equals: type },
-      })),
-    },
-  });
+  const candidateBadges = await badgeRepository.findCandidateBadges(badgeTypes);
 
   for (const badge of candidateBadges) {
     const criteria = badge.criteria as BadgeCriteria;
@@ -94,16 +80,10 @@ export async function checkAndAwardBadges(
 
     if (!meetsCriteria) continue;
 
-    const existing = await db.userBadge.findUnique({
-      where: {
-        userId_badgeId: { userId, badgeId: badge.id },
-      },
-    });
+    const existing = await badgeRepository.findUserBadge(userId, badge.id);
     if (existing) continue;
 
-    await db.userBadge.create({
-      data: { userId, badgeId: badge.id },
-    });
+    await badgeRepository.createUserBadge(userId, badge.id);
 
     return {
       id: badge.id,

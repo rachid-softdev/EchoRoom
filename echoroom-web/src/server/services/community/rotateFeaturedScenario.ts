@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import { featuredScenarioRepository } from "@/server/repositories";
 import { getUTCDateString } from "@/server/lib/date";
 
 interface RotationResult {
@@ -20,10 +20,7 @@ export async function rotateFeaturedScenario(): Promise<RotationResult> {
   const today = getUTCDateString();
 
   // 1. Check for existing admin-curated entry — manual override always wins
-  const existingEntry = await db.featuredScenario.findUnique({
-    where: { featuredDate: today },
-    select: { scenarioId: true, featureType: true },
-  });
+  const existingEntry = await featuredScenarioRepository.findByDate(today);
 
   if (existingEntry?.featureType === "ADMIN_CURATED") {
     return { scenarioId: existingEntry.scenarioId, date: today };
@@ -33,20 +30,7 @@ export async function rotateFeaturedScenario(): Promise<RotationResult> {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
 
-  const scenarios = await db.scenario.findMany({
-    where: {
-      visibility: "PUBLIC",
-      moderationStatus: "APPROVED",
-      createdAt: { gte: sevenDaysAgo },
-    },
-    select: {
-      id: true,
-      playCount: true,
-      _count: {
-        select: { reactions: true },
-      },
-    },
-  });
+  const scenarios = await featuredScenarioRepository.findTopScenario(sevenDaysAgo);
 
   if (scenarios.length === 0) {
     // No qualifying scenarios — preserve the existing entry (manual or none)
@@ -57,7 +41,7 @@ export async function rotateFeaturedScenario(): Promise<RotationResult> {
   const scored = scenarios
     .map((s) => ({
       id: s.id,
-      score: s._count.reactions * 2 + s.playCount * 1,
+      score: s.reactionCount * 2 + s.playCount * 1,
     }))
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -70,20 +54,7 @@ export async function rotateFeaturedScenario(): Promise<RotationResult> {
   }
 
   // 4. Persist the auto-rotation result
-  await db.featuredScenario.upsert({
-    where: { featuredDate: today },
-    update: {
-      scenarioId: winner.id,
-      featuredAt: new Date(),
-      featureType: "AUTOMATED",
-    },
-    create: {
-      scenarioId: winner.id,
-      featuredDate: today,
-      featuredAt: new Date(),
-      featureType: "AUTOMATED",
-    },
-  });
+  await featuredScenarioRepository.upsert(today, winner.id, "AUTOMATED");
 
   return { scenarioId: winner.id, date: today };
 }

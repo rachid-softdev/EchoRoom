@@ -12,6 +12,7 @@ import { withREDMetrics } from "../middleware/metrics";
 import { db } from "../db";
 import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
+import { detectCommentSpam } from "../services/security/spamDetection";
 
 export const communityRouter = router({
   comment: protectedProcedure
@@ -25,6 +26,15 @@ export const communityRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // Spam detection
+      const spamCheck = await detectCommentSpam(ctx.session.user.id, input.content);
+      if (spamCheck.flagged) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: spamCheck.reason ?? "Trop de requêtes",
+        });
+      }
+
       const comment = await db.comment.create({
         data: {
           userId: ctx.session.user.id,

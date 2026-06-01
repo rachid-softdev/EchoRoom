@@ -16,6 +16,7 @@ import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { generateScenarioScript } from "../services/ai/generateScript";
 import { getCachedFeed, setCachedFeed, invalidateFeedCache } from "../services/cache/scenarioCache";
 import { redis } from "@/lib/redis";
+import { detectScenarioSpam } from "../services/security/spamDetection";
 
 /** Shape of a feed item returned by the scenarios.feed procedure */
 type FeedItem = Prisma.ScenarioGetPayload<{
@@ -48,6 +49,15 @@ export const scenariosRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // Spam detection
+      const spamCheck = await detectScenarioSpam(ctx.session.user.id);
+      if (spamCheck.flagged) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: spamCheck.reason ?? "Trop de requêtes",
+        });
+      }
+
       const scenario = await db.scenario.create({
         data: {
           characterId: input.characterId,

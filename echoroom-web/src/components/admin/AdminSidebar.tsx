@@ -11,6 +11,7 @@ import {
   BarChart3,
   LayoutDashboard,
 } from "lucide-react"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 const navItems = [
   { href: "/admin/moderation", label: "Modération", icon: Shield },
@@ -56,6 +57,9 @@ export function AdminSidebar() {
           )
         })}
       </nav>
+      <div className="p-4 border-t border-border">
+        <ThemeToggle />
+      </div>
     </aside>
   )
 }

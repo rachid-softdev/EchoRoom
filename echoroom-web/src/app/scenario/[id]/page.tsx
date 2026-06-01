@@ -55,7 +55,8 @@ export async function generateMetadata({
   const ogDescription =
     scenario.description?.slice(0, 160) ??
     `Un scénario ${scenario.character?.name ?? "EchoRoom"} créé par ${scenario.creator?.username ?? "un membre"}`
-  const ogImage = scenario.character?.avatarUrl
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const ogUrl = `${appUrl}/api/og?id=${params.id}`
 
   return {
     title: ogTitle,
@@ -63,7 +64,7 @@ export async function generateMetadata({
     openGraph: {
       title: ogTitle,
       description: ogDescription,
-      images: ogImage ? [{ url: ogImage, width: 400, height: 400 }] : [],
+      images: [{ url: ogUrl, width: 1200, height: 630 }],
       siteName: "EchoRoom AI",
       type: "website",
     },
@@ -71,7 +72,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: ogTitle,
       description: ogDescription,
-      images: ogImage ? [ogImage] : [],
+      images: [ogUrl],
     },
   }
 }

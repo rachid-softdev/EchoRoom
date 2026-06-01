@@ -9,6 +9,7 @@ import { AppError } from "../lib/errors";
 import { getUTCDayRange } from "../lib/date";
 import { redis } from "@/lib/redis";
 import { createLogger } from "@/server/lib/logger";
+import { detectCallSpam } from "../services/security/spamDetection";
 
 const log = createLogger("calls-cache");
 
@@ -36,6 +37,15 @@ export const callsRouter = router({
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Ce numéro a été bloqué",
+        });
+      }
+
+      // Spam detection
+      const spamCheck = await detectCallSpam(ctx.session.user.id, input.phoneNumber);
+      if (spamCheck.flagged) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: spamCheck.reason ?? "Trop de requêtes",
         });
       }
 

@@ -1,7 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { router, publicProcedure, protectedProcedure, withIPRateLimit, withRateLimit } from "../procedures";
 import { db } from "../db";
-import { checkAndAwardBadges } from "../services/social/badges";
+import { AppError } from "../lib/errors";
 import { createClip, deleteClip, getClips } from "../services/social/clips";
 import { getTopCreators, getTopScenarios } from "../services/social/leaderboard";
 import {
@@ -140,13 +142,27 @@ export const socialRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      return createClip({
-        callId: input.callId,
-        userId: ctx.session.user.id,
-        title: input.title,
-        startTime: input.startTime,
-        endTime: input.endTime,
-      });
+      try {
+        return await createClip({
+          callId: input.callId,
+          userId: ctx.session.user.id,
+          title: input.title,
+          startTime: input.startTime,
+          endTime: input.endTime,
+        });
+      } catch (error) {
+        if (error instanceof AppError) {
+          switch (error.code) {
+            case "NOT_FOUND":
+              throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+            case "FORBIDDEN":
+              throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+            default:
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
+          }
+        }
+        throw error;
+      }
     }),
 
   getClips: protectedProcedure
@@ -169,7 +185,21 @@ export const socialRouter = router({
   deleteClip: protectedProcedure
     .input(z.object({ clipId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      return deleteClip(input.clipId, ctx.session.user.id);
+      try {
+        return await deleteClip(input.clipId, ctx.session.user.id);
+      } catch (error) {
+        if (error instanceof AppError) {
+          switch (error.code) {
+            case "NOT_FOUND":
+              throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+            case "FORBIDDEN":
+              throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+            default:
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
+          }
+        }
+        throw error;
+      }
     }),
 
   getLeaderboardScenarios: publicProcedure
