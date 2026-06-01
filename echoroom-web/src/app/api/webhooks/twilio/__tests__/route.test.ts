@@ -69,12 +69,15 @@ vi.mock("../validate", () => ({
 }));
 
 // Mock the twilio SDK — the route uses twilioClient.request() instead of raw fetch
+// Also validateRequest for the wrapTwilioWebhook middleware
 const mockTwilioRequest = vi.hoisted(() => vi.fn());
-vi.mock("twilio", () => ({
-  default: vi.fn(() => ({
+vi.mock("twilio", () => {
+  const mockFn = vi.fn(() => ({
     request: mockTwilioRequest,
-  })),
-}));
+  }));
+  mockFn.validateRequest = vi.fn().mockReturnValue(true);
+  return { default: mockFn };
+});
 
 // Fetch is globally available in Node 18+ / jsdom
 const mockFetch = vi.fn();

@@ -13,13 +13,13 @@ export const callsRouter = router({
     .use(withREDMetrics)
     .input(
       z.object({
-        scenarioId: z.string(),
+        scenarioId: z.string().min(1, "Scénario requis"),
         phoneNumber: z.string().transform((val) => val.normalize("NFKC"))
           .pipe(z.string().regex(
             /^\+[1-9]\d{6,14}$/,
             "Le numéro doit être au format international (ex: +33612345678)",
           )),
-        maxDurationSeconds: z.number().int().min(60).max(3600).default(300),
+        maxDurationSeconds: z.number().int().min(60, "Minimum 60 secondes").max(3600, "Maximum 3600 secondes").default(300),
       }),
     )
     .use(withRateLimit({ limit: 20, window: 3600 }))
@@ -76,7 +76,7 @@ export const callsRouter = router({
     .input(
       z.object({
         cursor: z.string().optional(),
-        limit: z.number().min(1).max(20).default(10),
+        limit: z.number().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -119,9 +119,9 @@ export const callsRouter = router({
     .use(withREDMetrics)
     .input(
       z.object({
-        scenarioId: z.string(),
+        scenarioId: z.string().min(1, "Scénario requis"),
         cursor: z.string().optional(),
-        limit: z.number().int().min(1).max(20).default(10),
+        limit: z.number().int().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -150,7 +150,7 @@ export const callsRouter = router({
     }),
 
   replay: protectedProcedure
-    .input(z.object({ callId: z.string() }))
+    .input(z.object({ callId: z.string().min(1, "Identifiant d'appel requis") }))
     .query(async ({ input, ctx }) => {
       const call = await db.call.findUnique({
         where: { id: input.callId },

@@ -35,6 +35,11 @@ vi.mock("@/components/shared/Footer", () => ({
   Footer: () => <footer data-testid="footer" />,
 }));
 
+// Mock ConsentBanner — renders nothing (avoids tRPC dependency in layout test)
+vi.mock("@/components/shared/ConsentBanner", () => ({
+  ConsentBanner: () => null,
+}));
+
 // Mock Inter font — returns a simple variable string
 vi.mock("next/font/google", () => ({
   Inter: () => ({

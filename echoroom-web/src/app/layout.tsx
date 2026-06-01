@@ -6,6 +6,7 @@ import { TRPCReactProvider } from "@/lib/trpc-provider";
 import { ToastProvider, Toaster } from "@/components/ui";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Footer } from "@/components/shared/Footer";
+import { ConsentBanner } from "@/components/shared/ConsentBanner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
             <SessionProvider>
               <ToastProvider>
               <div id="main-content" tabIndex={-1} className="flex flex-col min-h-screen">
+                <ConsentBanner />
                 {children}
                 <Footer />
               </div>

@@ -201,3 +201,238 @@ describe("conversationState lifecycle", () => {
     expect(retrieved!.callerNumber).toBe("v1:encrypted:+33698765432");
   });
 });
+
+describe("appendMessage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should append a message to existing state and update lastActiveAt", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { appendMessage } = await import("../conversationState");
+
+    // Seed Redis with initial state
+    const existingState = {
+      callSid: "CA_test_append",
+      scenarioId: "scenario-1",
+      characterId: "char-1",
+      callerNumber: "",
+      messages: [{ role: "user", content: "Hello" }],
+      turnCount: 0,
+      lastActiveAt: new Date().toISOString(),
+      status: "active",
+    };
+    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis.set).mockResolvedValue("OK");
+
+    const result = await appendMessage("CA_test_append", {
+      role: "assistant",
+      content: "Hi there!",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.messages).toHaveLength(2);
+    expect(result!.messages[0]).toEqual({ role: "user", content: "Hello" });
+    expect(result!.messages[1]).toEqual({ role: "assistant", content: "Hi there!" });
+    // lastActiveAt should be updated (newer than original)
+    expect(new Date(result!.lastActiveAt).getTime()).toBeGreaterThanOrEqual(
+      new Date(existingState.lastActiveAt).getTime(),
+    );
+  });
+
+  it("should return null when conversation state does not exist", async () => {
+    const { redis } = await import("@/lib/redis");
+    vi.mocked(redis.get).mockResolvedValue(null);
+
+    const { appendMessage } = await import("../conversationState");
+    const result = await appendMessage("CA_test_nonexistent", {
+      role: "assistant",
+      content: "Hello",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("should persist the updated state to Redis with TTL", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { appendMessage } = await import("../conversationState");
+    const { CONVERSATION_TTL_S } = await import("../constants");
+
+    const existingState = {
+      callSid: "CA_test_persist",
+      scenarioId: "scenario-1",
+      characterId: "char-1",
+      callerNumber: "",
+      messages: [],
+      turnCount: 0,
+      lastActiveAt: new Date().toISOString(),
+      status: "active",
+    };
+    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis.set).mockResolvedValue("OK");
+
+    await appendMessage("CA_test_persist", { role: "user", content: "Test" });
+
+    expect(redis.set).toHaveBeenCalledWith(
+      "conversation:CA_test_persist",
+      expect.any(String),
+      { ex: CONVERSATION_TTL_S },
+    );
+  });
+});
+
+describe("incrementTurn", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should increment turnCount by 1", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { incrementTurn } = await import("../conversationState");
+
+    const existingState = {
+      callSid: "CA_test_turn",
+      scenarioId: "scenario-1",
+      characterId: "char-1",
+      callerNumber: "",
+      messages: [],
+      turnCount: 5,
+      lastActiveAt: new Date().toISOString(),
+      status: "active",
+    };
+    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis.set).mockResolvedValue("OK");
+
+    const result = await incrementTurn("CA_test_turn");
+
+    expect(result).not.toBeNull();
+    expect(result!.turnCount).toBe(6);
+  });
+
+  it("should return null when state does not exist", async () => {
+    const { redis } = await import("@/lib/redis");
+    vi.mocked(redis.get).mockResolvedValue(null);
+
+    const { incrementTurn } = await import("../conversationState");
+    const result = await incrementTurn("CA_test_nonexistent");
+
+    expect(result).toBeNull();
+  });
+
+  it("should handle increment from zero", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { incrementTurn } = await import("../conversationState");
+
+    const existingState = {
+      callSid: "CA_test_zero",
+      scenarioId: "scenario-1",
+      characterId: "char-1",
+      callerNumber: "",
+      messages: [],
+      turnCount: 0,
+      lastActiveAt: new Date().toISOString(),
+      status: "active",
+    };
+    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
+
+    const result = await incrementTurn("CA_test_zero");
+    expect(result!.turnCount).toBe(1);
+  });
+});
+
+describe("setConversationStatus", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should update the status field", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { setConversationStatus } = await import("../conversationState");
+
+    const existingState = {
+      callSid: "CA_test_status",
+      scenarioId: "scenario-1",
+      characterId: "char-1",
+      callerNumber: "",
+      messages: [],
+      turnCount: 0,
+      lastActiveAt: new Date().toISOString(),
+      status: "active",
+    };
+    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(existingState));
+    vi.mocked(redis.set).mockResolvedValue("OK");
+
+    const result = await setConversationStatus("CA_test_status", "completed");
+
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe("completed");
+  });
+
+  it("should return null when state does not exist", async () => {
+    const { redis } = await import("@/lib/redis");
+    vi.mocked(redis.get).mockResolvedValue(null);
+
+    const { setConversationStatus } = await import("../conversationState");
+    const result = await setConversationStatus("CA_test_nonexistent", "completed");
+
+    expect(result).toBeNull();
+  });
+
+  it("should handle all status transitions", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { setConversationStatus } = await import("../conversationState");
+
+    const baseState = {
+      callSid: "CA_test_transitions",
+      scenarioId: "scenario-1",
+      characterId: "char-1",
+      callerNumber: "",
+      messages: [],
+      turnCount: 0,
+      lastActiveAt: new Date().toISOString(),
+      status: "active",
+    };
+
+    vi.mocked(redis.get).mockResolvedValue(JSON.stringify(baseState));
+    vi.mocked(redis.set).mockResolvedValue("OK");
+
+    const statuses: Array<"active" | "completed" | "timed_out" | "failed"> = [
+      "active", "completed", "timed_out", "failed",
+    ];
+
+    for (const s of statuses) {
+      vi.mocked(redis.get).mockResolvedValue(JSON.stringify(baseState));
+      const result = await setConversationStatus("CA_test_transitions", s);
+      expect(result!.status).toBe(s);
+    }
+  });
+});
+
+describe("deleteConversationState", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should delete the Redis key for the given callSid", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { deleteConversationState } = await import("../conversationState");
+
+    vi.mocked(redis.del).mockResolvedValue(1);
+
+    await deleteConversationState("CA_test_delete");
+
+    expect(redis.del).toHaveBeenCalledWith("conversation:CA_test_delete");
+    expect(redis.del).toHaveBeenCalledTimes(1);
+  });
+
+  it("should not throw when deleting a non-existent key", async () => {
+    const { redis } = await import("@/lib/redis");
+    const { deleteConversationState } = await import("../conversationState");
+
+    vi.mocked(redis.del).mockResolvedValue(0);
+
+    await expect(
+      deleteConversationState("CA_test_nonexistent"),
+    ).resolves.toBeUndefined();
+  });
+});

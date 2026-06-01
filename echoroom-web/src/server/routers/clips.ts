@@ -12,7 +12,7 @@ export const clipsRouter = router({
    */
   listByCall: protectedProcedure
     .use(withIPRateLimit({ limit: 60, window: 60 }))
-    .input(z.object({ callId: z.string().min(1) }))
+    .input(z.object({ callId: z.string().min(1, "Identifiant d'appel requis") }))
     .query(async ({ input, ctx }) => {
       const call = await db.call.findUnique({
         where: { id: input.callId },
@@ -37,8 +37,8 @@ export const clipsRouter = router({
     .use(withIPRateLimit({ limit: 60, window: 60 }))
     .input(
       z.object({
-        cursor: z.string().min(1).optional(),
-        limit: z.number().int().min(1).max(20).default(10),
+        cursor: z.string().min(1, "Curseur invalide").optional(),
+        limit: z.number().int().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -73,10 +73,10 @@ export const clipsRouter = router({
     .input(
       z
         .object({
-          callId: z.string().min(1),
-          startTime: z.number().int().min(0).max(86400),
-          endTime: z.number().int().min(0).max(86400),
-          title: z.string().min(1).max(100).optional(),
+          callId: z.string().min(1, "Identifiant d'appel requis"),
+          startTime: z.number().int().min(0, "Minimum 0").max(86400, "Maximum 86400"),
+          endTime: z.number().int().min(0, "Minimum 0").max(86400, "Maximum 86400"),
+          title: z.string().min(1, "Titre requis").max(100, "Maximum 100 caractères").optional(),
         })
         .refine((data) => data.endTime > data.startTime, {
           message: "La fin du clip doit être après le début",
@@ -97,7 +97,7 @@ export const clipsRouter = router({
    */
   delete: protectedProcedure
     .use(withRateLimit({ limit: 10, window: 3600 }))
-    .input(z.object({ clipId: z.string().min(1) }))
+    .input(z.object({ clipId: z.string().min(1, "Identifiant de clip requis") }))
     .mutation(async ({ input, ctx }) => {
       return deleteClip(input.clipId, ctx.session.user.id);
     }),

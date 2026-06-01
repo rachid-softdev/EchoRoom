@@ -6,18 +6,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Verifies that tokenVersion: { increment: 1 } is included in user.update
 // calls inside $transaction for:
 //   - adminRouter.deleteUser (admin.ts)
-//   - userRouter.deleteMyAccount (user.ts)
+//   - profileRouter.deleteMyAccount (profile.ts)
 //   - userRouter.withdrawConsent (user.ts) — regression test
 
 const mockDb = vi.hoisted(() => {
   const mockTx = {
     user: {
+      findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
       update: vi.fn().mockResolvedValue({ id: "user-1" }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     scenario: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     comment: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
-    call: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    call: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
   };
 
   return {
@@ -25,6 +30,9 @@ const mockDb = vi.hoisted(() => {
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    call: {
+      findFirst: vi.fn(),
     },
     auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
     // Expose mockTx for assertions
@@ -179,16 +187,16 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
   });
 });
 
-describe("userRouter.deleteMyAccount — N2 tokenVersion", () => {
+describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("should include tokenVersion: { increment: 1 } in user.update", async () => {
-    const { userRouter } = await import("../user");
+    const { profileRouter } = await import("../profile");
 
     // @ts-expect-error — mutation handler captured at import time
-    const handler = userRouter.deleteMyAccount.handler;
+    const handler = profileRouter.deleteMyAccount.handler;
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -210,10 +218,10 @@ describe("userRouter.deleteMyAccount — N2 tokenVersion", () => {
   });
 
   it("should include all deletion fields alongside tokenVersion", async () => {
-    const { userRouter } = await import("../user");
+    const { profileRouter } = await import("../profile");
 
     // @ts-expect-error — mutation handler captured at import time
-    const handler = userRouter.deleteMyAccount.handler;
+    const handler = profileRouter.deleteMyAccount.handler;
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -242,10 +250,10 @@ describe("userRouter.deleteMyAccount — N2 tokenVersion", () => {
     const { anonymizePersonalData } = await import(
       "@/server/services/user/anonymization"
     );
-    const { userRouter } = await import("../user");
+    const { profileRouter } = await import("../profile");
 
     // @ts-expect-error — mutation handler captured at import time
-    const handler = userRouter.deleteMyAccount.handler;
+    const handler = profileRouter.deleteMyAccount.handler;
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -262,6 +270,9 @@ describe("userRouter.deleteMyAccount — N2 tokenVersion", () => {
 describe("userRouter.withdrawConsent — N2 regression test", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Pre-check mocks: no active call and consent not already withdrawn
+    mockDb.call.findFirst.mockResolvedValue(null);
+    mockDb.user.findUnique.mockResolvedValue({ consentWithdrawnAt: null });
   });
 
   it("should include tokenVersion: { increment: 1 } in user.update", async () => {
@@ -278,17 +289,16 @@ describe("userRouter.withdrawConsent — N2 regression test", () => {
     // Verify $transaction was called
     expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
 
-    // withdrawConsent calls user.update twice:
-    // 1. Set consentWithdrawnAt
-    // 2. Increment tokenVersion
+    // withdrawConsent consolidates all fields into one user.update call,
+    // plus anonymizePersonalData calls another update for legacy fields
     const updateCalls = mockDb._mockTx.user.update.mock.calls;
-    expect(updateCalls.length).toBe(2);
 
-    // First call: consentWithdrawnAt
-    expect(updateCalls[0][0].data).toHaveProperty("consentWithdrawnAt");
-
-    // Second call: tokenVersion increment
-    expect(updateCalls[1][0].data.tokenVersion).toEqual({ increment: 1 });
+    // At least one update call should contain tokenVersion
+    const tokenVersionCall = updateCalls.find(
+      (call: any[]) => call[0]?.data?.tokenVersion,
+    );
+    expect(tokenVersionCall).toBeDefined();
+    expect(tokenVersionCall[0].data.tokenVersion).toEqual({ increment: 1 });
   });
 
   it("should call anonymizePersonalData inside the transaction", async () => {

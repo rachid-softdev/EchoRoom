@@ -15,6 +15,7 @@ interface ConversationEngineOptions {
 interface ConversationEngineResult {
   response: string;
   tokensUsed: number;
+  wasModerated: boolean;
 }
 
 export async function generateResponse(
@@ -25,6 +26,7 @@ export async function generateResponse(
     return {
       response: "Désolé, le moteur de conversation n'est pas disponible actuellement.",
       tokensUsed: 0,
+      wasModerated: false,
     };
   }
 
@@ -45,10 +47,12 @@ export async function generateResponse(
   // Centralized output moderation — catches ALL AI-generated content
   // Moderation will timeout after 2s and allow content through (fail-open)
   const moderatedResponse = await moderateOutput(response, 2000);
+  const wasModerated = moderatedResponse !== response;
 
   return {
     response: moderatedResponse,
     tokensUsed: completion.usage?.total_tokens ?? 0,
+    wasModerated,
   };
 }
 

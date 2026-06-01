@@ -14,60 +14,15 @@ import {
   getConversationState,
   setConversationStatus,
 } from "@/server/services/telephony/conversationState";
-import { checkWebhookRateLimit } from "../rateLimit";
-import { extractParams, validateTwilioRequest } from "./validate";
+import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
+import { validateRecordingUrl } from "@/server/lib/ssrf";
 
 const log = createLogger("twilio-webhook");
 
 const twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
 
-/** Defense-in-depth: validate that RecordingUrl points to a legitimate Twilio endpoint. */
-function isValidTwilioRecordingUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return (
-      parsed.protocol === "https:" &&
-      (parsed.hostname === "api.twilio.com" || parsed.hostname.endsWith(".twilio.com")) &&
-      parsed.pathname.startsWith("/2010-04-01/Accounts/") &&
-      parsed.pathname.includes("/Recordings/")
-    );
-  } catch {
-    return false;
-  }
-}
-
-export async function POST(req: NextRequest) {
-  // Enforce body size limit (50KB for Twilio webhooks)
-  const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
-  if (contentLength > 50_000) {
-    return NextResponse.json({ error: "Request too large" }, { status: 413 });
-  }
-
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
-
-  if (!(await checkWebhookRateLimit("twilio:status", ip))) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": "60" } },
-    );
-  }
-
-  const formData = await req.formData();
-  const params = extractParams(formData);
-
-  // Twilio webhook signature validation
-  if (!validateTwilioRequest(req, params)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
-  }
-  const callSid = formData.get("CallSid") as string | null;
-  const callStatus = formData.get("CallStatus") as string | null;
-  const callDuration = formData.get("CallDuration") as string | null;
-  const recordingUrl = formData.get("RecordingUrl") as string | null;
-  const recordingDuration = formData.get("RecordingDuration") as string | null;
-  const fromNumber = formData.get("From") as string | null;
+export const POST = wrapTwilioWebhook("twilio:status", async (_req, params) => {
+  const { callSid, callStatus, callDuration, recordingUrl, recordingDuration, fromNumber } = params;
 
   // Log the status update
   log.info("Twilio status webhook", { callSid, callStatus, fromNumber, callDuration });
@@ -132,11 +87,11 @@ export async function POST(req: NextRequest) {
     const message = error instanceof Error ? error.message : String(error);
     log.error("Error processing Twilio webhook", { error: message });
     // Return 500 so Twilio retries on transient failures
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
   }
 
   return NextResponse.json({ status: "ok" });
-}
+});
 
 async function handleCompletedCall(
   callSid: string,
@@ -197,7 +152,7 @@ async function handleCompletedCall(
 
   if (recordingUrl) {
     // Defense-in-depth: validate the recording URL origin
-    if (!isValidTwilioRecordingUrl(recordingUrl)) {
+    if (!validateRecordingUrl(recordingUrl)) {
       log.warn("Invalid RecordingUrl origin — skipping recording fetch", {
         recordingUrl,
       });

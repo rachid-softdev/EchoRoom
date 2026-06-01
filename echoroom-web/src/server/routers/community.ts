@@ -20,8 +20,8 @@ export const communityRouter = router({
     .use(withRateLimit({ limit: 30, window: 3600 }))
     .input(
       z.object({
-        scenarioId: z.string(),
-        content: z.string().min(1).max(500),
+        scenarioId: z.string().min(1, "Scénario requis"),
+        content: z.string().min(1, "Contenu requis").max(500, "Maximum 500 caractères"),
       }),
     )
     .mutation(async ({ input, ctx }) => {

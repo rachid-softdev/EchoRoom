@@ -74,89 +74,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      // On initial sign-in: set issuedAt + fetch tokenVersion from DB
+    async jwt({ token, user }) {
+      // On initial sign-in
       if (user) {
         token.id = user.id as string;
         token.role = (user.role ?? "USER") as "USER" | "ADMIN" | "MODERATOR";
         token.username = (user.username ?? "") as string;
-        token.issuedAt = Date.now();
 
-        // Immediately fetch the real tokenVersion from DB.
-        // This ensures the JWT matches the DB value and prevents
-        // infinite session invalidation after admin tokenVersion increments.
+        // Store tokenVersion and role from DB on every login
         if (user.id) {
           const dbUser = await db.user.findUnique({
             where: { id: user.id as string },
-            select: { tokenVersion: true },
+            select: { tokenVersion: true, role: true, deletedAt: true },
           });
-          token.tokenVersion = dbUser?.tokenVersion ?? 0;
+          if (dbUser) {
+            token.tokenVersion = dbUser.tokenVersion;
+            token.role = dbUser.role;
+          }
         }
+        token.issuedAt = Date.now();
         token.lastVerified = Date.now();
         return token;
       }
 
-      // ── Soft refresh: issue a new token if close to expiry ──
-      // If the token is within 1 hour of its 24h maxAge, re-issue with
-      // a fresh issuedAt to extend the session without forcing re-login.
-      // Re-verify against DB to ensure the account is still valid.
-      const issuedAt = token.issuedAt as number | undefined;
-      const now = Date.now();
-      const tokenAge = issuedAt ? now - issuedAt : 0;
-      const maxAgeMs = 24 * 60 * 60 * 1000;
-      const refreshWindowMs = 1 * 60 * 60 * 1000; // 1 hour before expiry
-
-      if (issuedAt && tokenAge > maxAgeMs - refreshWindowMs && tokenAge < maxAgeMs) {
-        // Verify account is still valid before extending
+      // ── Re-validate on every token access ──
+      // Fetch user from DB and compare tokenVersion + role.
+      // Invalidates token if user deleted, version changed, or role changed.
+      if (token.id) {
         const dbUser = await db.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, deletedAt: true, tokenVersion: true },
+          select: { tokenVersion: true, role: true, deletedAt: true },
         });
 
-        if (!dbUser || dbUser.deletedAt) return null;
-        if (dbUser.tokenVersion !== (token.tokenVersion ?? 0)) return null;
-
-        // Issue refreshed token
-        token.role = dbUser.role;
-        token.issuedAt = now;
-        token.lastVerified = now;
-        return token;
-      }
-
-      // ── Periodic re-validation ──
-      // Avoids a DB query on EVERY request while still detecting
-      // role changes, account deletion, and token invalidation.
-      // - Admins/moderators: every 1 minute (fast role change detection)
-      // - Regular users: every 15 minutes (reduce DB load)
-      const userRole = token.role as string;
-      const revalidationInterval = userRole === "ADMIN" || userRole === "MODERATOR"
-        ? 60 * 1000       // 1 minute for staff
-        : 15 * 60 * 1000; // 15 minutes for regular users
-
-      const needsRevalidation =
-        trigger === "update" ||
-        !token.lastVerified ||
-        now - (token.lastVerified as number) > revalidationInterval;
-
-      if (needsRevalidation && token.id) {
-        const dbUser = await db.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, deletedAt: true, tokenVersion: true },
-        });
-
-        // Account deleted or not found → invalidate token
-        if (!dbUser || dbUser.deletedAt) {
-          return null;
+        // User deleted, not found, or token version mismatch → invalidate
+        if (!dbUser || dbUser.deletedAt || dbUser.tokenVersion !== (token.tokenVersion ?? 0)) {
+          return {}; // Token vide → force re-connexion
         }
 
-        // Token version mismatch (password changed, session revoked) → invalidate
-        if (dbUser.tokenVersion !== (token.tokenVersion ?? 0)) {
-          return null;
-        }
-
-        // Update role from DB (in case of admin demotion/promotion)
+        // Update role from DB (détecte les promotions/rétrogradations)
         token.role = dbUser.role;
-        token.lastVerified = now;
+        token.lastVerified = Date.now();
       }
 
       return token;

@@ -8,6 +8,7 @@ import { communityRouter } from "./routers/community";
 import { adminRouter } from "./routers/admin";
 import { socialRouter } from "./routers/social";
 import { clipsRouter } from "./routers/clips";
+import { profileRouter } from "./routers/profile";
 import { userRouter } from "./routers/user";
 import { dashboardRouter } from "./routers/dashboard";
 import { scenariosV1Router } from "./routers/v1";
@@ -35,6 +36,7 @@ export const appRouter = router({
   admin: adminRouter,
   social: socialRouter,
   clips: clipsRouter,
+  profile: profileRouter,
   user: userRouter,
   dashboard: dashboardRouter,
 

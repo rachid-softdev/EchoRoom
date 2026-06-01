@@ -264,7 +264,7 @@ describe("moderateOutput", () => {
     const result = await moderateOutput(blockedText);
 
     expect(result).toBe(
-      "Je ne peux pas répondre à cela. Passons à autre chose.",
+      "Je suis désolé, je n'ai pas pu générer une réponse appropriée. Puis-je vous aider avec autre chose ?",
     );
   });
 

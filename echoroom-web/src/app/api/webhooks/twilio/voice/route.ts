@@ -10,8 +10,7 @@ import { ttsClient } from "@/server/services/audio/tts";
 import { ELEVENLABS_MODEL } from "@/server/services/telephony/constants";
 import { initConversationState } from "@/server/services/telephony/conversationState";
 import { buildSystemPrompt } from "@/server/services/telephony/prompts";
-import { checkWebhookRateLimit } from "../../rateLimit";
-import { extractParams, validateTwilioRequest } from "../validate";
+import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
 
 const log = createLogger("voice");
 
@@ -31,36 +30,11 @@ export async function GET(_req: NextRequest) {
  * POST handler — called by Twilio when a call is answered.
  * Returns TwiML with a greeting and speech gathering for the conversation.
  */
-export async function POST(req: NextRequest) {
-  // Enforce body size limit (50KB for Twilio webhooks)
-  const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
-  if (contentLength > 50_000) {
-    return NextResponse.json({ error: "Request too large" }, { status: 413 });
-  }
-
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
-
-  if (!(await checkWebhookRateLimit("twilio:voice:init", ip))) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": "60" } },
-    );
-  }
-
+export const POST = wrapTwilioWebhook("twilio:voice:init", async (req, params) => {
   const { searchParams } = new URL(req.url);
-  const formData = await req.formData();
-  const params = extractParams(formData);
 
-  // Twilio webhook signature validation
-  if (!validateTwilioRequest(req, params)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
-  }
-
-  const callSid = (formData.get("CallSid") as string) ?? "";
-  const fromNumber = (formData.get("From") as string) ?? "";
+  const callSid = params.callSid;
+  const fromNumber = params.fromNumber ?? "";
 
   // Resolve scenario and character — prefer opaque token over raw query params
   let scenarioId = "";
@@ -244,4 +218,4 @@ export async function POST(req: NextRequest) {
   return new NextResponse(twiml.toString(), {
     headers: { "Content-Type": "text/xml" },
   });
-}
+});

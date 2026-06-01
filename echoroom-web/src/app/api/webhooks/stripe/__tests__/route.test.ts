@@ -90,7 +90,7 @@ describe("Stripe webhook POST handler", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body).toEqual({ error: "Missing stripe-signature header" });
+    expect(body).toEqual({ error: "En-tête stripe-signature manquant" });
     expect(mockConstructEvent).not.toHaveBeenCalled();
   });
 
@@ -106,7 +106,7 @@ describe("Stripe webhook POST handler", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe("Invalid signature");
+    expect(body.error).toBe("Signature invalide");
   });
 
   it("should verify signature with correct parameters", async () => {
@@ -314,7 +314,7 @@ describe("Stripe webhook POST handler", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body).toEqual({ error: "Missing metadata" });
+    expect(body).toEqual({ error: "Métadonnées manquantes" });
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxCreate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
@@ -341,7 +341,7 @@ describe("Stripe webhook POST handler", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body).toEqual({ error: "Missing metadata" });
+    expect(body).toEqual({ error: "Métadonnées manquantes" });
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxCreate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
@@ -369,7 +369,7 @@ describe("Stripe webhook POST handler", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body).toEqual({ error: "Invalid credits" });
+    expect(body).toEqual({ error: "Crédits invalides" });
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxCreate).not.toHaveBeenCalled();
     expect(mockTransaction).not.toHaveBeenCalled();
@@ -394,7 +394,7 @@ describe("Stripe webhook POST handler", () => {
     let response = await POST(req);
     expect(response.status).toBe(400);
     let body = await response.json();
-    expect(body).toEqual({ error: "Invalid credits" });
+    expect(body).toEqual({ error: "Crédits invalides" });
 
     // Test negative
     vi.clearAllMocks();
@@ -413,7 +413,7 @@ describe("Stripe webhook POST handler", () => {
     response = await POST(req);
     expect(response.status).toBe(400);
     body = await response.json();
-    expect(body).toEqual({ error: "Invalid credits" });
+    expect(body).toEqual({ error: "Crédits invalides" });
   });
 
   // -----------------------------------------------------------------------
@@ -494,7 +494,7 @@ describe("Stripe webhook POST handler", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body).toEqual({ error: "Missing metadata" });
+    expect(body).toEqual({ error: "Métadonnées manquantes" });
   });
 
   // -----------------------------------------------------------------------
@@ -682,8 +682,12 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
+      // Set up tx-level mock — production code uses tx.* inside $transaction
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+      const mockTx = {
+        purchase: { updateMany: mockTxUpdateMany },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -693,7 +697,7 @@ describe("Stripe webhook POST handler", () => {
       expect(response.status).toBe(200);
 
       // Atomic update: only matches where disputedAt IS NULL
-      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+      expect(mockTxUpdateMany).toHaveBeenCalledWith({
         where: {
           stripePaymentId: "pi_dispute_123",
           disputedAt: null,
@@ -713,9 +717,12 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
-      // updateMany returns count=0 (disputedAt already set)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 0 });
+      // Set up tx-level mock — updateMany returns count=0 (disputedAt already set)
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+      const mockTx = {
+        purchase: { updateMany: mockTxUpdateMany },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -724,7 +731,7 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
       // Still called — but returned 0, so no action beyond logging
-      expect(db.purchase.updateMany).toHaveBeenCalled();
+      expect(mockTxUpdateMany).toHaveBeenCalled();
     });
 
     it("should handle dispute without payment_intent gracefully", async () => {
@@ -829,9 +836,11 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
-      // updateMany returns count=1 (disputedAt was set, now cleared)
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+      const mockTx = {
+        purchase: { updateMany: mockTxUpdateMany },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
       const { POST } = await import("../route");
 
@@ -840,8 +849,8 @@ describe("Stripe webhook POST handler", () => {
 
       expect(response.status).toBe(200);
 
-      // Atomic update: only matches where disputedAt IS NOT NULL
-      expect(db.purchase.updateMany).toHaveBeenCalledWith({
+      // Atomic update inside $transaction: only matches where disputedAt IS NOT NULL
+      expect(mockTxUpdateMany).toHaveBeenCalledWith({
         where: {
           stripePaymentId: "pi_won_123",
           disputedAt: { not: null },
@@ -862,17 +871,21 @@ describe("Stripe webhook POST handler", () => {
         data: { object: dispute },
       });
 
-      const { db } = await import("@/server/db");
-      (db.purchase.updateMany as any).mockResolvedValue({ count: 1 });
+      const mockTxUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+      const mockTx = {
+        purchase: { updateMany: mockTxUpdateMany },
+      };
+      mockTransaction.mockImplementation(async (cb: any) => cb(mockTx));
 
+      const { db } = await import("@/server/db");
       const { POST } = await import("../route");
 
       const req = createNextRequest(JSON.stringify({}), "valid_sig");
       await POST(req);
 
-      // No user update or $transaction — only updateMany for clearing disputedAt
+      // No user update — only updateMany inside $transaction for clearing disputedAt
       expect(db.user.update).not.toHaveBeenCalled();
-      expect(mockTransaction).not.toHaveBeenCalled();
+      expect(mockTransaction).toHaveBeenCalled();
     });
 
     it("should handle dispute.closed without payment_intent gracefully", async () => {

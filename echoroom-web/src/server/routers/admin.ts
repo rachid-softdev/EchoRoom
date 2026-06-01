@@ -206,12 +206,22 @@ export const adminRouter = router({
         limit: z.number().min(1).max(50).default(20),
         action: z.string().optional(),
         entityType: z.string().optional(),
+        adminId: z.string().optional(),
+        startDate: z.string().datetime().optional(),
+        endDate: z.string().datetime().optional(),
       }),
     )
     .query(async ({ input }) => {
+      // Construire un filtre typé via Zod + Prisma.AuditLogWhereInput
       const where: Prisma.AuditLogWhereInput = {};
       if (input.action) where.action = { equals: input.action };
       if (input.entityType) where.entityType = { equals: input.entityType };
+      if (input.adminId) where.adminId = input.adminId;
+      if (input.startDate || input.endDate) {
+        where.createdAt = {};
+        if (input.startDate) where.createdAt.gte = new Date(input.startDate);
+        if (input.endDate) where.createdAt.lte = new Date(input.endDate);
+      }
 
       const logs = await db.auditLog.findMany({
         where,
