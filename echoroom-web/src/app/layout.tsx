@@ -4,6 +4,7 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { TRPCReactProvider } from "@/lib/trpc-provider";
 import { ToastProvider, Toaster } from "@/components/ui";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Footer } from "@/components/shared/Footer";
 
 const inter = Inter({
@@ -27,11 +28,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // suppressHydrationWarning est nécessaire car le thème dark est défini
-    // statiquement dans le HTML (<html className="dark">). Next.js
+    // suppressHydrationWarning est nécessaire car le thème (dark/light) est
+    // défini statiquement par next-themes via l'attribut class. Next.js
     // n'a pas encore hydraté le ThemeProvider au moment du rendu initial.
-    // Ceci est intentionnel et ne masque pas de vrais problèmes d'hydratation.
-    <html lang="fr" className="dark" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <a
           href="#main-content"
@@ -39,9 +39,10 @@ export default function RootLayout({
         >
           Aller au contenu principal
         </a>
-        <TRPCReactProvider>
-          <SessionProvider>
-            <ToastProvider>
+        <ThemeProvider>
+          <TRPCReactProvider>
+            <SessionProvider>
+              <ToastProvider>
               <div id="main-content" tabIndex={-1} className="flex flex-col min-h-screen">
                 {children}
                 <Footer />
@@ -50,6 +51,7 @@ export default function RootLayout({
             </ToastProvider>
           </SessionProvider>
         </TRPCReactProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

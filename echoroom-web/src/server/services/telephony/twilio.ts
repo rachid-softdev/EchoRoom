@@ -4,6 +4,6 @@ import { createTwilioCircuitBreaker } from "@/server/lib/circuitBreaker";
 
 export const twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN, {
   timeout: 10000,
-});
+} as any);
 export const TWILIO_PHONE = env.TWILIO_PHONE_NUMBER;
 export const twilioCircuitBreaker = createTwilioCircuitBreaker();

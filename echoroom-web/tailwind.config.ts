@@ -3,32 +3,31 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: [
     "./src/**/*.{ts,tsx}",
-    "../../packages/ui/src/**/*.{ts,tsx}",
   ],
   darkMode: "class",
   theme: {
     extend: {
       colors: {
-        background: "#0a0a0b",
-        foreground: "#fafafa",
-        card: "#141416",
-        "card-foreground": "#fafafa",
-        border: "#27272a",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: "var(--card)",
+        "card-foreground": "var(--card-foreground)",
+        border: "var(--border)",
         primary: {
-          DEFAULT: "#06b6d4",
-          foreground: "#0a0a0b",
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
         },
         secondary: {
-          DEFAULT: "#27272a",
-          foreground: "#fafafa",
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
         },
         muted: {
-          DEFAULT: "#18181b",
-          foreground: "#a1a1aa",
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
         destructive: {
-          DEFAULT: "#ef4444",
-          foreground: "#fafafa",
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
         },
       },
       borderRadius: {

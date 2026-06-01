@@ -2,4 +2,3 @@ packages:
   - "echoroom-web"
   - "echoroom-mobile"
   - "echoroom-desktop-electron"
-  - "packages/*"

@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
+import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { db } from "../db";
 import { getUTCDateString } from "../lib/date";
 import { adminProcedure, router } from "../trpc";
@@ -544,5 +545,14 @@ export const adminRouter = router({
       const nextCursor = users.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };
+    }),
+
+  purgeGDPR: adminProcedure
+    .input(z.object({
+      retentionDays: z.number().min(7).max(90).default(30),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await purgeAnonymizedUsers(input.retentionDays);
+      return result;
     }),
 });

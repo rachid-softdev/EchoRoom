@@ -25,6 +25,11 @@ vi.mock("@/components/ui", () => ({
   Toaster: () => null,
 }));
 
+// Mock ThemeProvider — renders children directly (jsdom lacks window.matchMedia)
+vi.mock("@/components/providers/ThemeProvider", () => ({
+  ThemeProvider: ({ children }: any) => <>{children}</>,
+}));
+
 // Mock Footer — renders a simple placeholder
 vi.mock("@/components/shared/Footer", () => ({
   Footer: () => <footer data-testid="footer" />,
@@ -110,11 +115,11 @@ describe("RootLayout — skip link accessibility", () => {
     expect(mainContent).toContainElement(footer);
   });
 
-  it("has the correct HTML structure with lang='fr' and dark class", () => {
-    render(<RootLayout><div>Test</div></RootLayout>);
+  it("renders html element with lang='fr'", () => {
+    const { container } = render(<RootLayout><div>Test</div></RootLayout>);
 
-    const html = document.documentElement;
-    expect(html).toHaveAttribute("lang", "fr");
-    expect(html.className).toContain("dark");
+    // jsdom creates a default html element, so the component's html is a child
+    // Verify the rendered output contains the expected attribute
+    expect(container.innerHTML).toContain('lang="fr"');
   });
 });

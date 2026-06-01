@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
@@ -8,6 +9,7 @@ import { checkRateLimit } from "./middleware/rateLimit";
 import { checkContentBlocklist } from "./services/ai/moderation";
 import { validateCSRF, CSRFFailure } from "./middleware/csrf";
 import { createLogger } from "./lib/logger";
+import { runWithContext } from "./lib/requestContext";
 export { withIPRateLimit } from "./middleware/ipRateLimit";
 
 const log = createLogger("trpc");
@@ -52,6 +54,7 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
   return {
     db,
     session,
+    requestId: sanitizeRequestId(opts?.req?.headers.get("x-request-id")) ?? randomUUID(),
     headers: opts?.req?.headers ?? new Headers(),
     req: opts?.req,
   };
@@ -60,6 +63,12 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
 function parseTrustedOrigins(raw?: string): string[] {
   if (!raw) return [];
   return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+/** Sanitize and truncate client-supplied request IDs to prevent log bloat */
+function sanitizeRequestId(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  return raw.replace(/[^a-zA-Z0-9._~-]/g, "").substring(0, 64) || null;
 }
 
 export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
@@ -80,7 +89,6 @@ const t = initTRPC.context<TRPCContext>().create({
 export const router = t.router;
 export const mergeRouters = t.mergeRouters;
 export const middleware = t.middleware;
-export const publicProcedure = t.procedure;
 
 /** Session guaranteed to exist (after isAuthenticated guard) */
 export interface AuthenticatedSession {
@@ -171,6 +179,15 @@ export function withRateLimit(config: RateLimitConfig) {
   });
 }
 
+const withTracing = middleware(({ ctx, next }) => {
+  const requestId = ctx.requestId;
+  const userId = ctx.session?.user?.id;
+  return runWithContext(
+    { requestId, userId, source: "tRPC" },
+    () => next({ ctx: { ...ctx, requestId } }),
+  );
+});
+
 const TEXT_FIELDS = [
   "title",
   "description",
@@ -216,5 +233,8 @@ export const withContentModeration = middleware(async ({ ctx, next, input }) => 
   return next();
 });
 
-export const protectedProcedure = t.procedure.use(isAuthenticated);
-export const adminProcedure = t.procedure.use(isAuthenticated).use(isAdmin);
+export const publicProcedure = t.procedure.use(withTracing);
+export const protectedProcedure = t.procedure.use(isAuthenticated).use(withTracing);
+export const adminProcedure = t.procedure.use(isAuthenticated).use(isAdmin).use(withTracing);
+
+export { withTracing };

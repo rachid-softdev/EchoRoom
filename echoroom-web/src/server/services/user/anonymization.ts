@@ -29,6 +29,12 @@ export async function anonymizePersonalData(tx: PrismaTx, userId: string): Promi
     data: { content: "[Commentaire supprimé]" },
   });
 
+  // Sever FK references to this user as moderator (comments they moderated)
+  await tx.comment.updateMany({
+    where: { moderatedById: userId },
+    data: { moderatedById: null, moderatedAt: null },
+  });
+
   await tx.call.updateMany({
     where: { userId },
     data: { phoneNumber: "[ANONYMISÉ]" },
