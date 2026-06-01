@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { useApiToast } from "@/lib/trpc-error";
+import { toast } from "@/components/ui";
 import { CATEGORY_LABELS } from "@/lib/constants";
 
 export default function CreatePage() {
@@ -19,6 +20,25 @@ export default function CreatePage() {
   const createScenario = useApiToast(api.scenarios.create.useMutation(), {
     success: "Scénario créé !",
     onSuccess: () => router.push("/dashboard"),
+  });
+
+  const generateScript = api.scenarios.generateScript.useMutation({
+    onSuccess: (data) => {
+      setOpeningMessage(data.suggestedOpening);
+      if (data.suggestedResponses.length > 0) {
+        setAiInstructions(data.suggestedResponses.join("\n"));
+      }
+      toast({
+        title: "Script généré avec succès",
+        variant: "success",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: err.message ?? "Erreur lors de la génération du script",
+        variant: "destructive",
+      });
+    },
   });
 
   const [title, setTitle] = useState("");
@@ -132,9 +152,31 @@ export default function CreatePage() {
 
           {/* Opening message */}
           <div className="space-y-2">
-            <label htmlFor="openingMessage" className="text-sm font-medium">
-              Message d&apos;ouverture
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="openingMessage" className="text-sm font-medium">
+                Message d&apos;ouverture
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  generateScript.mutate({
+                    characterId: selectedCharacter,
+                    title,
+                    description,
+                    openingMessage,
+                  })
+                }
+                disabled={generateScript.isPending || !selectedCharacter}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generateScript.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                Assistant IA
+              </button>
+            </div>
             <Textarea
               id="openingMessage"
               placeholder="Ce que le personnage dit au début de l'appel..."
