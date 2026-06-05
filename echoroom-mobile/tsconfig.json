@@ -1,17 +1,7 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../tsconfig/expo-base.json",
   "compilerOptions": {
-    "strict": true,
     "moduleResolution": "bundler",
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "useUnknownInCatchVariables": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
