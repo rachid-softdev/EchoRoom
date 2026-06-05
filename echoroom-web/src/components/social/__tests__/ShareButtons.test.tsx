@@ -79,7 +79,8 @@ describe("ShareButtons", () => {
   });
 
   it("opens Twitter intent URL without description", () => {
-    render(<ShareButtons {...defaultProps} description={undefined} />);
+    const { description: _desc, ...propsWithoutDesc } = defaultProps;
+    render(<ShareButtons {...propsWithoutDesc} />);
     fireEvent.click(screen.getByRole("button", { name: /twitter/i }));
 
     const expected = `https://twitter.com/intent/tweet?text=${encodeURIComponent("Test Scenario")}&url=${encodeURIComponent("http://localhost:3000/scenario/scenario-123")}`;
@@ -187,8 +188,9 @@ describe("ShareButtons", () => {
   it("passes title as text when description is missing for native share", async () => {
     const mockShare = vi.fn().mockResolvedValue(undefined);
     (navigator as any).share = mockShare;
+    const { description: _desc, ...propsWithoutDesc } = defaultProps;
 
-    render(<ShareButtons {...defaultProps} description={undefined} />);
+    render(<ShareButtons {...propsWithoutDesc} />);
     fireEvent.click(screen.getByRole("button", { name: /partager/i }));
 
     await waitFor(() => {

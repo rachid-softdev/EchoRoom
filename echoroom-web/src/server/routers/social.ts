@@ -139,7 +139,7 @@ export const socialRouter = router({
         return await createClip({
           callId: input.callId,
           userId: ctx.session.user.id,
-          title: input.title,
+          ...(input.title !== undefined ? { title: input.title } : {}),
           startTime: input.startTime,
           endTime: input.endTime,
         });

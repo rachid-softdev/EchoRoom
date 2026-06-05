@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 
 interface PaginatedResult<T> {
   items: T[];
-  nextCursor?: string;
+  nextCursor: string | undefined;
 }
 
 interface UsePaginatedQueryOptions<T> {
@@ -13,11 +13,11 @@ interface UsePaginatedQueryOptions<T> {
 
 export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
   fetcher: (args: TArgs) => {
-    data?: PaginatedResult<T>;
+    data: PaginatedResult<T> | undefined;
     isLoading: boolean;
     isFetching?: boolean;
     isError: boolean;
-    error?: { message?: string } | null;
+    error?: { message?: string } | null | undefined;
     refetch: (opts?: Record<string, unknown>) => void;
   },
   initialArgs: Omit<TArgs, "cursor"> & { limit: number },

@@ -31,7 +31,7 @@ export const withREDMetrics = middleware(async ({ ctx, next, path, type }) => {
     const userId = ctx.session?.user?.id;
     trackEvent({
       event: "trpc_request",
-      userId,
+      ...(userId ? { userId } : {}),
       properties: {
         endpoint: path,
         type,
@@ -54,7 +54,7 @@ export const withREDMetrics = middleware(async ({ ctx, next, path, type }) => {
     const userId = ctx.session?.user?.id;
     trackEvent({
       event: "trpc_request",
-      userId,
+      ...(userId ? { userId } : {}),
       properties: {
         endpoint: path,
         type,

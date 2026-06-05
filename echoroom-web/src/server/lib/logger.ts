@@ -72,7 +72,7 @@ function writeEntry(level: LogLevel, module: string, message: string, meta?: Rec
     level,
     module,
     message,
-    meta: enhancedMeta,
+    ...(enhancedMeta ? { meta: enhancedMeta } : {}),
   };
 
   const line = JSON.stringify(entry);

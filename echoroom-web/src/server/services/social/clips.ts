@@ -44,7 +44,7 @@ export async function createClip(params: CreateClipParams) {
   const clip = await clipRepository.create({
     callId: params.callId,
     userId: params.userId,
-    title: params.title,
+    ...(params.title !== undefined ? { title: params.title } : {}),
     startTime: params.startTime,
     endTime: params.endTime,
   });

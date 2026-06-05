@@ -33,10 +33,10 @@ export default function CallReplayPage() {
       </p>
       {matchingCall && (
         <ReplayHeader
-          scenarioTitle={matchingCall.scenario?.title}
-          characterName={matchingCall.scenario?.character?.name}
-          durationSeconds={matchingCall.durationSeconds}
-          status={matchingCall.status}
+          {...(matchingCall.scenario?.title ? { scenarioTitle: matchingCall.scenario.title } : {})}
+          {...(matchingCall.scenario?.character?.name ? { characterName: matchingCall.scenario.character.name } : {})}
+          {...(matchingCall.durationSeconds !== undefined ? { durationSeconds: matchingCall.durationSeconds } : {})}
+          {...(matchingCall.status ? { status: matchingCall.status } : {})}
         />
       )}
 
@@ -45,13 +45,13 @@ export default function CallReplayPage() {
           <div className="space-y-6">
             <AudioPlayer
               recordingUrl={data.recordingUrl}
-              title={matchingCall?.scenario?.title}
+              {...(matchingCall?.scenario?.title ? { title: matchingCall.scenario.title } : {})}
             />
 
             <TranscriptView
               transcript={data.transcript ?? null}
               isLoading={replayQuery.isFetching}
-              scenarioName={matchingCall?.scenario?.title}
+              {...(matchingCall?.scenario?.title ? { scenarioName: matchingCall.scenario.title } : {})}
             />
           </div>
         )}

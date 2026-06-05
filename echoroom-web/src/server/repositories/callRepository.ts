@@ -57,7 +57,7 @@ export class PrismaCallRepository implements ICallRepository {
     return this.db.call.create({
       data: {
         user: { connect: { id: data.userId } },
-        scenario: data.scenarioId ? { connect: { id: data.scenarioId } } : undefined,
+        ...(data.scenarioId ? { scenario: { connect: { id: data.scenarioId } } } : {}),
         phoneNumber: data.phoneNumber,
         status: data.status as $Enums.CallStatus,
         costCredits: data.costCredits,

@@ -89,7 +89,6 @@ describe("usePaginatedQuery", () => {
       },
       "cursor-2": {
         items: [{ id: "2", name: "Item 2" }],
-        nextCursor: undefined,
       },
     };
 
@@ -152,7 +151,6 @@ describe("usePaginatedQuery", () => {
           { id: "2", name: "Item 2" }, // Duplicate
           { id: "3", name: "Item 3" }, // New
         ],
-        nextCursor: undefined,
       },
     };
 
@@ -351,7 +349,6 @@ describe("usePaginatedQuery", () => {
       },
       "cursor-2": {
         items: [{ id: "2", name: "Item 2" }],
-        nextCursor: undefined,
       },
     };
 

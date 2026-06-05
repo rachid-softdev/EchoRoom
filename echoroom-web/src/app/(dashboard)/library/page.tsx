@@ -5,7 +5,7 @@ import { Button } from "@/components/ui";
 import { Library as LibraryIcon, Plus } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { PaginatedGrid } from "@/components/shared/PaginatedGrid";
-import { ScenarioCard } from "@/components/shared/ScenarioCard";
+import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
@@ -60,7 +60,7 @@ export default function LibraryPage() {
             onLoadMore={paginated.loadMore}
           >
             {items.map((scenario) => (
-              <ScenarioCard key={scenario.id} scenario={scenario as any} />
+              <ScenarioCard key={(scenario as { id: string }).id} scenario={scenario as ScenarioCardData} />
             ))}
           </PaginatedGrid>
         )}
