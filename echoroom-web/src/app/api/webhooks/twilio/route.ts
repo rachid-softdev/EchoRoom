@@ -181,7 +181,7 @@ async function handleCompletedCall(
 
   // Merge transcripts
   if (deepgramTranscript && transcript) {
-    transcript.deepgramTranscript = deepgramTranscript;
+    transcript["deepgramTranscript"] = deepgramTranscript;
   } else if (deepgramTranscript) {
     transcript = { deepgramTranscript, messages: [] };
   }

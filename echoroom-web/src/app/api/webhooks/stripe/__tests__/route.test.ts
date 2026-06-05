@@ -167,7 +167,7 @@ describe("Stripe webhook POST handler", () => {
 
     // Verify $transaction was called with a callback function
     expect(mockTransaction).toHaveBeenCalledTimes(1);
-    expect(typeof mockTransaction.mock.calls[0][0]).toBe("function");
+    expect(typeof mockTransaction.mock.calls[0]![0]).toBe("function");
 
     // Verify purchase was created inside the transaction
     expect(mockTxCreate).toHaveBeenCalledWith({

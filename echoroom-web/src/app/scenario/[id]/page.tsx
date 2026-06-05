@@ -55,7 +55,7 @@ export async function generateMetadata({
   const ogDescription =
     scenario.description?.slice(0, 160) ??
     `Un scénario ${scenario.character?.name ?? "EchoRoom"} créé par ${scenario.creator?.username ?? "un membre"}`
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? "http://localhost:3000"
   const ogUrl = `${appUrl}/api/og?id=${params.id}`
 
   return {

@@ -32,8 +32,8 @@ function serializeValue(value: unknown): unknown {
       name: value.name,
       message: value.message,
     };
-    if (process.env.NODE_ENV === "development") {
-      serialized.stack = value.stack;
+    if (process.env['NODE_ENV'] === "development") {
+      serialized["stack"] = value.stack;
     }
     // Capture custom properties (e.g., AppError.code)
     for (const key of Object.keys(value as unknown as Record<string, unknown>)) {

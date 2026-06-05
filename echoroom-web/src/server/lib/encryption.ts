@@ -58,18 +58,25 @@ export function decryptPhoneNumber(encrypted: string): string {
   const parts = encrypted.split(":");
   let offset = 0;
 
-  if (parts[0] === "v1") {
+  const firstPart = parts[0];
+  if (firstPart === undefined) {
+    throw new Error("Invalid encrypted phone number format");
+  }
+
+  if (firstPart === "v1") {
     offset = 1;
-  } else if (parts[0].startsWith("v") && /^v\d+$/.test(parts[0])) {
-    throw new Error(`Unknown encryption key version: ${parts[0]}`);
+  } else if (firstPart.startsWith("v") && /^v\d+$/.test(firstPart)) {
+    throw new Error(`Unknown encryption key version: ${firstPart}`);
   }
 
   if (parts.length < offset + 3) {
     throw new Error("Invalid encrypted phone number format");
   }
 
-  const iv = Buffer.from(parts[offset], "hex");
-  const authTag = Buffer.from(parts[offset + 1], "hex");
+  const ivPart = parts[offset]!;
+  const authTagPart = parts[offset + 1]!;
+  const iv = Buffer.from(ivPart, "hex");
+  const authTag = Buffer.from(authTagPart, "hex");
   const ciphertext = parts.slice(offset + 2).join(":");
 
   try {

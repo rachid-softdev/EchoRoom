@@ -186,13 +186,13 @@ describe("getTopCreators", () => {
     const result = await getTopCreators({ period: "ALL", sort: "LIKES" });
 
     // u1 has totalLikesReceived=200, u2 has 30 — u1 should be first
-    expect(result[0].id).toBe("u1");
-    expect(result[1].id).toBe("u2");
+    expect(result[0]!.id).toBe("u1");
+    expect(result[1]!.id).toBe("u2");
     // Final values should use sub-aggregate
-    expect(result[0].totalLikesReceived).toBe(200);
-    expect(result[1].totalLikesReceived).toBe(30);
-    expect(result[0].username).toBe("top");
-    expect(result[1].username).toBe("bottom");
+    expect(result[0]!.totalLikesReceived).toBe(200);
+    expect(result[1]!.totalLikesReceived).toBe(30);
+    expect(result[0]!.username).toBe("top");
+    expect(result[1]!.username).toBe("bottom");
   });
 
   it("should sort by UserSocial.totalCallsMade when sort is CALLS", async () => {
@@ -212,10 +212,10 @@ describe("getTopCreators", () => {
     const result = await getTopCreators({ period: "ALL", sort: "CALLS" });
 
     // u1 has totalCallsMade=100, u2 has 50
-    expect(result[0].id).toBe("u1");
-    expect(result[1].id).toBe("u2");
-    expect(result[0].totalCallsMade).toBe(100);
-    expect(result[1].totalCallsMade).toBe(50);
+    expect(result[0]!.id).toBe("u1");
+    expect(result[1]!.id).toBe("u2");
+    expect(result[0]!.totalCallsMade).toBe(100);
+    expect(result[1]!.totalCallsMade).toBe(50);
   });
 
   it("should fall back to legacy fields when UserSocial is null (period-filtered path)", async () => {
@@ -242,8 +242,8 @@ describe("getTopCreators", () => {
     const result = await getTopCreators({ period: "WEEK", sort: "LIKES" });
 
     // u2 has social.totalLikesReceived=200 > u1's legacy 150
-    expect(result[0].id).toBe("u2");
-    expect(result[1].id).toBe("u1");
+    expect(result[0]!.id).toBe("u2");
+    expect(result[1]!.id).toBe("u1");
   });
 
   it("should filter by users active in the period for WEEK", async () => {

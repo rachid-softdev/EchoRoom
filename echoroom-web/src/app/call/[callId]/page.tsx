@@ -10,7 +10,7 @@ import { api } from "@/lib/trpc";
 
 export default function CallReplayPage() {
   const params = useParams();
-  const callId = params.callId as string;
+  const callId = params["callId"] as string;
 
   const replayQuery = api.calls.replay.useQuery({ callId });
   const callsQuery = api.calls.history.useQuery({ limit: 1 });

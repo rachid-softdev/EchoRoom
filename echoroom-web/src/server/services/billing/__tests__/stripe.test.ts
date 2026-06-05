@@ -22,8 +22,8 @@ const PRO_PRICE_ID = "price_tier_pro";
 describe("createCheckoutSession", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_PRICE_STARTER = STARTER_PRICE_ID;
-    process.env.STRIPE_PRICE_PRO = PRO_PRICE_ID;
+    process.env['STRIPE_PRICE_STARTER'] = STARTER_PRICE_ID;
+    process.env['STRIPE_PRICE_PRO'] = PRO_PRICE_ID;
   });
 
   it("should create a checkout session with correct parameters", async () => {

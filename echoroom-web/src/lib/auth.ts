@@ -77,9 +77,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       // On initial sign-in
       if (user) {
-        token.id = user.id as string;
-        token.role = (user.role ?? "USER") as "USER" | "ADMIN" | "MODERATOR";
-        token.username = (user.username ?? "") as string;
+        token["id"] = user.id as string;
+        token["role"] = (user.role ?? "USER") as "USER" | "ADMIN" | "MODERATOR";
+        token["username"] = (user.username ?? "") as string;
 
         // Store tokenVersion and role from DB on every login
         if (user.id) {
@@ -88,32 +88,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             select: { tokenVersion: true, role: true, deletedAt: true },
           });
           if (dbUser) {
-            token.tokenVersion = dbUser.tokenVersion;
-            token.role = dbUser.role;
+            token["tokenVersion"] = dbUser.tokenVersion;
+            token["role"] = dbUser.role;
           }
         }
-        token.issuedAt = Date.now();
-        token.lastVerified = Date.now();
+        token["issuedAt"] = Date.now();
+        token["lastVerified"] = Date.now();
         return token;
       }
 
       // ── Re-validate on every token access ──
       // Fetch user from DB and compare tokenVersion + role.
       // Invalidates token if user deleted, version changed, or role changed.
-      if (token.id) {
+      if (token["id"]) {
         const dbUser = await db.user.findUnique({
-          where: { id: token.id as string },
+          where: { id: token["id"] as string },
           select: { tokenVersion: true, role: true, deletedAt: true },
         });
 
         // User deleted, not found, or token version mismatch → invalidate
-        if (!dbUser || dbUser.deletedAt || dbUser.tokenVersion !== (token.tokenVersion ?? 0)) {
+        if (!dbUser || dbUser.deletedAt || dbUser.tokenVersion !== (token["tokenVersion"] ?? 0)) {
           return {}; // Token vide → force re-connexion
         }
 
         // Update role from DB (détecte les promotions/rétrogradations)
-        token.role = dbUser.role;
-        token.lastVerified = Date.now();
+        token["role"] = dbUser.role;
+        token["lastVerified"] = Date.now();
       }
 
       return token;

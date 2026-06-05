@@ -270,8 +270,8 @@ describe("authRouter.register — email enumeration protection", () => {
 
     try {
       await handler({ input: validInput, ctx: {} });
-    } catch (e: any) {
-      emailError = e;
+    } catch (e: unknown) {
+      emailError = e as Error;
     }
 
     // Reset mocks
@@ -290,8 +290,8 @@ describe("authRouter.register — email enumeration protection", () => {
 
     try {
       await handler2({ input: { ...validInput, username: "otheruser" }, ctx: {} });
-    } catch (e: any) {
-      usernameError = e;
+    } catch (e: unknown) {
+      usernameError = e as Error;
     }
 
     expect(emailError).not.toBeNull();
@@ -310,9 +310,9 @@ describe("authRouter.register — email enumeration protection", () => {
     try {
       await handler({ input: validInput, ctx: {} });
       expect.unreachable("Should have thrown");
-    } catch (e: any) {
+    } catch (e: unknown) {
       // tRPC TRPCError has a code property
-      expect(e.code).toBe("CONFLICT");
+      expect((e as { code: string }).code).toBe("CONFLICT");
     }
   });
 
@@ -325,11 +325,11 @@ describe("authRouter.register — email enumeration protection", () => {
 
     try {
       await handler({ input: validInput, ctx: {} });
-    } catch (e: any) {
+    } catch (e: unknown) {
       // The message must be generic: it should mention BOTH "email" and "nom d'utilisateur"
       // together, so the caller cannot infer which one caused the conflict
-      expect(e.message).toMatch(/email/i);
-      expect(e.message).toMatch(/utilisateur/i);
+      expect((e as { message: string }).message).toMatch(/email/i);
+      expect((e as { message: string }).message).toMatch(/utilisateur/i);
     }
   });
 

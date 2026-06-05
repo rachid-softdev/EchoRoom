@@ -20,15 +20,15 @@ const V1_FORMAT_REGEX = /^v1:[0-9a-f]{24}:[0-9a-f]{32}:[0-9a-f]*$/i;
 let originalKey: string | undefined;
 
 beforeAll(() => {
-  originalKey = process.env.PHONE_ENCRYPTION_KEY;
-  process.env.PHONE_ENCRYPTION_KEY = TEST_KEY;
+  originalKey = process.env['PHONE_ENCRYPTION_KEY'];
+  process.env['PHONE_ENCRYPTION_KEY'] = TEST_KEY;
 });
 
 afterAll(() => {
   if (originalKey === undefined) {
-    delete process.env.PHONE_ENCRYPTION_KEY;
+    delete process.env['PHONE_ENCRYPTION_KEY'];
   } else {
-    process.env.PHONE_ENCRYPTION_KEY = originalKey;
+    process.env['PHONE_ENCRYPTION_KEY'] = originalKey;
   }
 });
 
@@ -69,7 +69,7 @@ describe("encryptPhoneNumber", () => {
     expect(authTagHex).toMatch(/^[0-9a-f]{32}$/i);
     // Ciphertext is variable-length hex
     expect(ciphertextHex).toMatch(/^[0-9a-f]+$/i);
-    expect(ciphertextHex.length).toBeGreaterThan(0);
+    expect(ciphertextHex!.length).toBeGreaterThan(0);
   });
 
   it("throws when PHONE_ENCRYPTION_KEY is missing in env module", async () => {

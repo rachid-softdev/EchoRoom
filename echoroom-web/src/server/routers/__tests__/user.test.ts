@@ -137,7 +137,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
     });
 
     // Get the update call args from the transaction
-    const txCallback = mockDb.$transaction.mock.calls[0][0];
+    const txCallback = mockDb.$transaction.mock.calls[0]![0];
     const mockTx = {
       user: { update: vi.fn() },
       scenario: { updateMany: vi.fn() },
@@ -146,7 +146,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
     };
     await txCallback(mockTx);
 
-    const updateCall = mockTx.user.update.mock.calls[0][0];
+    const updateCall = mockTx.user.update.mock.calls[0]![0];
     // Email must NOT contain the user's original ID
     expect(updateCall.data.email).not.toContain("user-123");
     // Email must be a deleted-* format with UUID
@@ -169,7 +169,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
       ctx: validCtx,
     });
 
-    const txCallback = mockDb.$transaction.mock.calls[0][0];
+    const txCallback = mockDb.$transaction.mock.calls[0]![0];
     const mockTx = {
       user: { update: vi.fn() },
       scenario: { updateMany: vi.fn() },
@@ -178,7 +178,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
     };
     await txCallback(mockTx);
 
-    const updateCall = mockTx.user.update.mock.calls[0][0];
+    const updateCall = mockTx.user.update.mock.calls[0]![0];
     // passwordHash must NOT be "DELETED" sentinel
     expect(updateCall.data.passwordHash).not.toBe("DELETED");
     // Must be a valid bcrypt hash format
@@ -201,7 +201,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
       ctx: validCtx,
     });
 
-    const txCallback = mockDb.$transaction.mock.calls[0][0];
+    const txCallback = mockDb.$transaction.mock.calls[0]![0];
     const mockTx = {
       user: { update: vi.fn() },
       scenario: { updateMany: vi.fn() },
@@ -210,7 +210,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
     };
     await txCallback(mockTx);
 
-    const updateCall = mockTx.user.update.mock.calls[0][0];
+    const updateCall = mockTx.user.update.mock.calls[0]![0];
     expect(updateCall.data.tokenVersion).toEqual({ increment: 1 });
   });
 
@@ -230,7 +230,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
       ctx: validCtx,
     });
 
-    const txCallback = mockDb.$transaction.mock.calls[0][0];
+    const txCallback = mockDb.$transaction.mock.calls[0]![0];
     const mockTx = {
       user: { update: vi.fn() },
       scenario: { updateMany: vi.fn() },
@@ -239,7 +239,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
     };
     await txCallback(mockTx);
 
-    const updateCall = mockTx.user.update.mock.calls[0][0];
+    const updateCall = mockTx.user.update.mock.calls[0]![0];
     expect(updateCall.data.deletedAt).toBeInstanceOf(Date);
     expect(updateCall.data.anonymizedAt).toBeInstanceOf(Date);
   });
@@ -260,7 +260,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
       ctx: validCtx,
     });
 
-    const txCallback = mockDb.$transaction.mock.calls[0][0];
+    const txCallback = mockDb.$transaction.mock.calls[0]![0];
     const mockTx = {
       user: { update: vi.fn() },
       scenario: { updateMany: vi.fn() },
@@ -269,7 +269,7 @@ describe("deleteMyAccount — GDPR anonymization", () => {
     };
     await txCallback(mockTx);
 
-    const updateCall = mockTx.user.update.mock.calls[0][0];
+    const updateCall = mockTx.user.update.mock.calls[0]![0];
     expect(updateCall.data.displayName).toBeNull();
     expect(updateCall.data.bio).toBeNull();
     expect(updateCall.data.image).toBeNull();
@@ -397,8 +397,8 @@ describe("exportMyData — GDPR data portability", () => {
 
     try {
       await handler({ input: {}, ctx: validCtx });
-    } catch (e: any) {
-      expect(e.code).toBe("NOT_FOUND");
+    } catch (e: unknown) {
+      expect((e as { code: string }).code).toBe("NOT_FOUND");
     }
   });
 });

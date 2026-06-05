@@ -5,12 +5,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // ---------------------------------------------------------------------------
 // Tests for the structured JSON logger that writes to stdout/stderr.
 // Mocks process.stdout.write and process.stderr.write to capture output.
-// Mocks process.env.NODE_ENV to test environment-dependent behavior.
+// Mocks process.env['NODE_ENV'] to test environment-dependent behavior.
 
 describe("createLogger", () => {
   const originalStdoutWrite = process.stdout.write;
   const originalStderrWrite = process.stderr.write;
-  const originalEnv = process.env.NODE_ENV;
+  const originalEnv = process.env['NODE_ENV'];
 
   let stdoutMock: ReturnType<typeof vi.fn>;
   let stderrMock: ReturnType<typeof vi.fn>;
@@ -26,7 +26,7 @@ describe("createLogger", () => {
     process.stdout.write = originalStdoutWrite;
     process.stderr.write = originalStderrWrite;
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = originalEnv;
+    process.env['NODE_ENV'] = originalEnv;
     vi.restoreAllMocks();
   });
 
@@ -55,7 +55,7 @@ describe("createLogger", () => {
     log.info("Hello world");
 
     expect(stdoutMock).toHaveBeenCalledTimes(1);
-    const written = stdoutMock.mock.calls[0][0];
+    const written = stdoutMock.mock.calls[0]![0];
     const parsed = JSON.parse(written);
     expect(parsed).toHaveProperty("timestamp");
     expect(parsed).toHaveProperty("level", "info");
@@ -70,7 +70,7 @@ describe("createLogger", () => {
     log.error("Something failed");
 
     expect(stderrMock).toHaveBeenCalledTimes(1);
-    const written = stderrMock.mock.calls[0][0];
+    const written = stderrMock.mock.calls[0]![0];
     const parsed = JSON.parse(written);
     expect(parsed).toHaveProperty("level", "error");
     expect(parsed).toHaveProperty("module", "err-module");
@@ -89,7 +89,7 @@ describe("createLogger", () => {
 
   it("should write debug-level entries to stdout in development", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = "development";
+    process.env['NODE_ENV'] = "development";
     // Clear mocks after env change — the module caches nothing, it reads env each time
     stdoutMock.mockClear();
 
@@ -99,7 +99,7 @@ describe("createLogger", () => {
     log.debug("Debug message");
 
     expect(stdoutMock).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).toHaveProperty("level", "debug");
   });
 
@@ -107,7 +107,7 @@ describe("createLogger", () => {
 
   it("should suppress debug output when NODE_ENV is not development", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = "production";
+    process.env['NODE_ENV'] = "production";
     stdoutMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -119,7 +119,7 @@ describe("createLogger", () => {
 
   it("should suppress debug output when NODE_ENV is undefined", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    delete process.env.NODE_ENV;
+    delete process.env['NODE_ENV'];
     stdoutMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -131,7 +131,7 @@ describe("createLogger", () => {
 
   it("should still output info in production", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = "production";
+    process.env['NODE_ENV'] = "production";
     stdoutMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -139,13 +139,13 @@ describe("createLogger", () => {
 
     log.info("Info should appear");
     expect(stdoutMock).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).toHaveProperty("level", "info");
   });
 
   it("should still output error in production", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = "production";
+    process.env['NODE_ENV'] = "production";
     stderrMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -162,7 +162,7 @@ describe("createLogger", () => {
     const log = createLogger("my-custom-module");
 
     log.info("Test");
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).toHaveProperty("module", "my-custom-module");
   });
 
@@ -171,7 +171,7 @@ describe("createLogger", () => {
     const log = createLogger("");
 
     log.info("Test");
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).toHaveProperty("module", "");
   });
 
@@ -183,7 +183,7 @@ describe("createLogger", () => {
 
     log.info("With meta", { userId: "abc123", count: 42 });
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).toHaveProperty("meta");
     expect(parsed.meta).toEqual({ userId: "abc123", count: 42 });
   });
@@ -194,7 +194,7 @@ describe("createLogger", () => {
 
     log.info("Plain message");
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).not.toHaveProperty("meta");
   });
 
@@ -204,7 +204,7 @@ describe("createLogger", () => {
 
     log.info("No meta", undefined);
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).not.toHaveProperty("meta");
   });
 
@@ -217,14 +217,14 @@ describe("createLogger", () => {
     const error = new Error("Something broke");
     log.error("Failed", { error });
 
-    const parsed = JSON.parse(stderrMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stderrMock.mock.calls[0]![0]);
     expect(parsed.meta.error).toHaveProperty("name", "Error");
     expect(parsed.meta.error).toHaveProperty("message", "Something broke");
   });
 
   it("should include stack trace in development mode", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = "development";
+    process.env['NODE_ENV'] = "development";
     stderrMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -233,14 +233,14 @@ describe("createLogger", () => {
     const error = new Error("Dev error");
     log.error("Failed", { error });
 
-    const parsed = JSON.parse(stderrMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stderrMock.mock.calls[0]![0]);
     expect(parsed.meta.error).toHaveProperty("stack");
     expect(typeof parsed.meta.error.stack).toBe("string");
   });
 
   it("should omit stack trace in production mode", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env.NODE_ENV = "production";
+    process.env['NODE_ENV'] = "production";
     stderrMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -249,7 +249,7 @@ describe("createLogger", () => {
     const error = new Error("Prod error");
     log.error("Failed", { error });
 
-    const parsed = JSON.parse(stderrMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stderrMock.mock.calls[0]![0]);
     expect(parsed.meta.error).not.toHaveProperty("stack");
   });
 
@@ -259,12 +259,12 @@ describe("createLogger", () => {
 
     // AppError-like custom error with code property
     const customError = new Error("Custom failure");
-    (customError as unknown as Record<string, unknown>).code = "SCENARIO_NOT_FOUND";
-    (customError as unknown as Record<string, unknown>).statusCode = 404;
+    (customError as unknown as Record<string, unknown>)["code"] = "SCENARIO_NOT_FOUND";
+    (customError as unknown as Record<string, unknown>)["statusCode"] = 404;
 
     log.error("Request failed", { error: customError });
 
-    const parsed = JSON.parse(stderrMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stderrMock.mock.calls[0]![0]);
     expect(parsed.meta.error).toHaveProperty("name", "Error");
     expect(parsed.meta.error).toHaveProperty("message", "Custom failure");
     expect(parsed.meta.error).toHaveProperty("code", "SCENARIO_NOT_FOUND");
@@ -277,11 +277,11 @@ describe("createLogger", () => {
 
     const inner = new Error("Inner error");
     const outer = new Error("Outer error");
-    (outer as unknown as Record<string, unknown>).cause = inner;
+    (outer as unknown as Record<string, unknown>)["cause"] = inner;
 
     log.error("Nested", { error: outer });
 
-    const parsed = JSON.parse(stderrMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stderrMock.mock.calls[0]![0]);
     expect(parsed.meta.error).toHaveProperty("name", "Error");
     expect(parsed.meta.error).toHaveProperty("message", "Outer error");
     // 'cause' is an Error — it should be serialized too (as a plain object or Error)
@@ -300,7 +300,7 @@ describe("createLogger", () => {
     const req = new Request("https://example.com");
     log.info("Request received", { req });
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed.meta.req).toBe("[Request]");
   });
 
@@ -311,7 +311,7 @@ describe("createLogger", () => {
     const res = new Response("ok");
     log.info("Response sent", { res });
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed.meta.res).toBe("[Response]");
   });
 
@@ -323,7 +323,7 @@ describe("createLogger", () => {
 
     log.info("Time check");
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed).toHaveProperty("timestamp");
     const ts = parsed.timestamp;
     expect(() => new Date(ts)).not.toThrow();
@@ -343,9 +343,9 @@ describe("createLogger", () => {
     expect(stdoutMock).toHaveBeenCalledTimes(2); // info + warn
     expect(stderrMock).toHaveBeenCalledTimes(1); // error
 
-    const first = JSON.parse(stdoutMock.mock.calls[0][0]);
-    const second = JSON.parse(stdoutMock.mock.calls[1][0]);
-    const third = JSON.parse(stderrMock.mock.calls[0][0]);
+    const first = JSON.parse(stdoutMock.mock.calls[0]![0]);
+    const second = JSON.parse(stdoutMock.mock.calls[1]![0]);
+    const third = JSON.parse(stderrMock.mock.calls[0]![0]);
 
     expect(first.message).toBe("First");
     expect(second.message).toBe("Second");
@@ -360,7 +360,7 @@ describe("createLogger", () => {
 
     log.info("Null meta", { key: null, num: 0, flag: false });
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed.meta).toEqual({ key: null, num: 0, flag: false });
   });
 
@@ -370,7 +370,7 @@ describe("createLogger", () => {
 
     log.info("Empty meta", {});
 
-    const parsed = JSON.parse(stdoutMock.mock.calls[0][0]);
+    const parsed = JSON.parse(stdoutMock.mock.calls[0]![0]);
     expect(parsed.meta).toEqual({});
   });
 });

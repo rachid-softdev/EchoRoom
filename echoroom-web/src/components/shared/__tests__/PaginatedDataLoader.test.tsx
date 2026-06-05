@@ -180,7 +180,7 @@ describe("PaginatedDataLoader", () => {
 
     render(
       <PaginatedDataLoader query={query}>
-        {(loadedItems) => <div data-testid="result">{loadedItems[0].name}</div>}
+        {(loadedItems) => <div data-testid="result">{loadedItems[0]!.name}</div>}
       </PaginatedDataLoader>,
     );
 

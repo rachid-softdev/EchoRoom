@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   try {
     // ── Authentication ──────────────────────────────────────────────
     const authHeader = request.headers.get("authorization");
-    const expected = process.env.CRON_SECRET ?? '';
+    const expected = process.env['CRON_SECRET'] ?? '';
 
     if (!authHeader || !expected) {
       return NextResponse.json(

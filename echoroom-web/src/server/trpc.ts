@@ -28,11 +28,11 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
   if (opts?.req && opts.req.method === "POST") {
     try {
       validateCSRF(opts.req, {
-        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-        trustedOrigins: parseTrustedOrigins(process.env.TRUSTED_ORIGINS),
+        appUrl: process.env['NEXT_PUBLIC_APP_URL'] ?? "http://localhost:3000",
+        trustedOrigins: parseTrustedOrigins(process.env['TRUSTED_ORIGINS']),
         // In production, require Origin header (strict CSRF).
         // In development, allow missing Origin for mobile apps and tools.
-        allowMissingOrigin: process.env.NODE_ENV !== "production",
+        allowMissingOrigin: process.env['NODE_ENV'] !== "production",
       });
     } catch (error) {
       if (error instanceof CSRFFailure) {

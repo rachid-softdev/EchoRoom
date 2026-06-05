@@ -85,7 +85,7 @@ describe("adminRouter.featureScenario", () => {
 
     // Verify upsert was called with correct featuredDate (YYYY-MM-DD format)
     expect(mockDb.featuredScenario.upsert).toHaveBeenCalledTimes(1);
-    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0][0];
+    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0]![0];
 
     expect(upsertCall.where).toHaveProperty("featuredDate");
     expect(upsertCall.where.featuredDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -163,7 +163,7 @@ describe("adminRouter.featureScenario", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0][0];
+    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0]![0];
 
     // Verify the date matches current UTC date
     const now = new Date();
@@ -191,7 +191,7 @@ describe("adminRouter.featureScenario", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0][0];
+    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0]![0];
 
     expect(upsertCall.update.featuredAt).toBeInstanceOf(Date);
     expect(upsertCall.create.featuredAt).toBeInstanceOf(Date);
