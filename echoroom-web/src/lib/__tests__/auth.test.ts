@@ -48,7 +48,7 @@ describe("DUMMY_HASH — timing-constant auth protection", () => {
 
   it("should produce a valid bcrypt hash with cost 12", () => {
     // Extract cost factor from hash: $2b$12$...
-    const cost = parseInt(dummyHash.split("$")[2], 10);
+    const cost = parseInt(dummyHash.split("$")[2]!, 10);
     expect(cost).toBe(12);
   });
 });

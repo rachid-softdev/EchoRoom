@@ -109,7 +109,7 @@ describe("POST /api/user/export — N4 atomic rate limiting", () => {
 
     // Verify updateMany was called with the WHERE clause containing gdprDataExportedAt
     expect(mockDb.user.updateMany).toHaveBeenCalledTimes(1);
-    const updateManyCall = mockDb.user.updateMany.mock.calls[0][0];
+    const updateManyCall = mockDb.user.updateMany.mock.calls[0]![0];
     expect(updateManyCall.where.id).toBe("user-123");
     expect(updateManyCall.where.OR).toBeDefined();
     expect(updateManyCall.where.OR).toEqual(

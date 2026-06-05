@@ -147,12 +147,12 @@ describe("validateTwilioRequest — signature validation", () => {
     expect(mockValidateRequest).toHaveBeenCalled();
 
     // Verify the call uses proper typed parameters
-    const callArgs = mockValidateRequest.mock.calls[0];
-    expect(callArgs[0]).toBe("test_auth_token_for_validation");
-    expect(typeof callArgs[0]).toBe("string");
-    expect(typeof callArgs[1]).toBe("string");
-    expect(typeof callArgs[2]).toBe("string");
-    expect(typeof callArgs[3]).toBe("object");
+    const callArgs = mockValidateRequest.mock.calls[0]!;
+    expect(callArgs[0]!).toBe("test_auth_token_for_validation");
+    expect(typeof callArgs[0]!).toBe("string");
+    expect(typeof callArgs[1]!).toBe("string");
+    expect(typeof callArgs[2]!).toBe("string");
+    expect(typeof callArgs[3]!).toBe("object");
   });
 
   it("should handle non-ASCII characters in params without crashing", async () => {

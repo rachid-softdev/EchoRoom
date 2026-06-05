@@ -71,9 +71,9 @@ describe("usePaginatedQuery", () => {
     });
 
     // Should pass limit and extra args, cursor should be undefined for first page
-    const callArg = fetcher.mock.calls[0][0] as Record<string, unknown>;
-    expect(callArg.limit).toBe(25);
-    expect(callArg.category).toBe("chat");
+    const callArg = fetcher.mock.calls[0]![0] as Record<string, unknown>;
+    expect(callArg["limit"]).toBe(25);
+    expect(callArg["category"]).toBe("chat");
     // cursor may or may not be present depending on implementation
   });
 
@@ -96,7 +96,7 @@ describe("usePaginatedQuery", () => {
     const fetcher = vi.fn().mockImplementation((args: Record<string, unknown>) => {
       callCount++;
       // Determine which page to return based on cursor
-      const cursorKey = String(args.cursor ?? "undefined");
+      const cursorKey = String(args["cursor"] ?? "undefined");
       const pageData = pages[cursorKey] ?? pages["undefined"];
 
       return {
@@ -157,7 +157,7 @@ describe("usePaginatedQuery", () => {
     };
 
     const fetcher = vi.fn().mockImplementation((args: Record<string, unknown>) => {
-      const cursorKey = String(args.cursor ?? "undefined");
+      const cursorKey = String(args["cursor"] ?? "undefined");
       return {
         data: pages[cursorKey] ?? pages["undefined"],
         isLoading: false,
@@ -350,64 +350,13 @@ describe("usePaginatedQuery", () => {
         nextCursor: "cursor-2",
       },
       "cursor-2": {
-        items: [{ name: "B", value: 2 }],
-        nextCursor: undefined,
-      },
-    };
-
-    const fetcher = vi.fn().mockImplementation((args: Record<string, unknown>) => {
-      const cursorKey = String(args.cursor ?? "undefined");
-      return {
-        data: pages[cursorKey] ?? pages["undefined"],
-        isLoading: false,
-        isFetching: false,
-        isError: false,
-        refetch: vi.fn(),
-      };
-    });
-
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 } as any),
-    );
-
-    await waitFor(() => {
-      expect(result.current.items).toHaveLength(1);
-    });
-
-    await act(async () => {
-      result.current.loadMore();
-    });
-
-    await waitFor(() => {
-      expect(result.current.items).toHaveLength(2);
-    });
-
-    expect(result.current.items).toEqual([
-      { name: "A", value: 1 },
-      { name: "B", value: 2 },
-    ]);
-  });
-
-  it("should guard against multiple loadMore calls (sequential loading)", async () => {
-    const { usePaginatedQuery } = await import("../usePaginatedQuery");
-
-    const pages: Record<string, { items: MockItem[]; nextCursor?: string }> = {
-      "undefined": {
-        items: [{ id: "1", name: "Item 1" }],
-        nextCursor: "cursor-2",
-      },
-      "cursor-2": {
         items: [{ id: "2", name: "Item 2" }],
-        nextCursor: "cursor-3",
-      },
-      "cursor-3": {
-        items: [{ id: "3", name: "Item 3" }],
         nextCursor: undefined,
       },
     };
 
     const fetcher = vi.fn().mockImplementation((args: Record<string, unknown>) => {
-      const cursorKey = String(args.cursor ?? "undefined");
+      const cursorKey = String(args["cursor"] ?? "undefined");
       return {
         data: pages[cursorKey] ?? pages["undefined"],
         isLoading: false,

@@ -119,7 +119,7 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
     expect(updateManyCalls.length).toBeGreaterThanOrEqual(1);
 
     // Check the data passed to updateMany
-    const callData = updateManyCalls[0][0];
+    const callData = updateManyCalls[0]![0];
     expect(callData.where).toEqual({ id: "user-1", deletedAt: null });
     expect(callData.data.tokenVersion).toEqual({ increment: 1 });
   });
@@ -138,7 +138,7 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
     const updateManyCalls = mockDb._mockTx.user.updateMany.mock.calls;
     expect(updateManyCalls.length).toBeGreaterThanOrEqual(1);
 
-    const data = updateManyCalls[0][0].data;
+    const data = updateManyCalls[0]![0].data;
     expect(data).toHaveProperty("deletedAt");
     expect(data).toHaveProperty("anonymizedAt");
     expect(data).toHaveProperty("email");

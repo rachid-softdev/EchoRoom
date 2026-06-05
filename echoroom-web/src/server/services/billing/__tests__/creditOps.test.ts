@@ -284,9 +284,9 @@ describe("atomicSafeDecrement", () => {
         amount: 999,
       });
       expect.unreachable("Should have thrown");
-    } catch (e: any) {
+    } catch (e: unknown) {
       expect(e).toBeInstanceOf(AppError);
-      expect(e.code).toBe("INSUFFICIENT_CREDITS");
+      expect((e as InstanceType<typeof AppError>).code).toBe("INSUFFICIENT_CREDITS");
     }
   });
 

@@ -239,8 +239,8 @@ describe("IUserBillingRepository — interface contract", () => {
       const result = await mockRepo.getPurchaseHistory("user-1");
 
       expect(result).toHaveLength(2);
-      expect(result[0].creditsPurchased).toBe(50);
-      expect(result[1].creditsPurchased).toBe(100);
+      expect(result[0]!.creditsPurchased).toBe(50);
+      expect(result[1]!.creditsPurchased).toBe(100);
     });
 
     it("should return empty array for user with no purchases", async () => {
@@ -262,7 +262,7 @@ describe("IUserBillingRepository — interface contract", () => {
 
       const result = await mockRepo.getPurchaseHistory("user-1");
 
-      expect(result[0].refundedAt).toBeInstanceOf(Date);
+      expect(result[0]!.refundedAt).toBeInstanceOf(Date);
     });
   });
 

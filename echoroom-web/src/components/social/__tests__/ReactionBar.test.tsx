@@ -272,7 +272,7 @@ describe("ReactionBar", () => {
     expect(onSuccessCallbacks.length).toBe(1);
 
     // Call the onSuccess callback
-    onSuccessCallbacks[0]();
+    onSuccessCallbacks[0]!();
     expect(mockRefetch).toHaveBeenCalled();
   });
 

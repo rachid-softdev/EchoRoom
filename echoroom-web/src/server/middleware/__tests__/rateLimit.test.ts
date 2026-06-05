@@ -93,12 +93,12 @@ describe("checkRateLimit", () => {
     await checkRateLimit({ identifier: "user-1", limit: 10, window: 60 });
 
     expect(mockZadd).toHaveBeenCalledTimes(1);
-    const zaddArg = mockZadd.mock.calls[0];
-    expect(zaddArg[0]).toBe("ratelimit:user-1");
-    expect(zaddArg[1]).toHaveProperty("score");
-    expect(zaddArg[1]).toHaveProperty("member");
+    const zaddArg = mockZadd.mock.calls[0]!;
+    expect(zaddArg[0]!).toBe("ratelimit:user-1");
+    expect(zaddArg[1]!).toHaveProperty("score");
+    expect(zaddArg[1]!).toHaveProperty("member");
     // Member should contain the identifier and a timestamp
-    expect(zaddArg[1].member).toContain("user-1:");
+    expect(zaddArg[1]!.member).toContain("user-1:");
   });
 
   it("should handle very low limits (limit = 1)", async () => {

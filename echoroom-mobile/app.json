@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "EchoRoom",
+    "slug": "echoroom",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "echoroom",
+    "platforms": ["ios", "android", "web"]
+  }
+}

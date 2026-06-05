@@ -29,7 +29,7 @@ async function simulateJwtRevalidation(
 ): Promise<Record<string, unknown> | null> {
   const { db } = await import("@/server/db");
 
-  const userRole = (token.role as string) ?? "USER";
+  const userRole = (token["role"] as string) ?? "USER";
   const revalidationInterval =
     userRole === "ADMIN" || userRole === "MODERATOR"
       ? 60 * 1000 // 1 minute for staff
@@ -37,12 +37,12 @@ async function simulateJwtRevalidation(
 
   const needsRevalidation =
     trigger === "update" ||
-    !token.lastVerified ||
-    Date.now() - (token.lastVerified as number) > revalidationInterval;
+    !token["lastVerified"] ||
+    Date.now() - (token["lastVerified"] as number) > revalidationInterval;
 
-  if (needsRevalidation && token.id) {
+  if (needsRevalidation && token["id"]) {
     const dbUser = await db.user.findUnique({
-      where: { id: token.id as string },
+      where: { id: token["id"] as string },
       select: { role: true, deletedAt: true, tokenVersion: true },
     });
 
@@ -50,12 +50,12 @@ async function simulateJwtRevalidation(
       return null;
     }
 
-    if (dbUser.tokenVersion !== (token.tokenVersion ?? 0)) {
+    if (dbUser.tokenVersion !== (token["tokenVersion"] ?? 0)) {
       return null;
     }
 
-    token.role = dbUser.role;
-    token.lastVerified = Date.now();
+    token["role"] = dbUser.role;
+    token["lastVerified"] = Date.now();
   }
 
   return token;

@@ -41,7 +41,7 @@ describe("ScenarioCard — CATEGORY_LABELS coverage", () => {
       expect(CATEGORY_LABELS).toHaveProperty(category);
       const label = CATEGORY_LABELS[category];
       expect(label).toBeDefined();
-      expect(label.length).toBeGreaterThan(0);
+      expect(label!.length).toBeGreaterThan(0);
     },
   );
 

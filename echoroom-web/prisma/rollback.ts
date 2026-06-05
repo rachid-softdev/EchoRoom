@@ -62,7 +62,12 @@ function parseArgs(args: string[]): ParsedArgs {
         }
         break;
       case "--step":
-        parsed.step = Number.parseInt(args[++i], 10);
+        const stepStr = args[++i];
+        if (stepStr === undefined) {
+          console.error("❌ --step requires a value");
+          process.exit(1);
+        }
+        parsed.step = Number.parseInt(stepStr, 10);
         if (Number.isNaN(parsed.step) || parsed.step < 1) {
           console.error("❌ --step must be a positive integer");
           process.exit(1);
@@ -217,7 +222,7 @@ async function executeRollback(
   }
 
   // Confirmation prompt (skipped with --force)
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = process.env['NODE_ENV'] === "production";
   if (!force) {
     if (isProd) {
       console.error(

@@ -316,7 +316,7 @@ describe("initiateCall", () => {
       maxDurationSeconds: 600,
     });
 
-    expect(mockTx.call.create).toHaveBeenCalledWith({
+    expect(mockTx['call'].create).toHaveBeenCalledWith({
       data: {
         userId: "user-abc",
         scenarioId: "scenario-1",
@@ -346,7 +346,7 @@ describe("initiateCall", () => {
     });
 
     // Sprint 4: atomicDebit prefers UserBilling sub-aggregate
-    expect(mockTx.userBilling.updateMany).toHaveBeenCalledWith({
+    expect(mockTx['userBilling'].updateMany).toHaveBeenCalledWith({
       where: { userId: "user-abc", credits: { gte: 1 } },
       data: { credits: { decrement: 1 } },
     });
@@ -358,9 +358,9 @@ describe("initiateCall", () => {
 
     (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
     // UserBilling returns 0 credits — no legacy fallback, atomicDebit checks user existence
-    mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
+    mockTx['userBilling'].updateMany.mockResolvedValue({ count: 0 });
     // User exists, so should get INSUFFICIENT_CREDITS (not USER_NOT_FOUND)
-    mockTx.user.findUnique.mockResolvedValue({ id: "user-abc" });
+    mockTx['user'].findUnique.mockResolvedValue({ id: "user-abc" });
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
@@ -375,8 +375,8 @@ describe("initiateCall", () => {
     ).rejects.toThrow("Crédits insuffisants");
 
     // Should have tried UserBilling only (legacy fallback removed in Sprint 8)
-    expect(mockTx.userBilling.updateMany).toHaveBeenCalled();
-    expect(mockTx.user.updateMany).not.toHaveBeenCalled();
+    expect(mockTx['userBilling'].updateMany).toHaveBeenCalled();
+    expect(mockTx['user'].updateMany).not.toHaveBeenCalled();
   });
 
   it("should create Twilio token with correct parameters", async () => {
@@ -483,9 +483,9 @@ describe("initiateCall", () => {
     (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
 
     // Both UserBilling and legacy updateMany return 0 (insufficient credits)
-    mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
-    mockTx.user.updateMany.mockResolvedValue({ count: 0 });
-    mockTx.user.findUnique.mockResolvedValue({ id: "user-abc" });
+    mockTx['userBilling'].updateMany.mockResolvedValue({ count: 0 });
+    mockTx['user'].updateMany.mockResolvedValue({ count: 0 });
+    mockTx['user'].findUnique.mockResolvedValue({ id: "user-abc" });
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
@@ -507,9 +507,9 @@ describe("initiateCall", () => {
     (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
 
     // Both UserBilling and legacy updateMany return 0
-    mockTx.userBilling.updateMany.mockResolvedValue({ count: 0 });
-    mockTx.user.updateMany.mockResolvedValue({ count: 0 });
-    mockTx.user.findUnique.mockResolvedValue(null);
+    mockTx['userBilling'].updateMany.mockResolvedValue({ count: 0 });
+    mockTx['user'].updateMany.mockResolvedValue({ count: 0 });
+    mockTx['user'].findUnique.mockResolvedValue(null);
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
@@ -676,8 +676,8 @@ describe("initiateCall", () => {
     });
 
     // Verify dailyCallLimit.updateMany was called inside the transaction
-    expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalledTimes(1);
-    expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalledWith({
+    expect(mockTx['dailyCallLimit'].updateMany).toHaveBeenCalledTimes(1);
+    expect(mockTx['dailyCallLimit'].updateMany).toHaveBeenCalledWith({
       where: {
         userId: "user-abc",
         date: expect.any(Date),
@@ -696,7 +696,7 @@ describe("initiateCall", () => {
     // Simulate daily limit exceeded inside the transaction.
     // atomicIncrementDailyLimit throws AppError("DAILY_LIMIT_EXCEEDED", ...)
     // which propagates up through the $transaction callback.
-    mockTx.dailyCallLimit = {
+    mockTx['dailyCallLimit'] = {
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       create: vi.fn().mockRejectedValue(
         Object.assign(new Error("Unique constraint"), { code: "P2002" }),
@@ -739,7 +739,7 @@ describe("initiateCall", () => {
     });
 
     // Call created with CALLING — not PENDING
-    expect(mockTx.call.create).toHaveBeenCalledWith(
+    expect(mockTx['call'].create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           status: "CALLING",
@@ -802,10 +802,10 @@ describe("initiateCall", () => {
     // Verify that a single $transaction was used for all three operations
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     // dailyCallLimit.updateMany = daily limit check
-    expect(mockTx.dailyCallLimit.updateMany).toHaveBeenCalled();
+    expect(mockTx['dailyCallLimit'].updateMany).toHaveBeenCalled();
     // userBilling.updateMany = atomic debit (Sprint 4: prefers UserBilling)
-    expect(mockTx.userBilling.updateMany).toHaveBeenCalled();
+    expect(mockTx['userBilling'].updateMany).toHaveBeenCalled();
     // call.create = call record
-    expect(mockTx.call.create).toHaveBeenCalled();
+    expect(mockTx['call'].create).toHaveBeenCalled();
   });
 });

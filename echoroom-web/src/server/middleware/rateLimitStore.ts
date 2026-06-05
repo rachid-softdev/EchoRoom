@@ -68,7 +68,10 @@ class InMemoryRateLimitStore {
       const sorted = [...this.store.entries()].sort(([, a], [, b]) => a.resetAt - b.resetAt);
       const toDelete = Math.floor(sorted.length * 0.25);
       for (let i = 0; i < toDelete; i++) {
-        this.store.delete(sorted[i][0]);
+        const entry = sorted[i];
+        if (entry !== undefined) {
+          this.store.delete(entry[0]);
+        }
       }
       log.warn("In-memory rate limit store evicted 25% of entries", {
         remaining: this.store.size,

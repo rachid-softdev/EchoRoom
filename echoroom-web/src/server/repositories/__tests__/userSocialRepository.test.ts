@@ -202,7 +202,7 @@ describe("IUserSocialRepository — interface contract", () => {
 
       expect(result).toHaveLength(2);
       // First entry should have more likes
-      expect(result[0].totalLikesReceived).toBeGreaterThanOrEqual(result[1].totalLikesReceived);
+      expect(result[0]!.totalLikesReceived).toBeGreaterThanOrEqual(result[1]!.totalLikesReceived);
     });
 
     it("should limit results when limit is provided", async () => {
@@ -260,7 +260,7 @@ describe("IUserSocialRepository — interface contract", () => {
       const result = await mockRepo.getUserBadges("user-1");
 
       expect(result).toHaveLength(1);
-      expect(result[0].badge.name).toBe("First Call");
+      expect(result[0]!.badge.name).toBe("First Call");
     });
 
     it("should return empty array for user with no badges", async () => {

@@ -3,7 +3,7 @@ import { createLogger } from "@/server/lib/logger";
 const log = createLogger("circuit-breaker");
 
 export class CircuitBreakerOpenError extends Error {
-  name = "CircuitBreakerOpenError";
+  override name = "CircuitBreakerOpenError";
 
   constructor(message: string) {
     super(message);

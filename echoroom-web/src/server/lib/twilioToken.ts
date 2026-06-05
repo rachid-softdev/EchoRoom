@@ -52,7 +52,8 @@ export function verifyTwilioToken(
   const parts = token.split(".");
   if (parts.length !== 2) return null;
 
-  const [payloadB64, signature] = parts;
+  const payloadB64 = parts[0]!;
+  const signature = parts[1]!;
 
   try {
     const payloadStr = Buffer.from(payloadB64, "base64url").toString("utf8");

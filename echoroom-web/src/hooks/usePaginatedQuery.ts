@@ -26,7 +26,7 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
   const getKey =
     options?.getKey ??
     ((item: T) =>
-      (item as unknown as Record<string, unknown>).id as string);
+      (item as unknown as Record<string, unknown>)["id"] as string);
 
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allItems, setAllItems] = useState<T[]>([]);
@@ -66,7 +66,7 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
         }
         const existingKeys = new Set(prev.map(getKey));
         const filteredItems = data.items.filter(
-          (_item, i) => !existingKeys.has(newKeys[i]),
+          (_item, i) => !existingKeys.has(newKeys[i] as string | number),
         );
         return [...prev, ...filteredItems];
       });

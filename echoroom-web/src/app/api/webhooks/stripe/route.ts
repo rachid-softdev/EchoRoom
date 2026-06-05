@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
-      const userId = session.metadata?.userId;
-      const creditsStr = session.metadata?.credits;
+      const userId = session.metadata?.["userId"];
+      const creditsStr = session.metadata?.["credits"];
       if (!userId || !creditsStr) {
         log.error("Missing metadata on checkout session", { sessionId: session.id });
         return NextResponse.json({ error: "Métadonnées manquantes" }, { status: 400 });

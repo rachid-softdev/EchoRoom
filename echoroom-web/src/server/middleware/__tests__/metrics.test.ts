@@ -236,9 +236,9 @@ describe("withREDMetrics", () => {
 
     const metrics = getREDMetrics();
     expect(metrics["query:test.endpoint"]).toBeDefined();
-    expect(metrics["query:test.endpoint"].calls).toBe(3);
-    expect(metrics["query:test.endpoint"].errors).toBe(0);
-    expect(metrics["query:test.endpoint"].totalDurationMs).toBeGreaterThanOrEqual(0);
+    expect(metrics["query:test.endpoint"]!.calls).toBe(3);
+    expect(metrics["query:test.endpoint"]!.errors).toBe(0);
+    expect(metrics["query:test.endpoint"]!.totalDurationMs).toBeGreaterThanOrEqual(0);
   });
 
   it("getREDMetrics() should track errors separately", async () => {
@@ -257,8 +257,8 @@ describe("withREDMetrics", () => {
 
     const metrics = getREDMetrics();
     expect(metrics["query:error.test"]).toBeDefined();
-    expect(metrics["query:error.test"].calls).toBe(1);
-    expect(metrics["query:error.test"].errors).toBe(1);
+    expect(metrics["query:error.test"]!.calls).toBe(1);
+    expect(metrics["query:error.test"]!.errors).toBe(1);
   });
 
   it("should increment counters on multiple calls to different endpoints", async () => {
@@ -278,10 +278,10 @@ describe("withREDMetrics", () => {
     ).rejects.toThrow("fail");
 
     const metrics = getREDMetrics();
-    expect(metrics["query:a"].calls).toBe(2);
-    expect(metrics["query:a"].errors).toBe(0);
-    expect(metrics["mutation:b"].calls).toBe(2);
-    expect(metrics["mutation:b"].errors).toBe(1);
+    expect(metrics["query:a"]!.calls).toBe(2);
+    expect(metrics["query:a"]!.errors).toBe(0);
+    expect(metrics["mutation:b"]!.calls).toBe(2);
+    expect(metrics["mutation:b"]!.errors).toBe(1);
   });
 
   it("getREDMetrics() should return a snapshot (not a live reference)", async () => {
@@ -296,8 +296,8 @@ describe("withREDMetrics", () => {
 
     // Original should be unchanged
     const metrics = getREDMetrics();
-    expect(metrics["query:snapshot.test"].calls).toBe(1);
-    expect(metrics["query:snapshot.test"].errors).toBe(0);
+    expect(metrics["query:snapshot.test"]!.calls).toBe(1);
+    expect(metrics["query:snapshot.test"]!.errors).toBe(0);
   });
 
   // -----------------------------------------------------------------------

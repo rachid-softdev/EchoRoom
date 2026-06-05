@@ -70,8 +70,8 @@ describe("cleanupOldRecordings", () => {
     });
 
     expect(deleteAudioFile).toHaveBeenCalledTimes(2);
-    expect(deleteAudioFile).toHaveBeenCalledWith(oldCalls[0].recordingUrl);
-    expect(deleteAudioFile).toHaveBeenCalledWith(oldCalls[1].recordingUrl);
+    expect(deleteAudioFile).toHaveBeenCalledWith(oldCalls[0]!.recordingUrl);
+    expect(deleteAudioFile).toHaveBeenCalledWith(oldCalls[1]!.recordingUrl);
 
     expect(db.call.update).toHaveBeenCalledTimes(2);
     expect(db.call.update).toHaveBeenCalledWith({ where: { id: "call-1" }, data: { recordingUrl: null } });
@@ -115,7 +115,7 @@ describe("cleanupOldRecordings", () => {
       select: { id: true, recordingUrl: true, createdAt: true },
     });
 
-    const lastFirstPage = firstPage[firstPage.length - 1];
+    const lastFirstPage = firstPage[firstPage.length - 1]!;
     expect(db.call.findMany).toHaveBeenNthCalledWith(2, {
       where: { endedAt: { lte: expect.any(Date) }, recordingUrl: { not: null } },
       take: BATCH_SIZE, skip: 1, cursor: { id: lastFirstPage.id },
@@ -155,7 +155,7 @@ describe("cleanupOldRecordings", () => {
 
     expect(result).toBe(BATCH_SIZE * 2);
 
-    const expectedCursor = firstPage[firstPage.length - 1].id;
+    const expectedCursor = firstPage[firstPage.length - 1]!.id;
     expect(db.call.findMany).toHaveBeenNthCalledWith(2, {
       where: { endedAt: { lte: expect.any(Date) }, recordingUrl: { not: null } },
       take: BATCH_SIZE, skip: 1, cursor: { id: expectedCursor },

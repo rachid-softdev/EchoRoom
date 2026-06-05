@@ -22,7 +22,7 @@ const log = createLogger('gdpr-export')
 export async function POST(req: NextRequest) {
   // CSRF defense via Origin header (SameSite=Lax for session cookies is primary defense)
   const origin = req.headers.get('origin');
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000';
   if (origin) {
     try {
       const originUrl = new URL(origin);

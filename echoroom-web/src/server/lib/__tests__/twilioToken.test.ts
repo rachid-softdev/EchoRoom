@@ -15,15 +15,15 @@ const TEST_SECRET = "test_token_secret_at_least_16_char_long!";
 
 let origTokenSecret: string | undefined;
 beforeAll(() => {
-  origTokenSecret = process.env.TWILIO_TOKEN_SECRET;
-  process.env.TWILIO_TOKEN_SECRET = TEST_SECRET;
+  origTokenSecret = process.env['TWILIO_TOKEN_SECRET'];
+  process.env['TWILIO_TOKEN_SECRET'] = TEST_SECRET;
 });
 
 afterAll(() => {
   if (origTokenSecret === undefined) {
-    delete process.env.TWILIO_TOKEN_SECRET;
+    delete process.env['TWILIO_TOKEN_SECRET'];
   } else {
-    process.env.TWILIO_TOKEN_SECRET = origTokenSecret;
+    process.env['TWILIO_TOKEN_SECRET'] = origTokenSecret;
   }
 });
 
@@ -154,7 +154,7 @@ describe("M-3: verifyTwilioToken", () => {
 
     // Tamper with the signature part by replacing with a completely different signature
     const parts = token.split(".");
-    const tamperedToken = `${parts[0]}.${"B".repeat(parts[1].length)}`;
+    const tamperedToken = `${parts[0]!}.${"B".repeat(parts[1]!.length)}`;
 
     const payload = verifyTwilioToken(tamperedToken);
     expect(payload).toBeNull();
@@ -218,7 +218,7 @@ describe("M-3: verifyTwilioToken", () => {
     // Now verify that using a different secret would produce a different signature.
     // We do this by manually computing what the signature would be with a different secret.
     const parts = token.split(".");
-    const payloadB64 = parts[0];
+    const payloadB64 = parts[0]!;
     const payloadStr = Buffer.from(payloadB64, "base64url").toString("utf8");
     const { createHmac } = await import("node:crypto");
     const differentSig = createHmac("sha256", "different_secret_that_should_not_match")
@@ -226,7 +226,7 @@ describe("M-3: verifyTwilioToken", () => {
       .digest("base64url");
 
     // The computed signature should not match the token's signature
-    expect(differentSig).not.toBe(parts[1]);
+    expect(differentSig).not.toBe(parts[1]!);
   });
 });
 
@@ -252,7 +252,7 @@ describe("M-3: characterId in Twilio token", () => {
 
     // Tamper with the payload: change characterId
     const parts = token.split(".");
-    const originalPayloadStr = Buffer.from(parts[0], "base64url").toString("utf8");
+    const originalPayloadStr = Buffer.from(parts[0]!, "base64url").toString("utf8");
     const originalPayload = JSON.parse(originalPayloadStr);
     const tamperedPayload = { ...originalPayload, characterId: "hacked-character" };
     const tamperedPayloadStr = JSON.stringify(tamperedPayload);

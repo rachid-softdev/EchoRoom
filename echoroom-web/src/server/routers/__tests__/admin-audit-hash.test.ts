@@ -20,7 +20,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 const TEST_AUDIT_SECRET = "audit_hash_test_secret_16ch!";
 
 beforeAll(() => {
-  process.env.AUDIT_HASH_SECRET = TEST_AUDIT_SECRET;
+  process.env['AUDIT_HASH_SECRET'] = TEST_AUDIT_SECRET;
 });
 
 // We need to set env before admin.ts is imported.
