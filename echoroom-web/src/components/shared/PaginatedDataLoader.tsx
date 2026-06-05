@@ -8,7 +8,7 @@ interface PaginatedQueryResult<T> {
   items: T[];
   isLoading: boolean;
   isError: boolean;
-  error?: { message?: string } | null;
+  error?: { message?: string } | null | undefined;
   refetch: () => void;
 }
 

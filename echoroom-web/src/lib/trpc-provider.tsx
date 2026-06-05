@@ -32,7 +32,7 @@ export function TRPCReactProvider({ children }: { children: React.ReactNode }) {
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
           fetch(url, options) {
-            return fetch(url, { ...options, credentials: "include" });
+            return fetch(url, { ...options, credentials: "include" } as RequestInit);
           },
         }),
       ],

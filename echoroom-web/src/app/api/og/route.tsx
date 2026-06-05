@@ -102,9 +102,7 @@ export async function GET(req: Request) {
       {
         width: 1200,
         height: 630,
-        fonts: interFont
-          ? [{ name: "Inter", data: interFont, weight: 400 }]
-          : undefined,
+        ...(interFont ? { fonts: [{ name: "Inter", data: interFont, weight: 400 }] } : {}),
       },
     );
   } catch (error) {

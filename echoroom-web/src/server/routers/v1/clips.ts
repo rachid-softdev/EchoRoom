@@ -99,7 +99,7 @@ export const clipsV1Router = router({
           userId: ctx.session.user.id,
           startTime: input.startTime,
           endTime: input.endTime,
-          title: input.title,
+          ...(input.title !== undefined ? { title: input.title } : {}),
         });
       } catch (error) {
         if (error instanceof AppError) {

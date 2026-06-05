@@ -185,7 +185,7 @@ const withTracing = middleware(({ ctx, next }) => {
   const requestId = ctx.requestId;
   const userId = ctx.session?.user?.id;
   return runWithContext(
-    { requestId, userId, source: "tRPC" },
+    { requestId, ...(userId ? { userId } : {}), source: "tRPC" },
     () => next({ ctx: { ...ctx, requestId } }),
   );
 });

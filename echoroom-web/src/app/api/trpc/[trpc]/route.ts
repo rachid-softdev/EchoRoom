@@ -25,12 +25,11 @@ const handler = (req: NextRequest) => {
     router,
     createContext: () =>
       createTRPCContext({ req, apiVersion }),
-    onError:
-      process.env.NODE_ENV === "development"
-        ? ({ path, error }) => {
-            log.error("tRPC failed", { path: path ?? "<no-path>", version: apiVersion, message: error.message });
-          }
-        : undefined,
+    onError: ({ path, error }) => {
+      if (process.env.NODE_ENV === "development") {
+        log.error("tRPC failed", { path: path ?? "<no-path>", version: apiVersion, message: error.message });
+      }
+    },
   });
 };
 

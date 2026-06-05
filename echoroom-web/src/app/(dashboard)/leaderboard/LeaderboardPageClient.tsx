@@ -39,9 +39,7 @@ export default function LeaderboardPageClient() {
       name: s.title,
       image: s.character?.avatarUrl,
       value: s.likeCount,
-      extra: s.creator?.username
-        ? `par ${s.creator.username}`
-        : undefined,
+      ...(s.creator?.username ? { extra: `par ${s.creator.username}` } : {}),
     })) ?? []
 
   const creatorEntries =

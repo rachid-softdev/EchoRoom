@@ -415,7 +415,7 @@ export const adminV1Router = router({
       const blocked = await db.blockedNumber.create({
         data: {
           phoneNumber: input.phoneNumber,
-          reason: input.reason,
+          ...(input.reason !== undefined ? { reason: input.reason } : {}),
           blockedById: ctx.session.user.id,
         },
       });

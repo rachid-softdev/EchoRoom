@@ -205,7 +205,7 @@ export const scenariosRouter = router({
       if (!input.cursor && redis) {
         const cached = await getCachedTrendingFeed<FeedResponse>({
           limit: input.limit,
-          cursor: input.cursor,
+          ...(input.cursor ? { cursor: input.cursor } : {}),
         });
         if (cached) return cached;
       }
@@ -298,7 +298,7 @@ export const scenariosRouter = router({
       // Cache first page
       if (!input.cursor && redis) {
         void setCachedTrendingFeed(
-          { limit: input.limit, cursor: input.cursor },
+          { limit: input.limit, ...(input.cursor ? { cursor: input.cursor } : {}) },
           { items, nextCursor },
         );
       }

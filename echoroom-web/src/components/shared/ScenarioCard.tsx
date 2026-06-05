@@ -20,10 +20,10 @@ import { CATEGORY_LABELS } from '@/lib/constants'
  * @property likeCount - Total like count
  * @property visibility - Scenario visibility status
  */
-interface ScenarioCardData {
+export interface ScenarioCardData {
   id: string
   title: string
-  description: string
+  description: string | null
   character?: { name: string; slug?: string; category?: string }
   creator?: { username: string }
   _count?: { reactions: number; comments: number }
@@ -81,9 +81,11 @@ export function ScenarioCard({
           <CardTitle className="text-base group-hover:text-primary transition-colors" title={scenario.title}>
             {scenario.title}
           </CardTitle>
-          <CardDescription className="line-clamp-2" title={scenario.description}>
-            {scenario.description}
-          </CardDescription>
+          {scenario.description && (
+            <CardDescription className="line-clamp-2">
+              {scenario.description}
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between text-xs text-muted-foreground">

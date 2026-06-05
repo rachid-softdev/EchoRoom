@@ -18,7 +18,7 @@ export const charactersRouter = router({
         .optional(),
     )
     .query(async ({ input }) => {
-      const cacheParams = { category: input?.category };
+      const cacheParams = { ...(input?.category ? { category: input.category } : {}) };
       const cached = await getCachedCharacters<CachedCharacter[]>(cacheParams);
       if (cached) return cached;
 

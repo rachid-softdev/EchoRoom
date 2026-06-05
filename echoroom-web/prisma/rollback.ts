@@ -34,7 +34,7 @@ interface MigrationRecord {
 }
 
 interface ParsedArgs {
-  to?: string;
+  to: string | undefined;
   step?: number;
   force: boolean;
 }
@@ -50,7 +50,7 @@ interface DownSqlFile {
 // ─── CLI Argument Parsing ─────────────────────────────────────────────────────
 
 function parseArgs(args: string[]): ParsedArgs {
-  const parsed: ParsedArgs = { force: false };
+  const parsed: ParsedArgs = { to: undefined, force: false };
 
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
