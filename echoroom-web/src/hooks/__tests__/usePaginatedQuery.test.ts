@@ -349,6 +349,10 @@ describe("usePaginatedQuery", () => {
       },
       "cursor-2": {
         items: [{ id: "2", name: "Item 2" }],
+        nextCursor: "cursor-3",
+      },
+      "cursor-3": {
+        items: [{ id: "3", name: "Item 3" }],
       },
     };
 
@@ -390,8 +394,9 @@ describe("usePaginatedQuery", () => {
       expect(result.current.items).toHaveLength(3);
     });
 
+    // First item has no id (tests dedup fallback doesn't throw), others have ids
     expect(result.current.items).toEqual([
-      { id: "1", name: "Item 1" },
+      { name: "A", value: 1 },
       { id: "2", name: "Item 2" },
       { id: "3", name: "Item 3" },
     ]);
