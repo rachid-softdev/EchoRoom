@@ -5,6 +5,10 @@
 > **Monorepo** : Turborepo (pnpm workspaces)  
 > **Projets** : `echoroom-web` (Next.js 14), `echoroom-mobile` (Expo 52), `echoroom-desktop-electron` (Electron 33)
 
+> **Round 1 (PR #24)** ✅ — `strict` socle + 7 options avancées, migration desktop ESM, ~280 corrections  
+> **Round 2 (cette PR)** ✅ — `tsconfig/base.json` partagé, `target: ES2022`, `verbatimModuleSyntax`  
+> **Restant** : `exactOptionalPropertyTypes` (30+ erreurs, trop disruptif), tsconfig partagé mobile (contrainte Expo)
+
 ---
 
 ## 1. État des lieux détaillé
@@ -12,12 +16,13 @@
 ### 1.1 Architecture des fichiers tsconfig
 
 ```
-echoroom-web/tsconfig.json        → Standalone (aucun extends)
-echoroom-mobile/tsconfig.json     → extends "expo/tsconfig.base"
-echoroom-desktop-electron/tsconfig.json → Standalone (aucun extends)
+tsconfig/base.json                → Base partagée (créée Round 2)
+echoroom-web/tsconfig.json        → extends "../tsconfig/base.json"
+echoroom-mobile/tsconfig.json     → extends "expo/tsconfig.base" (trop spécifique)
+echoroom-desktop-electron/tsconfig.json → extends "../tsconfig/base.json"
 ```
 
-**Aucun tsconfig racine partagé** → les règles de sécurité ne sont pas uniformes.
+**✅ Tsconfig racine partagé créé** → les règles de sécurité sont uniformisées entre web et desktop.
 
 ### 1.2 Contenu actuel des fichiers
 

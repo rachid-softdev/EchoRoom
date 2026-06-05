@@ -1,9 +1,14 @@
 {
-  "extends": "expo/tsconfig.base",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "EchoRoom Shared Base",
   "compilerOptions": {
     "strict": true,
-    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
@@ -12,11 +17,6 @@
     "useUnknownInCatchVariables": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "verbatimModuleSyntax": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  },
-  "include": ["**/*.ts", "**/*.tsx"]
+    "verbatimModuleSyntax": true
+  }
 }
