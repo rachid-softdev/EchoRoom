@@ -501,7 +501,7 @@ npx expo start --web
 | Item | Statut | Erreurs | Effort | Risque | Bénéfice | Recommandation |
 |------|:------:|:-------:|:------:|:-----:|:--------:|:--------------:|
 | `exactOptionalPropertyTypes` | ❌ Reporté | **37** | 2-3 jours | 🟠 Élevé (Prisma null vs undefined) | 🔵 Faible | Attendre 6 mois |
-| Mobile → base partagée | ⚠️ Statu quo | 0 | 1 heure | 🟢 Faible | 🟢 Faible | Solution 1 (statu quo) pour l'instant |
+| Mobile → base partagée | ✅ Solution 2 adoptée | 0 | 15 min | 🟢 Faible | 🟡 Héritage automatique | `tsconfig/expo-base.json` créé, mobile l'étend |
 
 ### Prochaine évaluation recommandée
 
