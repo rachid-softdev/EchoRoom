@@ -64,7 +64,8 @@ export async function GET(req: Request) {
               marginBottom: "20px",
             }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="#06b6d4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#06b6d4" role="img" aria-label="EchoRoom AI">
+              <title>EchoRoom AI</title>
               <circle cx="12" cy="12" r="10" />
             </svg>
             <span
@@ -105,7 +106,7 @@ export async function GET(req: Request) {
         ...(interFont ? { fonts: [{ name: "Inter", data: interFont, weight: 400 }] } : {}),
       },
     );
-  } catch (error) {
+  } catch (_error) {
     // Fallback: redirect to character avatar
     const scenario = await db.scenario.findUnique({
       where: { id },

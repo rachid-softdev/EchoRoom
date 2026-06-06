@@ -12,6 +12,7 @@ import { api } from "@/lib/trpc";
 
 export default function HistoryPage() {
   const paginated = usePaginatedQuery(
+    // biome-ignore lint/correctness/useHookAtTopLevel: usePaginatedQuery lazily invokes the tRPC hook inside its body — this is a valid pattern
     (args) => api.calls.history.useQuery(args),
     { limit: 20 },
   );

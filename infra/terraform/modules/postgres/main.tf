@@ -10,10 +10,10 @@ resource "aiven_pg" "this" {
   disk_size    = var.disk_size
 
   pg_user_config {
-    pg_version          = var.pg_version
-    ip_filter           = var.ip_filter
-    backup_hour         = var.backup_hour
-    backup_minute       = var.backup_minute
+    pg_version    = var.pg_version
+    ip_filter     = var.ip_filter
+    backup_hour   = var.backup_hour
+    backup_minute = var.backup_minute
 
     # Sécurité : forcer SSL pour toutes les connexions
     pg_sslmode = var.sslmode

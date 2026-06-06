@@ -1,0 +1,93 @@
+# ─── Application CI — EchoRoom ─────────────────────────────────────────────────
+# Runs typecheck, lint, test, and build on every PR against main and on push to
+# main. Uses pnpm with turbo for task orchestration and caching.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  TURBO_CACHE_KEY: ci-${{ github.run_id }}
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @echoroom/web db:generate
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: TypeScript type check
+        run: pnpm typecheck
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tests
+        run: pnpm test
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+          DATABASE_URL: "postgresql://localhost:5432/echoroom?schema=public"
+          NEXTAUTH_SECRET: "test_secret_key_32_chars_minimum_here___x"
+
+      - name: Create .env for build
+        run: |
+          cat > echoroom-web/.env << 'EOF'
+          NEXT_PUBLIC_APP_URL=http://localhost:3000
+          DATABASE_URL=postgresql://localhost:5432/echoroom?schema=public
+          NEXTAUTH_SECRET=ci_secret_key_32_chars_minimum_here___xxx
+          STRIPE_SECRET_KEY=sk_test_ci
+          STRIPE_WEBHOOK_SECRET=whsec_ci
+          TWILIO_ACCOUNT_SID=AC_ci
+          TWILIO_AUTH_TOKEN=ci_token
+          TWILIO_PHONE_NUMBER=+15550000001
+          OPENAI_API_KEY=sk_ci
+          ELEVENLABS_API_KEY=ci_key
+          DEEPGRAM_API_KEY=ci_key
+          R2_ACCESS_KEY_ID=ci_key
+          R2_SECRET_ACCESS_KEY=ci_secret
+          R2_BUCKET_NAME=ci-bucket
+          R2_ENDPOINT=https://ci.r2.cloudflarestorage.com
+          POSTHOG_KEY=phc_ci
+          PHONE_ENCRYPTION_KEY=ci_phone_key_32_chars_minimum_here____
+          TWILIO_TOKEN_SECRET=ci_twilio_token_secret_16_
+          AUDIT_HASH_SECRET=ci_audit_hash_secret_16_cha
+          CRON_SECRET=ci_cron_secret_at_least_16_chars
+          EOF
+
+      - name: Build
+        run: pnpm build
