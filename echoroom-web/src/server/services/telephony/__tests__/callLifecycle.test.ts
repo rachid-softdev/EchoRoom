@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import type { Scenario, Character } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Call Lifecycle tests: failCall idempotency, initiateCall, withRetry
@@ -113,7 +114,7 @@ describe("failCall", () => {
 
   it("should not throw when repository resolves successfully", async () => {
     const { callRepository } = await import("@/server/repositories");
-    (callRepository.markAsFailedWithRefund as any).mockResolvedValue(undefined);
+    vi.mocked(callRepository.markAsFailedWithRefund).mockResolvedValue(undefined);
 
     const { failCall } = await import("../callLifecycle");
     await expect(failCall("call-1", 30)).resolves.toBeUndefined();
@@ -121,7 +122,7 @@ describe("failCall", () => {
 
   it("should propagate repository errors", async () => {
     const { callRepository } = await import("@/server/repositories");
-    (callRepository.markAsFailedWithRefund as any).mockRejectedValue(new Error("DB error"));
+    vi.mocked(callRepository.markAsFailedWithRefund).mockRejectedValue(new Error("DB error"));
 
     const { failCall } = await import("../callLifecycle");
     await expect(failCall("call-1", 30)).rejects.toThrow("DB error");
@@ -233,14 +234,31 @@ describe("withRetry", () => {
 describe("initiateCall", () => {
   let mockTx: Record<string, any>;
 
-  const validScenario = {
+  const validScenario: Scenario & { character: Character } = {
     id: "scenario-1",
-    title: "Test Scenario",
+    creatorId: "creator-1",
     characterId: "char-1",
+    title: "Test Scenario",
+    description: "",
+    openingMessage: "",
+    aiInstructions: "",
+    visibility: "PUBLIC",
+    moderationStatus: "APPROVED",
+    playCount: 0,
+    likeCount: 0,
+    createdAt: new Date("2025-01-01"),
     character: {
+      id: "char-1",
       name: "TestBot",
+      slug: "test-bot",
       description: "A test character",
       promptSystem: "Be helpful",
+      previewAudioUrl: "",
+      avatarUrl: "",
+      category: "NPC",
+      elevenLabsVoiceId: "",
+      isFeatured: false,
+      createdAt: new Date("2025-01-01"),
     },
   };
 
@@ -248,8 +266,8 @@ describe("initiateCall", () => {
     vi.clearAllMocks();
     // Reset repository mocks that may have been overridden by failCall tests
     const repos = await import("@/server/repositories");
-    (repos.callRepository.markAsFailedWithRefund as any).mockResolvedValue(undefined);
-    (repos.callRepository.updateStatusWithGuard as any).mockResolvedValue(1);
+    vi.mocked(repos.callRepository.markAsFailedWithRefund).mockResolvedValue(undefined);
+    vi.mocked(repos.callRepository.updateStatusWithGuard).mockResolvedValue(1);
 
     // Default transaction mock — happy path: sufficient credits + daily limit ok
     // Sprint 4: atomicDebit prefers UserBilling sub-aggregate
@@ -280,9 +298,12 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid_123" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    // The Prisma $transaction type is too complex to mock fully; the callback wraps mockTx
+    (db.$transaction as Mock).mockImplementation(
+      async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx),
+    );
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid_123" });
 
     const { initiateCall } = await import("../callLifecycle");
     const result = await initiateCall({
@@ -304,9 +325,9 @@ describe("initiateCall", () => {
     const { encryptPhoneNumber } = await import("@/server/lib/encryption");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -333,9 +354,9 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -356,12 +377,12 @@ describe("initiateCall", () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
     // UserBilling returns 0 credits — no legacy fallback, atomicDebit checks user existence
     mockTx['userBilling'].updateMany.mockResolvedValue({ count: 0 });
     // User exists, so should get INSUFFICIENT_CREDITS (not USER_NOT_FOUND)
     mockTx['user'].findUnique.mockResolvedValue({ id: "user-abc" });
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -385,9 +406,9 @@ describe("initiateCall", () => {
     const { createTwilioToken } = await import("@/server/lib/twilioToken");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -405,9 +426,9 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository, callRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_ringing" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_ringing" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -431,12 +452,12 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository, callRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     // Simulate that the status guard already matched nothing
-    (callRepository.updateStatusWithGuard as any).mockResolvedValue(0);
+    vi.mocked(callRepository.updateStatusWithGuard).mockResolvedValue(0);
 
     const { initiateCall } = await import("../callLifecycle");
     const result = await initiateCall({
@@ -460,7 +481,7 @@ describe("initiateCall", () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(null);
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(null);
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -480,13 +501,13 @@ describe("initiateCall", () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
 
     // Both UserBilling and legacy updateMany return 0 (insufficient credits)
     mockTx['userBilling'].updateMany.mockResolvedValue({ count: 0 });
     mockTx['user'].updateMany.mockResolvedValue({ count: 0 });
     mockTx['user'].findUnique.mockResolvedValue({ id: "user-abc" });
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -504,13 +525,13 @@ describe("initiateCall", () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
 
     // Both UserBilling and legacy updateMany return 0
     mockTx['userBilling'].updateMany.mockResolvedValue({ count: 0 });
     mockTx['user'].updateMany.mockResolvedValue({ count: 0 });
     mockTx['user'].findUnique.mockResolvedValue(null);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -529,12 +550,12 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository, callRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
     // Make the Twilio call fail
     const twilioError = new Error("Twilio network error");
-    (twilioClient.calls.create as any).mockRejectedValue(twilioError);
+    (twilioClient.calls.create as Mock).mockRejectedValue(twilioError);
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -556,11 +577,11 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository, callRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
     // Make the Twilio call fail
-    (twilioClient.calls.create as any).mockRejectedValue(new Error("Twilio error"));
+    (twilioClient.calls.create as Mock).mockRejectedValue(new Error("Twilio error"));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -582,10 +603,10 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
-    (twilioClient.calls.create as any).mockRejectedValue(new Error("Rate limit exceeded"));
+    (twilioClient.calls.create as Mock).mockRejectedValue(new Error("Rate limit exceeded"));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -605,10 +626,10 @@ describe("initiateCall", () => {
     const { createTwilioToken } = await import("@/server/lib/twilioToken");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (createTwilioToken as any).mockReturnValue("test-token-123");
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(createTwilioToken).mockReturnValue("test-token-123");
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -631,9 +652,9 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -663,9 +684,9 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -691,7 +712,7 @@ describe("initiateCall", () => {
   it("should throw DAILY_LIMIT_EXCEEDED when atomicIncrementDailyLimit fails", async () => {
     const { db } = await import("@/server/db");
     const { scenarioRepository } = await import("@/server/repositories");
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
 
     // Simulate daily limit exceeded inside the transaction.
     // atomicIncrementDailyLimit throws AppError("DAILY_LIMIT_EXCEEDED", ...)
@@ -702,7 +723,7 @@ describe("initiateCall", () => {
         Object.assign(new Error("Unique constraint"), { code: "P2002" }),
       ),
     };
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -726,9 +747,9 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({
@@ -757,9 +778,9 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository, callRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockRejectedValue(new Error("Twilio error"));
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockRejectedValue(new Error("Twilio error"));
 
     const { initiateCall } = await import("../callLifecycle");
 
@@ -785,11 +806,11 @@ describe("initiateCall", () => {
     const { twilioClient } = await import("@/server/services/telephony/twilio");
     const { scenarioRepository } = await import("@/server/repositories");
 
-    (scenarioRepository.findByIdWithCharacter as any).mockResolvedValue(validScenario);
+    vi.mocked(scenarioRepository.findByIdWithCharacter).mockResolvedValue(validScenario);
 
     // Track transaction callback to inspect what happens inside
-    (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
-    (twilioClient.calls.create as any).mockResolvedValue({ sid: "CA_mock_sid" });
+    (db.$transaction as Mock).mockImplementation(async (cb: (tx: Record<string, any>) => Promise<unknown>) => cb(mockTx));
+    (twilioClient.calls.create as Mock).mockResolvedValue({ sid: "CA_mock_sid" });
 
     const { initiateCall } = await import("../callLifecycle");
     await initiateCall({

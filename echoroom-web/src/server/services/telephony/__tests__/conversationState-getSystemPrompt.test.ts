@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 
 // ---------------------------------------------------------------------------
 // M-1: conversationState — getSystemPromptFromState
@@ -135,14 +135,33 @@ describe("M-1: getSystemPromptFromState", () => {
   it("should try DB fallback when scenarioId is set but no prompt exists", async () => {
     const { db } = await import("@/server/db");
     // Configure the existing mock to return a scenario with character data
-    (db.scenario.findUnique as any).mockResolvedValue({
+    // The real call uses include: { character: true } via scenarioRepository.findByIdWithCharacter
+    (db.scenario.findUnique as Mock).mockResolvedValue({
+      id: "scenario-valid",
+      creatorId: "creator-1",
+      title: "Test",
+      characterId: "char-1",
+      openingMessage: "",
+      aiInstructions: "Be helpful",
+      visibility: "PUBLIC",
+      moderationStatus: "APPROVED",
+      playCount: 0,
+      likeCount: 0,
+      createdAt: new Date(),
+      description: "Test scenario context",
       character: {
+        id: "char-1",
         name: "TestBot",
+        slug: "test-bot",
         description: "A test character",
         promptSystem: "Follow the rules",
+        previewAudioUrl: "",
+        avatarUrl: "",
+        category: "NPC",
+        elevenLabsVoiceId: "",
+        isFeatured: false,
+        createdAt: new Date(),
       },
-      aiInstructions: "Be helpful",
-      description: "Test scenario context",
     });
 
     const { getSystemPromptFromState } = await import("../conversationState");

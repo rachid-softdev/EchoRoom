@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
@@ -7,6 +5,7 @@ import { Button } from "@/components/ui";
 import { Sparkles, Phone, Users, Globe, ArrowRight, Zap, Shield, Share2, Headphones } from "lucide-react";
 import { MobileNav } from "@/components/landing/MobileNav";
 import { FeaturedScenariosSection } from "@/components/landing/FeaturedScenariosSection";
+import { DemoAudioForm } from "@/components/landing/DemoAudioForm";
 
 const features = [
   {
@@ -175,20 +174,7 @@ export default function HomePage() {
             Soyez parmi les premiers à découvrir les appels IA EchoRoom.
             Laissez-nous votre email pour être prévenu du lancement.
           </p>
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex flex-col sm:flex-row items-center gap-3 max-w-sm mx-auto"
-          >
-            <input
-              type="email"
-              placeholder="votre@email.com"
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              required
-            />
-            <Button type="submit" size="sm" className="shrink-0">
-              Prévenir
-            </Button>
-          </form>
+          <DemoAudioForm />
         </div>
       </section>
 
