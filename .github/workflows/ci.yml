@@ -60,6 +60,13 @@ jobs:
         run: pnpm test
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+          DATABASE_URL: "postgresql://localhost:5432/echoroom?schema=public"
+          NEXTAUTH_SECRET: "test_secret_key_32_chars_minimum_here___x"
 
       - name: Build
         run: pnpm build
+        env:
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+          DATABASE_URL: "postgresql://localhost:5432/echoroom?schema=public"
+          NEXTAUTH_SECRET: "test_secret_key_32_chars_minimum_here___x"
