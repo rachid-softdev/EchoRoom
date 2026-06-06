@@ -24,6 +24,11 @@ vi.mock("@/server/db", () => ({
   db: mockDb,
 }));
 
+// Mock Redis to avoid real connection attempts during test
+vi.mock("@/lib/redis", () => ({
+  redis: null,
+}));
+
 // Mock the tRPC module so that adminProcedure.input(schema).mutation(handler)
 // captures the handler in the router object for direct testing.
 vi.mock("@/server/trpc", () => {
