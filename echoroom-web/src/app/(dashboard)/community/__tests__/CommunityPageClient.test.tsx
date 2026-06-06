@@ -21,8 +21,8 @@ function createMutationObj() {
       mockMutate(...args);
     },
     isPending: false,
-    onSuccess: undefined as Function | undefined,
-    onError: undefined as Function | undefined,
+    onSuccess: undefined as ((...args: unknown[]) => unknown) | undefined,
+    onError: undefined as ((...args: unknown[]) => unknown) | undefined,
   };
   return obj;
 }
@@ -203,7 +203,7 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
   });
 
   it("should show success toast and refetch feed on successful comment", async () => {
-    let capturedOnSuccess: Function | undefined;
+    let capturedOnSuccess: ((...args: unknown[]) => unknown) | undefined;
     mockUseMutation.mockImplementation((...args: any[]) => {
       const opts = args[0];
       capturedOnSuccess = opts.onSuccess;
@@ -232,7 +232,7 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
   });
 
   it("should show error toast with error message on failed comment", async () => {
-    let capturedOnError: Function | undefined;
+    let capturedOnError: ((...args: unknown[]) => unknown) | undefined;
     mockUseMutation.mockImplementation((...args: any[]) => {
       const opts = args[0];
       capturedOnError = opts.onError;
@@ -258,7 +258,7 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
   });
 
   it("should show generic error toast when error has no message", async () => {
-    let capturedOnError: Function | undefined;
+    let capturedOnError: ((...args: unknown[]) => unknown) | undefined;
     mockUseMutation.mockImplementation((...args: any[]) => {
       const opts = args[0];
       capturedOnError = opts.onError;
@@ -300,7 +300,7 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
     // The component only clears input on success (via onSuccess), not on error.
     // Verify the structure: handleComment does NOT clear the input field.
     // This is a contract test — the input state management is in the component.
-    let capturedOnError: Function | undefined;
+    let capturedOnError: ((...args: unknown[]) => unknown) | undefined;
     mockUseMutation.mockImplementation((...args: any[]) => {
       const opts = args[0];
       capturedOnError = opts.onError;

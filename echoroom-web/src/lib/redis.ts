@@ -8,7 +8,7 @@ let redis: Redis | null = null;
 
 try {
   if (env.REDIS_URL) {
-    let url;
+    let url: URL | undefined;
     try {
       url = new URL(env.REDIS_URL);
     } catch {

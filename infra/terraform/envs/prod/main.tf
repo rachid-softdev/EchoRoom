@@ -22,14 +22,14 @@ terraform {
 module "postgres" {
   source = "../../modules/postgres"
 
-  project      = var.pg_project
+  project = var.pg_project
   service_name = "echoroom-db-prod"
-  cloud_name   = var.pg_cloud_name
-  plan         = var.pg_plan
-  disk_size    = var.pg_disk_size
+  cloud_name = var.pg_cloud_name
+  plan = var.pg_plan
+  disk_size = var.pg_disk_size
 
   # Production : rétention de sauvegarde étendue
-  backup_hour   = 2
+  backup_hour = 2
   backup_minute = 0
 
   # Production : limiter l'accès IP aux plages autorisées
@@ -38,24 +38,24 @@ module "postgres" {
   ]
 
   default_database = "echoroom_prod"
-  default_user     = "echoroom_admin_prod"
+  default_user = "echoroom_admin_prod"
 }
 
 module "redis" {
   source = "../../modules/redis"
 
-  database_name   = "echoroom-cache-prod"
-  region          = var.redis_region
-  tier            = var.redis_tier
+  database_name = "echoroom-cache-prod"
+  region = var.redis_region
+  tier = var.redis_tier
   max_connections = 500
 }
 
 module "r2" {
   source = "../../modules/r2"
 
-  account_id   = var.cloudflare_account_id
-  bucket_name  = var.r2_bucket_name
-  location     = var.r2_location
+  account_id = var.cloudflare_account_id
+  bucket_name = var.r2_bucket_name
+  location = var.r2_location
   jurisdiction = "eu" # RGPD
 
   # Production : accès public via Cloudflare Workers ou domaine personnalisé

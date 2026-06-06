@@ -13,6 +13,7 @@ import { api } from "@/lib/trpc";
 
 export default function LibraryPage() {
   const paginated = usePaginatedQuery(
+    // biome-ignore lint/correctness/useHookAtTopLevel: usePaginatedQuery lazily invokes the tRPC hook inside its body — this is a valid pattern
     (args) => api.scenarios.myScenarios.useQuery(args),
     { limit: 20 },
   );
@@ -60,7 +61,7 @@ export default function LibraryPage() {
             onLoadMore={paginated.loadMore}
           >
             {items.map((scenario) => (
-              <ScenarioCard key={(scenario as { id: string }).id} scenario={scenario as ScenarioCardData} />
+              <ScenarioCard key={(scenario as ScenarioCardData).id} scenario={scenario as ScenarioCardData} />
             ))}
           </PaginatedGrid>
         )}

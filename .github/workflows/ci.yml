@@ -1,0 +1,62 @@
+# ─── Application CI — EchoRoom ─────────────────────────────────────────────────
+# Runs typecheck, lint, test, and build on every PR against main and on push to
+# main. Uses pnpm with turbo for task orchestration and caching.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  TURBO_CACHE_KEY: ci-${{ github.run_id }}
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: TypeScript type check
+        run: pnpm typecheck
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tests
+        run: pnpm test
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Build
+        run: pnpm build

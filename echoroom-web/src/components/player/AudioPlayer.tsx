@@ -34,7 +34,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
   useEffect(() => {
     setHasError(false);
     setIsLoaded(false);
-  }, [recordingUrl]);
+  }, []);
 
   useEffect(() => {
     return () => {

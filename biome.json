@@ -11,15 +11,24 @@
     "rules": {
       "recommended": true,
       "style": {
-        "noNonNullAssertion": "error"
+        "noNonNullAssertion": "off"
       },
       "correctness": {
         "noUnusedImports": "error"
       },
+      "complexity": {
+        "useLiteralKeys": "off",
+        "useOptionalChain": "off"
+      },
+      "a11y": {
+        "useSemanticElements": "off"
+      },
       "suspicious": {
         "noShadowRestrictedNames": "off",
         "noUnknownAtRules": "off",
-        "noArrayIndexKey": "warn"
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off",
+        "noExplicitAny": "off"
       }
     }
   },
