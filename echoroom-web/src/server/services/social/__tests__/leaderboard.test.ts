@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Leaderboard tests: getTopScenarios & getTopCreators
@@ -27,7 +27,7 @@ describe("getTopScenarios", () => {
       { id: "s1", title: "Popular", likeCount: 100, playCount: 50 },
       { id: "s2", title: "Less Popular", likeCount: 50, playCount: 200 },
     ];
-    (db.scenario.findMany as any).mockResolvedValue(mockScenarios);
+    (db.scenario.findMany as Mock).mockResolvedValue(mockScenarios);
 
     const { getTopScenarios } = await import("../leaderboard");
     const result = await getTopScenarios({ period: "ALL", sort: "LIKES" });
@@ -42,7 +42,7 @@ describe("getTopScenarios", () => {
 
   it("should return scenarios sorted by playCount descending when sort is PLAYS", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "ALL", sort: "PLAYS" });
@@ -56,7 +56,7 @@ describe("getTopScenarios", () => {
 
   it("should always filter by PUBLIC visibility and APPROVED moderation", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "ALL", sort: "LIKES" });
@@ -73,12 +73,12 @@ describe("getTopScenarios", () => {
 
   it("should apply period filter for WEEK", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "WEEK", sort: "LIKES" });
 
-    const callArgs = (db.scenario.findMany as any).mock.calls[0][0];
+    const callArgs = (db.scenario.findMany as Mock).mock.calls[0]![0]!;
     expect(callArgs.where.createdAt).toBeDefined();
     expect(callArgs.where.createdAt.gte).toBeInstanceOf(Date);
 
@@ -92,12 +92,12 @@ describe("getTopScenarios", () => {
 
   it("should apply period filter for MONTH", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "MONTH", sort: "LIKES" });
 
-    const callArgs = (db.scenario.findMany as any).mock.calls[0][0];
+    const callArgs = (db.scenario.findMany as Mock).mock.calls[0]![0]!;
     expect(callArgs.where.createdAt).toBeDefined();
     expect(callArgs.where.createdAt.gte).toBeInstanceOf(Date);
 
@@ -111,35 +111,33 @@ describe("getTopScenarios", () => {
 
   it("should NOT apply createdAt filter for period ALL", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "ALL", sort: "LIKES" });
 
-    const callArgs = (db.scenario.findMany as any).mock.calls[0][0];
+    const callArgs = (db.scenario.findMany as Mock).mock.calls[0]![0]!;
     expect(callArgs.where.createdAt).toBeUndefined();
   });
 
   it("should limit results to 20", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "ALL", sort: "LIKES" });
 
-    expect(db.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 20 }),
-    );
+    expect(db.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 20 }));
   });
 
   it("should select the correct fields including nested relations", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     await getTopScenarios({ period: "ALL", sort: "LIKES" });
 
-    const callArgs = (db.scenario.findMany as any).mock.calls[0][0];
+    const callArgs = (db.scenario.findMany as Mock).mock.calls[0]![0]!;
     expect(callArgs.select).toBeDefined();
     expect(callArgs.select.id).toBe(true);
     expect(callArgs.select.title).toBe(true);
@@ -155,7 +153,7 @@ describe("getTopScenarios", () => {
 
   it("should handle empty results gracefully", async () => {
     const { db } = await import("@/server/db");
-    (db.scenario.findMany as any).mockResolvedValue([]);
+    (db.scenario.findMany as Mock).mockResolvedValue([]);
 
     const { getTopScenarios } = await import("../leaderboard");
     const result = await getTopScenarios({ period: "ALL", sort: "LIKES" });
@@ -172,12 +170,12 @@ describe("getTopCreators", () => {
   it("should sort by UserSocial.totalLikesReceived when sort is LIKES", async () => {
     const { db } = await import("@/server/db");
     // Mock the userSocialRepository.getTopByLikes call
-    (db.userSocial.findMany as any).mockResolvedValue([
+    (db.userSocial.findMany as Mock).mockResolvedValue([
       { userId: "u1", totalLikesReceived: 200 },
       { userId: "u2", totalLikesReceived: 30 },
     ]);
     // Mock db.user.findMany to return user details
-    (db.user.findMany as any).mockResolvedValue([
+    (db.user.findMany as Mock).mockResolvedValue([
       { id: "u1", username: "top", image: null, _count: { scenarios: 5 } },
       { id: "u2", username: "bottom", image: null, _count: { scenarios: 3 } },
     ]);
@@ -198,12 +196,12 @@ describe("getTopCreators", () => {
   it("should sort by UserSocial.totalCallsMade when sort is CALLS", async () => {
     const { db } = await import("@/server/db");
     // Mock the userSocialRepository.getTopByCalls call
-    (db.userSocial.findMany as any).mockResolvedValue([
+    (db.userSocial.findMany as Mock).mockResolvedValue([
       { userId: "u1", totalCallsMade: 100 },
       { userId: "u2", totalCallsMade: 50 },
     ]);
     // Mock db.user.findMany to return user details
-    (db.user.findMany as any).mockResolvedValue([
+    (db.user.findMany as Mock).mockResolvedValue([
       { id: "u1", username: "few", image: null, _count: { scenarios: 2 } },
       { id: "u2", username: "many", image: null, _count: { scenarios: 1 } },
     ]);
@@ -224,19 +222,25 @@ describe("getTopCreators", () => {
     // db.user.findMany directly returns users with social relations
     const mockCreators = [
       {
-        id: "u1", username: "legacy", image: null,
-        totalLikesReceived: 150, totalCallsMade: 20,
+        id: "u1",
+        username: "legacy",
+        image: null,
+        totalLikesReceived: 150,
+        totalCallsMade: 20,
         social: null,
         _count: { scenarios: 3 },
       },
       {
-        id: "u2", username: "social", image: null,
-        totalLikesReceived: 10, totalCallsMade: 5,
+        id: "u2",
+        username: "social",
+        image: null,
+        totalLikesReceived: 10,
+        totalCallsMade: 5,
         social: { totalLikesReceived: 200, totalCallsMade: 99 },
         _count: { scenarios: 1 },
       },
     ];
-    (db.user.findMany as any).mockResolvedValue(mockCreators);
+    (db.user.findMany as Mock).mockResolvedValue(mockCreators);
 
     const { getTopCreators } = await import("../leaderboard");
     const result = await getTopCreators({ period: "WEEK", sort: "LIKES" });
@@ -248,12 +252,12 @@ describe("getTopCreators", () => {
 
   it("should filter by users active in the period for WEEK", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    (db.user.findMany as Mock).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     await getTopCreators({ period: "WEEK", sort: "LIKES" });
 
-    const callArgs = (db.user.findMany as any).mock.calls[0][0];
+    const callArgs = (db.user.findMany as Mock).mock.calls[0]![0]!;
     expect(callArgs.where.scenarios).toBeDefined();
     expect(callArgs.where.scenarios.some).toBeDefined();
     expect(callArgs.where.scenarios.some.createdAt).toBeDefined();
@@ -262,19 +266,19 @@ describe("getTopCreators", () => {
 
   it("should filter by users active in the period for MONTH", async () => {
     const { db } = await import("@/server/db");
-    (db.user.findMany as any).mockResolvedValue([]);
+    (db.user.findMany as Mock).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     await getTopCreators({ period: "MONTH", sort: "LIKES" });
 
-    const callArgs = (db.user.findMany as any).mock.calls[0][0];
+    const callArgs = (db.user.findMany as Mock).mock.calls[0]![0]!;
     expect(callArgs.where.scenarios).toBeDefined();
     expect(callArgs.where.scenarios.some.createdAt.gte).toBeInstanceOf(Date);
   });
 
   it("should have empty where clause for period ALL (no filter)", async () => {
     const { db } = await import("@/server/db");
-    (db.userSocial.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as Mock).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     const result = await getTopCreators({ period: "ALL", sort: "LIKES" });
@@ -285,23 +289,19 @@ describe("getTopCreators", () => {
 
   it("should limit results via userSocialRepository (take:20)", async () => {
     const { db } = await import("@/server/db");
-    (db.userSocial.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as Mock).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     await getTopCreators({ period: "ALL", sort: "LIKES" });
 
     // The sub-aggregate query is limited to 20
-    expect(db.userSocial.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 20 }),
-    );
+    expect(db.userSocial.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 20 }));
   });
 
   it("should select user details via db.user.findMany with correct fields", async () => {
     const { db } = await import("@/server/db");
-    (db.userSocial.findMany as any).mockResolvedValue([
-      { userId: "u1", totalLikesReceived: 10 },
-    ]);
-    (db.user.findMany as any).mockResolvedValue([
+    (db.userSocial.findMany as Mock).mockResolvedValue([{ userId: "u1", totalLikesReceived: 10 }]);
+    (db.user.findMany as Mock).mockResolvedValue([
       { id: "u1", username: "user1", image: null, _count: { scenarios: 1 } },
     ]);
 
@@ -309,24 +309,29 @@ describe("getTopCreators", () => {
     await getTopCreators({ period: "ALL", sort: "LIKES" });
 
     // The userSocial query uses the sub-aggregate repository
-    const socialCallArgs = (db.userSocial.findMany as any).mock.calls[0][0];
+    const socialCallArgs = (db.userSocial.findMany as Mock).mock.calls[0]![0]!;
     expect(socialCallArgs.orderBy).toBeDefined();
     expect(socialCallArgs.orderBy.totalLikesReceived).toBe("desc");
     expect(socialCallArgs.take).toBe(20);
 
     // The user query fetches details by IDs
-    const userCallArgs = (db.user.findMany as any).mock.calls[0][0];
+    const userCallArgs = (db.user.findMany as Mock).mock.calls[0]![0]!;
     expect(userCallArgs.where.id.in).toEqual(["u1"]);
     expect(userCallArgs.select.id).toBe(true);
     expect(userCallArgs.select.username).toBe(true);
     expect(userCallArgs.select.image).toBe(true);
-    expect(userCallArgs.select._count).toBeDefined();
-    expect(userCallArgs.select._count.select.scenarios).toBe(true);
+    expect(userCallArgs.select._count).toEqual(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          scenarios: true,
+        }),
+      }),
+    );
   });
 
   it("should handle empty results gracefully (no social records)", async () => {
     const { db } = await import("@/server/db");
-    (db.userSocial.findMany as any).mockResolvedValue([]);
+    (db.userSocial.findMany as Mock).mockResolvedValue([]);
 
     const { getTopCreators } = await import("../leaderboard");
     const result = await getTopCreators({ period: "ALL", sort: "LIKES" });

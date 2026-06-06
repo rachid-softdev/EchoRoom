@@ -58,6 +58,11 @@ export const adminRouter = router({
         },
       });
 
+      // Invalidate cache
+      if (redis) {
+        await redis.del("admin:featuredScenario");
+      }
+
       return { success: true };
     }),
 
@@ -78,10 +83,21 @@ export const adminRouter = router({
         },
       });
 
+      // Invalidate cache
+      if (redis) {
+        await redis.del("admin:featuredScenario");
+      }
+
       return { success: true };
     }),
 
   getFeaturedScenario: adminProcedure.query(async () => {
+    const cacheKey = "admin:featuredScenario";
+    if (redis) {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached) return JSON.parse(cached);
+    }
+
     const today = getUTCDateString();
     const featured = await db.featuredScenario.findUnique({
       where: { featuredDate: today },
@@ -104,6 +120,10 @@ export const adminRouter = router({
       },
     });
 
+    if (redis) {
+      await redis.set(cacheKey, JSON.stringify(featured), { ex: 30 });
+    }
+
     return featured;
   }),
 
@@ -117,6 +137,12 @@ export const adminRouter = router({
         .optional(),
     )
     .query(async ({ input }) => {
+      const cacheKey = `admin:moderationQueue:${JSON.stringify(input ?? {})}`;
+      if (redis) {
+        const cached = await redis.get<string>(cacheKey);
+        if (cached) return JSON.parse(cached) as { items: any[]; nextCursor: string | undefined };
+      }
+
       const scenarios = await db.scenario.findMany({
         where: { moderationStatus: "PENDING" },
         take: (input?.limit ?? 20) + 1,
@@ -136,7 +162,13 @@ export const adminRouter = router({
       const items = scenarios.slice(0, limit);
       const nextCursor = scenarios.length > limit ? items[items.length - 1]?.id : undefined;
 
-      return { items, nextCursor };
+      const result = { items, nextCursor };
+
+      if (redis) {
+        await redis.set(cacheKey, JSON.stringify(result), { ex: 30 });
+      }
+
+      return result;
     }),
 
   approveScenario: adminProcedure
@@ -166,6 +198,12 @@ export const adminRouter = router({
           adminId: ctx.session.user.id,
         },
       });
+
+      // Invalidate moderation caches
+      if (redis) {
+        await redis.del("admin:moderationQueue:*");
+        await redis.del("admin:moderationQueueComments:*");
+      }
 
       return { success: true };
     }),
@@ -198,6 +236,12 @@ export const adminRouter = router({
         },
       });
 
+      // Invalidate moderation caches
+      if (redis) {
+        await redis.del("admin:moderationQueue:*");
+        await redis.del("admin:moderationQueueComments:*");
+      }
+
       return { success: true };
     }),
 
@@ -214,6 +258,12 @@ export const adminRouter = router({
       }),
     )
     .query(async ({ input }) => {
+      const cacheKey = `admin:auditLogs:${JSON.stringify(input)}`;
+      if (redis) {
+        const cached = await redis.get<string>(cacheKey);
+        if (cached) return JSON.parse(cached) as { items: any[]; nextCursor: string | undefined };
+      }
+
       // Construire un filtre typé via Zod + Prisma.AuditLogWhereInput
       const where: Prisma.AuditLogWhereInput = {};
       if (input.action) where.action = { equals: input.action };
@@ -238,7 +288,13 @@ export const adminRouter = router({
       const items = logs.slice(0, input.limit);
       const nextCursor = logs.length > input.limit ? items[items.length - 1]?.id : undefined;
 
-      return { items, nextCursor };
+      const result = { items, nextCursor };
+
+      if (redis) {
+        await redis.set(cacheKey, JSON.stringify(result), { ex: 60 });
+      }
+
+      return result;
     }),
 
   moderateComment: adminProcedure
@@ -272,6 +328,11 @@ export const adminRouter = router({
           adminId: ctx.session.user.id,
         },
       });
+
+      // Invalidate comment moderation cache
+      if (redis) {
+        await redis.del("admin:moderationQueueComments:*");
+      }
 
       return { success: true };
     }),
@@ -308,6 +369,11 @@ export const adminRouter = router({
         },
       });
 
+      // Invalidate comment moderation cache
+      if (redis) {
+        await redis.del("admin:moderationQueueComments:*");
+      }
+
       return { success: true };
     }),
 
@@ -320,6 +386,12 @@ export const adminRouter = router({
       }),
     )
     .query(async ({ input }) => {
+      const cacheKey = `admin:abuseReports:${JSON.stringify(input)}`;
+      if (redis) {
+        const cached = await redis.get<string>(cacheKey);
+        if (cached) return JSON.parse(cached) as { items: any[]; nextCursor: string | undefined };
+      }
+
       const where: Prisma.AbuseReportWhereInput = {};
       if (input.status) where.status = { equals: input.status };
 
@@ -337,7 +409,13 @@ export const adminRouter = router({
       const items = reports.slice(0, input.limit);
       const nextCursor = reports.length > input.limit ? items[items.length - 1]?.id : undefined;
 
-      return { items, nextCursor };
+      const result = { items, nextCursor };
+
+      if (redis) {
+        await redis.set(cacheKey, JSON.stringify(result), { ex: 30 });
+      }
+
+      return result;
     }),
 
   dismissAbuseReport: adminProcedure
@@ -372,10 +450,21 @@ export const adminRouter = router({
         },
       });
 
+      // Invalidate abuse reports cache
+      if (redis) {
+        await redis.del("admin:abuseReports:*");
+      }
+
       return { success: true };
     }),
 
   getBlockedNumbers: adminProcedure.query(async () => {
+    const cacheKey = "admin:blockedNumbers";
+    if (redis) {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached) return JSON.parse(cached) as { items: any[] };
+    }
+
     const blocked = await db.blockedNumber.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -383,7 +472,13 @@ export const adminRouter = router({
       },
     });
 
-    return { items: blocked };
+    const result = { items: blocked };
+
+    if (redis) {
+      await redis.set(cacheKey, JSON.stringify(result), { ex: 30 });
+    }
+
+    return result;
   }),
 
   blockNumber: adminProcedure
@@ -423,6 +518,11 @@ export const adminRouter = router({
         },
       });
 
+      // Invalidate blocked numbers cache
+      if (redis) {
+        await redis.del("admin:blockedNumbers");
+      }
+
       return { success: true, id: blocked.id };
     }),
 
@@ -453,6 +553,11 @@ export const adminRouter = router({
           metadata: { phoneNumber: hashPhoneForAudit(blocked.phoneNumber) },
         },
       });
+
+      // Invalidate blocked numbers cache
+      if (redis) {
+        await redis.del("admin:blockedNumbers");
+      }
 
       return { success: true };
     }),
