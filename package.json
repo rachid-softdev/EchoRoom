@@ -1,28 +1,34 @@
 {
-  "name": "@echoroom/root",
-  "version": "0.1.0",
-  "private": true,
-  "packageManager": "pnpm@9.0.0",
-  "scripts": {
-    "dev": "turbo dev",
-    "dev:web": "pnpm --filter echoroom-web dev",
-    "build": "turbo build",
-    "build:web": "pnpm --filter echoroom-web build",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck",
-    "test": "turbo test",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "check": "turbo lint && turbo typecheck",
-    "clean": "turbo clean"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
-    "turbo": "^2.0.0",
-    "typescript": "^5.6.0"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
-  }
+    "name":  "@echoroom/root",
+    "version":  "0.1.0",
+    "private":  true,
+    "packageManager":  "pnpm@9.0.0",
+    "scripts":  {
+                    "dev":  "turbo dev",
+                    "dev:web":  "pnpm --filter echoroom-web dev",
+                    "build":  "turbo build",
+                    "build:web":  "pnpm --filter echoroom-web build",
+                    "lint":  "turbo lint",
+                    "typecheck":  "turbo typecheck",
+                    "test":  "turbo test",
+                    "format":  "biome format --write .",
+                    "format:check":  "biome format .",
+                    "check":  "turbo lint \u0026\u0026 turbo typecheck",
+                    "clean":  "turbo clean",
+                    "changeset":  "changeset",
+                    "version-packages":  "changeset version",
+                    "release":  "changeset tag",
+                    "ci:release":  "pnpm changeset version \u0026\u0026 pnpm install --no-frozen-lockfile \u0026\u0026 pnpm build \u0026\u0026 pnpm changeset tag"
+                },
+    "devDependencies":  {
+                            "@biomejs/biome":  "^2.4.15",
+                            "turbo":  "^2.0.0",
+                            "typescript":  "^5.6.0",
+                            "@changesets/cli":  "^2.27.0",
+                            "@changesets/changelog-github":  "^0.5.0"
+                        },
+    "engines":  {
+                    "node":  "\u003e=20.0.0",
+                    "pnpm":  "\u003e=9.0.0"
+                }
 }
