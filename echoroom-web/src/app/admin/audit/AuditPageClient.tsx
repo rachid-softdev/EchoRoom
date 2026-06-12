@@ -48,11 +48,15 @@ const actionLabels: Record<string, string> = {
 export default function AuditPageClient() {
   const [actionFilter, setActionFilter] = useState<string | undefined>(undefined)
   const [entityFilter, setEntityFilter] = useState<string | undefined>(undefined)
+  const [dateFrom, setDateFrom] = useState<string>("")
+  const [dateTo, setDateTo] = useState<string>("")
   const [cursor, setCursor] = useState<string | undefined>(undefined)
 
   const auditQuery = api.admin.getAuditLogs.useQuery({
     action: actionFilter,
     entityType: entityFilter,
+    startDate: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    endDate: dateTo ? new Date(dateTo + "T23:59:59.999Z").toISOString() : undefined,
     cursor,
     limit: 20,
   })
@@ -60,8 +64,12 @@ export default function AuditPageClient() {
   function handleResetFilters() {
     setActionFilter(undefined)
     setEntityFilter(undefined)
+    setDateFrom("")
+    setDateTo("")
     setCursor(undefined)
   }
+
+  const hasDateFilter = dateFrom || dateTo
 
   return (
     <div>
@@ -104,7 +112,31 @@ export default function AuditPageClient() {
             </option>
           ))}
         </select>
-        {(actionFilter || entityFilter) && (
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-muted-foreground shrink-0">Du</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => {
+              setDateFrom(e.target.value)
+              setCursor(undefined)
+            }}
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground [color-scheme:dark]"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-muted-foreground shrink-0">Au</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => {
+              setDateTo(e.target.value)
+              setCursor(undefined)
+            }}
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground [color-scheme:dark]"
+          />
+        </div>
+        {(actionFilter || entityFilter || hasDateFilter) && (
           <Button variant="ghost" size="sm" onClick={handleResetFilters}>
             Réinitialiser
           </Button>

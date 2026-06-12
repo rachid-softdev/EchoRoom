@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui";
@@ -23,10 +23,17 @@ const roleLabels: Record<string, string> = {
 
 export default function UsersPageClient() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
+  // Debounce search to avoid firing a query on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const listQuery = api.admin.listUsers.useQuery({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     limit: 50,
   });
 

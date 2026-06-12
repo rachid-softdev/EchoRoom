@@ -54,4 +54,30 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* Stagger animation helpers */
+  .stagger-1 { animation-delay: 0ms; }
+  .stagger-2 { animation-delay: 80ms; }
+  .stagger-3 { animation-delay: 160ms; }
+  .stagger-4 { animation-delay: 240ms; }
+  .stagger-5 { animation-delay: 320ms; }
+  .stagger-6 { animation-delay: 400ms; }
+
+  /* Audio visualizer bars */
+  .audio-bar-1 { animation-delay: 0ms; }
+  .audio-bar-2 { animation-delay: 0.1s; }
+  .audio-bar-3 { animation-delay: 0.2s; }
+  .audio-bar-4 { animation-delay: 0.3s; }
+  .audio-bar-5 { animation-delay: 0.4s; }
+}
+
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

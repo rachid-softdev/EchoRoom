@@ -8,27 +8,22 @@ import {
   AvatarImage,
   AvatarFallback,
   Skeleton,
-  Input,
 } from "@/components/ui"
 import {
   Heart,
   MessageCircle,
   Play,
-  Send,
   ArrowLeft,
   AlertTriangle,
   RotateCcw,
-  Trash2,
 } from "lucide-react"
-import { api } from "@/lib/trpc"
 import { useUser } from "@/hooks"
-import { useSession } from "next-auth/react"
 import { ReactionBar } from "@/components/social/ReactionBar"
 import { ShareButtons } from "@/components/social/ShareButtons"
 import { ReportButton } from "@/components/social/ReportButton"
 import { ScenarioCard } from "@/components/shared/ScenarioCard"
-import { useState, useCallback } from "react"
-import { toast } from "@/components/ui"
+import { ClipCreator } from "@/components/scenario/ClipCreator"
+import { CommentsSection } from "@/components/scenario/CommentsSection"
 
 interface ScenarioDetailClientProps {
   scenarioId: string
@@ -43,87 +38,14 @@ export function ScenarioDetailClient({
   scenarioId,
 }: ScenarioDetailClientProps) {
   const { isAuthenticated } = useUser()
-  const { data: session } = useSession()
-  const isAdmin = session?.user?.role === "ADMIN"
-  const [commentInput, setCommentInput] = useState("")
 
   const scenarioQuery = api.scenarios.getById.useQuery({ id: scenarioId })
-  const commentsQuery = api.community.getComments.useQuery({
-    scenarioId,
-    limit: 20,
-  })
   const feedQuery = api.scenarios.feed.useQuery({
     limit: 4,
     sort: "CHRONOLOGICAL",
   })
-  const commentMutation = api.community.comment.useMutation({
-    onSuccess: () => {
-      commentsQuery.refetch()
-      setCommentInput("")
-      toast({
-        title: "Commentaire ajouté",
-        variant: "default",
-      })
-    },
-  })
 
-  const moderateCommentMutation = api.admin.moderateComment.useMutation({
-    onSuccess: () => {
-      commentsQuery.refetch()
-      toast({
-        title: "Commentaire modéré",
-        variant: "success",
-      })
-    },
-    onError: (err) => {
-      toast({
-        title: err.message ?? "Erreur lors de la modération",
-        variant: "destructive",
-      })
-    },
-  })
-
-  // Clip creator state
-  const [selectedCallId, setSelectedCallId] = useState<string | null>(null)
-  const [clipStartTime, setClipStartTime] = useState(0)
-  const [clipEndTime, setClipEndTime] = useState(30)
-  const [clipTitle, setClipTitle] = useState("")
-
-  const callsQuery = api.calls.listByScenario.useQuery(
-    { scenarioId, limit: 20 },
-    { enabled: isAuthenticated },
-  )
-
-  const createClipMutation = api.clips.create.useMutation({
-    onSuccess: () => {
-      toast({
-        title: "Clip créé",
-        message: "L'extraction audio a commencé en arrière-plan.",
-        variant: "default",
-      })
-      setSelectedCallId(null)
-      setClipStartTime(0)
-      setClipEndTime(30)
-      setClipTitle("")
-    },
-    onError: (err) => {
-      toast({
-        title: err.message ?? "Erreur lors de la création du clip",
-        variant: "destructive",
-      })
-    },
-  })
-
-  const handleCreateClip = useCallback(() => {
-    if (!selectedCallId) return
-    createClipMutation.mutate({
-      callId: selectedCallId,
-      startTime: clipStartTime,
-      endTime: clipEndTime,
-      title: clipTitle || undefined,
-    })
-  }, [selectedCallId, clipStartTime, clipEndTime, clipTitle, createClipMutation])
-
+  // ── Loading state ──────────────────────────────────────
   if (scenarioQuery.isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -142,17 +64,15 @@ export function ScenarioDetailClient({
     )
   }
 
+  // ── Error state ────────────────────────────────────────
   if (scenarioQuery.isError) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <p className="text-lg font-semibold mb-2">
-            Une erreur est survenue
-          </p>
+          <p className="text-lg font-semibold mb-2">Une erreur est survenue</p>
           <p className="text-sm text-muted-foreground mb-6">
-            {scenarioQuery.error?.message ??
-              "Impossible de charger ce scénario"}
+            {scenarioQuery.error?.message ?? "Impossible de charger ce scénario"}
           </p>
           <Button
             variant="outline"
@@ -167,15 +87,14 @@ export function ScenarioDetailClient({
     )
   }
 
+  // ── Empty state ────────────────────────────────────────
   const scenario = scenarioQuery.data
   if (!scenario) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-lg font-semibold mb-2">
-            Scénario introuvable
-          </p>
+          <p className="text-lg font-semibold mb-2">Scénario introuvable</p>
           <Link href="/community">
             <Button variant="outline" className="mt-4">
               Voir la communauté
@@ -186,10 +105,11 @@ export function ScenarioDetailClient({
     )
   }
 
-  const comments = commentsQuery.data?.items ?? []
+  // ── Derived data ───────────────────────────────────────
   const relatedScenarios =
     feedQuery.data?.items.filter((s) => s.id !== scenarioId).slice(0, 3) ?? []
 
+  // ── Content ────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
@@ -232,7 +152,7 @@ export function ScenarioDetailClient({
           </div>
 
           {scenario.description && (
-            <p className="text-muted-foreground mt-4 max-w-2xl">
+            <p className="text-muted-foreground mt-4 max-w-2xl text-pretty">
               {scenario.description}
             </p>
           )}
@@ -259,19 +179,17 @@ export function ScenarioDetailClient({
           </div>
         </div>
 
-        {/* Reactions */}
-        <div>
+        {/* Reactions & Share */}
+        <div className="space-y-4">
           <ReactionBar scenarioId={scenarioId} />
-        </div>
-
-        {/* Share buttons */}
-        <div className="flex items-center gap-2">
-          <ShareButtons
-            scenarioId={scenarioId}
-            title={scenario.title}
-            description={scenario.description}
-          />
-          <ReportButton targetType="SCENARIO" targetId={scenarioId} />
+          <div className="flex items-center gap-2">
+            <ShareButtons
+              scenarioId={scenarioId}
+              title={scenario.title}
+              description={scenario.description}
+            />
+            <ReportButton targetType="SCENARIO" targetId={scenarioId} />
+          </div>
         </div>
 
         {/* CTA */}
@@ -291,216 +209,15 @@ export function ScenarioDetailClient({
         )}
 
         {/* Clip creator */}
-        {isAuthenticated && (
-          <div className="rounded-xl border border-border/50 p-6 space-y-4">
-            <h3 className="font-semibold">Créer un clip</h3>
-            {callsQuery.isLoading ? (
-              <Skeleton className="h-24" />
-            ) : (callsQuery.data?.items ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Aucun appel avec enregistrement trouvé pour ce scénario
-              </p>
-            ) : (
-              <>
-                {/* Call selector */}
-                <div className="space-y-2">
-                  <label htmlFor="call-select" className="text-sm font-medium">Appel</label>
-                  <select
-                    id="call-select"
-                    value={selectedCallId ?? ""}
-                    onChange={(e) => setSelectedCallId(e.target.value || null)}
-                    className="w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="">Sélectionner un appel</option>
-                    {callsQuery.data?.items.map((call) => (
-                      <option key={call.id} value={call.id}>
-                        {new Date(call.createdAt).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}{" "}
-                        — {call.durationSeconds}s
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Start / End time inputs */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="clip-start" className="text-sm font-medium">Début (s)</label>
-                    <Input
-                      id="clip-start"
-                      type="number"
-                      min={0}
-                      value={clipStartTime}
-                      onChange={(e) => setClipStartTime(Math.max(0, Number(e.target.value)))}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="clip-end" className="text-sm font-medium">Fin (s)</label>
-                    <Input
-                      id="clip-end"
-                      type="number"
-                      min={0}
-                      value={clipEndTime}
-                      onChange={(e) => setClipEndTime(Math.max(0, Number(e.target.value)))}
-                      placeholder="30"
-                    />
-                  </div>
-                </div>
-
-                {/* Title input */}
-                <div className="space-y-2">
-                  <label htmlFor="clip-title" className="text-sm font-medium">Titre (optionnel)</label>
-                  <Input
-                    id="clip-title"
-                    value={clipTitle}
-                    onChange={(e) => setClipTitle(e.target.value)}
-                    placeholder="Mon clip"
-                  />
-                </div>
-
-                {/* Create button */}
-                <Button
-                  onClick={handleCreateClip}
-                  disabled={!selectedCallId || clipEndTime <= clipStartTime || createClipMutation.isPending}
-                  className="w-full gap-2"
-                >
-                  {createClipMutation.isPending ? "Création en cours..." : "Créer le clip"}
-                </Button>
-
-                {createClipMutation.data && (
-                  <p className="text-xs text-green-600">
-                    Clip créé avec succès — l&apos;extraction est lancée en arrière-plan.
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        {isAuthenticated && <ClipCreator scenarioId={scenarioId} />}
 
         {/* Comments section */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">
-            Commentaires ({comments.length})
-          </h2>
-
-          {comments.length > 0 ? (
-            <div className="space-y-3 mb-6">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="flex gap-3 p-3 rounded-xl border border-border/50"
-                >
-                  <Avatar className="w-8 h-8 shrink-0">
-                    {comment.user?.image ? (
-                      <AvatarImage
-                        src={comment.user.image}
-                        alt={comment.user.username}
-                      />
-                    ) : null}
-                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                      {comment.user?.username?.charAt(0).toUpperCase() ?? "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">
-                          {comment.user?.username ?? "Anonyme"}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(comment.createdAt).toLocaleDateString(
-                            "fr-FR",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
-                        </span>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto w-6 h-6 text-muted-foreground hover:text-destructive"
-                            onClick={() =>
-                              moderateCommentMutation.mutate({
-                                commentId: comment.id,
-                              })
-                            }
-                            disabled={moderateCommentMutation.isPending}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {comment.content}
-                      </p>
-                    </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-6">
-              Aucun commentaire pour le moment. Soyez le premier !
-            </p>
-          )}
-
-          {/* Comment input */}
-          {isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Ajouter un commentaire..."
-                value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const content = commentInput.trim()
-                    if (content) {
-                      commentMutation.mutate({
-                        scenarioId,
-                        content,
-                      })
-                    }
-                  }
-                }}
-                className="text-sm"
-              />
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => {
-                  const content = commentInput.trim()
-                  if (content) {
-                    commentMutation.mutate({ scenarioId, content })
-                  }
-                }}
-                disabled={!commentInput.trim() || commentMutation.isPending}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          ) : (
-            <Link
-              href={`/login?redirect=/scenario/${scenarioId}`}
-              className="text-sm text-primary hover:underline"
-            >
-              Connectez-vous pour commenter
-            </Link>
-          )}
-        </section>
+        <CommentsSection scenarioId={scenarioId} />
 
         {/* Related scenarios */}
         {relatedScenarios.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold mb-4">
-              Scénarios similaires
-            </h2>
+            <h2 className="text-lg font-semibold mb-4">Scénarios similaires</h2>
             <div className="grid md:grid-cols-3 gap-4">
               {relatedScenarios.map((s) => (
                 <ScenarioCard
