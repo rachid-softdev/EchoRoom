@@ -166,7 +166,7 @@ export default function RegisterPage() {
               </label>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !consentAccepted || passwordStrength < 4}>
+            <Button type="submit" className="w-full" disabled={loading || !consentAccepted || passwordStrength < 3}>
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
