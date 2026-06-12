@@ -37,17 +37,46 @@ const CATEGORY_TO_ENUM: Record<string, string> = {
   Weird: "WEIRD",
 };
 
+type SortValue = "CHRONOLOGICAL" | "TRENDING" | "TOP";
+
+function readInitialParams() {
+  const params = new URLSearchParams(
+    typeof window !== "undefined" ? window.location.search : ""
+  );
+  const sort = params.get("sort") as SortValue | null;
+  const category = params.get("category");
+  const search = params.get("search");
+  return {
+    sort: sort && ["CHRONOLOGICAL", "TRENDING", "TOP"].includes(sort) ? sort : "CHRONOLOGICAL" as SortValue,
+    category: category && categories.includes(category) ? category : "Tous",
+    search: search ?? "",
+  };
+}
+
 export default function ExplorePage() {
-  const [activeCategory, setActiveCategory] = useState("Tous");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [sort, setSort] = useState<"CHRONOLOGICAL" | "TRENDING" | "TOP">("CHRONOLOGICAL");
+  const initial = readInitialParams();
+  const [activeCategory, setActiveCategory] = useState(initial.category);
+  const [searchQuery, setSearchQuery] = useState(initial.search);
+  const [debouncedQuery, setDebouncedQuery] = useState(initial.search);
+  const [sort, setSort] = useState<SortValue>(initial.sort);
   const feedQuery = api.scenarios.feed.useQuery({ limit: 50, sort });
 
+  // Sync search debounce
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Sync state to URL params for shareable/bookmarkable URLs
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (sort !== "CHRONOLOGICAL") params.set("sort", sort);
+    if (activeCategory !== "Tous") params.set("category", activeCategory);
+    if (searchQuery) params.set("search", searchQuery);
+    const qs = params.toString();
+    const newUrl = qs ? `?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", newUrl);
+  }, [sort, activeCategory, searchQuery]);
 
   const filteredItems = useMemo(() =>
     feedQuery.data?.items.filter((scenario) => {

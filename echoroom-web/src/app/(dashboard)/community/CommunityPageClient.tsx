@@ -60,11 +60,10 @@ export default function CommunityPageClient() {
         {(data) => (
           <div className="space-y-4">
             {data.items.map((scenario) => (
-              <Link key={scenario.id} href={`/scenario/${scenario.id}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
-                <Card className="border-border/50 hover:border-primary/30 transition-colors cursor-pointer">
+              <Card key={scenario.id} className="border-border/50 hover:border-primary/30 transition-colors">
                   <CardHeader>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
                         {scenario.creator?.username?.charAt(0).toUpperCase() ?? "?"}
                       </div>
                       <div>
@@ -77,18 +76,26 @@ export default function CommunityPageClient() {
                         </Badge>
                       </div>
                     </div>
-                    <CardTitle className="text-base">{scenario.title}</CardTitle>
+                    <Link
+                      href={`/scenario/${scenario.id}`}
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+                    >
+                      <CardTitle className="text-base hover:text-primary transition-colors">
+                        {scenario.title}
+                      </CardTitle>
+                    </Link>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <ReactionBar scenarioId={scenario.id} />
-                      <button
-                        type="button"
+                      <Link
+                        href={`/scenario/${scenario.id}#comments`}
                         className="flex items-center gap-1 hover:text-primary transition-colors"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <MessageCircle className="w-4 h-4" />
                         {scenario._count?.comments ?? 0}
-                      </button>
+                      </Link>
                     </div>
 
                     {/* Comment input */}
@@ -104,6 +111,7 @@ export default function CommunityPageClient() {
                         }
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
+                            e.stopPropagation();
                             handleComment(scenario.id);
                           }
                         }}
@@ -112,7 +120,10 @@ export default function CommunityPageClient() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => handleComment(scenario.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleComment(scenario.id);
+                        }}
                         disabled={!commentInputs[scenario.id]?.trim()}
                       >
                         <Send className="w-4 h-4" />
@@ -120,7 +131,6 @@ export default function CommunityPageClient() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
             ))}
           </div>
         )}
