@@ -18,10 +18,11 @@ import {
   RotateCcw,
 } from "lucide-react"
 import { useUser } from "@/hooks"
+import { api } from "@/lib/trpc"
 import { ReactionBar } from "@/components/social/ReactionBar"
 import { ShareButtons } from "@/components/social/ShareButtons"
 import { ReportButton } from "@/components/social/ReportButton"
-import { ScenarioCard } from "@/components/shared/ScenarioCard"
+import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard"
 import { ClipCreator } from "@/components/scenario/ClipCreator"
 import { CommentsSection } from "@/components/scenario/CommentsSection"
 
@@ -107,7 +108,7 @@ export function ScenarioDetailClient({
 
   // ── Derived data ───────────────────────────────────────
   const relatedScenarios =
-    feedQuery.data?.items.filter((s) => s.id !== scenarioId).slice(0, 3) ?? []
+    feedQuery.data?.items.filter((s: ScenarioCardData) => s.id !== scenarioId).slice(0, 3) ?? []
 
   // ── Content ────────────────────────────────────────────
   return (
@@ -219,7 +220,7 @@ export function ScenarioDetailClient({
           <section>
             <h2 className="text-lg font-semibold mb-4">Scénarios similaires</h2>
             <div className="grid md:grid-cols-3 gap-4">
-              {relatedScenarios.map((s) => (
+              {relatedScenarios.map((s: ScenarioCardData) => (
                 <ScenarioCard
                   key={s.id}
                   scenario={s}

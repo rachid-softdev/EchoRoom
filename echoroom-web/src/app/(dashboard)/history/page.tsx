@@ -13,11 +13,13 @@ import { api } from "@/lib/trpc";
 
 interface CallItem {
   id: string;
-  scenario?: { title?: string } | null;
-  status?: string;
-  duration?: number;
-  createdAt?: Date;
-  character?: { name?: string } | null;
+  status: string;
+  durationSeconds: number;
+  createdAt: string | Date;
+  scenario?: {
+    title: string;
+    character?: { name: string };
+  };
 }
 
 export default function HistoryPage() {
@@ -36,7 +38,7 @@ export default function HistoryPage() {
       const call = item as CallItem;
       return (
         call.scenario?.title?.toLowerCase().includes(q) ||
-        call.character?.name?.toLowerCase().includes(q) ||
+        call.scenario?.character?.name?.toLowerCase().includes(q) ||
         call.status?.toLowerCase().includes(q)
       );
     });

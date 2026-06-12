@@ -9,7 +9,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui"
-import { User, Calendar, FileAudio, Users } from "lucide-react"
+import { Calendar, FileAudio, Users } from "lucide-react"
 
 interface ProfilePageProps {
   params: { username: string }
