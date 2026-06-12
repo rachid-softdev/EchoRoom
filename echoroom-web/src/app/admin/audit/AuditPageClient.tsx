@@ -56,7 +56,7 @@ export default function AuditPageClient() {
     action: actionFilter,
     entityType: entityFilter,
     startDate: dateFrom ? new Date(dateFrom).toISOString() : undefined,
-    endDate: dateTo ? new Date(dateTo + "T23:59:59.999Z").toISOString() : undefined,
+    endDate: dateTo ? new Date(`${dateTo}T23:59:59.999Z`).toISOString() : undefined,
     cursor,
     limit: 20,
   })
