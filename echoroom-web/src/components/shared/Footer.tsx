@@ -12,22 +12,22 @@ export function Footer() {
           </p>
           <nav className="flex items-center gap-6">
             <Link
+              href="/help"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Aide
+            </Link>
+            <Link
               href="/terms"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Conditions d&apos;utilisation
+              Conditions
             </Link>
             <Link
               href="/privacy"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Confidentialité
-            </Link>
-            <Link
-              href="/legal"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Mentions légales
             </Link>
           </nav>
         </div>

@@ -61,6 +61,7 @@ vi.mock("@/components/ui", () => ({
 
 vi.mock("lucide-react", () => ({
   ArrowRight: () => <svg data-testid="arrow-right-icon" />,
+  Sparkles: () => <svg data-testid="sparkles-icon" />,
 }));
 
 afterEach(() => {
@@ -76,7 +77,7 @@ describe("FeaturedScenariosSection", () => {
     FeaturedScenariosSection = mod.FeaturedScenariosSection;
   });
 
-  it("renders the title 'Scénario à la une'", () => {
+  it("renders the badge 'Scénario du jour'", () => {
     mockUseQuery.mockReturnValue({
       data: null,
       isLoading: false,
@@ -86,11 +87,10 @@ describe("FeaturedScenariosSection", () => {
 
     render(<FeaturedScenariosSection />);
 
-    expect(screen.getByText("Scénario")).toBeInTheDocument();
-    expect(screen.getByText("à la une")).toBeInTheDocument();
+    expect(screen.getByText(/Scénario du jour/)).toBeInTheDocument();
   });
 
-  it("renders the subtitle 'Découvrez le scénario du jour'", () => {
+  it("renders the heading 'Celui qui explose en ce moment'", () => {
     mockUseQuery.mockReturnValue({
       data: null,
       isLoading: false,
@@ -100,9 +100,8 @@ describe("FeaturedScenariosSection", () => {
 
     render(<FeaturedScenariosSection />);
 
-    expect(
-      screen.getByText("Découvrez le scénario du jour sélectionné par la communauté"),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Celui qui explose/)).toBeInTheDocument();
+    expect(screen.getByText(/en ce moment/)).toBeInTheDocument();
   });
 
   it("renders 'Voir tout' link that points to /explore", () => {

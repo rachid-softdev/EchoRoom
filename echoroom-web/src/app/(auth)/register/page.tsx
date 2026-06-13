@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
 import { Checkbox } from "@/components/ui";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [signInError, setSignInError] = useState("");
 
@@ -120,17 +121,29 @@ export default function RegisterPage() {
               <label htmlFor="password" className="text-sm font-medium">
                 Mot de passe
               </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Minimum 8 caractères"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                aria-describedby={error ? "register-error" : undefined}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Minimum 8 caractères"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  aria-describedby={error ? "register-error" : undefined}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {password.length > 0 && (
                 <PasswordStrengthMeter password={password} />
               )}

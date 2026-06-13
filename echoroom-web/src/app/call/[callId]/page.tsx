@@ -28,9 +28,18 @@ export default function CallReplayPage() {
       title="Replay de l'appel"
       backHref="/history"
     >
-      <p className="text-sm text-muted-foreground mb-6 font-mono">
-        ID : {callId}
-      </p>
+      {matchingCall ? (
+        <div className="flex items-center gap-3 mb-6 text-sm text-muted-foreground">
+          {matchingCall.scenario?.title && (
+            <span className="font-medium text-foreground">{matchingCall.scenario.title}</span>
+          )}
+          {matchingCall.status && (
+            <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
+              {matchingCall.status === "COMPLETED" ? "Terminé" : matchingCall.status}
+            </span>
+          )}
+        </div>
+      ) : null}
       {matchingCall && (
         <ReplayHeader
           {...(matchingCall.scenario?.title ? { scenarioTitle: matchingCall.scenario.title } : {})}

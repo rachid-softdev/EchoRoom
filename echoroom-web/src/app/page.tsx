@@ -266,14 +266,24 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* ── Hero ────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-6 pt-20 pb-16 lg:pt-28 lg:pb-24">
-        {/* Ambient glow */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] via-transparent to-transparent pointer-events-none" />
+      <section className="relative overflow-hidden px-6 pt-20 pb-16 lg:pt-28 lg:pb-24 min-h-[90vh] flex items-center">
+        {/* Hero background image with dark gradient overlay */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-30 lg:opacity-40"
+            style={{
+              backgroundImage: 'url("https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1920&q=80")',
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.06] via-transparent to-transparent" />
+        </div>
 
-        <div className="max-w-6xl mx-auto relative">
+        <div className="max-w-6xl mx-auto relative w-full">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Copy */}
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 animate-fade-in relative z-10">
               <h1 className="text-fluid-hero font-black leading-[0.92] tracking-tight text-balance">
                 Les appels IA que tout{" "}
                 <span className="text-primary relative">
@@ -314,8 +324,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Right: Call preview (desktop only) */}
-            <div className="hidden lg:block animate-fade-in [animation-delay:200ms]">
+            {/* Right: Call preview (visible on all screens) */}
+            <div className="animate-fade-in [animation-delay:200ms]">
               <LiveCallPreview />
             </div>
           </div>

@@ -42,6 +42,12 @@ export function PublicHeader() {
           >
             Classement
           </Link>
+          <Link
+            href="/help"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Aide
+          </Link>
         </nav>
         <div className="flex items-center gap-4">
           <ThemeToggle />

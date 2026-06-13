@@ -35,8 +35,8 @@ export default function LegalLayout({
         <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between text-xs text-muted-foreground">
           <span>&copy; {new Date().getFullYear()} EchoRoom AI</span>
           <div className="flex items-center gap-4">
-            <Link href="/legal" className="hover:text-foreground transition-colors">
-              Mentions légales
+            <Link href="/help" className="hover:text-foreground transition-colors">
+              Aide
             </Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">
               Confidentialité

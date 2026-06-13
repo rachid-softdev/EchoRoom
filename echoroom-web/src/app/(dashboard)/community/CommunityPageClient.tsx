@@ -19,14 +19,23 @@ export default function CommunityPageClient() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const feedQuery = api.scenarios.feed.useQuery({ limit: 20 });
   const commentMutation = api.community.comment.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       feedQuery.refetch();
+      // Clear input for this scenario on success
+      if (variables?.scenarioId) {
+        setCommentInputs((prev) => {
+          const next = { ...prev };
+          delete next[variables.scenarioId];
+          return next;
+        });
+      }
       toast({
         title: "Commentaire ajouté",
         variant: "default",
       });
     },
     onError: (err) => {
+      // Input is preserved on error so user doesn't lose their text
       toast({
         title: err.message ?? "Erreur lors de l'ajout du commentaire",
         variant: "destructive",
@@ -38,7 +47,6 @@ export default function CommunityPageClient() {
     const content = commentInputs[scenarioId]?.trim();
     if (!content || commentMutation.isPending) return;
     commentMutation.mutate({ scenarioId, content });
-    // Input is only cleared on success (in onSuccess callback)
   }
 
   return (
