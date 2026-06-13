@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
-import { Button, Input, SegmentedControl } from "@/components/ui";
-import { Search, ArrowLeft } from "lucide-react";
+import { Input, SegmentedControl } from "@/components/ui";
+import { Search } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { ScenarioCard } from "@/components/shared/ScenarioCard";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 
 const categories = [
   "Tous",
@@ -94,17 +94,7 @@ export default function ExplorePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Accueil
-        </Link>
-        <Link href="/login">
-          <Button variant="ghost" size="sm">
-            Connexion
-          </Button>
-        </Link>
-      </nav>
+      <MarketingNav />
 
       <section className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
         <div className="mb-8">

@@ -7,8 +7,19 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 export function PublicHeader() {
   const pathname = usePathname();
 
-  // Hide on dashboard and admin routes — they have their own layout
-  if (!pathname || pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+  // Hide on routes that have their own navigation
+  if (
+    !pathname ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname === "/explore" ||
+    pathname === "/pricing" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/legal")
+  ) {
     return null;
   }
 

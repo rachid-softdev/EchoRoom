@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
-import { Phone, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,12 +44,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="mb-8 flex items-center gap-2">
-        <Phone className="w-6 h-6 text-primary" />
-        <span className="text-xl font-bold">EchoRoom</span>
-      </div>
-
+    <div className="flex min-h-screen flex-col">
+      <MarketingNav />
+      <div className="flex-1 flex items-center justify-center px-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle>Connexion</CardTitle>
@@ -115,6 +113,7 @@ export default function LoginPage() {
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

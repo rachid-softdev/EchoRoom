@@ -31,7 +31,7 @@ export default function LibraryPage() {
         s.character?.name?.toLowerCase().includes(q) ||
         s.creator?.username?.toLowerCase().includes(q)
       );
-    });
+    }) as ScenarioCardData[];
   }, [paginated.items, search]);
 
   const hasSearch = search.trim().length > 0;
