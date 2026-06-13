@@ -29,6 +29,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
   const [duration, setDuration] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
 
   // Reset states when recordingUrl changes
   useEffect(() => {
@@ -70,6 +71,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
         setHasError(true)
       })
 
+      audio.playbackRate = playbackRate
       audioRef.current = audio
       audio.play().catch(() => {
         setIsPlaying(false)
@@ -96,6 +98,13 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
     },
     [],
   )
+
+  const handleSpeedChange = useCallback((speed: number) => {
+    setPlaybackRate(speed)
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed
+    }
+  }, [])
 
   const formatTime = (t: number) => {
     const m = Math.floor(t / 60)
@@ -170,6 +179,25 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
+        </div>
+      )}
+
+      {isLoaded && duration > 0 && (
+        <div className="flex items-center justify-center gap-1 mt-3">
+          {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+            <button
+              key={speed}
+              type="button"
+              onClick={() => handleSpeedChange(speed)}
+              className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                playbackRate === speed
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {speed}x
+            </button>
+          ))}
         </div>
       )}
 

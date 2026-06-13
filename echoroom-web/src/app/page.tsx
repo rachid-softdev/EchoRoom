@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui";
 import { Sparkles, MessageCircle, Share2, Zap, Headphones, Users, Shield } from "lucide-react";
 import { FeaturedScenariosSection } from "@/components/landing/FeaturedScenariosSection";
+import { LiveCounter } from "@/components/landing/LiveCounter";
+import { CallAudioVisualizer } from "@/components/landing/CallAudioVisualizer";
 
 /* ─── Static community data ───────────────────────────── */
-const LIVE_LISTENERS = 2847;
 const TRENDING_SCENARIOS = [
   "Fake Recruiter Simulator",
   "NPC Customer Support",
@@ -102,26 +103,14 @@ function LiveCallPreview() {
           </div>
 
           {/* Audio visualizer (subtle) */}
-          <div className="flex items-center gap-0.5 h-6 px-1" aria-hidden="true">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-0.5 rounded-full bg-primary/60 origin-bottom"
-                style={{
-                  height: `${30 + Math.random() * 70}%`,
-                  animation: `audio-bar ${0.4 + Math.random() * 0.6}s ease-in-out infinite`,
-                  animationDelay: `${i * 0.05}s`,
-                }}
-              />
-            ))}
-          </div>
+          <CallAudioVisualizer />
         </div>
 
         {/* Listener bar */}
         <div className="flex items-center gap-3 border-t border-border bg-muted/30 px-5 py-3">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users className="w-3.5 h-3.5" />
-            <span className="tabular-nums">{LIVE_LISTENERS.toLocaleString("fr-FR")}</span>
+            <LiveCounter className="tabular-nums" />
             <span>auditeurs</span>
           </div>
           <div className="flex -space-x-1.5">
@@ -149,7 +138,7 @@ function CommunityProofStrip() {
             <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1">
               <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-soft" />
               <span className="text-primary font-semibold tabular-nums">
-                {LIVE_LISTENERS.toLocaleString("fr-FR")}
+                <LiveCounter />
               </span>
               <span className="text-muted-foreground">en écoute</span>
             </div>

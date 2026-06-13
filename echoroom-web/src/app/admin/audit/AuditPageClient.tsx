@@ -85,6 +85,7 @@ export default function AuditPageClient() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <select
+          aria-label="Filtrer par action"
           className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground"
           value={actionFilter ?? ""}
           onChange={(e) => {
@@ -99,6 +100,7 @@ export default function AuditPageClient() {
           ))}
         </select>
         <select
+          aria-label="Filtrer par type d'entité"
           className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground"
           value={entityFilter ?? ""}
           onChange={(e) => {

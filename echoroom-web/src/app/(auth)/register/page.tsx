@@ -8,8 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
 import { Checkbox } from "@/components/ui";
-import { Phone, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
+import { api } from "@/lib/trpc";
+import { useApiToast } from "@/lib/trpc-error";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,38 +20,11 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [consentAccepted, setConsentAccepted] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [signInError, setSignInError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError("");
-
-    if (!consentAccepted) {
-      setError("Vous devez accepter les conditions d'utilisation");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/trpc/auth.register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          username,
-          password,
-          consentAccepted: true,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data?.message ?? "Erreur lors de l'inscription");
-        return;
-      }
-
+  const registerMutation = useApiToast(api.auth.register.useMutation(), {
+    success: "Compte créé avec succès !",
+    onSuccess: async () => {
       const result = await signIn("credentials", {
         email,
         password,
@@ -56,17 +32,33 @@ export default function RegisterPage() {
       });
 
       if (result?.error) {
-        setError("Compte créé mais erreur de connexion. Veuillez vous connecter.");
+        setSignInError("Compte créé mais erreur de connexion. Veuillez vous connecter.");
         return;
       }
 
       router.push("/dashboard");
       router.refresh();
-    } catch {
-      setError("Une erreur est survenue. Réessayez plus tard.");
-    } finally {
-      setLoading(false);
+    },
+  });
+
+  const error = registerMutation.error?.message ?? signInError;
+  const loading = registerMutation.isPending;
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSignInError("");
+
+    if (!consentAccepted) {
+      setSignInError("Vous devez accepter les conditions d'utilisation");
+      return;
     }
+
+    registerMutation.mutate({
+      email,
+      username,
+      password,
+      consentAccepted: true,
+    });
   }
 
   const passwordStrength = useMemo(() => {
@@ -80,12 +72,9 @@ export default function RegisterPage() {
   }, [password]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="mb-8 flex items-center gap-2">
-        <Phone className="w-6 h-6 text-primary" />
-        <span className="text-xl font-bold">EchoRoom</span>
-      </div>
-
+    <div className="flex min-h-screen flex-col">
+      <MarketingNav />
+      <div className="flex-1 flex items-center justify-center px-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle>Créer un compte</CardTitle>
@@ -183,6 +172,7 @@ export default function RegisterPage() {
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

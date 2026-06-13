@@ -10,6 +10,7 @@ import { useSession } from "next-auth/react";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
 import { PRICING_CONFIG } from "@/config/pricing";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 
 interface Plan {
   name: string
@@ -54,16 +55,7 @@ export default function PricingPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          EchoRoom
-        </Link>
-        <Link href="/login">
-          <Button variant="ghost" size="sm">
-            Connexion
-          </Button>
-        </Link>
-      </nav>
+      <MarketingNav />
 
       <section className="flex-1 px-6 py-16 max-w-5xl mx-auto w-full">
         <div className="text-center mb-12">

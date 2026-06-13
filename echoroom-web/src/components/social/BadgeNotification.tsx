@@ -54,7 +54,7 @@ export function BadgeNotification({ badge, onClose }: BadgeNotificationProps) {
       >
         <div className="flex items-start gap-3">
           {/* Badge icon */}
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
             {currentBadge.iconUrl ? (
               <img
                 src={currentBadge.iconUrl}

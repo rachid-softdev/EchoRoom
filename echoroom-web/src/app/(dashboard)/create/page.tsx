@@ -106,7 +106,7 @@ export default function CreatePage() {
                           : "border-border bg-card hover:border-border/80"
                       }`}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-2">
                         <Sparkles className="w-5 h-5 text-primary" />
                       </div>
                       <p className="font-medium text-sm">{char.name}</p>

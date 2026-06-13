@@ -71,7 +71,7 @@ export function BadgeDisplay({ userId }: BadgeDisplayProps) {
         <Card key={ub.id} className="border-border/50">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">
                 {ub.badge.iconUrl ? (
                   <img
                     src={ub.badge.iconUrl}
