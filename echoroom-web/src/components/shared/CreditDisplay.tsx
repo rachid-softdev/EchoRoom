@@ -5,9 +5,14 @@ import { Badge, Skeleton } from '@/components/ui'
 import { Tooltip } from '@/components/ui/tooltip'
 import { Phone } from 'lucide-react'
 
-export function CreditDisplay() {
+interface CreditDisplayProps {
+  /** Credits to display. Falls back to `useSession()` if not provided. */
+  credits?: number;
+}
+
+export function CreditDisplay({ credits: propCredits }: CreditDisplayProps) {
   const { data: session } = useSession()
-  const credits = (session?.user as { credits?: number } | undefined)?.credits
+  const credits = propCredits ?? (session?.user as { credits?: number } | undefined)?.credits
 
   if (credits === undefined) {
     return <Skeleton className="h-5 w-20 rounded-lg" />;

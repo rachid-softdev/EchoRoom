@@ -24,6 +24,14 @@ interface DashboardShellProps {
   backHref?: string
   actions?: React.ReactNode
   children: React.ReactNode
+  /** User object for SSR mode. When provided, skips `useSession()` for user data. */
+  user?: {
+    id: string
+    email: string
+    username: string
+    role: "USER" | "ADMIN" | "MODERATOR"
+    image: string | null
+  } | null
 }
 
 export function DashboardShell({
