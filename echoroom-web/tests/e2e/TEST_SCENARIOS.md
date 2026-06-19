@@ -27,6 +27,9 @@
 - [ ] Lien "Accueil" dans le footer fonctionnel
 - [ ] Dark mode toggle depuis la landing
 - [ ] Meta tags OG (OpenGraph) présents
+- [ ] Section démo audio — lecture audible
+- [ ] Scroll fluide vers les sections (CTAs anchors)
+- [ ] Section "Comment ça marche" visible
 
 ---
 
@@ -70,6 +73,27 @@
 - [ ] Email jetable bloqué
 - [ ] Mot de passe trop faible visuellement (PasswordStrengthMeter)
 - [ ] Lien vers la page login
+
+### `/forgot-password`
+
+#### ⬜ À coder
+- [ ] Chargement de la page forgot-password
+- [ ] Champ email visible
+- [ ] Validation email (format invalide)
+- [ ] Email non existant → erreur
+- [ ] Email existant → confirmation "email envoyé"
+- [ ] Lien retour vers login
+
+### `/reset-password`
+
+#### ⬜ À coder
+- [ ] Chargement de la page avec token valide
+- [ ] Token invalide → erreur
+- [ ] Token expiré → erreur
+- [ ] Nouveau mot de passe valide (min 8, majuscule, minuscule, chiffre)
+- [ ] Confirmation du mot de passe
+- [ ] Mismatch confirmation → erreur
+- [ ] Réinitialisation réussie → redirection login
 
 ---
 
@@ -358,6 +382,7 @@
 - [ ] `/legal` — page légale
 - [ ] `/privacy` — politique de confidentialité
 - [ ] `/terms` — conditions d'utilisation
+- [ ] `/help` — page d'aide
 - [ ] Liens depuis le footer fonctionnels
 
 ---
@@ -561,13 +586,101 @@
 - [ ] Images avec attribut alt
 - [ ] Annonces de chargement pour lecteurs d'écran (aria-live)
 
+---
+
+## 33. Help Page (`/help`)
+
+### ⬜ À coder
+- [ ] Chargement de la page help
+- [ ] Sections FAQ visibles
+- [ ] Liens vers les pages légales
+- [ ] Formulaire de contact / support (si présent)
+- [ ] Recherche dans l'aide (si implémentée)
+- [ ] Responsive sur 375px
+
+---
+
+## 34. Personnages (`characters`)
+
+### ⬜ À coder
+- [ ] Liste des personnages chargée (characters.list)
+- [ ] Sélection d'un personnage dans le formulaire de création
+- [ ] Personnage par slug (characters.getBySlug)
+- [ ] Image/picto du personnage visible
+- [ ] État vide si aucun personnage disponible
+
+---
+
+## 35. Audio System / Media Streams
+
+### ⬜ À coder
+- [ ] Flux audio Twilio (Media Streams) — connexion WebSocket
+- [ ] Lecture audio dans le replay
+- [ ] Contrôles audio (play, pause, seek, volume)
+- [ ] Création de clip audio depuis un replay
+- [ ] État erreur si enregistrement non disponible
+- [ ] Timeout si appel trop long (> 30 min)
+
+---
+
+## 36. Webhook Idempotency
+
+### ⬜ À coder
+- [ ] Stripe webhook — doublon rejeté (idempotency key)
+- [ ] Twilio webhook — doublon rejeté
+- [ ] Réponse 200 sans traitement pour doublon
+
+---
+
+## 37. CSRF Protection
+
+### ⬜ À coder
+- [ ] Requête POST sans origin → 403 (en production)
+- [ ] Origin non autorisée → 403
+- [ ] Origin autorisée → requête acceptée
+
+---
+
+## 38. OpenGraph Image (`/api/og`)
+
+### ⬜ À coder
+- [ ] Image OG générée pour un scénario valide (status 200, type image/png)
+- [ ] Image OG pour ID inexistant → 404
+- [ ] Cache-Control header présent
+- [ ] Meta tags OG sur la page scénario pointant vers l'API
+
+---
+
+## 39. Admin Feature Management
+
+### ⬜ À coder
+- [ ] Feature un scénario (admin.featureScenario)
+- [ ] Remove featured (admin.removeFeatured)
+- [ ] Get featured scenario (admin.getFeaturedScenario)
+- [ ] Scénario featured visible sur la landing page
+- [ ] Changement de featured rotationné via cron
+
+---
+
+## 40. Share Tracking
+
+### ⬜ À coder
+- [ ] Partage via lien copié (social.trackShare)
+- [ ] Partage Discord fonctionnel
+- [ ] Partage Twitter/X fonctionnel
+- [ ] Partage TikTok fonctionnel
+
+---
+
 ## Résumé
 
 | Section | ✅ Existants | ⬜ Planifiés | Total |
 |---------|:-----------:|:------------:|:-----:|
-| Landing | 11 | 6 | 17 |
+| Landing | 11 | 9 | 20 |
 | Auth Login | 10 | 7 | 17 |
 | Auth Register | 0 | 12 | 12 |
+| Auth Forgot Password | 0 | 6 | 6 |
+| Auth Reset Password | 0 | 7 | 7 |
 | Navigation | 10 | 3 | 13 |
 | Explore | 10 | 7 | 17 |
 | Scenario Detail | 6 | 14 | 20 |
@@ -583,7 +696,15 @@
 | Pricing | 0 | 4 | 4 |
 | Call Replay | 0 | 10 | 10 |
 | Admin | 0 | 25 | 25 |
-| Legal | 0 | 4 | 4 |
+| Legal | 0 | 5 | 5 |
+| Help Page | 0 | 6 | 6 |
+| Characters | 0 | 5 | 5 |
+| Audio System | 0 | 6 | 6 |
+| Webhook Idempotency | 0 | 3 | 3 |
+| CSRF Protection | 0 | 3 | 3 |
+| OpenGraph | 0 | 4 | 4 |
+| Admin Feature Mgmt | 0 | 5 | 5 |
+| Share Tracking | 0 | 4 | 4 |
 | API/Webhooks | 13 | 7 | 20 |
 | Sécurité | 1 | 4 | 5 |
 | Responsive | 0 | 5 | 5 |
@@ -598,4 +719,4 @@
 | Spam Detection | 0 | 5 | 5 |
 | Responsive (compl.) | 0 | 15 | 15 |
 | Accessibilité (compl.) | 0 | 10 | 10 |
-| **Total** | **66** | **248** | **314** |
+| **Total** | **66** | **301** | **367** |
