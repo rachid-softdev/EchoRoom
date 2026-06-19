@@ -1,0 +1,601 @@
+# EchoRoom — Scénarios de Test E2E
+
+> **Statut :** Plan de couverture E2E — chaque scénario listé doit être codé dans un fichier `.spec.ts`.
+> ✅ = déjà codé, ⬜ = à coder
+
+---
+
+## 1. Landing Page (`/`)
+
+### ✅ Existant (`landing.spec.ts` + `home.spec.ts`)
+- [x] Chargement sans erreurs console JS
+- [x] Section Hero visible avec h1
+- [x] Boutons CTA (Commencer gratuitement, Voir la bibliothèque)
+- [x] Section stats avec métriques (50K+ appels générés)
+- [x] Section "Scénario à la une"
+- [x] Section Tarifs avec cartes de prix
+- [x] Footer visible avec liens légaux
+- [x] Barre de navigation fonctionnelle
+- [x] Responsive sur viewport mobile
+- [x] Structure HTML valide (head, body, main)
+- [x] Titre de page correct
+
+### ⬜ À coder
+- [ ] Section démo audio (DemoAudioForm) — lecture, pause
+- [ ] Navigation vers `/pricing` depuis la landing
+- [ ] Navigation vers `/explore` depuis la landing
+- [ ] Lien "Accueil" dans le footer fonctionnel
+- [ ] Dark mode toggle depuis la landing
+- [ ] Meta tags OG (OpenGraph) présents
+
+---
+
+## 2. Authentication
+
+### `/login`
+
+#### ✅ Existant (`auth.spec.ts`)
+- [x] Chargement de la page login
+- [x] Champ email visible
+- [x] Champ mot de passe visible
+- [x] Bouton submit visible
+- [x] Lien "Mot de passe oublié ?"
+- [x] Lien d'inscription
+- [x] Navigation vers `/register`
+- [x] Branding EchoRoom visible
+- [x] Validation navigateur sur formulaire vide
+- [x] Message d'erreur sur identifiants invalides
+
+#### ⬜ À coder
+- [ ] Connexion réussie avec credentials valides
+- [ ] Redirection vers dashboard après login
+- [ ] Session persistée après refresh
+- [ ] Déconnexion (logout)
+- [ ] Rate limiting sur tentative de connexion
+- [ ] Masquage/affichage du mot de passe
+- [ ] Accessibilité — focus order, aria labels
+
+### `/register`
+
+#### ⬜ À coder
+- [ ] Chargement de la page register
+- [ ] Tous les champs visibles (email, username, password, consent)
+- [ ] Validation email (format invalide)
+- [ ] Validation username (min 3, max 20, caractères autorisés)
+- [ ] Validation mot de passe (min 8, majuscule, minuscule, chiffre)
+- [ ] Case à cocher consent obligatoire
+- [ ] Inscription réussie → redirection dashboard
+- [ ] Email déjà existant → erreur CONFLICT
+- [ ] Username déjà existant → erreur CONFLICT
+- [ ] Email jetable bloqué
+- [ ] Mot de passe trop faible visuellement (PasswordStrengthMeter)
+- [ ] Lien vers la page login
+
+---
+
+## 3. Navigation
+
+### ✅ Existant (`navigation.spec.ts`)
+- [x] Barre de navigation visible sur home
+- [x] Bouton Connexion pour utilisateur non auth
+- [x] Bouton S'inscrire pour utilisateur non auth
+- [x] Navigation vers /explore
+- [x] Navigation vers /pricing
+- [x] Navigation vers /login
+- [x] Navigation vers /register
+- [x] Retour à l'accueil via branding
+- [x] Menu mobile sur petit viewport
+- [x] Navigation depuis menu mobile
+
+### ⬜ À coder
+- [ ] Menu utilisateur connecté (Dashboard, Library, Settings, Logout)
+- [ ] Header différent selon rôle (USER vs ADMIN)
+- [ ] Protection 404 pour routes inexistantes
+
+---
+
+## 4. Explore / Feed
+
+### ✅ Existant (`explore.spec.ts`)
+- [x] Titre de page visible
+- [x] Champ de recherche visible
+- [x] Recherche accepte du texte
+- [x] Tous les filtres catégorie visibles
+- [x] Activation d'une catégorie au clic
+- [x] Boutons de tri visibles (Chronologique, Tendance, Top)
+- [x] Changement de tri actif
+- [x] Cartes scénario OU état vide
+- [x] Lien retour Accueil
+- [x] Bouton Connexion pour utilisateur non auth
+
+### ⬜ À coder
+- [ ] Pagination (load more / infinite scroll)
+- [ ] Recherche par texte filtrée (si implémentée)
+- [ ] Redirection vers `/scenario/[id]` au clic sur une carte
+- [ ] Affichage des catégories depuis l'API
+- [ ] Changement de tri recharge les résultats
+- [ ] État loading (skeleton)
+- [ ] État erreur API
+
+---
+
+## 5. Scenario Detail (`/scenario/[id]`)
+
+### ✅ Existant (`scenario.spec.ts`)
+- [x] 404 pour ID inexistant
+- [x] 404 pour segment ID vide
+- [x] Section commentaires visible
+- [x] Reaction bar visible
+- [x] Titre du scénario visible
+- [x] Lien retour communauté
+
+### ⬜ À coder
+- [ ] Détails du scénario (description, opening message, character)
+- [ ] Bouton d'appel visible (si auth + crédits suffisants)
+- [ ] Redirection vers login si pas auth et clic sur appel
+- [ ] Boutons de partage (Discord, Twitter, TikTok, Copy link)
+- [ ] Section clips audio
+- [ ] Likes — toggle reaction
+- [ ] Commentaires — posting (si auth)
+- [ ] Commentaires — liste paginée
+- [ ] Signalement d'abus
+- [ ] Meta tags OG dynamiques
+- [ ] Badge du créateur visible
+- [ ] Compteur de lectures / likes
+- [ ] Information de crédit manquant si solde insuffisant
+- [ ] Visibilité privée/unlisted masquée aux non-créateurs
+
+---
+
+## 6. Dashboard (`/dashboard`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] Solde de crédits affiché
+- [ ] Liste des appels récents
+- [ ] Nombre d'appels aujourd'hui
+- [ ] Liste des scénarios récents
+- [ ] Lien vers création de scénario
+- [ ] Lien vers historique
+- [ ] Lien vers library
+- [ ] Données chargées depuis dashboard.getData (agrégé)
+
+---
+
+## 7. Create Scenario (`/create`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] Formulaire complet visible (character, title, description, opening, instructions, visibility)
+- [ ] Sélection de personnage (dropdown/list)
+- [ ] Validation title (min 3, max 80)
+- [ ] Validation description (max 300)
+- [ ] Validation openingMessage (max 300)
+- [ ] Validation aiInstructions (max 3000)
+- [ ] Création réussie → redirection vers le scénario
+- [ ] Erreur modération (contenu bloqué)
+- [ ] Génération de script IA (generateScript)
+- [ ] Rate limiting (10 créations/heure)
+- [ ] Spam detection
+
+---
+
+## 8. Library (`/library`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] Liste des scénarios de l'utilisateur
+- [ ] Pagination (cursor-based)
+- [ ] État vide (aucun scénario)
+- [ ] Modification d'un scénario
+- [ ] Suppression d'un scénario
+- [ ] Changement de visibilité
+- [ ] Tri par date / popularité (si implémenté)
+
+---
+
+## 9. History (`/history`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] Liste des appels récents
+- [ ] Pagination
+- [ ] État vide
+- [ ] Lien vers replay d'un appel
+- [ ] Statut de l'appel visible
+- [ ] Durée de l'appel affichée
+
+---
+
+## 10. Profile (`/profile/[username]`)
+
+### ⬜ À coder
+- [ ] Profil public d'un utilisateur
+- [ ] Badges visibles (si le user a des badges)
+- [ ] Liste des scénarios publics du créateur
+- [ ] 404 pour username inexistant
+- [ ] Modification du profil (si propriétaire)
+- [ ] Changement de username
+
+---
+
+## 11. Settings (`/settings`)
+
+### ✅ Partiellement existant (`consent.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Section danger zone visible
+- [x] Dialogue de consent visible
+- [x] Validation confirmation "RETIRER"
+- [x] Fermeture dialogue (Escape)
+
+### ⬜ À coder
+- [ ] Modification du profil (nom d'utilisateur)
+- [ ] Changement de mot de passe
+- [ ] Validation ancien mot de passe
+- [ ] Export GDPR (profile.exportData)
+- [ ] Suppression de compte (avec confirmation "SUPPRIMER")
+- [ ] Retrait de consentement via RETIRER → logout + redirect home
+- [ ] Réacceptation du consentement (reconsent)
+- [ ] Affichage du statut de consentement
+- [ ] Affichage du statut de suppression
+
+---
+
+## 12. Community (`/community`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] Fil d'actualité communautaire
+- [ ] Interactions (likes, commentaires)
+- [ ] Publication de commentaire
+- [ ] Pagination
+
+---
+
+## 13. Leaderboard (`/leaderboard`)
+
+### ⬜ À coder
+- [ ] Top scénarios (période : ALL, WEEK, MONTH)
+- [ ] Top créateurs (période : ALL, WEEK, MONTH)
+- [ ] Changement de tri (LIKES, PLAYS / LIKES, CALLS)
+- [ ] Affichage des badges
+
+---
+
+## 14. Billing (`/billing`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] Solde de crédits affiché
+- [ ] Sélection de pack de crédits
+- [ ] Lien vers Stripe Checkout (vérifier redirection)
+- [ ] Historique des achats
+
+---
+
+## 15. Pricing (`/pricing`) — Marketing
+
+### ⬜ À coder
+- [ ] Cartes de prix visibles
+- [ ] Plans affichés avec leurs features
+- [ ] CTA "Commencer" / "S'inscrire" fonctionnel
+- [ ] Comparaison des plans
+
+---
+
+## 16. Call Replay (`/call/[callId]`)
+
+### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] 404 pour callId inexistant
+- [ ] FORBIDDEN si pas le propriétaire
+- [ ] Lecteur audio visible (si enregistrement disponible)
+- [ ] Transcription visible
+- [ ] Création de clip depuis le replay
+- [ ] Liste des clips d'un appel avec pagination
+- [ ] Suppression d'un clip (si propriétaire)
+- [ ] Partage d'un clip
+- [ ] Boutons de partage
+
+---
+
+## 17. Admin Pages
+
+### `/admin/moderation`
+
+#### ⬜ À coder
+- [ ] Redirection vers login si non auth
+- [ ] FORBIDDEN pour rôle USER
+- [ ] File d'attente de modération
+- [ ] Approbation d'un scénario
+- [ ] Rejet d'un scénario
+- [ ] File d'attente des commentaires
+- [ ] Approbation/Rejet de commentaire
+- [ ] Pagination
+
+### `/admin/users`
+#### ⬜ À coder
+- [ ] Liste des utilisateurs
+- [ ] Recherche par username/email
+- [ ] Pagination
+- [ ] Détail utilisateur (admin.getUserDetail)
+- [ ] Suppression utilisateur (admin.deleteUser)
+
+### `/admin/reports`
+#### ⬜ À coder
+- [ ] Liste des signalements d'abus
+- [ ] Filtre par statut
+- [ ] Dismiss d'un rapport
+
+### `/admin/blocked-numbers`
+#### ⬜ À coder
+- [ ] Liste des numéros bloqués
+- [ ] Ajout d'un numéro bloqué
+- [ ] Suppression d'un numéro bloqué
+
+### `/admin/audit`
+#### ⬜ À coder
+- [ ] Logs d'audit paginés
+- [ ] Filtres (action, entityType, adminId, date range)
+
+### `/admin/analytics`
+#### ⬜ À coder
+- [ ] Page analytics admin
+- [ ] Métriques clés visibles
+
+### `/admin/dlq`
+#### ⬜ À coder
+- [ ] File d'attente des webhooks échoués (DLQ)
+- [ ] Détail d'un élément DLQ (payload, headers, erreur)
+- [ ] Retry d'un webhook depuis la DLQ
+- [ ] Pagination de la DLQ
+
+---
+
+## 18. Legal Pages
+
+### ⬜ À coder
+- [ ] `/legal` — page légale
+- [ ] `/privacy` — politique de confidentialité
+- [ ] `/terms` — conditions d'utilisation
+- [ ] Liens depuis le footer fonctionnels
+
+---
+
+## 19. API & Webhooks
+
+### ✅ Existant (`rate-limiting.spec.ts` + `webhook-protection.spec.ts`)
+- [x] Rate limiting — retour 429 après dépassement (webhook status)
+- [x] Rate limiting — header Retry-After présent
+- [x] Requête unique non limitée
+- [x] Pas de leak d'erreurs internes dans 429
+- [x] Reset du rate limit après expiration de fenêtre
+- [x] Signature manquante → 403
+- [x] Signature invalide → 403
+- [x] Signature vide → 403
+- [x] Payload > 50KB → 413
+- [x] Voice webhook sans signature → 403
+- [x] Voice input webhook sans signature → 403
+- [x] Stream webhook sans signature → 403
+- [x] Content-Type valide accepté
+
+### ⬜ À coder
+- [ ] Stripe webhook — signature validation
+- [ ] Stripe webhook — idempotence (doublon)
+- [ ] Stripe webhook — body size > 100KB → 413
+- [ ] Healthcheck endpoint `/api/health` — retour 200
+- [ ] Healthcheck — DB connectée
+- [ ] Healthcheck — Redis connecté
+- [ ] CSRF — requête POST sans origin → 403 (en production)
+- [ ] CSRF — origin non autorisée → 403
+
+---
+
+## 20. Sécurité
+
+### ✅ Existant (`security-headers.test.ts` dans `__tests__/`)
+- [x] Headers de sécurité (CSP, HSTS, X-Frame-Options, etc.)
+
+### ⬜ À coder (E2E)
+- [ ] Redirection HTTP → HTTPS
+- [ ] Cookie session secure (HTTP-only, SameSite)
+- [ ] Rate limiting IP sur routes publiques
+- [ ] Délai constant sur auth (timing attack protection)
+
+---
+
+## 21. Responsive / Mobile
+
+### ⬜ À coder
+- [ ] Toutes les pages s'affichent sur 375px
+- [ ] Toutes les pages s'affichent sur 768px (tablette)
+- [ ] Menu mobile fonctionne sur toutes les pages
+- [ ] Pas de débordement horizontal
+- [ ] Formulaires utilisables sur mobile
+
+---
+
+## 22. Accessibilité
+
+### ⬜ À coder
+- [ ] Skip link présent et fonctionnel
+- [ ] Navigation au clavier (Tab) sur les pages principales
+- [ ] Contrast ratio suffisant (vérification basique)
+- [ ] Labels ARIA sur les éléments interactifs
+- [ ] Messages d'erreur associés aux champs de formulaire
+
+---
+
+## 23. GDPR & Data Privacy
+
+### ⬜ À coder
+- [ ] Export de données (profile.exportData) — téléchargement JSON
+- [ ] Suppression de compte (profile.deleteMyAccount) avec confirmation "SUPPRIMER"
+- [ ] Réacceptation du consentement (user.reconsent)
+- [ ] Statut de suppression affiché (user.myDeletionStatus)
+- [ ] Accès refusé après retrait de consentement
+- [ ] Données déjà anonymisées après purge
+
+---
+
+## 24. Badges & Gamification
+
+### ⬜ À coder
+- [ ] Liste des badges disponibles (social.getBadges)
+- [ ] Badges du créateur affichés sur le profil public
+- [ ] Badges affichés sur la page scénario du créateur
+- [ ] Obtention de badge après première action (call, like, commentaire)
+- [ ] Badges affichés dans le leaderboard
+
+---
+
+## 25. Audio Clips
+
+### ⬜ À coder
+- [ ] Liste des clips d'un utilisateur (social.getClips / clips.listByUser)
+- [ ] Suppression d'un clip par le propriétaire
+- [ ] Tentative de suppression d'un clip par un autre utilisateur → FORBIDDEN
+- [ ] Clip lié à un call dans l'historique
+- [ ] Bouton de partage d'un clip
+
+---
+
+## 26. Cron Jobs / Background Jobs
+
+### ⬜ À coder
+- [ ] Appel manuel de `/api/cron/gdpr-purge` — vérification des utilisateurs anonymisés
+- [ ] Appel manuel de `/api/cron/cleanup-recordings` — nettoyage des enregistrements expirés
+- [ ] Appel manuel de `/api/cron/rotate-featured` — rotation du scénario à la une
+- [ ] Authentification requise pour les endpoints cron (CRON_SECRET)
+- [ ] Erreur 401 si CRON_SECRET manquant ou invalide
+
+---
+
+## 27. Loading, Empty & Error States
+
+### ⬜ À coder
+- [ ] Squelette de chargement visible sur Dashboard (dashboard.getData)
+- [ ] Squelette de chargement visible sur Explore (feed)
+- [ ] Squelette de chargement visible sur Scenario Detail
+- [ ] Squelette de chargement visible sur Library
+- [ ] Squelette de chargement visible sur History
+- [ ] État vide "Aucun scénario" dans Library
+- [ ] État vide "Aucun appel" dans History
+- [ ] État vide "Aucun résultat" dans Explore
+- [ ] État vide "Aucun commentaire" sur Scenario Detail
+- [ ] Erreur API — toast d'erreur affiché
+- [ ] Error boundary — crash d'un composant n'affecte pas le reste de la page
+- [ ] Réseau hors ligne — message d'erreur approprié
+
+---
+
+## 28. Stripe Checkout & Billing
+
+### ⬜ À coder
+- [ ] Sélection d'un pack de crédits sur `/billing`
+- [ ] Redirection vers Stripe Checkout (createCheckout)
+- [ ] Retour de Stripe — confirmation d'achat
+- [ ] Solde de crédits mis à jour après achat réussi
+- [ ] Stripe webhook — événement checkout.session.completed
+- [ ] Stripe webhook — événement charge.refunded (remboursement)
+- [ ] Stripe webhook — événement charge.dispute.created (litige)
+- [ ] Stripe webhook — signature invalide → 403
+- [ ] Stripe webhook — body size > 100KB → 413
+- [ ] Historique des achats visible sur `/billing`
+
+---
+
+## 29. Async AI Moderation
+
+### ⬜ À coder
+- [ ] Scénario créé avec contenu bloqué → modération asynchrone déclenchée
+- [ ] Commentaire posté avec contenu bloqué → modération asynchrone déclenchée
+- [ ] Scénario approuvé par modération asynchrone visible dans l'explore
+- [ ] Commentaire approuvé par modération asynchrone visible
+
+---
+
+## 30. Spam Detection
+
+### ⬜ À coder
+- [ ] Appel téléphonique depuis un numéro bloqué → rejeté
+- [ ] Scénario avec contenu spammy → bloqué
+- [ ] Commentaire avec contenu spammy → bloqué
+- [ ] Ajout d'un numéro à la liste bloquée (admin.blockNumber)
+- [ ] Suppression d'un numéro de la liste bloquée (admin.unblockNumber)
+
+---
+
+## 31. Responsive / Mobile (complément)
+
+### ⬜ À coder
+- [ ] Dashboard responsive sur 375px
+- [ ] Create Scenario responsive sur 375px
+- [ ] Library responsive sur 375px
+- [ ] History responsive sur 375px
+- [ ] Settings responsive sur 375px
+- [ ] Community responsive sur 375px
+- [ ] Leaderboard responsive sur 375px
+- [ ] Billing responsive sur 375px
+- [ ] Scenario Detail responsive sur 375px
+- [ ] Call Replay responsive sur 375px
+- [ ] Admin pages responsive sur 375px
+- [ ] Profile responsive sur 375px
+- [ ] Pas de débordement horizontal sur 375px pour toutes les pages
+- [ ] Formulaires utilisables sur mobile pour toutes les pages avec formulaire
+- [ ] Menu mobile fonctionne sur toutes les pages auth
+
+---
+
+## 32. Accessibilité (complément)
+
+### ⬜ À coder
+- [ ] Skip link présent et fonctionnel sur toutes les pages
+- [ ] Navigation au clavier (Tab) sur les pages principales
+- [ ] Focus trap dans les dialogues (ConfirmDialog, modals)
+- [ ] Focus restauré après fermeture de dialogue
+- [ ] Contrast ratio suffisant (vérification basique)
+- [ ] Labels ARIA sur les éléments interactifs
+- [ ] Messages d'erreur associés aux champs de formulaire (aria-describedby)
+- [ ] Rôles ARIA corrects (bannière, navigation, main, complémentaire)
+- [ ] Images avec attribut alt
+- [ ] Annonces de chargement pour lecteurs d'écran (aria-live)
+
+## Résumé
+
+| Section | ✅ Existants | ⬜ Planifiés | Total |
+|---------|:-----------:|:------------:|:-----:|
+| Landing | 11 | 6 | 17 |
+| Auth Login | 10 | 7 | 17 |
+| Auth Register | 0 | 12 | 12 |
+| Navigation | 10 | 3 | 13 |
+| Explore | 10 | 7 | 17 |
+| Scenario Detail | 6 | 14 | 20 |
+| Dashboard | 0 | 9 | 9 |
+| Create Scenario | 0 | 10 | 10 |
+| Library | 0 | 7 | 7 |
+| History | 0 | 6 | 6 |
+| Profile | 0 | 5 | 5 |
+| Settings | 5 | 9 | 14 |
+| Community | 0 | 5 | 5 |
+| Leaderboard | 0 | 4 | 4 |
+| Billing | 0 | 5 | 5 |
+| Pricing | 0 | 4 | 4 |
+| Call Replay | 0 | 10 | 10 |
+| Admin | 0 | 25 | 25 |
+| Legal | 0 | 4 | 4 |
+| API/Webhooks | 13 | 7 | 20 |
+| Sécurité | 1 | 4 | 5 |
+| Responsive | 0 | 5 | 5 |
+| Accessibilité | 0 | 5 | 5 |
+| GDPR & Data Privacy | 0 | 6 | 6 |
+| Badges & Gamification | 0 | 5 | 5 |
+| Audio Clips | 0 | 5 | 5 |
+| Cron Jobs | 0 | 5 | 5 |
+| Loading/Empty/Error | 0 | 12 | 12 |
+| Stripe Checkout | 0 | 10 | 10 |
+| Async AI Moderation | 0 | 4 | 4 |
+| Spam Detection | 0 | 5 | 5 |
+| Responsive (compl.) | 0 | 15 | 15 |
+| Accessibilité (compl.) | 0 | 10 | 10 |
+| **Total** | **66** | **248** | **314** |
