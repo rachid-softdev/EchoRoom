@@ -135,6 +135,9 @@
 ### ⬜ À coder
 - [ ] Pagination (load more / infinite scroll)
 - [ ] Recherche par texte filtrée (si implémentée)
+- [ ] Recherche sans résultat → message "Aucun résultat"
+- [ ] Recherche avec caractères spéciaux (HTML, SQL) — pas de crash
+- [ ] Recherche avec chaîne vide → résultats normaux
 - [ ] Redirection vers `/scenario/[id]` au clic sur une carte
 - [ ] Affichage des catégories depuis l'API
 - [ ] Changement de tri recharge les résultats
@@ -168,6 +171,8 @@
 - [ ] Compteur de lectures / likes
 - [ ] Information de crédit manquant si solde insuffisant
 - [ ] Visibilité privée/unlisted masquée aux non-créateurs
+- [ ] Scénario supprimé → 404
+- [ ] Scénario en modération → message "en cours de validation"
 
 ---
 
@@ -183,6 +188,10 @@
 - [ ] Lien vers historique
 - [ ] Lien vers library
 - [ ] Données chargées depuis dashboard.getData (agrégé)
+- [ ] KPI visible (appels aujourd'hui, crédits restants, scénarios créés)
+- [ ] Lien rapide vers la création de scénario
+- [ ] Skeleton de chargement pendant le fetch
+- [ ] Erreur API → message d'erreur sans bloquer la page
 
 ---
 
@@ -201,6 +210,8 @@
 - [ ] Génération de script IA (generateScript)
 - [ ] Rate limiting (10 créations/heure)
 - [ ] Spam detection
+- [ ] Double soumission évitée (bouton désactivé après clic)
+- [ ] Brouillon persisté localement si navigation accidentelle
 
 ---
 
@@ -273,6 +284,8 @@
 - [ ] Interactions (likes, commentaires)
 - [ ] Publication de commentaire
 - [ ] Pagination
+- [ ] Signalement d'abus depuis un post
+- [ ] Réactions en temps réel (optimistic)
 
 ---
 
@@ -672,6 +685,141 @@
 
 ---
 
+## 41. API Versioning
+
+### ⬜ À coder
+- [ ] Endpoint /api/v1/* fonctionne et retourne des données
+- [ ] Endpoint /api/v2/* fonctionne et retourne des données
+- [ ] Version inconnue (ex: /api/v3/*) → 404 ou 400
+- [ ] Version header manquant → version par défaut utilisée
+- [ ] Réponse contient header X-API-Version
+- [ ] v1 et unversioned retournent des structures compatibles
+
+---
+
+## 42. IP Rate Limiting
+
+### ⬜ À coder
+- [ ] Requêtes répétées sur route publique → 429 après seuil
+- [ ] Header Retry-After présent sur 429
+- [ ] IP différente non limitée
+- [ ] Reset du compteur après expiration de la fenêtre
+- [ ] Routes auth non impactées par le rate limiting public
+
+---
+
+## 43. Twilio Webhook Validation
+
+### ⬜ À coder
+- [ ] Webhook Twilio avec signature valide → 200
+- [ ] Signature Twilio manquante → 403
+- [ ] Signature Twilio invalide → 403
+- [ ] Voice webhook — TwiML XML bien formé
+- [ ] Handle-input webhook — SpeechResult traité
+- [ ] Stream webhook — MediaStream connecté
+
+---
+
+## 44. Browser Navigation & Deep Linking
+
+### ⬜ À coder
+- [ ] Accès direct à `/dashboard` sans auth → redirection login
+- [ ] Accès direct à `/settings` sans auth → redirection login
+- [ ] Accès direct à `/create` sans auth → redirection login
+- [ ] Accès direct à `/library` sans auth → redirection login
+- [ ] Accès direct à `/billing` sans auth → redirection login
+- [ ] Accès direct à `/history` sans auth → redirection login
+- [ ] Accès direct à `/community` sans auth → redirection login
+- [ ] Accès direct à `/admin/*` sans auth → redirection login
+- [ ] Bouton retour navigateur → page précédente fonctionnelle
+- [ ] Bouton avant navigateur → page suivante fonctionnelle
+- [ ] URL mise à jour après navigation SPA
+- [ ] Rechargement de page conserve l'URL
+
+---
+
+## 45. Auth Session
+
+### ⬜ À coder
+- [ ] Session persistée après refresh (cookie valide)
+- [ ] Session expirée → redirection login au prochain appel API
+- [ ] Session valide dans un second onglet
+- [ ] Déconnexion dans un onglet → second onglet déconnecté au refresh
+- [ ] GET /api/auth/session retourne l'utilisateur connecté
+- [ ] GET /api/auth/session retourne null si non auth
+
+---
+
+## 46. Pagination Edge Cases
+
+### ⬜ À coder
+- [ ] Dernière page atteinte — plus de bouton "Load more"
+- [ ] Curseur nul/non valide → géré sans erreur
+- [ ] Changement rapide de page (double clic) pas de doublon
+- [ ] Pagination avec 0 résultats → état vide
+- [ ] Pagination avec 1 résultat → fonctionne
+
+---
+
+## 47. Password Change
+
+### ⬜ À coder
+- [ ] Ancien mot de passe incorrect → erreur
+- [ ] Nouveau mot de passe trop faible → erreur (min 8, majuscule, minuscule, chiffre)
+- [ ] Confirmation mismatch → erreur
+- [ ] Changement réussi → confirmation toast
+- [ ] Session conservée après changement
+- [ ] Nouveau mot de passe utilisable au login suivant
+- [ ] Rate limiting sur les tentatives de changement
+
+---
+
+## 48. Toast / Notification System
+
+### ⬜ À coder
+- [ ] Erreur API → toast d'erreur affiché
+- [ ] Succès (création, mise à jour) → toast de succès
+- [ ] Toast disparaît après délai (auto-dismiss)
+- [ ] Toast fermable manuellement
+- [ ] Toasts multiples empilés correctement
+- [ ] Pas de toast pour les erreurs silencieuses (background)
+
+---
+
+## 49. Concurrent Operations
+
+### ⬜ À coder
+- [ ] Double clic sur "Créer" → une seule création (prevent double submit)
+- [ ] Double clic sur "Démarrer appel" → un seul appel
+- [ ] Deux onglets — modification simultanée du même scénario → dernier gagne
+- [ ] Like toggle rapide (5 clics) → état final correct
+- [ ] Soumission formulaire pendant chargement → bloqué
+
+---
+
+## 50. Optimistic Updates & UI Rollback
+
+### ⬜ À coder
+- [ ] Like — UI se met à jour immédiatement (optimistic)
+- [ ] Like — rollback si requête échoue
+- [ ] Commentaire — apparaît immédiatement dans le fil
+- [ ] Commentaire — retiré avec erreur si la requête échoue
+- [ ] Suppression scénario — retiré de la liste immédiatement
+- [ ] Suppression scénario — restauré si erreur API
+
+---
+
+## 51. Form Draft Persistence
+
+### ⬜ À coder
+- [ ] Formulaire de création partiellement rempli → données persistées (localStorage)
+- [ ] Navigation hors `/create` → données conservées
+- [ ] Rechargement navigateur → formulaire pré-rempli
+- [ ] Soumission réussie → brouillon effacé
+- [ ] Annulation manuelle → brouillon effacé
+
+---
+
 ## Résumé
 
 | Section | ✅ Existants | ⬜ Planifiés | Total |
@@ -682,15 +830,15 @@
 | Auth Forgot Password | 0 | 6 | 6 |
 | Auth Reset Password | 0 | 7 | 7 |
 | Navigation | 10 | 3 | 13 |
-| Explore | 10 | 7 | 17 |
-| Scenario Detail | 6 | 14 | 20 |
-| Dashboard | 0 | 9 | 9 |
-| Create Scenario | 0 | 10 | 10 |
+| Explore | 10 | 10 | 20 |
+| Scenario Detail | 6 | 16 | 22 |
+| Dashboard | 0 | 13 | 13 |
+| Create Scenario | 0 | 12 | 12 |
 | Library | 0 | 7 | 7 |
 | History | 0 | 6 | 6 |
 | Profile | 0 | 5 | 5 |
 | Settings | 5 | 9 | 14 |
-| Community | 0 | 5 | 5 |
+| Community | 0 | 7 | 7 |
 | Leaderboard | 0 | 4 | 4 |
 | Billing | 0 | 5 | 5 |
 | Pricing | 0 | 4 | 4 |
@@ -705,6 +853,17 @@
 | OpenGraph | 0 | 4 | 4 |
 | Admin Feature Mgmt | 0 | 5 | 5 |
 | Share Tracking | 0 | 4 | 4 |
+| API Versioning | 0 | 6 | 6 |
+| IP Rate Limiting | 0 | 5 | 5 |
+| Twilio Webhook Validation | 0 | 6 | 6 |
+| Browser Navigation & Deep Linking | 0 | 12 | 12 |
+| Auth Session | 0 | 6 | 6 |
+| Pagination Edge Cases | 0 | 5 | 5 |
+| Password Change | 0 | 7 | 7 |
+| Toast / Notification System | 0 | 6 | 6 |
+| Concurrent Operations | 0 | 5 | 5 |
+| Optimistic Updates & UI Rollback | 0 | 6 | 6 |
+| Form Draft Persistence | 0 | 5 | 5 |
 | API/Webhooks | 13 | 7 | 20 |
 | Sécurité | 1 | 4 | 5 |
 | Responsive | 0 | 5 | 5 |
@@ -719,4 +878,4 @@
 | Spam Detection | 0 | 5 | 5 |
 | Responsive (compl.) | 0 | 15 | 15 |
 | Accessibilité (compl.) | 0 | 10 | 10 |
-| **Total** | **66** | **301** | **367** |
+| **Total** | **66** | **383** | **449** |
