@@ -205,4 +205,99 @@ describe("scenarioCache", () => {
     const key2 = mod.buildCacheKey({ sort: "trending", limit: 50 }, 0);
     expect(key2).toBe("cache:feed:v0:trending:50:first");
   });
+
+  // -----------------------------------------------------------------------
+  // getCachedTrendingFeed
+  // -----------------------------------------------------------------------
+
+  it("getCachedTrendingFeed should use correct key prefix 'cache:trending:'", async () => {
+    mockRedisInstance.get
+      .mockResolvedValueOnce(3) // version
+      .mockResolvedValueOnce({ items: ["a", "b"] }); // cached data
+
+    const { getCachedTrendingFeed } = await import("../scenarioCache");
+    const result = await getCachedTrendingFeed({ limit: 10, cursor: "page1" });
+
+    expect(result).toEqual({ items: ["a", "b"] });
+    expect(mockRedisInstance.get).toHaveBeenNthCalledWith(1, "cache:feed:version");
+    expect(mockRedisInstance.get).toHaveBeenNthCalledWith(2, "cache:trending:v3:10:page1");
+  });
+
+  it("getCachedTrendingFeed should use 'first' when cursor is undefined", async () => {
+    mockRedisInstance.get
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce("data");
+
+    const { getCachedTrendingFeed } = await import("../scenarioCache");
+    await getCachedTrendingFeed({ limit: 20 });
+
+    expect(mockRedisInstance.get).toHaveBeenNthCalledWith(2, "cache:trending:v2:20:first");
+  });
+
+  it("getCachedTrendingFeed should return null on cache miss", async () => {
+    mockRedisInstance.get
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(null);
+
+    const { getCachedTrendingFeed } = await import("../scenarioCache");
+    const result = await getCachedTrendingFeed({ limit: 5 });
+
+    expect(result).toBeNull();
+  });
+
+  it("getCachedTrendingFeed should return null on redis error", async () => {
+    mockRedisInstance.get.mockRejectedValue(new Error("Redis error"));
+
+    const { getCachedTrendingFeed } = await import("../scenarioCache");
+    const result = await getCachedTrendingFeed({ limit: 10 });
+
+    expect(result).toBeNull();
+    expect(mockLogInstance.warn).toHaveBeenCalledWith("Trending cache read failed", expect.any(Object));
+  });
+
+  // -----------------------------------------------------------------------
+  // setCachedTrendingFeed
+  // -----------------------------------------------------------------------
+
+  it("setCachedTrendingFeed should use correct key prefix and TTL of 120s", async () => {
+    mockRedisInstance.get.mockResolvedValue(4); // version
+    mockRedisInstance.set.mockResolvedValue("OK");
+
+    const { setCachedTrendingFeed } = await import("../scenarioCache");
+    const data = { items: ["x", "y"] };
+    await setCachedTrendingFeed({ limit: 15, cursor: "abc" }, data);
+
+    expect(mockRedisInstance.get).toHaveBeenCalledWith("cache:feed:version");
+    expect(mockRedisInstance.set).toHaveBeenCalledWith(
+      "cache:trending:v4:15:abc",
+      JSON.stringify(data),
+      { ex: 120 }, // CACHE_TRENDING_TTL_S = 120
+    );
+  });
+
+  it("setCachedTrendingFeed should use 'first' when cursor is undefined", async () => {
+    mockRedisInstance.get.mockResolvedValue(5);
+    mockRedisInstance.set.mockResolvedValue("OK");
+
+    const { setCachedTrendingFeed } = await import("../scenarioCache");
+    await setCachedTrendingFeed({ limit: 25 }, { items: [] });
+
+    expect(mockRedisInstance.set).toHaveBeenCalledWith(
+      "cache:trending:v5:25:first",
+      JSON.stringify({ items: [] }),
+      { ex: 120 },
+    );
+  });
+
+  it("setCachedTrendingFeed should handle redis error gracefully", async () => {
+    mockRedisInstance.get.mockResolvedValue(1);
+    mockRedisInstance.set.mockRejectedValue(new Error("Write failed"));
+
+    const { setCachedTrendingFeed } = await import("../scenarioCache");
+    await expect(
+      setCachedTrendingFeed({ limit: 10 }, { items: [] }),
+    ).resolves.toBeUndefined();
+
+    expect(mockLogInstance.warn).toHaveBeenCalledWith("Trending cache write failed", expect.any(Object));
+  });
 });

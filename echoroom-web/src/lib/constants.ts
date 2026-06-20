@@ -51,7 +51,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function formatDuration(seconds: number): string {
-  if (seconds === 0) return "0s";
+  if (seconds <= 0) return "0s";
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return mins > 0

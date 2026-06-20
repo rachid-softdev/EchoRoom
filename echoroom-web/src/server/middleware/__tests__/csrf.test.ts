@@ -147,6 +147,28 @@ describe("isOriginAllowed", () => {
     };
     expect(isOriginAllowed("https://echoroom.app", config)).toBe(true);
   });
+
+  it("should reject origin 'null' (sandboxed iframe)", async () => {
+    const { isOriginAllowed } = await import("../csrf");
+    // The string "null" is not a valid URL → catch block → false
+    expect(isOriginAllowed("null", defaultConfig)).toBe(false);
+  });
+
+  it("should reject protocol-relative origin (//evil.com)", async () => {
+    const { isOriginAllowed } = await import("../csrf");
+    // "//evil.com" is not a valid URL (no scheme) → catch block → false
+    expect(isOriginAllowed("//evil.com", defaultConfig)).toBe(false);
+  });
+
+  it("should match trusted origin with trailing slash", async () => {
+    const { isOriginAllowed } = await import("../csrf");
+    const config = {
+      appUrl: "https://echoroom.app",
+      trustedOrigins: ["https://trusted.echoroom.app/"],
+    };
+    // Trailing slash is part of the URL path, origin comparison strips it
+    expect(isOriginAllowed("https://trusted.echoroom.app", config)).toBe(true);
+  });
 });
 
 describe("CSRFFailure", () => {
@@ -315,6 +337,57 @@ describe("validateCSRF", () => {
     expect(() =>
       validateCSRF(req, { appUrl: "https://echoroom.app", allowMissingOrigin: false }),
     ).toThrow(CSRFFailure);
+  });
+
+  it("should validate origin for non-POST methods (validateCSRF does not skip by method)", async () => {
+    const { validateCSRF, CSRFFailure } = await import("../csrf");
+    // validateCSRF itself does NOT check method — it validates whatever origin is present.
+    // The method check (POST only) is in createTRPCContext. At the middleware level,
+    // even GET requests with an evil origin are correctly rejected.
+    const req = createMockRequest({ origin: "https://evil-site.com" });
+
+    expect(() =>
+      validateCSRF(req, { appUrl: "https://echoroom.app", allowMissingOrigin: true }),
+    ).toThrow(CSRFFailure);
+  });
+
+  it("should handle referer with invalid characters (space in host) as malformed URL", async () => {
+    const { validateCSRF } = await import("../csrf");
+    // Referer with space in host causes new URL() to throw (invalid URL)
+    const req = createMockRequest({
+      origin: null,
+      referer: "https://exa mple.com/page",
+    });
+
+    // new URL throws → sourceOrigin becomes null
+    // With allowMissingOrigin: true → passes (treated as non-browser client)
+    expect(() =>
+      validateCSRF(req, { appUrl: "https://echoroom.app", allowMissingOrigin: true }),
+    ).not.toThrow();
+  });
+
+  it("should reject referer with invalid characters when allowMissingOrigin is false", async () => {
+    const { validateCSRF, CSRFFailure } = await import("../csrf");
+    const req = createMockRequest({
+      origin: null,
+      referer: "https://exa mple.com/page",
+    });
+
+    expect(() =>
+      validateCSRF(req, { appUrl: "https://echoroom.app", allowMissingOrigin: false }),
+    ).toThrow(CSRFFailure);
+  });
+
+  it("should support trusted origin with trailing slash for validation", async () => {
+    const { validateCSRF } = await import("../csrf");
+    const req = createMockRequest({ origin: "https://staging.echoroom.app" });
+
+    const config = {
+      appUrl: "https://echoroom.app",
+      trustedOrigins: ["https://staging.echoroom.app/"],
+    };
+    // Trailing slash should not affect origin comparison
+    expect(() => validateCSRF(req, config)).not.toThrow();
   });
 });
 

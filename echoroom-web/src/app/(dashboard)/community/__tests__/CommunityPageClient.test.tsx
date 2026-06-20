@@ -11,9 +11,9 @@ import userEvent from "@testing-library/user-event";
 //   - isPending guard prevents double submissions
 //   - Empty/whitespace content is prevented
 
-const mockMutate = vi.fn<(...args: any[]) => void>();
+const mockMutate = vi.hoisted(() => vi.fn<(...args: any[]) => void>());
 const mockRefetch = vi.fn();
-const mockToast = vi.fn();
+const mockToast = vi.hoisted(() => vi.fn());
 
 function createMutationObj() {
   const obj = {
@@ -27,8 +27,8 @@ function createMutationObj() {
   return obj;
 }
 
-const mockUseMutation = vi.fn(createMutationObj);
-const mockUseQuery = vi.fn();
+const mockUseMutation = vi.hoisted(() => vi.fn(createMutationObj));
+const mockUseQuery = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/trpc", () => ({
   api: {
@@ -81,6 +81,7 @@ vi.mock("@/components/shared/DashboardShell", () => ({
 vi.mock("@/components/shared/DataLoader", () => ({
   DataLoader: ({ children, query, isEmpty, empty }: any) => {
     if (query.isLoading) return <div data-testid="loading">Loading...</div>;
+    if (query.isError) return <div>Une erreur est survenue</div>;
     if (isEmpty(query.data)) return <div data-testid="empty">{empty}</div>;
     return <div data-testid="data-loaded">{children(query.data)}</div>;
   },
@@ -324,5 +325,114 @@ describe("CommunityPageClient — comment mutation (Item 20)", () => {
 
     // Input should still have the text (not cleared on error)
     expect(input.value).toBe("Will fail");
+  });
+
+  // ── Feed loading state ───────────────────────────────────────
+
+  it("shows loading state when feed is loading", async () => {
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      refetch: mockRefetch,
+    });
+
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    expect(screen.getByTestId("loading")).toBeInTheDocument();
+  });
+
+  // ── Feed error state ─────────────────────────────────────────
+
+  it("shows DataLoader error state when feed query has error", async () => {
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { message: "Network error" },
+      refetch: mockRefetch,
+    });
+
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    // DataLoader renders "Une erreur est survenue" in error state
+    expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
+  });
+
+  // ── Empty feed state ─────────────────────────────────────────
+
+  it("shows empty state when feed has no items", async () => {
+    mockUseQuery.mockReturnValue({
+      data: { items: [] },
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    expect(screen.getByTestId("empty-state")).toBeInTheDocument();
+    expect(screen.getByText("Aucun post pour le moment")).toBeInTheDocument();
+  });
+
+  // ── Feed data renders correctly ─────────────────────────────
+
+  it("renders scenario cards from feed data", async () => {
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    expect(screen.getByText("Test Scenario")).toBeInTheDocument();
+    expect(screen.getByText("TestUser")).toBeInTheDocument();
+  });
+
+  // ── Send button disabled when input empty ────────────────────
+
+  it("send button is disabled when input is empty", async () => {
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    const sendButton = screen.getByTestId("send-button");
+    expect(sendButton).toBeDisabled();
+  });
+
+  it("send button is enabled when input has text", async () => {
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    const input = screen.getByTestId("comment-input");
+    await userEvent.type(input, "Some comment");
+
+    const sendButton = screen.getByTestId("send-button");
+    expect(sendButton).not.toBeDisabled();
+  });
+
+  // ── Comment count ────────────────────────────────────────────
+
+  it("renders comment count from _count.comments", async () => {
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    // Comment count for scenario-1 is 0
+    expect(screen.getByText("0")).toBeInTheDocument();
+  });
+
+  // ── ReactionBar rendering ────────────────────────────────────
+
+  it("renders ReactionBar for each scenario", async () => {
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    expect(screen.getByTestId("reaction-bar-scenario-1")).toBeInTheDocument();
+  });
+
+  // ── Scenario link ────────────────────────────────────────────
+
+  it("renders scenario link to detail page", async () => {
+    const Module = await import("../CommunityPageClient");
+    render(<Module.default />);
+
+    const scenarioLink = screen.getByRole("link", { name: /test scenario/i });
+    expect(scenarioLink).toHaveAttribute("href", "/scenario/scenario-1");
   });
 });

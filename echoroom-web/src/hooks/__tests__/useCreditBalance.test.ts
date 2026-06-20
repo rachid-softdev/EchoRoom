@@ -141,4 +141,87 @@ describe("useCreditBalance", () => {
     result.current.refetch();
     expect(mockRefetch).toHaveBeenCalled();
   });
+
+  it("should return 0 credits when data.credits is 0", async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      status: "authenticated",
+    });
+
+    mockUseQuery.mockReturnValue({
+      data: { credits: 0 },
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    const { useCreditBalance } = await import("../useCreditBalance");
+    const { result } = renderHook(() => useCreditBalance());
+
+    expect(result.current.credits).toBe(0);
+  });
+
+  it("should return 0 credits when data.credits is null", async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      status: "authenticated",
+    });
+
+    mockUseQuery.mockReturnValue({
+      data: { credits: null },
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    const { useCreditBalance } = await import("../useCreditBalance");
+    const { result } = renderHook(() => useCreditBalance());
+
+    // data?.credits ?? 0 → null ?? 0 → 0
+    expect(result.current.credits).toBe(0);
+  });
+
+  it("should disable query when session.user is null", async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: null },
+      status: "authenticated",
+    });
+
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    const { useCreditBalance } = await import("../useCreditBalance");
+    renderHook(() => useCreditBalance());
+
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        enabled: false,
+      }),
+    );
+  });
+
+  it("should pass staleTime=30000 to useQuery", async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { id: "user-1" } },
+      status: "authenticated",
+    });
+
+    mockUseQuery.mockReturnValue({
+      data: { credits: 100 },
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    const { useCreditBalance } = await import("../useCreditBalance");
+    renderHook(() => useCreditBalance());
+
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        staleTime: 30000,
+      }),
+    );
+  });
 });

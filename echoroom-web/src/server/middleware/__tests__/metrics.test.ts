@@ -300,6 +300,100 @@ describe("withREDMetrics", () => {
     expect(metrics["query:snapshot.test"]!.errors).toBe(0);
   });
 
+  it("should increment calls and totalDurationMs on success, not errors", async () => {
+    const { withREDMetrics, getREDMetrics } = await import("../metrics");
+
+    const nextOk = vi.fn().mockResolvedValue({ ok: true });
+    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "counter.test", type: "query" });
+
+    const metrics = getREDMetrics();
+    expect(metrics["query:counter.test"]!.calls).toBe(1);
+    expect(metrics["query:counter.test"]!.errors).toBe(0); // Not incremented on success
+    expect(metrics["query:counter.test"]!.totalDurationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("should increment errors on failure and re-throw the error", async () => {
+    const { withREDMetrics, getREDMetrics } = await import("../metrics");
+
+    const testError = new Error("error-counter-test");
+    const nextErr = vi.fn().mockRejectedValue(testError);
+
+    await expect(
+      (withREDMetrics as any)({
+        ctx: { session: { user: { id: "user-err" } } },
+        next: nextErr,
+        path: "error.counter",
+        type: "mutation",
+      }),
+    ).rejects.toThrow("error-counter-test");
+
+    const metrics = getREDMetrics();
+    expect(metrics["mutation:error.counter"]!.calls).toBe(1);
+    expect(metrics["mutation:error.counter"]!.errors).toBe(1);
+    expect(metrics["mutation:error.counter"]!.totalDurationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("should enforce MAX_METRICS_ENTRIES limit (1000) by evicting old entries", async () => {
+    const { withREDMetrics, getREDMetrics } = await import("../metrics");
+
+    const nextOk = vi.fn().mockResolvedValue({ ok: true });
+
+    // Create 1005 distinct endpoints (MAX_METRICS_ENTRIES = 1000)
+    for (let i = 0; i < 1005; i++) {
+      await (withREDMetrics as any)({
+        ctx: { session: null },
+        next: nextOk,
+        path: `endpoint-${i}`,
+        type: "query",
+      });
+    }
+
+    const metrics = getREDMetrics();
+    const entryCount = Object.keys(metrics).length;
+
+    // Should not exceed MAX_METRICS_ENTRIES
+    expect(entryCount).toBeLessThanOrEqual(1000);
+    // At least some of the oldest entries were evicted
+    // The latest entries (endpoint-1000 to endpoint-1004) should exist
+    expect(metrics["query:endpoint-1004"]).toBeDefined();
+    // But some early ones may be gone
+    const hasOldEntry = metrics["query:endpoint-0"] !== undefined;
+    // Either the old entry was evicted (which is expected) or the map hasn't
+    // reached 1000 unique keys yet due to timing. Verify the invariant holds.
+    expect(entryCount).toBeLessThanOrEqual(1000);
+  });
+
+  it("should handle trackEvent rejection without blocking the middleware (fire-and-forget)", async () => {
+    // trackEvent already rejects above, but let's verify on the error path too
+    mockTrackEvent.mockRejectedValue(new Error("PostHog full"));
+
+    const { withREDMetrics } = await import("../metrics");
+
+    const next = vi.fn().mockResolvedValue({ ok: true });
+
+    await expect(
+      (withREDMetrics as any)({
+        ctx: { session: { user: { id: "user-fnf" } } },
+        next,
+        path: "fire-and-forget",
+        type: "query",
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    // Error path should also not throw
+    mockTrackEvent.mockRejectedValue(new Error("PostHog full again"));
+    const nextErr = vi.fn().mockRejectedValue(new Error("proc error"));
+
+    await expect(
+      (withREDMetrics as any)({
+        ctx: { session: null },
+        next: nextErr,
+        path: "fire-and-forget-err",
+        type: "mutation",
+      }),
+    ).rejects.toThrow("proc error"); // The original error, not PostHog's
+  });
+
   // -----------------------------------------------------------------------
   // Null posthog handling (via trackEvent mock)
   // -----------------------------------------------------------------------

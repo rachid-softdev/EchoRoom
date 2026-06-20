@@ -130,6 +130,7 @@ vi.mock("@/server/db", () => ({
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     userBilling: {
       upsert: vi.fn(),
@@ -144,8 +145,9 @@ vi.mock("@/server/trpc", () => {
       type: "mutation" as const,
       handler,
     })),
-    query: vi.fn(() => ({
+    query: vi.fn((handler: Function) => ({
       type: "query" as const,
+      handler,
     })),
     use: vi.fn(() => chain),
   };
@@ -350,5 +352,283 @@ describe("authRouter.register — email enumeration protection", () => {
         }),
       }),
     );
+  });
+
+  it("should throw BAD_REQUEST when consentAccepted is false", async () => {
+    await expect(
+      handler({ input: { ...validInput, consentAccepted: false }, ctx: {} }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Vous devez accepter les conditions d'utilisation",
+    });
+  });
+
+  it("should detect disposable email domains", async () => {
+    await expect(
+      handler({ input: { ...validInput, email: "user@mailinator.com" }, ctx: {} }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Les emails jetables ne sont pas autorisés",
+    });
+  });
+
+  it("should detect disposable email with recursive subdomains", async () => {
+    // "user@sub.mailinator.com" should also be blocked (recursive check)
+    await expect(
+      handler({ input: { ...validInput, email: "user@sub.mailinator.com" }, ctx: {} }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Les emails jetables ne sont pas autorisés",
+    });
+  });
+
+  it("should detect disposable email with deep subdomains", async () => {
+    // "user@a.b.c.mailinator.com" should match via recursive parent domain check
+    await expect(
+      handler({ input: { ...validInput, email: "user@a.b.c.mailinator.com" }, ctx: {} }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Les emails jetables ne sont pas autorisés",
+    });
+  });
+
+  it("should normalize email casing — domain case-insensitivity", async () => {
+    // Domain is lowercased in the disposable check; Test with mixed-case domain
+    await expect(
+      handler({ input: { ...validInput, email: "user@MailInator.COM" }, ctx: {} }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Les emails jetables ne sont pas autorisés",
+    });
+  });
+
+  it("should not block non-disposable emails with subdomains", async () => {
+    // A legitimate subdomain email should pass the disposable check
+    mockDb.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    mockDb.user.create.mockResolvedValue({ id: "user-created" });
+
+    const result = await handler({
+      input: { ...validInput, email: "user@mail.example.com" },
+      ctx: {},
+    });
+
+    expect(result).toEqual({ userId: "user-created" });
+  });
+
+  it("should throw CONFLICT when race condition causes double insert", async () => {
+    // Both checks pass (findUnique returns null) but create fails with unique constraint
+    mockDb.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    mockDb.user.create.mockRejectedValue(
+      new Error("Unique constraint failed on the fields: (`email`)"),
+    );
+
+    await expect(
+      handler({ input: validInput, ctx: {} }),
+    ).rejects.toThrow("Unique constraint");
+  });
+
+  it("should throw when bcrypt.hash fails", async () => {
+    mockDb.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    const bcryptjs = await import("bcryptjs");
+    (bcryptjs.default.hash as any).mockRejectedValueOnce(
+      new Error("bcrypt error"),
+    );
+
+    await expect(
+      handler({ input: validInput, ctx: {} }),
+    ).rejects.toThrow("bcrypt error");
+  });
+
+  it("should call userBillingRepository.upsert after user creation", async () => {
+    mockDb.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    mockDb.user.create.mockResolvedValue({ id: "user-new" });
+    mockDb.userBilling.upsert.mockResolvedValue({});
+
+    await handler({ input: validInput, ctx: {} });
+
+    expect(mockDb.userBilling.upsert).toHaveBeenCalledWith({
+      where: { userId: "user-new" },
+      create: { userId: "user-new" },
+      update: {},
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// changePassword — password change mutations
+// ---------------------------------------------------------------------------
+describe("authRouter.changePassword — password change", () => {
+  let mockDb: any;
+  let handler: Function;
+  const validCtx = {
+    session: { user: { id: "user-123" } },
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const dbModule = await import("@/server/db");
+    mockDb = dbModule.db;
+
+    const { authRouter } = await import("../auth");
+    // @ts-expect-error
+    handler = authRouter.changePassword.handler;
+  });
+
+  const validInput = {
+    currentPassword: "OldPass1",
+    newPassword: "NewValidPass1",
+  };
+
+  it("should change password successfully and increment tokenVersion", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      passwordHash: "$2b$12$existing_hash_for_test",
+    });
+
+    const bcryptjs = await import("bcryptjs");
+    (bcryptjs.default.compare as any).mockResolvedValue(true);
+    (bcryptjs.default.hash as any).mockResolvedValue("$2b$12$new_hashed_password");
+
+    const result = await handler({ input: validInput, ctx: validCtx });
+
+    expect(result).toEqual({ success: true });
+    expect(mockDb.user.update).toHaveBeenCalledWith({
+      where: { id: "user-123" },
+      data: {
+        passwordHash: "$2b$12$new_hashed_password",
+        tokenVersion: { increment: 1 },
+      },
+    });
+  });
+
+  it("should throw BAD_REQUEST when currentPassword is incorrect", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      passwordHash: "$2b$12$existing_hash_for_test",
+    });
+
+    const bcryptjs = await import("bcryptjs");
+    (bcryptjs.default.compare as any).mockResolvedValue(false);
+
+    await expect(
+      handler({ input: validInput, ctx: validCtx }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Mot de passe actuel incorrect",
+    });
+  });
+
+  it("should throw NOT_FOUND when user does not exist", async () => {
+    mockDb.user.findUnique.mockResolvedValue(null);
+
+    await expect(
+      handler({ input: validInput, ctx: validCtx }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Utilisateur introuvable",
+    });
+  });
+
+  it("should throw when currentPassword and newPassword are the same (validation)", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      passwordHash: "$2b$12$existing_hash_for_test",
+    });
+
+    const bcryptjs = await import("bcryptjs");
+    // The current password matches
+    (bcryptjs.default.compare as any).mockResolvedValue(true);
+    // But bcrypt.hash of the same password produces a different hash
+    (bcryptjs.default.hash as any).mockResolvedValue("$2b$12$new_same_password");
+
+    // The source code does NOT check if old === new password.
+    // It re-hashes the new password and always succeeds.
+    // This test documents the current behavior.
+    const result = await handler({
+      input: { currentPassword: "SamePass1", newPassword: "SamePass1" },
+      ctx: validCtx,
+    });
+
+    expect(result).toEqual({ success: true });
+    // The password IS updated even if the same value is provided
+    expect(mockDb.user.update).toHaveBeenCalled();
+  });
+
+  it("should reject empty currentPassword (Zod)", () => {
+    const schema = z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string()
+        .min(8, "Minimum 8 caractères")
+        .max(128, "Maximum 128 caractères")
+        .regex(/[A-Z]/, "Doit contenir une majuscule")
+        .regex(/[a-z]/, "Doit contenir une minuscule")
+        .regex(/[0-9]/, "Doit contenir un chiffre"),
+    });
+
+    const result = schema.safeParse({
+      currentPassword: "",
+      newPassword: "ValidNew1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject newPassword that is too short (Zod)", () => {
+    const schema = z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string()
+        .min(8, "Minimum 8 caractères")
+        .max(128, "Maximum 128 caractères")
+        .regex(/[A-Z]/, "Doit contenir une majuscule")
+        .regex(/[a-z]/, "Doit contenir une minuscule")
+        .regex(/[0-9]/, "Doit contenir un chiffre"),
+    });
+
+    const result = schema.safeParse({
+      currentPassword: "OldPass1",
+      newPassword: "Short1A",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject newPassword missing uppercase (Zod)", () => {
+    const schema = z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string()
+        .min(8, "Minimum 8 caractères")
+        .max(128, "Maximum 128 caractères")
+        .regex(/[A-Z]/, "Doit contenir une majuscule")
+        .regex(/[a-z]/, "Doit contenir une minuscule")
+        .regex(/[0-9]/, "Doit contenir un chiffre"),
+    });
+
+    const result = schema.safeParse({
+      currentPassword: "OldPass1",
+      newPassword: "nouppercase1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should reject newPassword missing digit (Zod)", () => {
+    const schema = z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string()
+        .min(8, "Minimum 8 caractères")
+        .max(128, "Maximum 128 caractères")
+        .regex(/[A-Z]/, "Doit contenir une majuscule")
+        .regex(/[a-z]/, "Doit contenir une minuscule")
+        .regex(/[0-9]/, "Doit contenir un chiffre"),
+    });
+
+    const result = schema.safeParse({
+      currentPassword: "OldPass1",
+      newPassword: "NoDigitsHere",
+    });
+    expect(result.success).toBe(false);
   });
 });

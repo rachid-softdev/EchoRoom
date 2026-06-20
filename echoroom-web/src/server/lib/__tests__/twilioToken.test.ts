@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll, afterEach, beforeAll } from "vitest";
 
 // ---------------------------------------------------------------------------
 // M-3: twilioToken.ts — TTL change (1 hour) and token verification
@@ -107,6 +107,10 @@ describe("M-3: verifyTwilioToken", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("should return payload for a valid token within TTL", async () => {
     const { createTwilioToken, verifyTwilioToken } = await import("../twilioToken");
 
@@ -121,12 +125,14 @@ describe("M-3: verifyTwilioToken", () => {
   it("should return null for an expired token", async () => {
     const { createTwilioToken, verifyTwilioToken } = await import("../twilioToken");
 
+    const now = 1_000_000;
+    vi.spyOn(Date, "now").mockReturnValue(now);
+
     const token = createTwilioToken("call-1", "scenario-1", "character-1");
 
-    // Wait 1ms so that Date.now() - payload.iat > 0
-    await new Promise((resolve) => setTimeout(resolve, 1));
+    // Advance clock so that Date.now() - payload.iat > 0 with maxAgeMs=0
+    vi.spyOn(Date, "now").mockReturnValue(now + 1);
 
-    // Use a maxAgeMs of 0 to force expiration
     const payload = verifyTwilioToken(token, 0);
 
     expect(payload).toBeNull();
@@ -318,5 +324,73 @@ describe("M-3: characterId in Twilio token", () => {
     const token2 = createTwilioToken("call-1", "scenario-1", "character-b");
 
     expect(token1).not.toBe(token2);
+  });
+
+  // -----------------------------------------------------------------------
+  // timingSafeEqual buffer length check
+  // -----------------------------------------------------------------------
+
+  it("should return null when signature buffer length differs (timingSafeEqual pre-check)", async () => {
+    const { createTwilioToken, verifyTwilioToken } = await import("../twilioToken");
+
+    const token = createTwilioToken("call-1", "scenario-1", "character-1");
+
+    // Replace the signature with a shorter one to trigger the length check
+    const parts = token.split(".");
+    const shorterSig = parts[1]!.slice(0, -5); // Remove 5 chars to make it shorter
+    const tamperedToken = `${parts[0]!}.${shorterSig}`;
+
+    const payload = verifyTwilioToken(tamperedToken);
+    expect(payload).toBeNull();
+  });
+
+  it("should return null when signature buffer is longer than expected", async () => {
+    const { createTwilioToken, verifyTwilioToken } = await import("../twilioToken");
+
+    const token = createTwilioToken("call-1", "scenario-1", "character-1");
+
+    // Replace the signature with a longer one
+    const parts = token.split(".");
+    const longerSig = parts[1]! + "extra";
+    const tamperedToken = `${parts[0]!}.${longerSig}`;
+
+    const payload = verifyTwilioToken(tamperedToken);
+    expect(payload).toBeNull();
+  });
+
+  // -----------------------------------------------------------------------
+  // HMAC-SHA256 algorithm verification
+  // -----------------------------------------------------------------------
+
+  it("should sign token with HMAC-SHA256 algorithm", async () => {
+    // Re-create what createTwilioToken does internally to verify the algorithm
+    const { createHmac } = await import("node:crypto");
+
+    const payloadStr = JSON.stringify({ callId: "call-1", scenarioId: "s-1", characterId: "c-1", iat: 0 });
+    const expectedSignature = createHmac("sha256", TEST_SECRET)
+      .update(payloadStr)
+      .digest("base64url");
+
+    // Create a token with different algorithms to verify only SHA256 matches
+    const sha384Sig = createHmac("sha384", TEST_SECRET)
+      .update(payloadStr)
+      .digest("base64url");
+
+    const sha512Sig = createHmac("sha512", TEST_SECRET)
+      .update(payloadStr)
+      .digest("base64url");
+
+    // SHA-256 produces a specific length output
+    expect(expectedSignature.length).not.toBe(sha384Sig.length);
+    expect(expectedSignature.length).not.toBe(sha512Sig.length);
+
+    // The real createTwilioToken uses SHA-256
+    const { createTwilioToken } = await import("../twilioToken");
+    const token = createTwilioToken("call-1", "s-1", "c-1");
+    const parts = token.split(".");
+    const realSignature = parts[1]!;
+
+    // The real signature length should match SHA-256 output, not SHA-384 or SHA-512
+    expect(realSignature.length).toBe(expectedSignature.length);
   });
 });

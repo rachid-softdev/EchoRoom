@@ -26,7 +26,7 @@ function getClientEnv(): z.infer<typeof clientEnvSchema> {
   const result = clientEnvSchema.safeParse(_env);
 
   if (!result.success) {
-    // During build, use defaults
+    // During build, use defaults for fields that failed validation
     const defaults: Record<string, string> = {
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       NEXT_PUBLIC_POSTHOG_KEY: "phc_placeholder",
@@ -34,9 +34,13 @@ function getClientEnv(): z.infer<typeof clientEnvSchema> {
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_placeholder",
     };
 
+    const failedFields = new Set(
+      Object.keys(result.error.flatten().fieldErrors),
+    );
+
     const envWithDefaults = { ..._env };
     for (const [key, value] of Object.entries(defaults)) {
-      if (!envWithDefaults[key as keyof typeof _env]) {
+      if (failedFields.has(key)) {
         (envWithDefaults as Record<string, string | undefined>)[key] = value;
       }
     }

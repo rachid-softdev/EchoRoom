@@ -122,3 +122,130 @@ describe("Redis URL validation", () => {
     expect(mod.redis).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Redis constructor tests — token extraction and constructor calls
+// ---------------------------------------------------------------------------
+describe("Redis constructor — token and URL handling", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("should call Redis constructor with URL and token", async () => {
+    // Mock Redis class to intercept constructor calls
+    const mockRedisInstance = {};
+    const RedisMock = vi.fn(() => mockRedisInstance);
+
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        REDIS_URL: "https://us1-valid.upstash.io:6379",
+        REDIS_TOKEN: "my-secret-token",
+      },
+    }));
+
+    vi.doMock("@upstash/redis", () => ({
+      Redis: RedisMock,
+    }));
+
+    const mod = await import("../redis");
+
+    expect(mod.redis).toBe(mockRedisInstance);
+    expect(RedisMock).toHaveBeenCalledWith({
+      url: "https://us1-valid.upstash.io:6379",
+      token: "my-secret-token",
+    });
+  });
+
+  it("should extract token from URL password when REDIS_TOKEN is absent", async () => {
+    const mockRedisInstance = {};
+    const RedisMock = vi.fn(() => mockRedisInstance);
+
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        REDIS_URL: "https://:url-password-token@host.com:6379",
+        // REDIS_TOKEN is NOT set
+      },
+    }));
+
+    vi.doMock("@upstash/redis", () => ({
+      Redis: RedisMock,
+    }));
+
+    const mod = await import("../redis");
+
+    expect(RedisMock).toHaveBeenCalledWith({
+      url: "https://:url-password-token@host.com:6379",
+      token: "url-password-token",
+    });
+  });
+
+  it("should use REDIS_TOKEN over URL password when both are present", async () => {
+    const mockRedisInstance = {};
+    const RedisMock = vi.fn(() => mockRedisInstance);
+
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        REDIS_URL: "https://:url-password@host.com:6379",
+        REDIS_TOKEN: "explicit-token",
+      },
+    }));
+
+    vi.doMock("@upstash/redis", () => ({
+      Redis: RedisMock,
+    }));
+
+    const mod = await import("../redis");
+
+    expect(RedisMock).toHaveBeenCalledWith({
+      url: "https://:url-password@host.com:6379",
+      token: "explicit-token",
+    });
+  });
+
+  it("should set redis export to null when Redis constructor throws", async () => {
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        REDIS_URL: "https://localhost:6379",
+      },
+    }));
+
+    // Mock Redis constructor to throw
+    vi.doMock("@upstash/redis", () => ({
+      Redis: vi.fn(() => {
+        throw new Error("Redis init failed");
+      }),
+    }));
+
+    const mod = await import("../redis");
+
+    // Should not crash — outer try/catch catches and redis stays null
+    expect(mod.redis).toBeNull();
+  });
+
+  it("should pass undefined token when URL has no password and no REDIS_TOKEN", async () => {
+    const mockRedisInstance = {};
+    const RedisMock = vi.fn(() => mockRedisInstance);
+
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        REDIS_URL: "https://host-without-password.com:6379",
+        // REDIS_TOKEN is not set, URL has no password
+      },
+    }));
+
+    vi.doMock("@upstash/redis", () => ({
+      Redis: RedisMock,
+    }));
+
+    const mod = await import("../redis");
+
+    // url.password for "https://host-without-password.com:6379" is ""
+    // env.REDIS_TOKEN is undefined
+    // So token should be: undefined ?? ("" || undefined) = undefined
+    expect(RedisMock).toHaveBeenCalledWith({
+      url: "https://host-without-password.com:6379",
+      token: undefined,
+    });
+  });
+});

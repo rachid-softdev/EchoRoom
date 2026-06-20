@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from "vitest";
 
 // ---------------------------------------------------------------------------
 // InMemoryRateLimitStore Tests
@@ -20,6 +20,7 @@ describe("InMemoryRateLimitStore", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   // -----------------------------------------------------------------------
@@ -105,6 +106,65 @@ describe("InMemoryRateLimitStore", () => {
     // on next check, effectively resetting.)
     expect(store.check("temp:1", 5, 1)).toBe(true); // Reset
     expect(store.check("temp:2", 5, 1)).toBe(true); // Reset
+  });
+
+  it("should remove expired entries during periodicCleanup (memory leak prevention)", async () => {
+    // Use fake timers to control the 30-second CLEANUP_INTERVAL_MS
+    vi.useFakeTimers();
+
+    // Create entries with 1-second windows
+    store.check("leak:a", 5, 1);
+    store.check("leak:b", 5, 1);
+    store.check("leak:c", 5, 1);
+    expect(store.size).toBe(3);
+
+    // Advance time past their expiry (1s window) AND past the cleanup interval (30s)
+    // We need lastCleanup to be > 30s ago for periodicCleanup to run
+    // Set time to 40 seconds later so both expiry and cleanup trigger
+    await vi.advanceTimersByTimeAsync(40_000);
+
+    // Trigger periodicCleanup by making a new check call
+    store.check("fresh-key", 5, 60);
+
+    // The 3 expired entries should have been removed during periodicCleanup
+    expect(store.size).toBe(1);
+
+    vi.useRealTimers();
+  });
+
+  it("should evict 25% of entries when store exceeds 100k entries", () => {
+    vi.useFakeTimers();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    // Since store was created in beforeEach (before fake timers), lastCleanup
+    // is the real current time. Set system time to a far FUTURE value so that
+    // now - lastCleanup exceeds CLEANUP_INTERVAL_MS (30s) on every check call.
+    vi.setSystemTime(new Date("2099-01-01T00:00:00Z"));
+
+    // Note: periodicCleanup runs at the START of each check(), before the
+    // new entry is added. So we need the store to already have > 100k entries
+    // for the eviction to trigger. Creating 100_001 entries ensures that when
+    // periodicCleanup runs for a subsequent key, size > 100_000 is true.
+    for (let i = 0; i < 100_001; i++) {
+      store.check(`evict-bulk:${i}`, 5, 3600);
+    }
+    expect(store.size).toBe(100_001);
+
+    // Advance time past the 30-second CLEANUP_INTERVAL_MS
+    vi.setSystemTime(new Date("2099-01-01T00:00:31Z"));
+
+    // This check triggers periodicCleanup, which sees size 100001 > 100000
+    store.check("evict-trigger", 5, 3600);
+
+    // After eviction, store should have removed ~25% of old entries
+    // Starting from 100001 entries, removing 25% of 100001 = ~25000
+    // After cleanup (75001 remaining), check() adds the evict-trigger entry,
+    // bringing the total to 75002
+    expect(store.size).toBeLessThanOrEqual(75_002);
+    expect(store.size).toBeGreaterThanOrEqual(75_001);
+
+    warnSpy.mockRestore();
+    vi.useRealTimers();
   });
 
   it("should track size accurately", () => {

@@ -34,14 +34,22 @@ export function CallDisclaimerDialog({
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "true") {
-      setHasAcceptedBefore(true);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "true") {
+        setHasAcceptedBefore(true);
+      }
+    } catch {
+      // localStorage not available — continue without stored preference
     }
   }, []);
 
   function handleAccept() {
-    localStorage.setItem(STORAGE_KEY, "true");
+    try {
+      localStorage.setItem(STORAGE_KEY, "true");
+    } catch {
+      // localStorage not available — accept still proceeds for this session
+    }
     setHasAcceptedBefore(true);
     onAccept();
     onOpenChange(false);

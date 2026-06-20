@@ -100,7 +100,7 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
     isFetchingMore,
     isError: query.isError,
     error: query.error,
-    hasMore: !!nextCursor,
+    hasMore: nextCursor !== undefined,
     loadMore,
     refetch,
   };

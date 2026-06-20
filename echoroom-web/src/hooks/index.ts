@@ -8,6 +8,6 @@ export function useUser() {
   return {
     user: session?.user ?? null,
     isLoading: status === "loading",
-    isAuthenticated: status === "authenticated",
+    isAuthenticated: status === "authenticated" && !!session?.user,
   };
 }

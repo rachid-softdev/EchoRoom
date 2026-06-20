@@ -1,3 +1,5 @@
+import "@testing-library/jest-dom/vitest";
+
 /**
  * Vitest setup — ensures env vars are properly set before any imports.
  * Without this, env.ts would receive empty strings from process.env
