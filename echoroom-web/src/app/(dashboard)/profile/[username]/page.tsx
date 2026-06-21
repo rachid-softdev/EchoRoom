@@ -69,7 +69,7 @@ type ActivityItem =
   | { type: "scenario" } & ScenarioFeedItem
   | { type: "call" } & CallFeedItem;
 
-function buildActivityFeed(
+export function buildActivityFeed(
   scenarios: ScenarioFeedItem[],
   calls: CallFeedItem[]
 ): ActivityItem[] {
@@ -86,7 +86,7 @@ function buildActivityFeed(
   return items.slice(0, ACTIVITY_LIMIT);
 }
 
-function formatRelativeDate(date: Date): string {
+export function formatRelativeDate(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
