@@ -24,40 +24,47 @@ export const dashboardRouter = router({
       const userId = ctx.session.user.id;
       const { todayStart, todayEnd } = getUTCDayRange();
 
-      // Run all queries in parallel for optimal performance
+      // Run all queries in parallel for optimal performance.
+      // Each query is independently resilient — if one fails, the rest still return data.
       const [billing, recentCalls, todayCount, scenarios] = await Promise.all([
-        userBillingRepository.findByUserId(userId),
-        db.call.findMany({
-          where: { userId },
-          take: input.callsLimit + 1,
-          orderBy: { createdAt: "desc" },
-          include: {
-            scenario: {
-              select: {
-                id: true,
-                title: true,
-                character: { select: { name: true, slug: true } },
+        userBillingRepository.findByUserId(userId).catch(() => null),
+        db.call
+          .findMany({
+            where: { userId },
+            take: input.callsLimit + 1,
+            orderBy: { createdAt: "desc" },
+            include: {
+              scenario: {
+                select: {
+                  id: true,
+                  title: true,
+                  character: { select: { name: true, slug: true } },
+                },
               },
             },
-          },
-        }),
-        db.call.count({
-          where: {
-            userId,
-            createdAt: { gte: todayStart, lte: todayEnd },
-          },
-        }),
-        db.scenario.findMany({
-          where: { creatorId: userId },
-          take: input.scenariosLimit + 1,
-          orderBy: { createdAt: "desc" },
-          include: {
-            character: {
-              select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
+          })
+          .catch(() => []),
+        db.call
+          .count({
+            where: {
+              userId,
+              createdAt: { gte: todayStart, lte: todayEnd },
             },
-            _count: { select: { reactions: true, comments: true } },
-          },
-        }),
+          })
+          .catch(() => 0),
+        db.scenario
+          .findMany({
+            where: { creatorId: userId },
+            take: input.scenariosLimit + 1,
+            orderBy: { createdAt: "desc" },
+            include: {
+              character: {
+                select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
+              },
+              _count: { select: { reactions: true, comments: true } },
+            },
+          })
+          .catch(() => []),
       ]);
 
       return {

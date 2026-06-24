@@ -70,8 +70,10 @@ export const authRouter = router({
         }
       }
 
+      const email = input.email.toLowerCase();
+
       const [existingEmail, existingUsername] = await Promise.all([
-        db.user.findUnique({ where: { email: input.email }, select: { id: true } }),
+        db.user.findUnique({ where: { email }, select: { id: true } }),
         db.user.findUnique({ where: { username: input.username }, select: { id: true } }),
       ]);
 
@@ -86,7 +88,7 @@ export const authRouter = router({
 
       const user = await db.user.create({
         data: {
-          email: input.email,
+          email,
           username: input.username,
           passwordHash,
           consentAcceptedAt: new Date(),

@@ -34,12 +34,45 @@ export default function HistoryPage() {
   const filteredItems = useMemo(() => {
     if (!search.trim()) return paginated.items;
     const q = search.toLowerCase();
+
+    // Carte de correspondance français -> anglais pour les statuts
+    const statusTranslation: Record<string, string> = {
+      "terminé": "COMPLETED",
+      "termine": "COMPLETED",
+      "complété": "COMPLETED",
+      "complete": "COMPLETED",
+      "échoué": "FAILED",
+      "echoue": "FAILED",
+      "échec": "FAILED",
+      "echec": "FAILED",
+      "en cours": "IN_PROGRESS",
+      "bloqué": "BLOCKED",
+      "bloque": "BLOCKED",
+      "remboursé": "REFUNDED",
+      "rembourse": "REFUNDED",
+      "en attente": "PENDING",
+      "annulé": "CANCELLED",
+      "annule": "CANCELLED",
+    };
+
+    const translateStatus = (status: string): string => {
+      const lower = status.toLowerCase();
+      // Si c'est déjà un statut anglais, le garder
+      if (["COMPLETED", "FAILED", "IN_PROGRESS", "BLOCKED", "REFUNDED", "PENDING", "CANCELLED"].includes(status)) return status;
+      // Sinon chercher la traduction
+      return statusTranslation[lower] ?? status;
+    };
+
     return paginated.items.filter((item) => {
       const call = item as CallItem;
+      const statusMatch = call.status
+        ? translateStatus(call.status).toLowerCase().includes(q) ||
+          statusTranslation[q] === call.status
+        : false;
       return (
         call.scenario?.title?.toLowerCase().includes(q) ||
         call.scenario?.character?.name?.toLowerCase().includes(q) ||
-        call.status?.toLowerCase().includes(q)
+        statusMatch
       );
     });
   }, [paginated.items, search]);

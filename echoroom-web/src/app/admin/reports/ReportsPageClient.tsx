@@ -4,10 +4,11 @@ import { useState } from "react"
 import { Badge } from "@/components/ui"
 import { Button } from "@/components/ui"
 import { Card, CardContent } from "@/components/ui"
-import { DataLoader } from "@/components/shared/DataLoader"
+import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader"
 import { api } from "@/lib/trpc"
 import { toast } from "@/components/ui"
 import { Flag, Check } from "lucide-react"
+import { usePaginatedQuery } from "@/hooks/usePaginatedQuery"
 
 const statusFilters = [
   { label: "Tous", value: undefined },
@@ -37,15 +38,15 @@ const targetTypeLabels: Record<string, string> = {
 export default function ReportsPageClient() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
 
-  const reportsQuery = api.admin.getAbuseReports.useQuery({
-    status: statusFilter,
-    limit: 50,
-  })
+  const paginated = usePaginatedQuery(
+    (args) => api.admin.getAbuseReports.useQuery({ ...args, status: statusFilter }),
+    { limit: 20 },
+  )
 
   const dismissMutation = api.admin.dismissAbuseReport.useMutation({
     onSuccess: () => {
       toast({ title: "Signalement ignoré", variant: "success" })
-      reportsQuery.refetch()
+      paginated.refetch()
     },
     onError: (err) => {
       toast({
@@ -80,9 +81,8 @@ export default function ReportsPageClient() {
         ))}
       </div>
 
-      <DataLoader
-        query={reportsQuery}
-        isEmpty={(data) => data.items.length === 0}
+      <PaginatedDataLoader
+        query={paginated}
         empty={
           <Card className="border-border/50">
             <CardContent className="py-16 text-center">
@@ -95,64 +95,77 @@ export default function ReportsPageClient() {
           </Card>
         }
       >
-        {(data) => (
-          <div className="space-y-3">
-            {data.items.map((report) => (
-              <Card key={report.id} className="border-border/50">
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {targetTypeLabels[report.targetType] ?? report.targetType}
-                        </Badge>
-                        <Badge
-                          variant={statusBadgeVariant[report.status] ?? "outline"}
-                          className="text-xs"
-                        >
-                          {statusLabels[report.status] ?? report.status}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          par {report.reporter?.username ?? "inconnu"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(report.createdAt).toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {report.reason.length > 100
-                          ? `${report.reason.slice(0, 100)}...`
-                          : report.reason}
-                      </p>
-                      {report.reviewedBy && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Reviewé par {report.reviewedBy.username}
+        {() => (
+          <>
+            <div className="space-y-3">
+              {paginated.items.map((report) => (
+                <Card key={report.id} className="border-border/50">
+                  <CardContent className="py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            {targetTypeLabels[report.targetType] ?? report.targetType}
+                          </Badge>
+                          <Badge
+                            variant={statusBadgeVariant[report.status] ?? "outline"}
+                            className="text-xs"
+                          >
+                            {statusLabels[report.status] ?? report.status}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            par {report.reporter?.username ?? "inconnu"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(report.createdAt).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {report.reason.length > 100
+                            ? `${report.reason.slice(0, 100)}...`
+                            : report.reason}
                         </p>
+                        {report.reviewedBy && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Reviewé par {report.reviewedBy.username}
+                          </p>
+                        )}
+                      </div>
+                      {report.status === "PENDING" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="shrink-0 gap-1.5 text-muted-foreground hover:text-green-500"
+                          onClick={() => dismissMutation.mutate({ reportId: report.id })}
+                          disabled={dismissMutation.isPending}
+                        >
+                          <Check className="w-4 h-4" />
+                          Ignorer
+                        </Button>
                       )}
                     </div>
-                    {report.status === "PENDING" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="shrink-0 gap-1.5 text-muted-foreground hover:text-green-500"
-                        onClick={() => dismissMutation.mutate({ reportId: report.id })}
-                        disabled={dismissMutation.isPending}
-                      >
-                        <Check className="w-4 h-4" />
-                        Ignorer
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {paginated.hasMore && (
+              <div className="flex justify-center mt-6">
+                <Button
+                  variant="outline"
+                  onClick={paginated.loadMore}
+                  disabled={paginated.isFetchingMore}
+                >
+                  {paginated.isFetchingMore ? "Chargement..." : "Voir plus"}
+                </Button>
+              </div>
+            )}
+          </>
         )}
-      </DataLoader>
+      </PaginatedDataLoader>
     </div>
   )
 }

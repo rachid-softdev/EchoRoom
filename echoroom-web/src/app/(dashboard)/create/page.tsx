@@ -60,6 +60,16 @@ export default function CreatePage() {
     });
   }
 
+  const handleCancel = () => {
+    // Clear any persisted draft data
+    try {
+      localStorage.removeItem("echoroom-create-draft");
+    } catch {
+      // localStorage may be unavailable
+    }
+    router.push("/dashboard");
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -67,11 +77,9 @@ export default function CreatePage() {
           <ArrowLeft className="w-4 h-4" />
           Dashboard
         </Link>
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm">
-            Annuler
-          </Button>
-        </Link>
+        <Button variant="ghost" size="sm" onClick={handleCancel}>
+          Annuler
+        </Button>
       </nav>
 
       <section className="flex-1 px-6 py-8 max-w-3xl mx-auto w-full">

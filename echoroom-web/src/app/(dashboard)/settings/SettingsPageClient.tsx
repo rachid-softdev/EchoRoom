@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui";
-import { User, Download, Trash2, Loader2, ShieldX } from "lucide-react";
+import { User, Download, Trash2, Loader2, ShieldX, Lock } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { api } from "@/lib/trpc";
 import { toast } from "@/components/ui";
+import { useApiToast } from "@/lib/trpc-error";
 import { signOut } from "next-auth/react";
 
 export default function SettingsPageClient() {
@@ -21,6 +22,10 @@ export default function SettingsPageClient() {
   const [consentDialogOpen, setConsentDialogOpen] = useState(false);
   const [consentConfirmation, setConsentConfirmation] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
+  const originalUsername = useRef("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const updateProfile = api.profile.updateProfile.useMutation({
     onSuccess: () => {
@@ -101,10 +106,20 @@ export default function SettingsPageClient() {
     },
   });
 
+  const changePasswordMutation = useApiToast(api.auth.changePassword.useMutation(), {
+    success: "Mot de passe modifié avec succès",
+    onSuccess: () => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+  });
+
   useEffect(() => {
     if (session?.user) {
       setUsername(session.user.username ?? "");
       setEmail(session.user.email ?? "");
+      originalUsername.current = session.user.username ?? "";
     }
   }, [session]);
 
@@ -132,8 +147,9 @@ export default function SettingsPageClient() {
               placeholder="Votre pseudo"
               value={username}
               onChange={(e) => {
-                setUsername(e.target.value);
-                setHasChanges(true);
+                const newValue = e.target.value;
+                setUsername(newValue);
+                setHasChanges(newValue !== originalUsername.current);
               }}
             />
           </div>
@@ -160,6 +176,75 @@ export default function SettingsPageClient() {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 "Enregistrer"
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Password change */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle>Mot de passe</CardTitle>
+              <CardDescription>Changez votre mot de passe</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="currentPassword" className="text-sm font-medium">
+              Mot de passe actuel
+            </label>
+            <Input
+              id="currentPassword"
+              type="password"
+              placeholder="••••••••"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="newPassword" className="text-sm font-medium">
+              Nouveau mot de passe
+            </label>
+            <Input
+              id="newPassword"
+              type="password"
+              placeholder="8 caractères minimum"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="text-sm font-medium">
+              Confirmer le nouveau mot de passe
+            </label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Retapez le nouveau mot de passe"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={() => changePasswordMutation.mutate({
+                currentPassword,
+                newPassword,
+              })}
+              disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 8 || changePasswordMutation.isPending}
+              className="gap-2"
+            >
+              {changePasswordMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Changer le mot de passe"
               )}
             </Button>
           </div>
