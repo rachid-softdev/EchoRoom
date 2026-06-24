@@ -25,7 +25,7 @@ test.describe("Register page", () => {
     await expect(usernameInput).toHaveAttribute("required", "");
     await expect(usernameInput).toHaveAttribute("minlength", "3");
 
-    const passwordInput = page.getByLabel("Mot de passe");
+    const passwordInput = page.locator("#password");
     await expect(passwordInput).toBeVisible();
     await expect(passwordInput).toHaveAttribute("type", "password");
     await expect(passwordInput).toHaveAttribute("required", "");

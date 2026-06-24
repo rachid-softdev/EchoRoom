@@ -11,3 +11,4 @@ process.env['REDIS_URL'] = process.env['REDIS_URL'] || "https://localhost:6379";
 process.env['R2_PUBLIC_URL'] = process.env['R2_PUBLIC_URL'] || "https://cdn.echoroom.app";
 process.env['PHONE_ENCRYPTION_KEY'] = process.env['PHONE_ENCRYPTION_KEY'] || "test_key_for_ci_32_chars_minimum_!!!!!";
 process.env['TWILIO_TOKEN_SECRET'] = process.env['TWILIO_TOKEN_SECRET'] || "test_twilio_token_secret_here";
+process.env['NEXTAUTH_SECRET'] = process.env['NEXTAUTH_SECRET'] || "test_secret_for_ci_32_chars_minimum_!!!!!!";
