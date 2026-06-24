@@ -1,7 +1,8 @@
 # EchoRoom — Scénarios de Test E2E
 
 > **Statut :** Plan de couverture E2E — chaque scénario listé doit être codé dans un fichier `.spec.ts`.
-> ✅ = déjà codé, ⬜ = à coder
+> ✅ = déjà codé, ⬜ = à coder  
+> **Mise à jour : 24 juin 2026 — +16 nouveaux fichiers, ~280 nouveaux scénarios identifiés**
 
 ---
 
@@ -148,23 +149,46 @@
 
 ## 5. Scenario Detail (`/scenario/[id]`)
 
-### ✅ Existant (`scenario.spec.ts`)
+### ✅ Existant (`scenario.spec.ts` + `scenario-detail.spec.ts`)
 - [x] 404 pour ID inexistant
 - [x] 404 pour segment ID vide
 - [x] Section commentaires visible
 - [x] Reaction bar visible
 - [x] Titre du scénario visible
 - [x] Lien retour communauté
+- [x] Route gérée pour scénario valide (status < 400)
+- [x] Skeleton loading state (animate-pulse)
+- [x] CTA section visible (Démarrer l'appel / Connectez-vous)
+- [x] Section "Scénarios similaires" ou section associée visible
 
 ### ⬜ À coder
 - [ ] Détails du scénario (description, opening message, character)
+- [ ] Loading state avec skeleton (h6, h10, h4, h4, 3x h20)
+- [ ] Error state avec AlertTriangle + "Réessayer"
+- [ ] Null/not-found state avec lien communauté
+- [ ] Avatar personnage avec image/fallback initiales
+- [ ] Stats row (likes, plays, comments) avec formatNumber
 - [ ] Bouton d'appel visible (si auth + crédits suffisants)
 - [ ] Redirection vers login si pas auth et clic sur appel
 - [ ] Boutons de partage (Discord, Twitter, TikTok, Copy link)
+- [ ] ShareButtons — trackShare mutation
+- [ ] ReportButton — dialog avec textarea raison
+- [ ] ReportButton — min 10 char validation
+- [ ] ReportButton — submit → reportAbuse mutation
 - [ ] Section clips audio
 - [ ] Likes — toggle reaction
 - [ ] Commentaires — posting (si auth)
+- [ ] Commentaires — non auth: "Connectez-vous" link
+- [ ] Commentaires — Enter key soumet
 - [ ] Commentaires — liste paginée
+- [ ] Commentaires — admin moderate button
+- [ ] ReactionBar — emoji list depuis API
+- [ ] ReactionBar — click emoji toggle like
+- [ ] ReactionBar — "+" button → EmojiPicker (8 emojis)
+- [ ] Related scenarios (max 3 cards)
+- [ ] ClipCreator — loading skeleton
+- [ ] ClipCreator — "Aucun appel" empty state
+- [ ] ClipCreator — selecteur appel, validation temps
 - [ ] Signalement d'abus
 - [ ] Meta tags OG dynamiques
 - [ ] Badge du créateur visible
@@ -178,77 +202,137 @@
 
 ## 6. Dashboard (`/dashboard`)
 
-### ⬜ À coder
-- [ ] Redirection vers login si non auth
-- [ ] Solde de crédits affiché
-- [ ] Liste des appels récents
-- [ ] Nombre d'appels aujourd'hui
-- [ ] Liste des scénarios récents
-- [ ] Lien vers création de scénario
-- [ ] Lien vers historique
-- [ ] Lien vers library
-- [ ] Données chargées depuis dashboard.getData (agrégé)
-- [ ] KPI visible (appels aujourd'hui, crédits restants, scénarios créés)
-- [ ] Lien rapide vers la création de scénario
-- [ ] Skeleton de chargement pendant le fetch
-- [ ] Erreur API → message d'erreur sans bloquer la page
+### ✅ Existant (`dashboard.spec.ts` + `dashboard-guard.spec.ts` + `dashboard-content.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route `/dashboard` gérée (status < 400, pas 404)
+- [x] Routes `/create`, `/library`, `/history`, `/settings`, `/billing`, `/community`, `/leaderboard` gérées
+- [x] Route `/profile/[username]` gérée (status < 400, pas 404)
+- [x] Statut HTTP 307/302 avec header Location vers `/login`
+- [x] Solde de crédits affiché
+- [x] Liste des appels récents
+- [x] Nombre d'appels aujourd'hui
+- [x] Liste des scénarios récents
+- [x] Lien vers création de scénario
+- [x] Lien vers historique
+- [x] Lien vers library
+- [x] KPI visible (appels aujourd'hui, crédits restants, scénarios créés)
+- [x] Skeleton de chargement pendant le fetch
+- [x] Erreur API → message d'erreur sans bloquer la page
+
+### ⬜ À coder (nouveaux scénarios)
+- [ ] FeaturedScenario s'affiche (loading → contenu ou null)
+- [ ] Message motivationnel "En pleine forme !" si >5 appels aujourd'hui
+- [ ] Message "Bien joué !" si >0 appels aujourd'hui
+- [ ] Lien "Créer mon premier →" si 0 scénario créé
+- [ ] Surprise Me navigue vers `/explore?sort=TRENDING`
+- [ ] Actions rapides (4 cards) visibles et cliquables
+- [ ] BadgeGrid se charge et affiche les badges
+- [ ] BadgeGrid état vide "Aucun badge pour le moment"
+- [ ] BadgeGrid état erreur
 
 ---
 
 ## 7. Create Scenario (`/create`)
 
+### ✅ Existant (`create.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Grille de sélection de personnage visible
+- [x] Tous les champs visibles (title, description, opening, instructions IA)
+- [x] Attributs des champs (required, minlength, maxlength)
+- [x] Toggle visibilité PUBLIC/PRIVÉ avec feedback visuel
+- [x] Lien retour (flèche) vers `/dashboard`
+- [x] Bouton Annuler vers `/dashboard`
+- [x] Compteur de caractères instructions IA ({n}/3000)
+
 ### ⬜ À coder
-- [ ] Redirection vers login si non auth
-- [ ] Formulaire complet visible (character, title, description, opening, instructions, visibility)
-- [ ] Sélection de personnage (dropdown/list)
+- [ ] Création réussie → redirection vers le scénario
+- [ ] Erreur modération (contenu bloqué)
+- [ ] Génération de script IA (generateScript) — loading spinner
+- [ ] Génération de script IA — succès → auto-remplissage
+- [ ] Génération de script IA — erreur → toast erreur
+- [ ] Bouton génération désactivé si aucun personnage sélectionné
+- [ ] Bouton submit désactivé si aucun personnage sélectionné
+- [ ] Bouton submit spinner pendant mutation
 - [ ] Validation title (min 3, max 80)
 - [ ] Validation description (max 300)
 - [ ] Validation openingMessage (max 300)
-- [ ] Validation aiInstructions (max 3000)
-- [ ] Création réussie → redirection vers le scénario
-- [ ] Erreur modération (contenu bloqué)
-- [ ] Génération de script IA (generateScript)
 - [ ] Rate limiting (10 créations/heure)
 - [ ] Spam detection
 - [ ] Double soumission évitée (bouton désactivé après clic)
 - [ ] Brouillon persisté localement si navigation accidentelle
+- [ ] Character list loading skeleton (4 skeletons)
+- [ ] Character list empty state (aucun personnage disponible)
 
 ---
 
 ## 8. Library (`/library`)
 
+### ✅ Existant (`library.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route gérée (status < 400, pas 404)
+- [x] Titre "Bibliothèque" visible
+- [x] Sous-titre "Vos scénarios sauvegardés et vos créations" visible
+- [x] Bouton "Nouveau" avec href="/create"
+- [x] Champ recherche avec placeholder
+- [x] Recherche accepte du texte
+- [x] Bouton effacer recherche (X) apparaît après avoir tapé
+- [x] Bouton effacer réinitialise la recherche
+
 ### ⬜ À coder
-- [ ] Redirection vers login si non auth
 - [ ] Liste des scénarios de l'utilisateur
-- [ ] Pagination (cursor-based)
-- [ ] État vide (aucun scénario)
+- [ ] Pagination (cursor-based) — "Voir plus"
+- [ ] "Voir plus" spinner pendant chargement
+- [ ] État vide avec deux CTAs (Créer / Explorer)
+- [ ] Recherche filtrée (côté client)
+- [ ] État "Aucun résultat" pour recherche sans résultat
+- [ ] ScenarioCard affiche badge, titre, créateur, compteurs
 - [ ] Modification d'un scénario
 - [ ] Suppression d'un scénario
 - [ ] Changement de visibilité
-- [ ] Tri par date / popularité (si implémenté)
 
 ---
 
 ## 9. History (`/history`)
 
+### ✅ Existant (`history.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route gérée (status < 400, pas 404)
+- [x] Titre "Historique des appels" visible
+- [x] Sous-titre visible
+- [x] Champ recherche avec placeholder
+- [x] Recherche accepte du texte
+- [x] Bouton effacer recherche (X) apparaît après avoir tapé
+
 ### ⬜ À coder
-- [ ] Redirection vers login si non auth
-- [ ] Liste des appels récents
-- [ ] Pagination
-- [ ] État vide
-- [ ] Lien vers replay d'un appel
-- [ ] Statut de l'appel visible
-- [ ] Durée de l'appel affichée
+- [ ] Liste des appels récents avec statuts, durée, date
+- [ ] Pagination — "Voir plus"
+- [ ] "Voir plus" spinner pendant chargement
+- [ ] État vide avec CTA "Créer un appel"
+- [ ] Lien replay visible seulement pour COMPLETED
+- [ ] Statut affiché en français (Terminé, Échoué)
+- [ ] Durée formatée
+- [ ] Recherche filtrée côté client
+- [ ] État "Aucun résultat" pour recherche sans résultat
 
 ---
 
 ## 10. Profile (`/profile/[username]`)
 
+### ✅ Existant (`profile.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route `/profile/[username]` gérée (status < 400)
+- [x] Username inexistant → 404 ou redirect géré
+- [x] Pattern de route existe (pas 404 framework)
+
 ### ⬜ À coder
-- [ ] Profil public d'un utilisateur
+- [ ] Profil public d'un utilisateur (header, avatar, stats)
+- [ ] Cartes stats (scénarios, appels)
+- [ ] Fil d'activité (mix scénarios + appels)
+- [ ] Activity item → lien vers détail scénario/call
 - [ ] Badges visibles (si le user a des badges)
-- [ ] Liste des scénarios publics du créateur
-- [ ] 404 pour username inexistant
+- [ ] État vide "Pas encore d'activité"
+- [ ] Limite d'activité indiquée quand > 10 items
+- [ ] 404 pour username inexistant (vérification navigateur)
 - [ ] Modification du profil (si propriétaire)
 - [ ] Changement de username
 
@@ -256,19 +340,34 @@
 
 ## 11. Settings (`/settings`)
 
-### ✅ Partiellement existant (`consent.spec.ts`)
+### ✅ Partiellement existant (`consent.spec.ts` + `gdpr-settings.spec.ts`)
 - [x] Redirection vers login si non auth
-- [x] Section danger zone visible
+- [x] Route `/settings` gérée (status < 400)
+- [x] Section Profil (heading, username input, email disabled)
+- [x] Bouton "Enregistrer" visible (quand authentifié)
+- [x] Section Apparence visible
+- [x] Section Zone de danger visible
+- [x] Export données visible ("Exporter mes données")
+- [x] Suppression compte visible ("Supprimer mon compte")
+- [x] Dialogue de suppression avec input "SUPPRIMER"
+- [x] Bouton confirm désactivé initialement
+- [x] Typage "SUPPRIMER" active le bouton
+- [x] Texte erroné garde le bouton désactivé (NON, RETI, retirer)
 - [x] Dialogue de consent visible
 - [x] Validation confirmation "RETIRER"
 - [x] Fermeture dialogue (Escape)
 
 ### ⬜ À coder
-- [ ] Modification du profil (nom d'utilisateur)
+- [ ] Modification du profil (username) — mutation + toast succès/erreur
 - [ ] Changement de mot de passe
 - [ ] Validation ancien mot de passe
-- [ ] Export GDPR (profile.exportData)
-- [ ] Suppression de compte (avec confirmation "SUPPRIMER")
+- [ ] Export GDPR (profile.exportData) — POST /api/user/export, téléchargement JSON
+- [ ] Export — état chargement "Export..."
+- [ ] Export — erreur → toast erreur
+- [ ] Suppression de compte — succès → toast + signOut + redirect /
+- [ ] Suppression de compte — erreur → toast erreur
+- [ ] Bouton "Enregistrer" désactivé quand pas de changements
+- [ ] Spinner sur bouton Enregistrer pendant mutation
 - [ ] Retrait de consentement via RETIRER → logout + redirect home
 - [ ] Réacceptation du consentement (reconsent)
 - [ ] Affichage du statut de consentement
@@ -278,35 +377,78 @@
 
 ## 12. Community (`/community`)
 
+### ✅ Existant (`community.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route gérée (status < 400, pas 404)
+- [x] Titre "Communauté" visible
+- [x] Sous-titre visible
+- [x] Feed chargé (cartes scénario OU "Aucun post pour le moment")
+- [x] Input commentaire avec placeholder visible
+- [x] Bouton envoi commentaire visible
+
 ### ⬜ À coder
-- [ ] Redirection vers login si non auth
-- [ ] Fil d'actualité communautaire
-- [ ] Interactions (likes, commentaires)
-- [ ] Publication de commentaire
-- [ ] Pagination
+- [ ] Fil d'actualité communautaire (feed)
+- [ ] ReactionBar avec émoticônes chargées
+- [ ] Commentaire — Enter key soumet
+- [ ] Commentaire — envoi réussi → input vidé + toast
+- [ ] Commentaire — erreur → input préservé + toast erreur
+- [ ] Bouton envoi désactivé quand input vide
+- [ ] Compteur commentaires lié au détail scénario (#comments)
+- [ ] Pagination du feed
 - [ ] Signalement d'abus depuis un post
+- [ ] DataLoader loading skeleton
+- [ ] DataLoader état erreur
 - [ ] Réactions en temps réel (optimistic)
 
 ---
 
 ## 13. Leaderboard (`/leaderboard`)
 
+### ✅ Existant (`leaderboard.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route gérée (status < 400, pas 404)
+- [x] Titre "Classement" visible
+- [x] Sous-titre visible
+- [x] Tabs "Scénarios" et "Créateurs" visibles
+- [x] Filtres période "Tout", "Cette semaine", "Ce mois" visibles
+- [x] Tab "Scénarios" actif par défaut
+
 ### ⬜ À coder
 - [ ] Top scénarios (période : ALL, WEEK, MONTH)
 - [ ] Top créateurs (période : ALL, WEEK, MONTH)
-- [ ] Changement de tri (LIKES, PLAYS / LIKES, CALLS)
-- [ ] Affichage des badges
+- [ ] Changement d'onglet → requête correspondante
+- [ ] Changement période → refetch données
+- [ ] LeaderboardTable loading skeleton (5 lignes)
+- [ ] LeaderboardTable état vide
+- [ ] Top 3 items highlightés (or, argent, bronze)
+- [ ] Icônes trophée pour top 3
+- [ ] Avatar avec initiales fallback
+- [ ] "par {username}" pour scénarios
+- [ ] "{count} scénario(s)" pour créateurs
 
 ---
 
 ## 14. Billing (`/billing`)
 
+### ✅ Existant (`billing.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route gérée (status < 400, pas 404)
+- [x] Titre "Crédits & Facturation" visible
+- [x] Section "Acheter des crédits" visible
+- [x] Packs de crédits visibles (10, 50, 200, 500)
+- [x] Prix des packs visibles
+- [x] Badge "Populaire" sur le pack 50 crédits
+- [x] Texte historique vide "Aucun achat pour le moment"
+
 ### ⬜ À coder
-- [ ] Redirection vers login si non auth
-- [ ] Solde de crédits affiché
-- [ ] Sélection de pack de crédits
-- [ ] Lien vers Stripe Checkout (vérifier redirection)
-- [ ] Historique des achats
+- [ ] Solde de crédits affiché (Badge)
+- [ ] Bouton "Acheter" désactivé pendant mutation checkout
+- [ ] Checkout mutation succès → window.location.href redirigé
+- [ ] Historique des achats — scroll-to-packs button
+- [ ] Crédits loading state (skeleton)
+- [ ] Stripe webhook — checkout.session.completed
+- [ ] Stripe webhook — signature invalide → 403
+- [ ] Stripe webhook — body > 100KB → 413
 
 ---
 
@@ -322,87 +464,139 @@
 
 ## 16. Call Replay (`/call/[callId]`)
 
+### ✅ Existant (`call-replay.spec.ts` + `call-replay-content.spec.ts`)
+- [x] Redirection vers login si non auth
+- [x] Route gérée (status < 400, pas 404 pour tout callId)
+- [x] Route gérée pour UUID format call ID
+- [x] 404 pour callId inexistant
+- [x] Page heading visible quand accessible
+
 ### ⬜ À coder
-- [ ] Redirection vers login si non auth
-- [ ] 404 pour callId inexistant
 - [ ] FORBIDDEN si pas le propriétaire
-- [ ] Lecteur audio visible (si enregistrement disponible)
-- [ ] Transcription visible
+- [ ] ReplayHeader affiche métadonnées (scenario, personnage, durée, statut)
+- [ ] AudioPlayer — pas d'enregistrement → "Aucun enregistrement disponible"
+- [ ] AudioPlayer — loading → spinner
+- [ ] AudioPlayer — erreur → "Chargement impossible"
+- [ ] AudioPlayer — play/pause toggle
+- [ ] AudioPlayer — seek slider
+- [ ] AudioPlayer — contrôles vitesse (0.5x, 0.75x, 1x, 1.5x, 2x)
+- [ ] AudioPlayer — bouton download
+- [ ] AudioPlayer — affichage temps (current / duration)
+- [ ] TranscriptView — loading skeleton
+- [ ] TranscriptView — null → "Transcript en cours de traitement..."
+- [ ] TranscriptView — empty → "Aucune transcription disponible"
+- [ ] TranscriptView — bulles chat (IA gauche, User droite)
 - [ ] Création de clip depuis le replay
 - [ ] Liste des clips d'un appel avec pagination
 - [ ] Suppression d'un clip (si propriétaire)
 - [ ] Partage d'un clip
-- [ ] Boutons de partage
 
 ---
 
 ## 17. Admin Pages
 
-### `/admin/moderation`
+### ✅ Existant (`admin-guard.spec.ts` + `admin-pages.spec.ts`)
+- [x] Redirection `/admin` → login si non auth
+- [x] Redirection `/admin/*` → login si non auth
+- [x] Toutes les routes admin gérées (status < 400, pas 404)
+- [x] Route `/admin/dlq` retourne 404 (inexistante)
+- [x] Route inexistante `/admin/xyz` → 404
+- [x] Sidebar de navigation admin visible (quand authentifié)
 
+### `/admin/moderation`
 #### ⬜ À coder
-- [ ] Redirection vers login si non auth
 - [ ] FORBIDDEN pour rôle USER
+- [ ] Tabs (Scénarios / Commentaires)
 - [ ] File d'attente de modération
 - [ ] Approbation d'un scénario
 - [ ] Rejet d'un scénario
-- [ ] File d'attente des commentaires
+- [ ] Boutons désactivés pendant mutation
+- [ ] File d'attente vide "Tout est modéré"
+- [ ] Filtre statut commentaires (PENDING / REJECTED)
 - [ ] Approbation/Rejet de commentaire
-- [ ] Pagination
 
 ### `/admin/users`
 #### ⬜ À coder
 - [ ] Liste des utilisateurs
-- [ ] Recherche par username/email
+- [ ] Recherche par username/email (debounced 300ms)
+- [ ] Bouton effacer recherche (X)
 - [ ] Pagination
 - [ ] Détail utilisateur (admin.getUserDetail)
+- [ ] Carte infos (ID, crédits, appels, consentement)
+- [ ] Carte statistiques (scénarios, commentaires, réactions)
+- [ ] Utilisateur supprimé affiché barré
+- [ ] Badges rôles (Admin, User, Moderator)
 - [ ] Suppression utilisateur (admin.deleteUser)
+- [ ] État vide / recherche sans résultat
 
 ### `/admin/reports`
 #### ⬜ À coder
-- [ ] Liste des signalements d'abus
-- [ ] Filtre par statut
-- [ ] Dismiss d'un rapport
+- [ ] Filtre tabs (Tous, En attente, Traité, Ignoré)
+- [ ] Cartes signalement avec type, statut, reporter, raison
+- [ ] Action Dismiss pour PENDING
+- [ ] Dismiss désactivé pendant mutation
+- [ ] Indicateur "revu par"
+- [ ] Raison tronquée à 100 caractères
+- [ ] État vide par filtre
 
 ### `/admin/blocked-numbers`
 #### ⬜ À coder
-- [ ] Liste des numéros bloqués
-- [ ] Ajout d'un numéro bloqué
-- [ ] Suppression d'un numéro bloqué
+- [ ] Formulaire (téléphone + raison)
+- [ ] Submit bloqué si vide ou pending
+- [ ] Mutation → reset formulaire + refetch liste
+- [ ] Bouton débloquer
+- [ ] Liste (téléphone, raison, bloqueur, date)
+- [ ] État vide "Aucun numéro bloqué"
 
 ### `/admin/audit`
 #### ⬜ À coder
-- [ ] Logs d'audit paginés
-- [ ] Filtres (action, entityType, adminId, date range)
+- [ ] Filtre action (dropdown)
+- [ ] Filtre entityType (dropdown)
+- [ ] Filtre date range (from/to)
+- [ ] Bouton reset filtres
+- [ ] Tableau (Date, Admin, Action, Type, ID)
+- [ ] Pagination curseur "Charger plus"
+- [ ] Load more désactivé pendant fetch
+- [ ] État vide pour filtres
 
 ### `/admin/analytics`
 #### ⬜ À coder
-- [ ] Page analytics admin
-- [ ] Métriques clés visibles
-
-### `/admin/dlq`
-#### ⬜ À coder
-- [ ] File d'attente des webhooks échoués (DLQ)
-- [ ] Détail d'un élément DLQ (payload, headers, erreur)
-- [ ] Retry d'un webhook depuis la DLQ
-- [ ] Pagination de la DLQ
+- [ ] Grille stats (4 cards)
+- [ ] Carte roadmap
+- [ ] Liens vers autres pages admin
 
 ---
 
 ## 18. Legal Pages
 
+### ✅ Existant (`legal.spec.ts`)
+- [x] `/legal` — page légale avec heading "Mentions légales"
+- [x] `/legal` — sections Éditeur, Hébergement, Contact
+- [x] `/privacy` — politique de confidentialité
+- [x] `/privacy` — sections collecte données, droits, cookies
+- [x] `/terms` — conditions d'utilisation
+- [x] `/terms` — sections description service, crédits, PI
+- [x] `/help` — page d'aide avec heading "Aide & FAQ"
+- [x] `/help` — FAQ details/summary présents et cliquables
+- [x] Footer liens visibles (Aide, Conditions, Confidentialité)
+- [x] Navigation footer → `/help`, `/terms`, `/privacy`
+- [x] Lien "Retour à l'accueil" visible
+- [x] Branding EchoRoom visible
+
 ### ⬜ À coder
-- [ ] `/legal` — page légale
-- [ ] `/privacy` — politique de confidentialité
-- [ ] `/terms` — conditions d'utilisation
-- [ ] `/help` — page d'aide
-- [ ] Liens depuis le footer fonctionnels
+- [ ] /help — sections FAQ déroulantes
+- [ ] /help — recherche dans l'aide
+- [ ] /help — formulaire de contact
 
 ---
 
 ## 19. API & Webhooks
 
-### ✅ Existant (`rate-limiting.spec.ts` + `webhook-protection.spec.ts`)
+### ✅ Existant (`rate-limiting.spec.ts` + `webhook-protection.spec.ts` + `api-health.spec.ts`)
+- [x] Healthcheck `/api/health` — retour 200
+- [x] Healthcheck — JSON body valide (status, timestamp, uptime)
+- [x] Session API `/api/auth/session` — null si non auth
+- [x] Export API `/api/user/export` — 401 si non auth
 - [x] Rate limiting — retour 429 après dépassement (webhook status)
 - [x] Rate limiting — header Retry-After présent
 - [x] Requête unique non limitée
@@ -421,7 +615,6 @@
 - [ ] Stripe webhook — signature validation
 - [ ] Stripe webhook — idempotence (doublon)
 - [ ] Stripe webhook — body size > 100KB → 413
-- [ ] Healthcheck endpoint `/api/health` — retour 200
 - [ ] Healthcheck — DB connectée
 - [ ] Healthcheck — Redis connecté
 - [ ] CSRF — requête POST sans origin → 403 (en production)
@@ -820,6 +1013,164 @@
 
 ---
 
+## 52. Theme Toggle
+
+### ✅ Existant (`theme.spec.ts`)
+- [x] ThemeToggle icône visible sur la landing page
+- [x] Pas d'erreurs console liées au thème
+
+### ⬜ À coder
+- [ ] Click toggle dark/light theme
+- [ ] Icône change (soleil↔lune) selon le thème
+- [ ] Thème persisté après navigation
+- [ ] Thème persisté après rechargement
+
+---
+
+## 53. Error Boundary
+
+### ✅ Existant (`error-boundary.spec.ts`)
+- [x] Page 404 — icône Frown visible
+- [x] Page 404 — message "n'existe pas ou a été déplacée"
+- [x] Page erreur — heading "Une erreur est survenue"
+- [x] Page erreur — bouton "Réessayer"
+- [x] Page erreur — bouton Copier digest
+- [x] Skip link "Aller au contenu principal" présent
+- [x] Structure HTML valide (lang="fr", title, main)
+
+### ⬜ À coder
+- [ ] Error boundary — crash composant n'affecte pas le reste
+- [ ] Réseau hors ligne — message approprié
+
+---
+
+## 54. Shared Components — États non couverts
+
+### DataLoader
+- [ ] Loading skeleton (customizable)
+- [ ] Error state avec AlertTriangle + "Réessayer"
+- [ ] Empty state custom
+- [ ] Callback isEmpty custom
+
+### PaginatedDataLoader
+- [ ] Loading spinner (default)
+- [ ] Error state avec "Réessayer"
+- [ ] Empty state custom
+
+### PaginatedGrid
+- [ ] "Voir plus" visible quand hasMore
+- [ ] "Voir plus" caché quand hasMore=false
+- [ ] Spinner quand isLoadingMore
+
+### ScenarioCard
+- [ ] Badge catégorie, titre, créateur, compteurs
+- [ ] Share button (clipboard + toast)
+- [ ] Card liée au détail scénario
+
+### ConfirmDialog
+- [ ] Cancel ferme le dialog
+- [ ] Confirm trigger onConfirm
+- [ ] Loading spinner désactive boutons
+- [ ] ConfirmDisabled empêche confirm
+- [ ] Variante destructive change couleur
+
+### AudioPlayer
+- [ ] Play/pause toggle
+- [ ] Seek slider
+- [ ] Speed controls (0.5x, 0.75x, 1x, 1.5x, 2x)
+- [ ] Download button
+- [ ] Time display (mm:ss)
+- [ ] No recording → empty state
+- [ ] Loading spinner
+- [ ] Error state AlertTriangle
+
+### TranscriptView
+- [ ] Loading skeleton (5 messages alternés)
+- [ ] null → "Transcript en cours de traitement..."
+- [ ] Empty → "Aucune transcription disponible"
+- [ ] Bulles chat (IA gauche, User droite)
+- [ ] Timestamps par chunk
+
+### BadgeDisplay / BadgeGrid
+- [ ] Loading skeleton (3 cards)
+- [ ] Error state "Erreur chargement badges"
+- [ ] Empty state "Aucun badge pour le moment"
+- [ ] Badge card (icône, nom, description, date)
+
+### ConsentBanner
+- [ ] Caché quand consent actif
+- [ ] Visible quand consent retiré
+- [ ] "Ré-accepter" → reconsent mutation
+- [ ] Mutation → page reload
+
+### CallDisclaimerDialog
+- [ ] Dialog avec infos (4 bullet points)
+- [ ] Checkbox requis pour activer bouton
+- [ ] "Démarrer l'appel" → onAccept + close
+- [ ] localStorage persistence
+- [ ] SSR-safe (null until mounted)
+
+### PasswordStrengthMeter
+- [ ] Caché quand password vide
+- [ ] 5 barres segmentées colorées
+- [ ] Labels force (Très faible à Très fort)
+- [ ] Checks individuels (✓/✗)
+- [ ] Recalcul au changement
+
+### Toast System
+- [ ] Toast apparaît en bas à droite
+- [ ] Auto-dismiss après 4s
+- [ ] Close button dismiss immédiat
+- [ ] Toasts multiples empilés
+- [ ] Variante destructive/success
+
+### DashboardShell Navigation
+- [ ] Nav links avec active state
+- [ ] CreditDisplay visible dans nav
+- [ ] ThemeToggle visible dans nav
+- [ ] Settings link (gear icon)
+- [ ] Mobile: icons only
+- [ ] Sticky nav + backdrop blur
+
+### CreditDisplay
+- [ ] Skeleton quand credits undefined
+- [ ] Badge avec nombre de crédits
+- [ ] Tooltip au hover
+
+### EmptyState
+- [ ] Icône, titre, description
+- [ ] Action slot optionnel
+
+---
+
+## 55. Cross-Cutting Responsive
+
+### ⬜ À coder
+- [ ] Toutes les pages dashboard sur 375px
+- [ ] Admin sidebar collapses on mobile
+- [ ] Dashboard nav scroll horizontal mobile
+- [ ] Pas de débordement horizontal
+- [ ] Formulaires utilisables sur mobile
+
+---
+
+## 56. Cross-Cutting Accessibilité
+
+### ⬜ À coder
+- [ ] Skip link focusable + fonctionnel
+- [ ] Tab navigation sur nav links
+- [ ] Focus trap dans dialogues
+- [ ] Focus restauré après fermeture dialog
+- [ ] Escape ferme dialogues
+- [ ] aria-current="page" sur nav active
+- [ ] aria-live="polite" sur contenu dynamique
+- [ ] aria-label sur boutons icône-only
+- [ ] form inputs avec labels associés
+- [ ] Contrast ratio suffisant
+- [ ] Images avec attribut alt
+
+---
+
 ## Résumé
 
 | Section | ✅ Existants | ⬜ Planifiés | Total |
@@ -831,20 +1182,20 @@
 | Auth Reset Password | 0 | 7 | 7 |
 | Navigation | 10 | 3 | 13 |
 | Explore | 10 | 10 | 20 |
-| Scenario Detail | 6 | 16 | 22 |
-| Dashboard | 0 | 13 | 13 |
-| Create Scenario | 0 | 12 | 12 |
-| Library | 0 | 7 | 7 |
-| History | 0 | 6 | 6 |
-| Profile | 0 | 5 | 5 |
-| Settings | 5 | 9 | 14 |
-| Community | 0 | 7 | 7 |
-| Leaderboard | 0 | 4 | 4 |
-| Billing | 0 | 5 | 5 |
+| Scenario Detail | 10 | 24 | 34 |
+| Dashboard | 15 | 9 | 24 |
+| Create Scenario | 8 | 16 | 24 |
+| Library | 9 | 10 | 19 |
+| History | 7 | 9 | 16 |
+| Profile | 4 | 10 | 14 |
+| Settings | 17 | 14 | 31 |
+| Community | 7 | 12 | 19 |
+| Leaderboard | 7 | 11 | 18 |
+| Billing | 8 | 7 | 15 |
 | Pricing | 0 | 4 | 4 |
-| Call Replay | 0 | 10 | 10 |
-| Admin | 0 | 25 | 25 |
-| Legal | 0 | 5 | 5 |
+| Call Replay | 5 | 18 | 23 |
+| Admin | 6 | 42 | 48 |
+| Legal | 12 | 3 | 15 |
 | Help Page | 0 | 6 | 6 |
 | Characters | 0 | 5 | 5 |
 | Audio System | 0 | 6 | 6 |
@@ -864,11 +1215,11 @@
 | Concurrent Operations | 0 | 5 | 5 |
 | Optimistic Updates & UI Rollback | 0 | 6 | 6 |
 | Form Draft Persistence | 0 | 5 | 5 |
-| API/Webhooks | 13 | 7 | 20 |
+| API/Webhooks | 18 | 7 | 25 |
 | Sécurité | 1 | 4 | 5 |
 | Responsive | 0 | 5 | 5 |
 | Accessibilité | 0 | 5 | 5 |
-| GDPR & Data Privacy | 0 | 6 | 6 |
+| GDPR & Data Privacy | 6 | 8 | 14 |
 | Badges & Gamification | 0 | 5 | 5 |
 | Audio Clips | 0 | 5 | 5 |
 | Cron Jobs | 0 | 5 | 5 |
@@ -876,6 +1227,9 @@
 | Stripe Checkout | 0 | 10 | 10 |
 | Async AI Moderation | 0 | 4 | 4 |
 | Spam Detection | 0 | 5 | 5 |
-| Responsive (compl.) | 0 | 15 | 15 |
-| Accessibilité (compl.) | 0 | 10 | 10 |
-| **Total** | **66** | **383** | **449** |
+| Theme Toggle | 2 | 4 | 6 |
+| Error Boundary | 7 | 2 | 9 |
+| Shared Components (DataLoader, AudioPlayer, etc.) | 0 | 75 | 75 |
+| Cross-Cutting Responsive | 0 | 5 | 5 |
+| Cross-Cutting Accessibilité | 0 | 11 | 11 |
+| **Total** | **190** | **534** | **724** |

@@ -21,7 +21,7 @@ test.describe("Login page", () => {
 
   test("should display the password input field", async ({ page }) => {
     await page.goto("/login");
-    const passwordInput = page.getByLabel("Mot de passe");
+    const passwordInput = page.locator("#password");
     await expect(passwordInput).toBeVisible();
     await expect(passwordInput).toHaveAttribute("type", "password");
     await expect(passwordInput).toHaveAttribute("required", "");
@@ -79,7 +79,7 @@ test.describe("Login page", () => {
 
     // Fill in fields with invalid credentials
     await page.getByLabel("Email").fill("invalid@example.com");
-    await page.getByLabel("Mot de passe").fill("wrongpassword");
+    await page.locator("#password").fill("wrongpassword");
     await page.getByRole("button", { name: "Se connecter" }).click();
 
     // The sign-in attempt will fail and show an error message

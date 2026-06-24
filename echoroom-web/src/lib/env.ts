@@ -115,6 +115,7 @@ function loadEnv(): EnvType {
     if (key === "NEXTAUTH_SECRET" && !envValue) {
       const generated = randomBytes(32).toString("hex");
       console.warn("⚠️  NEXTAUTH_SECRET not set — generating random key for this session");
+      process.env[key] = generated;  // Also set on process.env so NextAuth can find it
       merged[key] = generated;
     } else {
       merged[key] = (envValue as string) ?? DEV_DEFAULTS[key] ?? "";
