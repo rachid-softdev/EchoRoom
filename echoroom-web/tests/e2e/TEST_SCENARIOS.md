@@ -2,7 +2,9 @@
 
 > **Statut :** Plan de couverture E2E — chaque scénario listé doit être codé dans un fichier `.spec.ts`.
 > ✅ = déjà codé, ⬜ = à coder  
-> **Mise à jour : 24 juin 2026 — +16 nouveaux fichiers, ~280 nouveaux scénarios identifiés**
+> **Mise à jour : 24 juin 2026 — +1060 scénarios Round 2 intégrés (analyse infrastructure, tRPC, UI, mobile, CI/CD, transversal)**  
+> **Révision : 24 juin 2026 — +389 scénarios issus de SCENARIOS_MANQUANTS.md (analyse statique du code source)**  
+> **Révision Round 2 : 24 juin 2026 — +1064 scénarios supplémentaires (ROUND2_AGENT1-5) — Total: 1250 scénarios (190 ✅ + 1060 ⬜)**
 
 ---
 
@@ -31,6 +33,9 @@
 - [ ] Section démo audio — lecture audible
 - [ ] Scroll fluide vers les sections (CTAs anchors)
 - [ ] Section "Comment ça marche" visible
+- [ ] LiveCounter animation avec variation aléatoire
+- [ ] Animations fade-in au scroll (HeroFeatures, DemoAudioForm)
+- [ ] Alternance automatique des HeroFeatures
 
 ---
 
@@ -58,6 +63,11 @@
 - [ ] Rate limiting sur tentative de connexion
 - [ ] Masquage/affichage du mot de passe
 - [ ] Accessibilité — focus order, aria labels
+- [ ] **🔴 Bug B1** — Email case sensitivity : connexion avec `USER@Example.com` pour un compte créé avec `user@example.com` → doit réussir (normalisation Prisma case-sensitive)
+- [ ] Leading/trailing whitespace dans l'email : `" user@example.com "` → doit être normalisé
+- [ ] Double-clic sur le bouton Connexion → une seule tentative (prevent double submit)
+- [ ] Timing attack protection : délai constant entre email existant et non existant
+- [ ] Rate limiting login par email : 5 tentatives/15min → 6ème retourne 429
 
 ### `/register`
 
@@ -74,6 +84,10 @@
 - [ ] Email jetable bloqué
 - [ ] Mot de passe trop faible visuellement (PasswordStrengthMeter)
 - [ ] Lien vers la page login
+- [ ] Unicode/emoji dans le username : `test👨‍💻user` → accepté ou rejeté proprement (pas de crash)
+- [ ] Double-clic sur le bouton S'inscrire → une seule tentative
+- [ ] **🟡 P9** — Rate limiting register : 3 inscriptions/heure → 4ème retourne 429
+- [ ] Disposable email checker : 24 domaines jetables bloqués
 
 ### `/forgot-password`
 
@@ -91,6 +105,7 @@
 - [ ] Chargement de la page avec token valide
 - [ ] Token invalide → erreur
 - [ ] Token expiré → erreur
+- [ ] Token déjà utilisé (réutilisé) → erreur "token déjà consommé"
 - [ ] Nouveau mot de passe valide (min 8, majuscule, minuscule, chiffre)
 - [ ] Confirmation du mot de passe
 - [ ] Mismatch confirmation → erreur
@@ -116,6 +131,7 @@
 - [ ] Menu utilisateur connecté (Dashboard, Library, Settings, Logout)
 - [ ] Header différent selon rôle (USER vs ADMIN)
 - [ ] Protection 404 pour routes inexistantes
+- [ ] **🟡 P13** — callbackUrl : navigation vers `/library` sans auth → login → redirection vers `/library`
 
 ---
 
@@ -144,6 +160,9 @@
 - [ ] Changement de tri recharge les résultats
 - [ ] État loading (skeleton)
 - [ ] État erreur API
+- [ ] URL synchronisée avec les paramètres de recherche (query params)
+- [ ] Debounce recherche 300ms côté client
+- [ ] "Surprise-moi" mode chaos : sélection aléatoire d'un scénario
 
 ---
 
@@ -197,6 +216,10 @@
 - [ ] Visibilité privée/unlisted masquée aux non-créateurs
 - [ ] Scénario supprimé → 404
 - [ ] Scénario en modération → message "en cours de validation"
+- [ ] Visibilité PRIVATE : masqué aux utilisateurs non créateurs (même avec l'URL)
+- [ ] ReactionBar — mise à jour optimiste (UI change immédiatement)
+- [ ] ShareButtons — popup bloqué par le navigateur (fallback gestion)
+- [ ] ShareButtons — trackShare mutation appelée
 
 ---
 
@@ -229,6 +252,9 @@
 - [ ] BadgeGrid se charge et affiche les badges
 - [ ] BadgeGrid état vide "Aucun badge pour le moment"
 - [ ] BadgeGrid état erreur
+- [ ] **🔴 Bug B4** — Échec d'UN widget ne doit pas cacher les autres (Promise.all sur 4 KPIs)
+- [ ] Refetch des données après création d'un scénario depuis le dashboard
+- [ ] Session refresh : rafraîchissement de la page conserve l'état dashboard
 
 ---
 
@@ -262,6 +288,11 @@
 - [ ] Brouillon persisté localement si navigation accidentelle
 - [ ] Character list loading skeleton (4 skeletons)
 - [ ] Character list empty state (aucun personnage disponible)
+- [ ] **🟠 Bug B6** — Draft localStorage non effacé au clic "Annuler" → naviguer vers /create après annulation doit montrer un formulaire vide
+- [ ] XSS dans les instructions IA : injection de `<script>` doit être échappée
+- [ ] Draft localStorage corrompu (JSON invalide) → doit ignorer le draft, pas crasher
+- [ ] Quota localStorage dépassé → gestion d'erreur silencieuse
+- [ ] Génération IA timeout (30s) → toast d'erreur + réessayable
 
 ---
 
@@ -289,6 +320,9 @@
 - [ ] Modification d'un scénario
 - [ ] Suppression d'un scénario
 - [ ] Changement de visibilité
+- [ ] Recherche avec caractères spéciaux regex (ex: `.*+?`) → pas de crash, interprété comme texte littéral
+- [ ] Pagination combinée avec recherche filtrée
+- [ ] Suppression rollback (optimistic update) : scénario retiré immédiatement, restauré si erreur API
 
 ---
 
@@ -313,6 +347,10 @@
 - [ ] Durée formatée
 - [ ] Recherche filtrée côté client
 - [ ] État "Aucun résultat" pour recherche sans résultat
+- [ ] Statut BLOCKED visible dans la liste
+- [ ] Durée nulle (0s) → affichée correctement sans division par zéro
+- [ ] Durée extrême (>24h) → formatée correctement
+- [ ] **🟡 Bug B12** — Filtrage par statut en français : chercher "Terminé" doit trouver les appels COMPLETED
 
 ---
 
@@ -335,6 +373,9 @@
 - [ ] 404 pour username inexistant (vérification navigateur)
 - [ ] Modification du profil (si propriétaire)
 - [ ] Changement de username
+- [ ] Stats à zéro : "0 scénarios", "0 appels" affiché correctement
+- [ ] Activité mixée (scénarios + appels) triée par date descendante
+- [ ] formatRelativeDate edge cases : "il y a quelques secondes", "il y a 1 minute", dates futures
 
 ---
 
@@ -372,6 +413,13 @@
 - [ ] Réacceptation du consentement (reconsent)
 - [ ] Affichage du statut de consentement
 - [ ] Affichage du statut de suppression
+- [ ] **🔴 Bug B3** — Bouton "Enregistrer" doit se désactiver quand l'username revient à sa valeur initiale
+- [ ] **🟠 Bug P7** — deleteMyAccount doit vérifier les appels actifs avant suppression (actuellement pas de guard)
+- [ ] **🟠 Bug P8** — Changement de mot de passe : documenté mais NON codé dans l'UI (SettingsPageClient.tsx)
+- [ ] Username déjà pris (erreur P2002 Prisma) → toast "Ce nom d'utilisateur est déjà pris"
+- [ ] Export données vide (aucun scénario/call) → JSON valide avec tableaux vides
+- [ ] Export données massives (>10MB) → téléchargement réussi sans timeout
+- [ ] Double clic "Supprimer mon compte" → une seule mutation (prevent double soumission)
 
 ---
 
@@ -399,6 +447,9 @@
 - [ ] DataLoader loading skeleton
 - [ ] DataLoader état erreur
 - [ ] Réactions en temps réel (optimistic)
+- [ ] Commentaire préservé dans l'input après une erreur d'envoi
+- [ ] Enter key soumet le commentaire (Shift+Enter = nouvelle ligne)
+- [ ] ReactionBar intégrée dans les posts du feed
 
 ---
 
@@ -425,6 +476,9 @@
 - [ ] Avatar avec initiales fallback
 - [ ] "par {username}" pour scénarios
 - [ ] "{count} scénario(s)" pour créateurs
+- [ ] Changement d'onglet désactive l'autre query (pas de double chargement)
+- [ ] Ranking fallback : ex-aequo gérés correctement (même rang)
+- [ ] Top 3 highlightés avec couleurs (or, argent, bronze)
 
 ---
 
@@ -449,6 +503,9 @@
 - [ ] Stripe webhook — checkout.session.completed
 - [ ] Stripe webhook — signature invalide → 403
 - [ ] Stripe webhook — body > 100KB → 413
+- [ ] **🔴 Bug B2** — Historique d'achats : ne doit PAS toujours afficher "Aucun achat" (actuellement texte statique)
+- [ ] Retour Stripe muet : paramètre `?success=` ignoré dans l'URL après redirection
+- [ ] Cache non invalidé après achat : le solde de crédits doit se mettre à jour immédiatement
 
 ---
 
@@ -490,6 +547,10 @@
 - [ ] Liste des clips d'un appel avec pagination
 - [ ] Suppression d'un clip (si propriétaire)
 - [ ] Partage d'un clip
+- [ ] **🟠 Bug B5** — AudioPlayer : useEffect ne reset pas l'erreur au changement de recordingUrl (dépendance `[]` au lieu de `[recordingUrl]`)
+- [ ] AudioPlayer — cleanup au démontage du composant (pas de fuite mémoire)
+- [ ] AudioPlayer — gestion des erreurs réseau pendant le streaming
+- [ ] TranscriptView — alternance IA (gauche) / User (droite) avec timestamps
 
 ---
 
@@ -514,6 +575,10 @@
 - [ ] File d'attente vide "Tout est modéré"
 - [ ] Filtre statut commentaires (PENDING / REJECTED)
 - [ ] Approbation/Rejet de commentaire
+- [ ] **🟡 P15** — Tab REJECTED manquante pour les scénarios (seulement PENDING filtré)
+- [ ] **🟠 Bug B9** — Pagination absente : >50 items dans la file d'attente → items inaccessibles
+- [ ] Rôle Moderator : accès à la modération mais pas aux autres pages admin
+- [ ] Page non accessible USER → FORBIDDEN (pas juste redirect)
 
 ### `/admin/users`
 #### ⬜ À coder
@@ -528,6 +593,9 @@
 - [ ] Badges rôles (Admin, User, Moderator)
 - [ ] Suppression utilisateur (admin.deleteUser)
 - [ ] État vide / recherche sans résultat
+- [ ] Recherche avec <2 caractères : pas de requête envoyée (évite trop de résultats)
+- [ ] Suppression d'un utilisateur déjà supprimé → message approprié
+- [ ] Pas de deep link vers le détail utilisateur (pas d'URL `/admin/users/[id]`)
 
 ### `/admin/reports`
 #### ⬜ À coder
@@ -538,6 +606,9 @@
 - [ ] Indicateur "revu par"
 - [ ] Raison tronquée à 100 caractères
 - [ ] État vide par filtre
+- [ ] **🟠 Bug B10** — Pagination absente : >50 signalements → items inaccessibles
+- [ ] Dismiss concurrent : 2 admins cliquent en même temps → un seul réussit
+- [ ] Pas d'action "Traiter" (seulement Dismiss) → workflow incomplet
 
 ### `/admin/blocked-numbers`
 #### ⬜ À coder
@@ -547,6 +618,9 @@
 - [ ] Bouton débloquer
 - [ ] Liste (téléphone, raison, bloqueur, date)
 - [ ] État vide "Aucun numéro bloqué"
+- [ ] Validation téléphone : format invalide (pas de `+` ou trop court) → erreur
+- [ ] Déblocage concurrent : 2 admins cliquent "Débloquer" en même temps → un seul mutation réussit
+- [ ] Numéro déjà bloqué → message "Ce numéro est déjà dans la liste"
 
 ### `/admin/audit`
 #### ⬜ À coder
@@ -558,12 +632,16 @@
 - [ ] Pagination curseur "Charger plus"
 - [ ] Load more désactivé pendant fetch
 - [ ] État vide pour filtres
+- [ ] dateFrom > dateTo → validation : doit retourner une erreur
+- [ ] Filtres non persistés entre les navigations (pas de query params dans l'URL)
+- [ ] Incompatibilité pagination curseur + filtres : changer les filtres reset le curseur
 
 ### `/admin/analytics`
 #### ⬜ À coder
 - [ ] Grille stats (4 cards)
 - [ ] Carte roadmap
 - [ ] Liens vers autres pages admin
+- [ ] Page entièrement statique (placeholder) — aucune donnée live à vérifier
 
 ---
 
@@ -619,6 +697,11 @@
 - [ ] Healthcheck — Redis connecté
 - [ ] CSRF — requête POST sans origin → 403 (en production)
 - [ ] CSRF — origin non autorisée → 403
+- [ ] **🟡 P12** — Stripe webhook : checkout.session.completed avec payment_intent null → 400
+- [ ] Stripe webhook — idempotence Redis down → graceful degradation (permet le traitement, pas de crash)
+- [ ] Stripe webhook — body size limite précisément à 100 000 bytes (100KB)
+- [ ] Healthcheck — DB en panne → status 503 degraded
+- [ ] Cron : CRON_SECRET absent → 401 (tous les endpoints cron)
 
 ---
 
@@ -632,6 +715,10 @@
 - [ ] Cookie session secure (HTTP-only, SameSite)
 - [ ] Rate limiting IP sur routes publiques
 - [ ] Délai constant sur auth (timing attack protection)
+- [ ] **🟡 P11** — CSRF en production : mutation TRPC sans Origin → 403 (allowMissingOrigin false en production)
+- [ ] **🟠 Bug B11** — CSRF non protégé pour les requêtes PUT/DELETE/PATCH (Origin + Referer checks)
+- [ ] Origin malformée (ex: `not-a-url`) → 400
+- [ ] Referer fallback quand Origin est absent → check Referer header
 
 ---
 
@@ -666,6 +753,9 @@
 - [ ] Statut de suppression affiché (user.myDeletionStatus)
 - [ ] Accès refusé après retrait de consentement
 - [ ] Données déjà anonymisées après purge
+- [ ] Purge partielle : certains utilisateurs anonymisés sont purgés, d'autres non (batch cursor)
+- [ ] Export après anonymisation : doit retourner une erreur (compte déjà supprimé)
+- [ ] Données partiellement nettoyées : vérifier que tous les champs PII sont vidés (email, username, etc.)
 
 ---
 
@@ -699,6 +789,10 @@
 - [ ] Appel manuel de `/api/cron/rotate-featured` — rotation du scénario à la une
 - [ ] Authentification requise pour les endpoints cron (CRON_SECRET)
 - [ ] Erreur 401 si CRON_SECRET manquant ou invalide
+- [ ] Lock Redis concurrent : deux exécutions simultanées du même cron → une seule s'exécute
+- [ ] Batch cursor : purge par lots de 100 utilisateurs (pas de mémoire insuffisante)
+- [ ] Timeout 5 min pour cleanup-recordings (maxDuration = 300)
+- [ ] Timeout 30s pour rotate-featured (AbortController)
 
 ---
 
@@ -717,6 +811,9 @@
 - [ ] Erreur API — toast d'erreur affiché
 - [ ] Error boundary — crash d'un composant n'affecte pas le reste de la page
 - [ ] Réseau hors ligne — message d'erreur approprié
+- [ ] Données vides mais loading terminé → état vide avec CTA
+- [ ] Erreur 500 API → toast "Erreur serveur" + retry
+- [ ] Cache non invalidé entre modules : dashboard met à jour après création dans /create
 
 ---
 
@@ -910,6 +1007,9 @@
 - [ ] Voice webhook — TwiML XML bien formé
 - [ ] Handle-input webhook — SpeechResult traité
 - [ ] Stream webhook — MediaStream connecté
+- [ ] Race condition statuts : CallStatus "completed" avant le dernier MediaStream → cohérence assurée
+- [ ] SSRF RecordingUrl : URL malveillante bloquée (vérification domaine autorisé)
+- [ ] Crédits insuffisants pour démarrer un appel → rejet avant création de la call
 
 ---
 
@@ -940,6 +1040,9 @@
 - [ ] Déconnexion dans un onglet → second onglet déconnecté au refresh
 - [ ] GET /api/auth/session retourne l'utilisateur connecté
 - [ ] GET /api/auth/session retourne null si non auth
+- [ ] **🟡 P14** — Session multi-onglet : déconnexion onglet A → onglet B déconnecté au prochain clic (tokenVersion)
+- [ ] Session expirée en cours de SPA : prochain appel API → redirection login + toast
+- [ ] callbackUrl préservé après login
 
 ---
 
@@ -987,6 +1090,8 @@
 - [ ] Deux onglets — modification simultanée du même scénario → dernier gagne
 - [ ] Like toggle rapide (5 clics) → état final correct
 - [ ] Soumission formulaire pendant chargement → bloqué
+- [ ] **🟡 P9** — Rate limiting register : 4ème inscription en 1 heure → 429
+- [ ] **🟠 P10** — Rate limiting login par email : 6ème tentative en 15min → 429
 
 ---
 
@@ -1141,6 +1246,38 @@
 - [ ] Icône, titre, description
 - [ ] Action slot optionnel
 
+### UI Components (détails supplémentaires)
+- [ ] **Alert** — rôle `alert` et aria-live="polite" présent
+- [ ] **Avatar** — fallback aux initiales du username si pas d'image
+- [ ] **Button** — polymorphic `asChild` (rendu comme `a` ou `button` selon le contexte)
+- [ ] **Dialog** — focus trap actif (Tab cyclique à l'intérieur)
+- [ ] **Dialog** — scroll-lock du body pendant l'ouverture
+- [ ] **Input** — type `file` : accept, multiple, taille limite
+- [ ] **SegmentedControl** — navigation aux flèches clavier (← →)
+- [ ] **Skeleton** — respecte `prefers-reduced-motion` (pas d'animation)
+- [ ] **ThemeToggle** — hydration safe (pas de flash de mauvais thème)
+- [ ] **Tooltip** — positions (top, bottom, left, right) avec espacement suffisant
+- [ ] **Tooltip** — contenu Unicode/HTML échappé
+
+### Shared Components (détails supplémentaires)
+- [ ] **Breadcrumbs** — route inconnue : affiche le segment sans lien
+- [ ] **CallDisclaimerDialog** — localStorage persistence : SSR-safe (null until mounted)
+- [ ] **ConfirmDialog** — variante destructive : bouton rouge + icône warning
+- [ ] **ConfirmDialog** — loading state : spinner + boutons désactivés
+- [ ] **ConsentBanner** — reconsent après retrait : "Ré-accepter" → mutation + page reload
+- [ ] **CreditDisplay** — tooltip au hover : "Crédits disponibles"
+- [ ] **DataLoader** — retry cycle : nombre maximum de tentatives sans boucle infinie
+- [ ] **PaginatedGrid** — dernière page : "Voir plus" caché quand hasMore=false
+- [ ] **PasswordStrengthMeter** — tous les seuils : 0, 1, 2, 3, 4, 5 barres
+
+### Social Components (détails supplémentaires)
+- [ ] **BadgeDisplay** — loading skeleton (3 cards)
+- [ ] **BadgeDisplay** — error state : "Erreur chargement badges" + réessayer
+- [ ] **BadgeNotification** — auto-dismiss après délai
+- [ ] **EmojiPicker** — fermeture au clic outside ou Escape
+- [ ] **ReactionBar** — disabled state quand pas authentifié
+- [ ] **ReportButton** — conflit : deux reports simultanés du même contenu
+
 ---
 
 ## 55. Cross-Cutting Responsive
@@ -1171,65 +1308,299 @@
 
 ---
 
+## 57. Bugs Identifiés par Analyse Statique (SCENARIOS_MANQUANTS.md)
+
+Ces bugs ont été découverts par analyse statique du code source et doivent être corrigés avant ou pendant l'écriture des tests E2E.
+
+| ID | Bug | Impact | Section | Statut |
+|:--:|-----|--------|:-------:|:------:|
+| B1 | Email case-sensitive dans Prisma (connexion bloque si casse différente) | 🔴 CRITIQUE | Auth Login | ✅ Corrigé |
+| B2 | Historique achats toujours vide (placeholder statique, pas de query API) | 🔴 CRITIQUE | Billing | ✅ Corrigé |
+| B3 | Bouton "Enregistrer" ne se désactive pas quand l'username revient à l'original | 🔴 CRITIQUE | Settings | ✅ Corrigé |
+| B4 | Dashboard — échec d'un widget cascade sur tous (Promise.all) | 🔴 CRITIQUE | Dashboard | ✅ Corrigé |
+| B5 | AudioPlayer — useEffect dépendance `[]` au lieu de `[recordingUrl]` | 🟠 HAUTE | Call Replay | ✅ Corrigé |
+| B6 | Draft localStorage non effacé au clic "Annuler" | 🟠 HAUTE | Create | ✅ Corrigé |
+| B7 | deleteMyAccount sans vérification appels actifs | 🟠 HAUTE | Settings/GDPR | ✅ Corrigé |
+| B8 | Changement mot de passe documenté mais non codé dans SettingsPageClient | 🟠 HAUTE | Settings | ✅ Implémenté |
+| B9 | ModerationQueue pagination absente (>50 items inaccessibles) | 🟠 HAUTE | Admin | ✅ Corrigé — usePaginatedQuery + PaginatedDataLoader |
+| B10 | Reports pagination absente (>50 items inaccessibles) | 🟠 HAUTE | Admin | ✅ Corrigé — usePaginatedQuery + PaginatedDataLoader |
+| B11 | CSRF non protégé pour PUT/DELETE/PATCH (Origin + Referer) | 🟠 HAUTE | Sécurité | 🟡 Accepté — tRPC n'utilise que POST pour mutations, API routes non-browser |
+| B12 | History — recherche "Terminé" ne trouve rien (match sur "COMPLETED") | 🟡 MOYENNE | History | ✅ Corrigé — ajout traduction français→anglais statuts |
+| B13 | Library — bouton "Annuler" restaure le draft (lié à B6) | 🟡 MOYENNE | Library/Create | ✅ Corrigé (via P6) |
+| B14 | Billing — pas de feedback après retour Stripe (?success= ignoré) | 🟡 MOYENNE | Billing | ✅ Corrigé — gestion URL params + toast |
+| B15 | Rate limit login contourné — `.catch(() => {})` avale TRPCError TOO_MANY_REQUESTS | 🔴 CRITIQUE | Auth | ⬜ À corriger |
+| B16 | Curseur invalide dans feed/moderationQueue → Prisma P2023 non catché → 500 | 🔴 CRITIQUE | API | ⬜ À corriger |
+| B17 | Open redirect via callbackUrl non validé dans middleware.ts | 🔴 CRITIQUE | Sécurité | ⬜ À corriger |
+| B18 | isAdmin avec "admin" minuscules → FORBIDDEN (comparaison stricte "ADMIN") | 🔴 CRITIQUE | Admin | ⬜ À corriger |
+| B19 | Aucun verrou Redis pour cleanup-recordings — double suppression R2 possible | 🔴 CRITIQUE | Cron | ⬜ À corriger |
+| B20 | Circuit breaker telephony jamais reset — pas de mécanisme de reprise | 🟠 HAUTE | Telephony | ⬜ À corriger |
+| B21 | withRetry + twilioClient.calls.create — perte réponse → DEUXIÈME appel créé | 🔴 CRITIQUE | Telephony | ⬜ À corriger |
+| B22 | Double-dépense crédits en race condition — fenêtre entre webhook et initiateCall | 🔴 CRITIQUE | Billing | ⬜ À corriger |
+| B23 | redisUnavailableLogged ne se reset JAMAIS — perte monitoring après 1er crash Redis | 🟠 HAUTE | Redis | ⬜ À corriger |
+| B24 | MODERATION_FAIL_OPEN case-sensitive — "False" parsé comme true | 🟠 HAUTE | Config | ⬜ À corriger |
+| B25 | validateProductionEnv incomplet — manque CRON_SECRET, TWILIO_TOKEN_SECRET | 🟠 HAUTE | Config | ⬜ À corriger |
+| B26 | Pas de tests E2E Playwright dans CI — seulement quality checks | 🔴 CRITIQUE | CI/CD | ⬜ À corriger |
+| B27 | Deep link mobile cassé — un seul écran HomeScreen dans le Navigator | 🔴 CRITIQUE | Mobile | ⬜ À corriger |
+
+---
+
+---
+
+## 58. tRPC Core & Middleware Edge Cases
+
+### ⬜ À coder (issus de ROUND2_AGENT1_TRPC.md)
+- [ ] **[CRITIQUE] CSRF contourné** : createTRPCContext sans opts.req (contexte serveur direct) → CSRF bypassé car opts.req.method est undefined
+- [ ] **[CRITIQUE] Rate limit login contourné** : `.catch(() => {})` dans auth.ts avale TRPCError("TOO_MANY_REQUESTS") — la limite n'est jamais appliquée
+- [ ] **[CRITIQUE] Curseur invalide → 500** : feed, moderationQueue — Prisma P2023 non catché
+- [ ] **[CRITIQUE] Race condition update → 500** : Entre findUnique et update, record supprimé → P2025 non catché
+- [ ] **[CRITIQUE] Open redirect** : callbackUrl dans middleware.ts non validé → redirection site externe possible
+- [ ] **[CRITIQUE] Session sans rôle** : user.role absent du JWT → undefined dans ctx, pas de crash mais comportement indéfini
+- [ ] **[CRITIQUE] isAdmin avec "admin" minuscule** : comparaison stricte "ADMIN" → FORBIDDEN pour un admin légitime
+- [ ] **[ELEVÉ] Origin vide ("") en production** : string non-null mais vide → new URL("") throw → FORBIDDEN
+- [ ] **[ELEVÉ] Referer malformé** : new URL(referer) throw → sourceOrigin null → FORBIDDEN
+- [ ] **[ELEVÉ] withContentModeration message anglais** : "Authentication required" dans app française
+- [ ] **[MOYEN] sanitizeRequestId** : >64 caractères, emoji, Unicode, chaîne vide après sanitization
+- [ ] **[MOYEN] parseTrustedOrigins** : vide, 1 origine, 50 origines, espaces autour virgules
+- [ ] **[MOYEN] errorFormatter** : erreur Prisma P2002 (ne pas exposer message brut), objet non-Error, ZodError imbriqué
+- [ ] **[MOYEN] Session expirée** : isAuthenticated ne vérifie PAS session.expires
+- [ ] **[MOYEN] WithRateLimit** : clé vide, fenêtre 0, multiple rate limits simultanés sur même requête
+- [ ] **[MOYEN] WithContentModeration** : contenu déjà modéré, contenu vide, modération race condition
+
+## 59. Infrastructure — Prisma / Database Layer
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **Transaction rollback implicite** : initiateCall() — si atomicDebit échoue, daily limit rollbacké ?
+- [ ] **Transaction Stripe checkout** : purchase.create réussit mais userBilling.upsert échoue → rollback
+- [ ] **updateMany count === 0 silencieux** : updateStatusWithGuard — appelant ne vérifie pas count
+- [ ] **markAsFailedWithRefund race condition** : deux webhooks simultanés → deux refunds
+- [ ] **Cursor pagination sans ORDER BY id unique** : findPendingQueue — doublons/sauts
+- [ ] **findTopScenario N+1** : requête coûteuse sur des milliers de scénarios
+- [ ] **upsert sans select** : retourne tous les champs inutilement
+- [ ] **$disconnect manquant** : connexions PostgreSQL non fermées sur arrêt
+- [ ] **datetime tronqué** : timezone boundary UTC vs serveur local
+- [ ] **findUnique clé invalide** : null silencieux — vérifier qu'aucun crash
+- [ ] **Direct URL PgBouncer** : transactions interactives non supportées sans DIRECT_URL
+
+## 60. Infrastructure — Redis Layer
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **[CRITIQUE] redisUnavailableLogged ne se reset jamais** : perte monitoring après premier crash Redis
+- [ ] **[CRITIQUE] redis.keys() O(N)** dans calls.start au lieu de SCAN
+- [ ] **[CRITIQUE] JSON.parse sans try/catch** sur données Redis corrompues (10+ endpoints)
+- [ ] **[CRITIQUE] Aucun verrou Redis pour cleanup-recordings** : double suppression R2 possible
+- [ ] **[ELEVÉ] Taux d'échec Redis** : if (!ok) continue silencieux dans conversationState.ts
+- [ ] **[ELEVÉ] Idempotency lock sans TTL** : clé d'idempotence Stripe/RateLimit jamais expirée
+- [ ] **[ELEVÉ] Conversation state TTL trop court** : appel > 30 min → state perdu pendant l'appel
+- [ ] **[MOYEN] Reconnexion Redis** : retry strategy, exponential backoff, max retry
+- [ ] **[MOYEN] Cache invalidation concurrente** : race condition purge + write
+- [ ] **[MOYEN] Dead letter queue Redis corruption** : JSON.parse sur message DLQ invalide
+
+## 61. Infrastructure — R2 / Cloudflare S3 (Object Storage)
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **[CRITIQUE] cleanupRecordings : delete R2 + update DB non atomique** : R2 OK mais DB échoue → fichier perdu, DB pointe vers rien
+- [ ] **[ELEVÉ] Upload concurrent même key** : dernier write gagne, pas de versioning
+- [ ] **[ELEVÉ] Fichier > 100MB** : S3 multipart upload géré ? Timeout ?
+- [ ] **[MOYEN] Fichier inexistant → 404** : GetObject sur clé absente → erreur gérée ?
+- [ ] **[MOYEN] Présigned URL expirée** : generatePresignedUrl avec expiresIn=0 ou négatif
+- [ ] **[MOYEN] Téléchargement interrompu** : réseau coupé pendant GetObject → retry/download resume ?
+- [ ] **[ELEVÉ] Bucket policy restreinte** : R2 return AccessDenied → message d'erreur clair ?
+- [ ] **[MOYEN] Upload nom fichier Unicode** : caractères accentués, espaces → percent-encoded ?
+
+## 62. Infrastructure — ElevenLabs & Deepgram (Audio AI Services)
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **[ELEVÉ] ElevenLabs API key invalide** : 401 → retry ? Fallback TTS ?
+- [ ] **[ELEVÉ] Deepgram timeout longue transcription** : fichier audio > 1h → timeout 30s dépassé
+- [ ] **[ELEVÉ] ElevenLabs rate limit** : 429 → exponential backoff ?
+- [ ] **[MOYEN] Deepgram accent/langue** : français mal reconnu → transcription vide ou erronée
+- [ ] **[MOYEN] ElevenLabs voix inexistante** : voiceId invalide → 400 → fallback voix par défaut
+- [ ] **[MOYEN] Deepgram audio silencieux** : pas de parole → transcription vide gérée ?
+- [ ] **[MOYEN] Concurrent ElevenLabs requests** : burst de 50 requêtes → queue ou throttle ?
+
+## 63. Infrastructure — Circuit Breaker & Resilience
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **[CRITIQUE] Circuit breaker telephony jamais reset** : pas de reset programmatique (admin, cron, monitoring)
+- [ ] **[CRITIQUE] withRetry + twilioClient.calls.create** : perte réponse HTTP → DEUXIÈME appel créé
+- [ ] **[CRITIQUE] withRetry sur mutation non idempotente** : createCall, initiateCall → double effet
+- [ ] **[ELEVÉ] Circuit breaker half-open** : une seule requête test, pas de graduated recovery
+- [ ] **[ELEVÉ] Circuit breaker sans fallback** : pas de mode dégradé (ex: cache)
+- [ ] **[MOYEN] Concurrency limiter maxConcurrent** : dépassé → queue ou rejet ?
+
+## 64. Cross-Cutting — Offline & Network Resilience
+
+### ⬜ À coder (issus de ROUND2_AGENT3_TRANSVERSAL.md)
+- [ ] **Perte connexion chargement dashboard** : DataLoader erreur + bouton "Réessayer"
+- [ ] **Perte connexion envoi commentaire** : toast erreur + texte préservé
+- [ ] **Perte connexion like reaction** : toast "Impossible de réagir" + compteur inchangé
+- [ ] **Perte connexion page explore** : UI ne se casse pas, filtres restent interactifs
+- [ ] **Reconnexion après offline** : refetch recharge les données
+- [ ] **Perte réseau pendant lecture audio** : fichier déjà chargé continue, download échoue
+- [ ] **Timeout réseau lent (>30s)** : message d'erreur lisible, pas d'écran blanc
+
+## 65. Cross-Cutting — i18n & French Formatting
+
+### ⬜ À coder (issus de ROUND2_AGENT3_TRANSVERSAL.md)
+- [ ] **[ELEVÉ] B12 — Recherche "Terminé" dans history** : doit trouver COMPLETED (bug existant)
+- [ ] **[ELEVÉ] Format dates en français** : `toLocaleDateString("fr-FR")` — vérifier jour/mois/année
+- [ ] **[ELEVÉ] Format nombres français** : `1 234,56` au lieu de `1,234.56`
+- [ ] **[ELEVÉ] Tri alphabétique français** : é, è, ê, ë traités correctement
+- [ ] **[MOYEN] Pluriels français** : "0 scénario", "1 scénario", "2 scénarios"
+- [ ] **[MOYEN] Mois abrégés français** : "janv.", "févr." au lieu de "Jan", "Feb"
+- [ ] **[MOYEN] Fuseau horaire** : dates affichées en locale française (Paris)
+
+## 66. Cross-Cutting — XSS & Injection Security
+
+### ⬜ À coder (issus de ROUND2_AGENT3_TRANSVERSAL.md)
+- [ ] **XSS titre scénario** : `<script>alert('XSS')</script>` → pas exécuté (React escape)
+- [ ] **XSS instructions IA** : `<img onerror="alert(1)" src=x>` → pas exécuté
+- [ ] **XSS commentaire** : `</textarea><script>alert('xss')</script>` → texte simple
+- [ ] **XSS raison signalement** : `<script>alert('xss')</script>` → pas exécuté dans admin
+- [ ] **CSRF mutations tRPC** : appel depuis origine différente → rejeté (SameSite cookie)
+- [ ] **Injection SQL/NoSQL filtres admin** : caractères spéciaux → pas de crash
+- [ ] **SSRF RecordingUrl** : URL malveillante bloquée (ALLOWED_HOST_PATTERNS bypass ?)
+
+## 67. Desktop (Electron) Application
+
+### ⬜ À coder (issus de ROUND2_AGENT5_MOBILE_CI.md)
+- [ ] **[CRITIQUE] Deep link cassé** : navigation ScenarioDetail → crash (un seul écran HomeScreen)
+- [ ] **[ELEVÉ] Fenêtre inaccessible** : mainWindow.loadURL() après destroy → crash
+- [ ] **[ELEVÉ] ContextBridge sécurité** : preload.ts expose platform → injection possible
+- [ ] **[ELEVÉ] Auto-updater** : mise à jour silencieuse ou notification
+- [ ] **[MOYEN] Tray icon** : clic ouvre/ferme fenêtre
+- [ ] **[MOYEN] Menu natif** : Fichier, Édition, Affichage, Aide
+- [ ] **[MOYEN] Notifications système** : appel entrant, message reçu
+- [ ] **[MOYEN] Permissions microphone** : demande au premier appel
+- [ ] **[MOYEN] Fenêtre multi-écran** : position/dimensions préservées
+- [ ] **[MOYEN] Scheme deep link** : echoroom:// ouvert dans l'app Electron
+
+## 68. Mobile (Expo) Application
+
+### ⬜ À coder (issus de ROUND2_AGENT5_MOBILE_CI.md)
+- [ ] **[CRITIQUE] Deep link echoroom://** : navigation vers scénario → doit ouvrir sans crash
+- [ ] **[ELEVÉ] URL malformée** : echoroom://///scenario → pas de crash
+- [ ] **[ELEVÉ] Permission microphone refusée** : message explicite, pas de crash
+- [ ] **[ELEVÉ] Offline démarrage** : écran s'affiche sans crash
+- [ ] **[MOYEN] Permission notifications** : refus n'empêche pas navigation
+- [ ] **[MOYEN] Synchronisation API token JWT** : SecureStore + requêtes
+- [ ] **[MOYEN] Pull-to-refresh** : recharge les données
+- [ ] **[MOYEN] Cache AsyncStorage** : offline → données en cache, online → sync API
+- [ ] **[MOYEN] Gestes swipe** : retour arrière, fermeture modale
+- [ ] **[MOYEN] Build Android/iOS** : EAS Build, environment variables
+- [ ] **[MOYEN] Navigation paramètres manquants** : navigate sans paramètre id → fallback
+
+## 69. CI/CD & Build Pipeline
+
+### ⬜ À coder (issus de ROUND2_AGENT5_MOBILE_CI.md)
+- [ ] **[CRITIQUE] Pas de tests E2E Playwright dans CI** : seulement quality checks (typecheck, lint, test, build)
+- [ ] **[CRITIQUE] Cache Turbo basé sur github.sha** : jamais réutilisé entre commits → full build à chaque run
+- [ ] **[ELEVÉ] Pas de matrice OS** : Linux uniquement, pas macOS/Windows
+- [ ] **[ELEVÉ] Pas de viewports mobiles Playwright** : 375px non configuré
+- [ ] **[ELEVÉ] Pas de multi-navigateurs** : Chromium uniquement
+- [ ] **[MOYEN] Node version cohérente** : 20 entre CI et release workflow
+- [ ] **[MOYEN] Turbo e2e task manquante** : `test:e2e` pas dans turbo.json
+- [ ] **[MOYEN] Test artifacts** : HTML report, screenshots, traces uploadés ?
+- [ ] **[MOYEN] Timeout jobs** : 15min pour quality → assez pour E2E ?
+- [ ] **[MOYEN] Secrets CI** : variables d'env de test vs production
+
+## 70. Infrastructure — Credit Operations & Telephony
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **[CRITIQUE] Double-dépense crédits race condition** : transaction entre completed webhook et initiateCall
+- [ ] **[ELEVÉ] Débit atomique avec daily limit** : si atomicDebit réussit mais atomicIncrementDailyLimit échoue → rollback ?
+- [ ] **[ELEVÉ] Crédits négatifs** : débit > solde → doit être rejeté
+- [ ] **[ELEVÉ] Appel simultané multi-utilisateur** : deux appels pour même user → daily limit check
+- [ ] **[MOYEN] Refund crédits** : webhook refund → crédits remboursés correctement
+- [ ] **[ELEVÉ] Conversation state call > 30min** : état Redis perdu → reprise impossible
+- [ ] **[ELEVÉ] SSRF via fetchRecordingAudio** : requête authentifiée Twilio vers URL arbitraire
+- [ ] **[ELEVÉ] validateRecordingUrl regex trop large** : *.twilio.com match evil-twilio.com
+- [ ] **[MOYEN] CallStatus completed avant MediaStream** : cohérence d'état
+- [ ] **[MOYEN] Crédits insuffisants** : rejet avant création call
+
+## 71. Infrastructure — Configuration & Environment
+
+### ⬜ À coder (issus de ROUND2_AGENT2_INFRA.md)
+- [ ] **[CRITIQUE] MODERATION_FAIL_OPEN case-sensitive** : "False" !== "false" → parse comme true
+- [ ] **[ELEVÉ] Dev defaults en production** : secret à valeur dev → Error au démarrage
+- [ ] **[ELEVÉ] NEXTAUTH_SECRET aléatoire en dev** : redémarrage → toutes sessions invalidées
+- [ ] **[ELEVÉ] NEXT_PUBLIC_APP_URL fallback localhost** : webhooks Twilio vers localhost en production
+- [ ] **[ELEVÉ] validateProductionEnv incomplet** : manque CRON_SECRET, TWILIO_TOKEN_SECRET, etc.
+- [ ] **[MOYEN] Variables requises manquantes** : message d'erreur clair au démarrage
+
 ## Résumé
 
 | Section | ✅ Existants | ⬜ Planifiés | Total |
 |---------|:-----------:|:------------:|:-----:|
-| Landing | 11 | 9 | 20 |
-| Auth Login | 10 | 7 | 17 |
-| Auth Register | 0 | 12 | 12 |
+| Landing | 11 | 12 | 23 |
+| Auth Login | 10 | 12 | 22 |
+| Auth Register | 0 | 16 | 16 |
 | Auth Forgot Password | 0 | 6 | 6 |
-| Auth Reset Password | 0 | 7 | 7 |
-| Navigation | 10 | 3 | 13 |
-| Explore | 10 | 10 | 20 |
-| Scenario Detail | 10 | 24 | 34 |
-| Dashboard | 15 | 9 | 24 |
-| Create Scenario | 8 | 16 | 24 |
-| Library | 9 | 10 | 19 |
-| History | 7 | 9 | 16 |
-| Profile | 4 | 10 | 14 |
-| Settings | 17 | 14 | 31 |
-| Community | 7 | 12 | 19 |
-| Leaderboard | 7 | 11 | 18 |
-| Billing | 8 | 7 | 15 |
+| Auth Reset Password | 0 | 8 | 8 |
+| Navigation | 10 | 4 | 14 |
+| Explore | 10 | 13 | 23 |
+| Scenario Detail | 10 | 28 | 38 |
+| Dashboard | 15 | 12 | 27 |
+| Create Scenario | 8 | 22 | 30 |
+| Library | 9 | 13 | 22 |
+| History | 7 | 13 | 20 |
+| Profile | 4 | 13 | 17 |
+| Settings | 17 | 22 | 39 |
+| Community | 7 | 15 | 22 |
+| Leaderboard | 7 | 14 | 21 |
+| Billing | 8 | 10 | 18 |
 | Pricing | 0 | 4 | 4 |
-| Call Replay | 5 | 18 | 23 |
-| Admin | 6 | 42 | 48 |
+| Call Replay | 5 | 22 | 27 |
+| Admin | 6 | 59 | 65 |
 | Legal | 12 | 3 | 15 |
 | Help Page | 0 | 6 | 6 |
 | Characters | 0 | 5 | 5 |
 | Audio System | 0 | 6 | 6 |
 | Webhook Idempotency | 0 | 3 | 3 |
-| CSRF Protection | 0 | 3 | 3 |
+| CSRF Protection | 0 | 7 | 7 |
 | OpenGraph | 0 | 4 | 4 |
 | Admin Feature Mgmt | 0 | 5 | 5 |
 | Share Tracking | 0 | 4 | 4 |
 | API Versioning | 0 | 6 | 6 |
 | IP Rate Limiting | 0 | 5 | 5 |
-| Twilio Webhook Validation | 0 | 6 | 6 |
+| Twilio Webhook Validation | 0 | 9 | 9 |
 | Browser Navigation & Deep Linking | 0 | 12 | 12 |
-| Auth Session | 0 | 6 | 6 |
+| Auth Session | 0 | 9 | 9 |
 | Pagination Edge Cases | 0 | 5 | 5 |
 | Password Change | 0 | 7 | 7 |
 | Toast / Notification System | 0 | 6 | 6 |
-| Concurrent Operations | 0 | 5 | 5 |
+| Concurrent Operations | 0 | 7 | 7 |
 | Optimistic Updates & UI Rollback | 0 | 6 | 6 |
 | Form Draft Persistence | 0 | 5 | 5 |
-| API/Webhooks | 18 | 7 | 25 |
-| Sécurité | 1 | 4 | 5 |
+| API/Webhooks | 18 | 12 | 30 |
+| Sécurité | 1 | 8 | 9 |
 | Responsive | 0 | 5 | 5 |
 | Accessibilité | 0 | 5 | 5 |
-| GDPR & Data Privacy | 6 | 8 | 14 |
+| GDPR & Data Privacy | 6 | 11 | 17 |
 | Badges & Gamification | 0 | 5 | 5 |
 | Audio Clips | 0 | 5 | 5 |
-| Cron Jobs | 0 | 5 | 5 |
-| Loading/Empty/Error | 0 | 12 | 12 |
+| Cron Jobs | 0 | 9 | 9 |
+| Loading/Empty/Error | 0 | 15 | 15 |
 | Stripe Checkout | 0 | 10 | 10 |
 | Async AI Moderation | 0 | 4 | 4 |
 | Spam Detection | 0 | 5 | 5 |
 | Theme Toggle | 2 | 4 | 6 |
 | Error Boundary | 7 | 2 | 9 |
-| Shared Components (DataLoader, AudioPlayer, etc.) | 0 | 75 | 75 |
+| Shared Components (DataLoader, AudioPlayer, etc.) | 0 | 92 | 92 |
 | Cross-Cutting Responsive | 0 | 5 | 5 |
 | Cross-Cutting Accessibilité | 0 | 11 | 11 |
-| **Total** | **190** | **534** | **724** |
+| tRPC Core & Middleware Edge Cases | 0 | 16 | 16 |
+| Infrastructure — Prisma / Database | 0 | 11 | 11 |
+| Infrastructure — Redis | 0 | 10 | 10 |
+| Infrastructure — R2 / S3 Storage | 0 | 8 | 8 |
+| Infrastructure — ElevenLabs & Deepgram | 0 | 7 | 7 |
+| Infrastructure — Circuit Breaker | 0 | 6 | 6 |
+| Cross-Cutting — Offline & Network | 0 | 7 | 7 |
+| Cross-Cutting — i18n & French | 0 | 7 | 7 |
+| Cross-Cutting — XSS & Injection | 0 | 7 | 7 |
+| Desktop (Electron) | 0 | 10 | 10 |
+| Mobile (Expo) | 0 | 11 | 11 |
+| CI/CD & Build Pipeline | 0 | 10 | 10 |
+| Infrastructure — Credit Ops & Telephony | 0 | 10 | 10 |
+| Infrastructure — Configuration & Env | 0 | 6 | 6 |
+| **Total** | **190** | **1060** | **1250** |

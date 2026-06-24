@@ -16,6 +16,11 @@ export const billingRouter = router({
     return { credits: 0 };
   }),
 
+  getPurchases: protectedProcedure.query(async ({ ctx }) => {
+    const purchases = await userBillingRepository.getPurchaseHistory(ctx.session.user.id);
+    return purchases;
+  }),
+
   createCheckout: protectedProcedure
     .input(
       z.object({

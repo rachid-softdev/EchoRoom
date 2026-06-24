@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui";
@@ -7,6 +8,7 @@ import { CreditCard, Loader2 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
+import { toast } from "@/components/ui";
 
 interface CreditPack {
   credits: number
@@ -22,8 +24,44 @@ const creditPacks: CreditPack[] = [
   { credits: 500, price: "49,99 €", priceId: "price_500", popular: false },
 ];
 
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}
+
 export default function BillingPage() {
   const creditsQuery = api.billing.getCredits.useQuery();
+  const purchasesQuery = api.billing.getPurchases.useQuery();
+
+  // Gérer le retour depuis Stripe Checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get("success");
+    const canceled = params.get("canceled");
+
+    if (success === "true") {
+      toast({
+        title: "Achat réussi ! Vos crédits ont été ajoutés à votre compte.",
+        variant: "success",
+      });
+      // Nettoyer l'URL sans recharger la page
+      window.history.replaceState({}, "", window.location.pathname);
+      // Rafraîchir les données
+      creditsQuery.refetch();
+      purchasesQuery.refetch();
+    } else if (canceled === "true") {
+      toast({
+        title: "Achat annulé — vous pouvez réessayer quand vous voulez.",
+        variant: "default",
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const checkout = useApiToast(api.billing.createCheckout.useMutation(), {
     success: "Redirection vers le paiement...",
     onSuccess: (data) => {
@@ -88,18 +126,77 @@ export default function BillingPage() {
 
       {/* Payment history */}
       <h2 className="text-xl font-semibold mb-4">Historique des achats</h2>
-      <Card>
-        <CardContent className="py-12 text-center">
-          <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">Aucun achat pour le moment</p>
-          <Button variant="outline" size="sm" onClick={() => {
-            const el = document.getElementById("credit-packs");
-            if (el) el.scrollIntoView({ behavior: "smooth" });
-          }}>
-            Acheter des crédits
-          </Button>
-        </CardContent>
-      </Card>
+      {purchasesQuery.isLoading ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-muted rounded" />
+                    <div className="h-3 w-24 bg-muted rounded" />
+                  </div>
+                  <div className="h-4 w-16 bg-muted rounded" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : purchasesQuery.isError ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-destructive mb-2">Erreur lors du chargement de l&apos;historique</p>
+            <Button variant="outline" size="sm" onClick={() => purchasesQuery.refetch()}>
+              Réessayer
+            </Button>
+          </CardContent>
+        </Card>
+      ) : purchasesQuery.data && purchasesQuery.data.length > 0 ? (
+        <Card>
+          <div className="divide-y">
+            {purchasesQuery.data.map((purchase) => (
+              <div
+                key={purchase.id}
+                className="flex items-center justify-between px-6 py-4"
+              >
+                <div>
+                  <p className="font-medium">
+                    {purchase.creditsPurchased} crédits
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(purchase.createdAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {purchase.refundedAt && (
+                    <Badge variant="outline" className="text-destructive border-destructive/30">
+                      Remboursé
+                    </Badge>
+                  )}
+                  {purchase.disputedAt && (
+                    <Badge variant="outline" className="text-amber-500 border-amber-500/30">
+                      Litige
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">Aucun achat pour le moment</p>
+            <Button variant="outline" size="sm" onClick={() => {
+              const el = document.getElementById("credit-packs");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+            }}>
+              Acheter des crédits
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </DashboardShell>
   );
 }

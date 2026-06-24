@@ -18,6 +18,9 @@ vi.mock("@/lib/trpc", () => ({
       getCredits: {
         useQuery: vi.fn(),
       },
+      getPurchases: {
+        useQuery: vi.fn(),
+      },
       createCheckout: {
         useMutation: vi.fn(() => ({
           mutate: (...args: unknown[]) => mockCheckoutMutate(...args),
@@ -79,6 +82,9 @@ import BillingPage from "../page";
 const mockCreditsQuery = api.billing.getCredits.useQuery as ReturnType<
   typeof vi.fn
 >;
+const mockPurchasesQuery = api.billing.getPurchases.useQuery as ReturnType<
+  typeof vi.fn
+>;
 
 describe("BillingPage", () => {
   afterEach(() => {
@@ -92,6 +98,12 @@ describe("BillingPage", () => {
       isLoading: false,
       data: { credits: 42 },
       isError: false,
+    });
+    mockPurchasesQuery.mockReturnValue({
+      isLoading: false,
+      data: [],
+      isError: false,
+      refetch: vi.fn(),
     });
   });
 

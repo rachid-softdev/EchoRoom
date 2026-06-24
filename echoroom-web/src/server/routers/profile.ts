@@ -197,6 +197,21 @@ export const profileRouter = router({
       // because UUIDs don't match the $2b$ format that bcrypt expects.
       const deletedHash = await bcrypt.hash(crypto.randomUUID(), 12);
 
+      // Prevent deletion if user has active calls
+      const activeCall = await db.call.findFirst({
+        where: {
+          userId,
+          status: { in: ["PENDING", "CALLING", "RINGING", "ACTIVE"] },
+        },
+      });
+
+      if (activeCall) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Impossible de supprimer le compte : un appel est en cours. Veuillez attendre la fin de l'appel.",
+        });
+      }
+
       await db.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },

@@ -1,11 +1,14 @@
-import type { PrismaClient, UserBilling } from "@prisma/client";
+import type { PrismaClient, UserBilling, Purchase } from "@prisma/client";
 import type { PrismaTx, AtomicDebitResult } from "./types";
+
+export type PurchaseHistoryItem = Pick<Purchase, "id" | "creditsPurchased" | "createdAt" | "refundedAt" | "disputedAt">;
 
 export interface IUserBillingRepository {
   findByUserId(userId: string): Promise<Pick<UserBilling, "id" | "userId" | "credits"> | null>;
   upsert(userId: string, data?: Partial<Pick<UserBilling, "credits">>): Promise<UserBilling>;
   atomicDebit(tx: PrismaTx, userId: string, cost: number): Promise<AtomicDebitResult>;
   atomicRefund(tx: PrismaTx, userId: string, amount: number): Promise<void>;
+  getPurchaseHistory(userId: string): Promise<PurchaseHistoryItem[]>;
 }
 
 export class PrismaUserBillingRepository implements IUserBillingRepository {
@@ -53,6 +56,20 @@ export class PrismaUserBillingRepository implements IUserBillingRepository {
       where: { userId },
       create: { userId, credits: amount },
       update: { credits: { increment: amount } },
+    });
+  }
+
+  async getPurchaseHistory(userId: string): Promise<PurchaseHistoryItem[]> {
+    return this.db.purchase.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        creditsPurchased: true,
+        createdAt: true,
+        refundedAt: true,
+        disputedAt: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
   }
 }
