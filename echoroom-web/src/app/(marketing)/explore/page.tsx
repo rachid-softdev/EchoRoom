@@ -1,24 +1,18 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Input, SegmentedControl, Button } from "@/components/ui";
-import { Search, Shuffle, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { SegmentedControl } from "@/components/ui";
+import { Search, Clock, Flame, ArrowUp } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { ScenarioCard } from "@/components/shared/ScenarioCard";
 import { MarketingNav } from "@/components/layout/MarketingNav";
+import { ExploreHero } from "@/components/explore/ExploreHero";
+import { CategoryCloud } from "@/components/explore/CategoryCloud";
+import { ChaosSearch } from "@/components/explore/ChaosSearch";
+import { GridHeader } from "@/components/explore/GridHeader";
 
-// Primary categories shown upfront; the rest are collapsed behind "Plus"
-const PRIMARY_CATEGORIES = ["Tous", "Chaotique", "Romantique", "Corporate", "NPC"];
-const EXTRA_CATEGORIES = ["Horreur", "Cringe", "Gamer", "Weird"];
-const ALL_CATEGORIES = [...PRIMARY_CATEGORIES, ...EXTRA_CATEGORIES];
-
-const sortOptions = [
-  { value: "CHRONOLOGICAL" as const, label: "Chronologique" },
-  { value: "TRENDING" as const, label: "Tendance" },
-  { value: "TOP" as const, label: "Top" },
-];
-
+// Category name → API enum mapping
 const CATEGORY_TO_ENUM: Record<string, string> = {
   Romantique: "ROMANTIC",
   Chaotique: "CHAOTIC",
@@ -32,6 +26,12 @@ const CATEGORY_TO_ENUM: Record<string, string> = {
 
 type SortValue = "CHRONOLOGICAL" | "TRENDING" | "TOP";
 
+const sortOptions = [
+  { value: "CHRONOLOGICAL" as const, label: "Récents", icon: <Clock className="w-3.5 h-3.5" /> },
+  { value: "TRENDING" as const, label: "En folie", icon: <Flame className="w-3.5 h-3.5" /> },
+  { value: "TOP" as const, label: "Meilleurs", icon: <ArrowUp className="w-3.5 h-3.5" /> },
+];
+
 function readInitialParams() {
   const params = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : ""
@@ -41,7 +41,7 @@ function readInitialParams() {
   const search = params.get("search");
   return {
     sort: sort && ["CHRONOLOGICAL", "TRENDING", "TOP"].includes(sort) ? sort : "TRENDING" as SortValue,
-    category: category && ALL_CATEGORIES.includes(category) ? category : "Tous",
+    category: category ?? "Tous",
     search: search ?? "",
   };
 }
@@ -63,9 +63,15 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState(initial.search);
   const [debouncedQuery, setDebouncedQuery] = useState(initial.search);
   const [sort, setSort] = useState<SortValue>(initial.sort);
-  const [showAllCategories, setShowAllCategories] = useState(false);
   const [chaosKey, setChaosKey] = useState(0);
   const feedQuery = api.scenarios.feed.useQuery({ limit: 50, sort });
+
+  // Track whether user has ever typed — used to collapse hero with animation
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const isSearching = searchQuery.length > 0;
+
+  // Increments on category/search change to trigger grid re-animation
+  const [transitionKey, setTransitionKey] = useState(0);
 
   // Sync search debounce
   useEffect(() => {
@@ -84,8 +90,17 @@ export default function ExplorePage() {
     window.history.replaceState(null, "", newUrl);
   }, [sort, activeCategory, searchQuery]);
 
-  const visibleCategories = showAllCategories ? ALL_CATEGORIES : PRIMARY_CATEGORIES;
-  const hiddenCount = ALL_CATEGORIES.length - PRIMARY_CATEGORIES.length;
+  // Detect first search interaction for hero collapse animation
+  useEffect(() => {
+    if (isSearching && !hasInteracted) {
+      setHasInteracted(true);
+    }
+  }, [isSearching, hasInteracted]);
+
+  // Bump transition key when filters change to re-trigger stagger animation
+  useEffect(() => {
+    setTransitionKey((k) => k + 1);
+  }, [activeCategory, debouncedQuery]);
 
   const filteredItems = useMemo(() =>
     feedQuery.data?.items.filter((scenario) => {
@@ -104,87 +119,79 @@ export default function ExplorePage() {
 
   const shuffledItems = useMemo(() => shuffleArray(filteredItems), [filteredItems]);
 
+  // Derive trending titles from the feed for the hero marquee
+  const trendingScenarios = useMemo(() => {
+    if (feedQuery.data?.items && feedQuery.data.items.length > 0) {
+      // Take up to 12 titles, cycling through with some repetition for substance
+      const titles = feedQuery.data.items.map((s) => s.title);
+      // Ensure enough items for looping
+      while (titles.length < 8) titles.push(...titles);
+      return titles.slice(0, 12);
+    }
+    return [
+      "Fake Recruiter",
+      "Le Patron Absurde",
+      "Karaoke Night",
+      "Date Aveugle",
+      "Réunion du Lundi",
+      "PVP Drama",
+      "Appel Secret",
+      "Cringe Story",
+      "Horreur au Bureau",
+      "GG EZ",
+      "Monologue Intérieur",
+      "Crise Existentialiste",
+    ];
+  }, [feedQuery.data]);
+
+  // First item from feed used as featured spotlight
+  const featuredScenario = useMemo(() => {
+    return feedQuery.data?.items?.[0] ?? undefined;
+  }, [feedQuery.data]);
+
+  const handleChaosToggle = useCallback(() => {
+    setChaosKey((k) => k + 1);
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       <MarketingNav />
 
       <section className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h1 className="text-fluid-section font-bold mb-2">Explorer les scénarios</h1>
-            <p className="text-muted-foreground">
-              Découvrez les créations de la communauté EchoRoom
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 shrink-0"
-            onClick={() => setChaosKey((k) => k + 1)}
-          >
-            <Shuffle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Surprise-moi</span>
-          </Button>
-        </div>
-
-        {/* Search + Sort — side by side */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un scénario..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <SegmentedControl
-            options={sortOptions}
-            value={sort}
-            onChange={setSort}
+        {/* ═══ Zone 1: The Pulse (Hero) ═══ */}
+        <div
+          className={`overflow-hidden transition-all duration-500 ease-out ${
+            isSearching ? "max-h-0 opacity-0 mb-0" : "max-h-[500px] opacity-100 mb-8"
+          }`}
+        >
+          <ExploreHero
+            trendingScenarios={trendingScenarios}
+            {...(featuredScenario ? { featured: featuredScenario } : {})}
           />
         </div>
 
-        {/* Categories — collapsed by default */}
-        <div className="flex flex-wrap items-center gap-2 mb-8">
-          {visibleCategories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setActiveCategory(category)}
-              aria-pressed={activeCategory === category}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                activeCategory === category
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-          {!showAllCategories && hiddenCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowAllCategories(true)}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors flex items-center gap-1"
-            >
-              +{hiddenCount} autres <ChevronDown className="w-3 h-3" />
-            </button>
-          )}
-          {showAllCategories && (
-            <button
-              type="button"
-              onClick={() => setShowAllCategories(false)}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors flex items-center gap-1"
-            >
-              Moins <ChevronUp className="w-3 h-3" />
-            </button>
-          )}
+        {/* ═══ Zone 2: The Chaos Controls ═══ */}
+        <div className="space-y-4 mb-8">
+          <ChaosSearch value={searchQuery} onChange={setSearchQuery} />
+
+          <CategoryCloud
+            activeCategory={activeCategory}
+            onSelect={setActiveCategory}
+          />
+
+          <div className="flex justify-end">
+            <SegmentedControl
+              options={sortOptions}
+              value={sort}
+              onChange={setSort}
+            />
+          </div>
         </div>
 
-        {/* Grid */}
+        {/* ═══ Zone 3: The Grid ═══ */}
         <DataLoader
           query={feedQuery}
+          skeletonCount={6}
           isEmpty={(data) =>
             data.items.length === 0 &&
             activeCategory === "Tous" &&
@@ -192,7 +199,7 @@ export default function ExplorePage() {
           }
         >
           {(data) => {
-            // When chaos key changes, show shuffled results
+            // Determine which items to display
             const useChaos = chaosKey > 0 && searchQuery === "" && activeCategory === "Tous";
             const items = useChaos
               ? shuffledItems
@@ -220,16 +227,27 @@ export default function ExplorePage() {
             }
 
             return (
-              <div>
-                {useChaos && (
-                  <p className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
-                    <Shuffle className="w-3 h-3 text-primary" />
-                    Mode chaos activé — les résultats sont mélangés aléatoirement
-                  </p>
-                )}
+              <div key={transitionKey} className="animate-fade-in">
+                <GridHeader
+                  resultCount={items.length}
+                  chaosActive={useChaos}
+                  onChaosToggle={handleChaosToggle}
+                  {...(activeCategory !== "Tous" ? { categoryLabel: activeCategory } : {})}
+                  {...(searchQuery ? { searchQuery } : {})}
+                />
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {items.map((scenario) => (
-                    <ScenarioCard key={scenario.id} scenario={scenario} />
+                  {items.map((scenario, idx) => (
+                    <div
+                      key={scenario.id}
+                      className={`animate-fade-in ${
+                        idx < 6
+                          ? (`stagger-${idx + 1}` as string)
+                          : ""
+                      }`}
+                      style={{ animationDuration: "0.3s" }}
+                    >
+                      <ScenarioCard scenario={scenario} />
+                    </div>
                   ))}
                 </div>
               </div>

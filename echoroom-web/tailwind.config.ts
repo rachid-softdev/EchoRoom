@@ -53,6 +53,7 @@ const config: Config = {
           "50%": { transform: "scaleY(1)" },
         },
         "scale-in": { from: { transform: "scale(0.9)", opacity: "0" }, to: { transform: "scale(1)", opacity: "1" } },
+        "marquee": { from: { transform: "translateX(0)" }, to: { transform: "translateX(-100%)" } },
       },
       animation: {
         "fade-in": "fade-in 0.3s ease-out",
@@ -64,6 +65,7 @@ const config: Config = {
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "audio-bar": "audio-bar 0.8s ease-in-out infinite",
         "scale-in": "scale-in 0.3s ease-out",
+"marquee": "marquee 30s linear infinite",
       },
     },
   },
