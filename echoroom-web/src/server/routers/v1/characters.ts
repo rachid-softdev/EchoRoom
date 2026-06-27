@@ -7,13 +7,24 @@
  * It maintains backward compatibility for clients that depend on the v1 shapes.
  * Changes and improvements should go into v2+ routers.
  */
-import { z } from "zod";
-import { router, publicProcedure } from "../../procedures";
-import { db } from "../../db";
-import { getCachedCharacters, setCachedCharacters } from "../../services/cache/characterCache";
-import type { Character } from "@prisma/client";
 
-type CachedCharacter = Pick<Character, "id" | "name" | "slug" | "description" | "previewAudioUrl" | "avatarUrl" | "category" | "isFeatured">;
+import type { Character } from "@prisma/client";
+import { z } from "zod";
+import { db } from "../../db";
+import { publicProcedure, router } from "../../procedures";
+import { getCachedCharacters, setCachedCharacters } from "../../services/cache/characterCache";
+
+type CachedCharacter = Pick<
+  Character,
+  | "id"
+  | "name"
+  | "slug"
+  | "description"
+  | "previewAudioUrl"
+  | "avatarUrl"
+  | "category"
+  | "isFeatured"
+>;
 
 export const charactersV1Router = router({
   list: publicProcedure
@@ -52,27 +63,25 @@ export const charactersV1Router = router({
       return characters;
     }),
 
-  getBySlug: publicProcedure
-    .input(z.object({ slug: z.string() }))
-    .query(async ({ input }) => {
-      const character = await db.character.findUnique({
-        where: { slug: input.slug },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          description: true,
-          previewAudioUrl: true,
-          avatarUrl: true,
-          category: true,
-          isFeatured: true,
-        },
-      });
+  getBySlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
+    const character = await db.character.findUnique({
+      where: { slug: input.slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        previewAudioUrl: true,
+        avatarUrl: true,
+        category: true,
+        isFeatured: true,
+      },
+    });
 
-      if (!character) {
-        return null;
-      }
+    if (!character) {
+      return null;
+    }
 
-      return character;
-    }),
+    return character;
+  }),
 });

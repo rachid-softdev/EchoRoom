@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, waitFor, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ── Hoisted mocks for dynamic mutation state ──────────────────────────
 const mockMutate = vi.hoisted(() => vi.fn());
@@ -25,7 +25,11 @@ vi.mock("next/navigation", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock tRPC with dynamic mutation state (getters for live reads)
@@ -82,18 +86,52 @@ vi.mock("@/components/shared/PasswordStrengthMeter", () => ({
 // Mock @/components/ui
 vi.mock("@/components/ui", () => ({
   Button: ({ children, onClick, variant, className, disabled, type, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} className={className} disabled={disabled} type={type} {...props}>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      className={className}
+      disabled={disabled}
+      type={type}
+      {...props}
+    >
       {children}
     </button>
   ),
   Input: (props: any) => <input {...props} />,
-  Card: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardContent: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardDescription: ({ children, className, ...props }: any) => <p className={className} {...props}>{children}</p>,
-  CardHeader: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardTitle: ({ children, className, ...props }: any) => <h2 className={className} {...props}>{children}</h2>,
+  Card: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardContent: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardDescription: ({ children, className, ...props }: any) => (
+    <p className={className} {...props}>
+      {children}
+    </p>
+  ),
+  CardHeader: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardTitle: ({ children, className, ...props }: any) => (
+    <h2 className={className} {...props}>
+      {children}
+    </h2>
+  ),
   Checkbox: ({ id, checked, onChange, className, ...props }: any) => (
-    <input type="checkbox" id={id} checked={checked} onChange={onChange} className={className} {...props} />
+    <input
+      type="checkbox"
+      id={id}
+      checked={checked}
+      onChange={onChange}
+      className={className}
+      {...props}
+    />
   ),
 }));
 
@@ -125,9 +163,7 @@ describe("RegisterPage", () => {
     expect(screen.getByLabelText(/nom d'utilisateur/i)).toBeInTheDocument();
     // Use placeholder to avoid ambiguity with show/hide password button aria-label
     expect(screen.getByPlaceholderText("Minimum 8 caractères")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /créer mon compte/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /créer mon compte/i })).toBeInTheDocument();
   });
 
   it("has username min/max length constraints", () => {
@@ -207,9 +243,7 @@ describe("RegisterPage", () => {
     const { container } = render(<RegisterPage />);
 
     // Button is disabled when consent is unchecked
-    expect(
-      screen.getByRole("button", { name: /créer mon compte/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /créer mon compte/i })).toBeDisabled();
 
     // Bypass the disabled button to test the handleSubmit guard
     const form = container.querySelector("form")!;
@@ -225,9 +259,7 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     // passwordStrength = 0 (empty password) → button disabled
-    expect(
-      screen.getByRole("button", { name: /créer mon compte/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /créer mon compte/i })).toBeDisabled();
   });
 
   it("enables submit button when consent is given and password is strong enough", async () => {
@@ -239,9 +271,7 @@ describe("RegisterPage", () => {
     await user.type(screen.getByPlaceholderText("Minimum 8 caractères"), "StrongPass1");
     await user.click(screen.getByRole("checkbox"));
 
-    expect(
-      screen.getByRole("button", { name: /créer mon compte/i }),
-    ).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /créer mon compte/i })).not.toBeDisabled();
   });
 
   // ── Password strength meter tests ───────────────────────────────────
@@ -265,10 +295,7 @@ describe("RegisterPage", () => {
     const user = userEvent.setup();
     render(<RegisterPage />);
 
-    await user.type(
-      screen.getByPlaceholderText("Minimum 8 caractères"),
-      "Test123!",
-    );
+    await user.type(screen.getByPlaceholderText("Minimum 8 caractères"), "Test123!");
 
     expect(screen.getByTestId("password-strength-meter")).toHaveAttribute(
       "data-password",
@@ -433,9 +460,7 @@ describe("RegisterPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "Compte créé mais erreur de connexion. Veuillez vous connecter.",
-        ),
+        screen.getByText("Compte créé mais erreur de connexion. Veuillez vous connecter."),
       ).toBeInTheDocument();
     });
 
@@ -455,8 +480,6 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     expect(screen.getByText("Créer un compte")).toBeInTheDocument();
-    expect(
-      screen.getByText("5 crédits offerts pour commencer"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("5 crédits offerts pour commencer")).toBeInTheDocument();
   });
 });

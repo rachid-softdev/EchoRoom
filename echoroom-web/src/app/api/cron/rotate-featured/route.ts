@@ -22,32 +22,23 @@ export async function GET(request: NextRequest) {
   try {
     // ── Authentication ──────────────────────────────────────────────
     const authHeader = request.headers.get("authorization");
-    const expected = process.env['CRON_SECRET'] ?? '';
+    const expected = process.env["CRON_SECRET"] ?? "";
 
     if (!authHeader || !expected) {
-      return NextResponse.json(
-        { error: "Non autorisé" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : authHeader;
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
     // Constant-time comparison — mitigates timing side-channel attacks
     const tokenBuf = Buffer.from(token);
     const expectedBuf = Buffer.from(expected);
 
     const isValid =
-      tokenBuf.length === expectedBuf.length &&
-      timingSafeEqual(tokenBuf, expectedBuf);
+      tokenBuf.length === expectedBuf.length && timingSafeEqual(tokenBuf, expectedBuf);
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Non autorisé" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
     // ── Execute rotation ────────────────────────────────────────────
@@ -64,19 +55,13 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeoutId);
 
     if (controller.signal.aborted) {
-      return NextResponse.json(
-        { error: "Délai d'exécution dépassé" },
-        { status: 504 },
-      );
+      return NextResponse.json({ error: "Délai d'exécution dépassé" }, { status: 504 });
     }
 
     // Log full error server-side, return generic message
     log.error("Rotation failed", { error });
 
-    return NextResponse.json(
-      { success: false, reason: "Erreur interne" },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, reason: "Erreur interne" }, { status: 500 });
   }
 }
 

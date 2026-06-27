@@ -1,10 +1,15 @@
-import type { Prisma, PrismaClient, Scenario, Character, $Enums } from "@prisma/client";
+import type { $Enums, Character, Prisma, PrismaClient, Scenario } from "@prisma/client";
 
 export interface IScenarioRepository {
   findById(id: string): Promise<Scenario | null>;
   findByIdWithCharacter(id: string): Promise<(Scenario & { character: Character }) | null>;
   incrementPlayCount(id: string): Promise<void>;
-  create(data: Pick<Scenario, "creatorId" | "characterId" | "title" | "description" | "openingMessage" | "aiInstructions">): Promise<Scenario>;
+  create(
+    data: Pick<
+      Scenario,
+      "creatorId" | "characterId" | "title" | "description" | "openingMessage" | "aiInstructions"
+    >,
+  ): Promise<Scenario>;
   findTopByEngagement(
     sort: "LIKES" | "PLAYS",
     sinceDate: Date | null,
@@ -36,7 +41,12 @@ export class PrismaScenarioRepository implements IScenarioRepository {
     });
   }
 
-  async create(data: Pick<Scenario, "creatorId" | "characterId" | "title" | "description" | "openingMessage" | "aiInstructions">): Promise<Scenario> {
+  async create(
+    data: Pick<
+      Scenario,
+      "creatorId" | "characterId" | "title" | "description" | "openingMessage" | "aiInstructions"
+    >,
+  ): Promise<Scenario> {
     return this.db.scenario.create({ data });
   }
 
@@ -46,9 +56,7 @@ export class PrismaScenarioRepository implements IScenarioRepository {
     limit: number,
   ): Promise<any[]> {
     const orderBy =
-      sort === "LIKES"
-        ? ({ likeCount: "desc" } as const)
-        : ({ playCount: "desc" } as const);
+      sort === "LIKES" ? ({ likeCount: "desc" } as const) : ({ playCount: "desc" } as const);
 
     const where: Prisma.ScenarioWhereInput = {
       visibility: "PUBLIC",

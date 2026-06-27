@@ -13,10 +13,10 @@ import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { anonymizePersonalData } from "@/server/services/user/anonymization";
-import { purgeAnonymizedUsers } from "@/server/jobs/gdprPurge";
 import { db } from "@/server/db";
+import { purgeAnonymizedUsers } from "@/server/jobs/gdprPurge";
 import { getUTCDateString } from "@/server/lib/date";
+import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { adminProcedure, router } from "@/server/trpc";
 
 function hashPhoneForAudit(phone: string): string {
@@ -633,8 +633,7 @@ export const adminV1Router = router({
       });
 
       const items = comments.slice(0, input.limit);
-      const nextCursor =
-        comments.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = comments.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };
     }),
@@ -675,9 +674,11 @@ export const adminV1Router = router({
     }),
 
   purgeGDPR: adminProcedure
-    .input(z.object({
-      retentionDays: z.number().min(7).max(90).default(30),
-    }))
+    .input(
+      z.object({
+        retentionDays: z.number().min(7).max(90).default(30),
+      }),
+    )
     .mutation(async ({ input }) => {
       const result = await purgeAnonymizedUsers(input.retentionDays);
       return result;

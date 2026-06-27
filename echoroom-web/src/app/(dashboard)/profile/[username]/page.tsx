@@ -1,20 +1,15 @@
-import type { Metadata } from "next"
+import { ArrowRight, Calendar, FileAudio, Phone, Sparkles, Users } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@/server/db"
-import { DashboardShell } from "@/components/shared/DashboardShell"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  Badge,
-} from "@/components/ui"
-import { Calendar, FileAudio, Users, Phone, Sparkles, ArrowRight } from "lucide-react"
+import { DashboardShell } from "@/components/shared/DashboardShell";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
+import { db } from "@/server/db";
+import { buildActivityFeed, formatRelativeDate } from "./profile-helpers";
+import type { CallFeedItem } from "./profile-helpers";
 
 interface ProfilePageProps {
-  params: { username: string }
+  params: { username: string };
 }
 
 const ACTIVITY_LIMIT = 10;
@@ -57,66 +52,21 @@ async function getProfileData(username: string) {
   return user;
 }
 
-interface ScenarioFeedItem {
-  id: string; title: string; createdAt: Date; playCount: number; likeCount: number;
-}
-interface CallFeedItem {
-  id: string; createdAt: Date; status: string; durationSeconds: number;
-  scenarioTitle?: string; scenarioId?: string;
-}
-
-type ActivityItem =
-  | { type: "scenario" } & ScenarioFeedItem
-  | { type: "call" } & CallFeedItem;
-
-export function buildActivityFeed(
-  scenarios: ScenarioFeedItem[],
-  calls: CallFeedItem[]
-): ActivityItem[] {
-  const items: ActivityItem[] = [];
-
-  for (const s of scenarios) {
-    items.push({ type: "scenario", ...s });
-  }
-  for (const c of calls) {
-    items.push({ type: "call", ...c });
-  }
-
-  items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  return items.slice(0, ACTIVITY_LIMIT);
-}
-
-export function formatRelativeDate(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "À l'instant";
-  if (diffMins < 60) return `Il y a ${diffMins} min`;
-  if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays < 7) return `Il y a ${diffDays}j`;
-  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(date);
-}
-
-export async function generateMetadata({
-  params,
-}: ProfilePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const user = await db.user.findUnique({
     where: { username: params.username },
     select: { username: true },
-  })
+  });
 
   if (!user) {
     return {
       title: "Profil introuvable — EchoRoom AI",
       description: "Ce profil n'existe pas sur EchoRoom AI.",
-    }
+    };
   }
 
-  const title = `${user.username} — EchoRoom AI`
-  const description = `Découvrez le profil de ${user.username} sur EchoRoom AI : ses scénarios, son activité et ses statistiques.`
+  const title = `${user.username} — EchoRoom AI`;
+  const description = `Découvrez le profil de ${user.username} sur EchoRoom AI : ses scénarios, son activité et ses statistiques.`;
 
   return {
     title,
@@ -133,7 +83,7 @@ export async function generateMetadata({
       title,
       description,
     },
-  }
+  };
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
@@ -151,15 +101,20 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const activity = buildActivityFeed(
     user.scenarios.map((s) => ({
-      id: s.id, title: s.title, createdAt: s.createdAt,
-      playCount: s.playCount, likeCount: s.likeCount,
+      id: s.id,
+      title: s.title,
+      createdAt: s.createdAt,
+      playCount: s.playCount,
+      likeCount: s.likeCount,
     })),
     user.calls.map((c) => ({
-      id: c.id, createdAt: c.createdAt,
-      status: String(c.status), durationSeconds: c.durationSeconds,
+      id: c.id,
+      createdAt: c.createdAt,
+      status: String(c.status),
+      durationSeconds: c.durationSeconds,
       scenarioTitle: c.scenario?.title ?? undefined,
       scenarioId: c.scenario?.id ?? undefined,
-    })) as CallFeedItem[]
+    })) as CallFeedItem[],
   );
   const totalItems = user._count.scenarios + user._count.calls;
 
@@ -241,11 +196,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
                           <span>Nouveau scénario</span>
                           <span className="text-muted-foreground/40">&middot;</span>
-                          <span>{item.playCount} lectures &middot; {item.likeCount} likes</span>
+                          <span>
+                            {item.playCount} lectures &middot; {item.likeCount} likes
+                          </span>
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-xs text-muted-foreground">{formatRelativeDate(item.createdAt)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelativeDate(item.createdAt)}
+                        </p>
                         <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 ml-auto mt-0.5 group-hover:text-primary transition-colors" />
                       </div>
                     </div>
@@ -262,10 +221,20 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
                           <Badge
-                            variant={item.status === "COMPLETED" ? "secondary" : item.status === "FAILED" ? "destructive" : "outline"}
+                            variant={
+                              item.status === "COMPLETED"
+                                ? "secondary"
+                                : item.status === "FAILED"
+                                  ? "destructive"
+                                  : "outline"
+                            }
                             className="text-[10px] px-1.5 py-0"
                           >
-                            {item.status === "COMPLETED" ? "Terminé" : item.status === "FAILED" ? "Échoué" : item.status}
+                            {item.status === "COMPLETED"
+                              ? "Terminé"
+                              : item.status === "FAILED"
+                                ? "Échoué"
+                                : item.status}
                           </Badge>
                           {item.durationSeconds > 0 && (
                             <>
@@ -276,7 +245,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-xs text-muted-foreground">{formatRelativeDate(item.createdAt)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelativeDate(item.createdAt)}
+                        </p>
                         <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 ml-auto mt-0.5 group-hover:text-primary transition-colors" />
                       </div>
                     </div>
@@ -291,9 +262,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5 mb-4">
                 <Sparkles className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-base font-semibold mb-1">
-                Pas encore d&apos;activité
-              </p>
+              <p className="text-base font-semibold mb-1">Pas encore d&apos;activité</p>
               <p className="text-sm text-muted-foreground max-w-md">
                 {user.username} n&apos;a pas encore créé de scénario ou passé d&apos;appel.
               </p>
@@ -302,5 +271,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         )}
       </div>
     </DashboardShell>
-  )
+  );
 }
+
+// Re-exported for test compatibility — imported from "../page" in tests
+export { buildActivityFeed, formatRelativeDate } from "./profile-helpers";

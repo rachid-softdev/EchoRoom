@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // useApiToast — tRPC error handler hook
@@ -29,9 +29,7 @@ describe("useApiToast", () => {
       isPending: false,
     };
 
-    const { result } = renderHook(() =>
-      useApiToast(mutation, { success: "Créé avec succès !" }),
-    );
+    const { result } = renderHook(() => useApiToast(mutation, { success: "Créé avec succès !" }));
 
     await result.current.mutateAsync({ name: "test" });
 
@@ -75,9 +73,7 @@ describe("useApiToast", () => {
       isPending: false,
     };
 
-    const { result } = renderHook(() =>
-      useApiToast(mutation, { success: "Créé" }),
-    );
+    const { result } = renderHook(() => useApiToast(mutation, { success: "Créé" }));
 
     await expect(result.current.mutateAsync({ email: "test@test.com" })).rejects.toThrow();
 
@@ -124,9 +120,7 @@ describe("useApiToast", () => {
       isPending: false,
     };
 
-    const { result } = renderHook(() =>
-      useApiToast(mutation, { success: "Créé" }),
-    );
+    const { result } = renderHook(() => useApiToast(mutation, { success: "Créé" }));
 
     await expect(result.current.mutateAsync({})).rejects.toThrow();
 
@@ -147,13 +141,9 @@ describe("useApiToast", () => {
       isPending: false,
     };
 
-    const { result } = renderHook(() =>
-      useApiToast(mutation, { success: "Créé" }),
-    );
+    const { result } = renderHook(() => useApiToast(mutation, { success: "Créé" }));
 
-    await expect(result.current.mutateAsync({})).rejects.toThrow(
-      "Quelque chose a mal tourné",
-    );
+    await expect(result.current.mutateAsync({})).rejects.toThrow("Quelque chose a mal tourné");
   });
 
   it("should work with empty options without crashing", async () => {
@@ -203,9 +193,7 @@ describe("useApiToast", () => {
       isPending: false,
     };
 
-    const { result } = renderHook(() =>
-      useApiToast(mutation, { success: "Success" }),
-    );
+    const { result } = renderHook(() => useApiToast(mutation, { success: "Success" }));
 
     // mutate should call mutateAsync internally
     await result.current.mutate("input");

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { TRPCError } from "@trpc/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // adminRouter tests
@@ -58,7 +58,10 @@ vi.mock("@/server/trpc", () => {
   };
 });
 
-type FeatureScenarioInput = { input: { scenarioId: string }; ctx: { session: { user: { id: string } } } };
+type FeatureScenarioInput = {
+  input: { scenarioId: string };
+  ctx: { session: { user: { id: string } } };
+};
 type MutationHandler = (opts: FeatureScenarioInput) => Promise<{ success: boolean }>;
 
 describe("adminRouter.featureScenario", () => {

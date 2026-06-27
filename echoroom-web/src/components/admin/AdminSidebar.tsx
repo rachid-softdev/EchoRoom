@@ -1,17 +1,9 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import {
-  Shield,
-  Flag,
-  ScrollText,
-  Ban,
-  Users,
-  BarChart3,
-  LayoutDashboard,
-} from "lucide-react"
-import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { Ban, BarChart3, Flag, LayoutDashboard, ScrollText, Shield, Users } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const navItems = [
   { href: "/admin/moderation", label: "Modération", icon: Shield },
@@ -20,26 +12,23 @@ const navItems = [
   { href: "/admin/blocked-numbers", label: "Numéros bloqués", icon: Ban },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
   { href: "/admin/analytics", label: "Analytiques", icon: BarChart3 },
-]
+];
 
 export function AdminSidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <aside className="w-64 shrink-0 h-full border-r border-border bg-background flex flex-col">
       <div className="p-4 border-b border-border">
-        <Link
-          href="/admin/moderation"
-          className="flex items-center gap-2 text-sm font-semibold"
-        >
+        <Link href="/admin/moderation" className="flex items-center gap-2 text-sm font-semibold">
           <LayoutDashboard className="w-4 h-4 text-primary" />
           <span>EchoRoom Admin</span>
         </Link>
       </div>
       <nav className="flex-1 p-2 space-y-1">
         {navItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
@@ -54,12 +43,12 @@ export function AdminSidebar() {
               <Icon className="w-4 h-4 shrink-0" />
               <span>{item.label}</span>
             </Link>
-          )
+          );
         })}
       </nav>
       <div className="p-4 border-t border-border">
         <ThemeToggle />
       </div>
     </aside>
-  )
+  );
 }

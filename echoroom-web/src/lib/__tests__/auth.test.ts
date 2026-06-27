@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import bcrypt from "bcryptjs";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock db for authorize tests
 vi.mock("@/server/db", () => ({
@@ -47,9 +47,7 @@ describe("DUMMY_HASH — timing-constant auth protection", () => {
   });
 
   it("should not throw when used in bcrypt.compare", async () => {
-    await expect(
-      bcrypt.compare("any-password", dummyHash),
-    ).resolves.not.toThrow();
+    await expect(bcrypt.compare("any-password", dummyHash)).resolves.not.toThrow();
   });
 
   it("should return false for empty password against dummy hash", async () => {
@@ -80,13 +78,13 @@ describe("DUMMY_HASH — timing-constant auth protection", () => {
  * Extracted for isolated testing of JWT logic.
  */
 async function simulateJwtCallback(
-  token: Record<string, unknown>,
-  user: Record<string, unknown> | null,
+  token: any,
+  user: any,
   options?: {
-    dbUser?: Record<string, unknown> | null;
-    findUniqueImpl?: () => Record<string, unknown> | null;
+    dbUser?: any;
+    findUniqueImpl?: () => any;
   },
-): Promise<Record<string, unknown>> {
+): Promise<any> {
   // On initial sign-in
   if (user) {
     token["id"] = user.id as string;
@@ -95,7 +93,7 @@ async function simulateJwtCallback(
 
     // Store tokenVersion and role from DB on every login
     if (user.id) {
-      let dbUser: Record<string, unknown> | null = null;
+      let dbUser: any = null;
       if (options?.findUniqueImpl) {
         dbUser = options.findUniqueImpl();
       } else if (options?.dbUser !== undefined) {
@@ -113,7 +111,7 @@ async function simulateJwtCallback(
 
   // ── Re-validate on every token access ──
   if (token["id"]) {
-    let dbUser: Record<string, unknown> | null = null;
+    let dbUser: any = null;
     if (options?.findUniqueImpl) {
       dbUser = options.findUniqueImpl();
     } else if (options?.dbUser !== undefined) {
@@ -218,17 +216,13 @@ describe("jwt callback — token management", () => {
       role: "USER",
     };
 
-    const result = await simulateJwtCallback(
-      token,
-      null,
-      {
-        dbUser: {
-          tokenVersion: 5,
-          deletedAt: null,
-          role: "MODERATOR", // Role changed in DB
-        },
+    const result = await simulateJwtCallback(token, null, {
+      dbUser: {
+        tokenVersion: 5,
+        deletedAt: null,
+        role: "MODERATOR", // Role changed in DB
       },
-    );
+    });
 
     expect(result.role).toBe("MODERATOR");
     expect(result.lastVerified).toBeGreaterThanOrEqual(before);
@@ -239,13 +233,9 @@ describe("jwt callback — token management", () => {
       someExistingProp: "keep-me",
     };
 
-    const result = await simulateJwtCallback(
-      token,
-      null,
-      {
-        dbUser: null,
-      },
-    );
+    const result = await simulateJwtCallback(token, null, {
+      dbUser: null,
+    });
 
     // No id in token, so re-validation is skipped, token returned as-is
     expect(result).toEqual(token);
@@ -345,7 +335,7 @@ describe("session callback — role from JWT (contract)", () => {
 
     // Extract the session callback body to verify no db queries there
     const sessionCallbackMatch = source.match(
-      /async session\(\{ session, token \}\) \{[\s\S]*?\n  \}/,
+      /async session\(\{ session, token \}\) \{[\s\S]*?\n {2}\}/,
     );
     expect(sessionCallbackMatch).not.toBeNull();
 
@@ -379,7 +369,7 @@ const DUMMY_HASH = "$2a$12$Cu8vgg8BQxK03D9Sf95z.O5wQsmxCzuzVT6wfuRxXRsGcOXCLF1Mq
  */
 async function simulateAuthorize(
   credentials: { email?: string; password?: string } | null,
-): Promise<Record<string, unknown> | null> {
+): Promise<any> {
   if (!credentials?.email || !credentials?.password) {
     return null;
   }

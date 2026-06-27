@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // RootLayout tests — skip link accessibility (S-5 fix)
@@ -62,7 +62,11 @@ describe("RootLayout — skip link accessibility", () => {
   });
 
   it("renders a skip-to-content link with href='#main-content'", () => {
-    render(<RootLayout><div>Test content</div></RootLayout>);
+    render(
+      <RootLayout>
+        <div>Test content</div>
+      </RootLayout>,
+    );
 
     const skipLink = screen.getByRole("link", {
       name: /Aller au contenu principal/i,
@@ -72,7 +76,11 @@ describe("RootLayout — skip link accessibility", () => {
   });
 
   it("renders the skip link with sr-only class (visually hidden until focused)", () => {
-    render(<RootLayout><div>Test content</div></RootLayout>);
+    render(
+      <RootLayout>
+        <div>Test content</div>
+      </RootLayout>,
+    );
 
     const skipLink = screen.getByRole("link", {
       name: /Aller au contenu principal/i,
@@ -83,7 +91,11 @@ describe("RootLayout — skip link accessibility", () => {
   });
 
   it("renders the main content div with id='main-content'", () => {
-    render(<RootLayout><div>Test content</div></RootLayout>);
+    render(
+      <RootLayout>
+        <div>Test content</div>
+      </RootLayout>,
+    );
 
     const mainContent = document.getElementById("main-content");
     expect(mainContent).toBeInTheDocument();
@@ -91,7 +103,11 @@ describe("RootLayout — skip link accessibility", () => {
   });
 
   it("renders the main content div with tabIndex={-1}", () => {
-    render(<RootLayout><div>Test content</div></RootLayout>);
+    render(
+      <RootLayout>
+        <div>Test content</div>
+      </RootLayout>,
+    );
 
     const mainContent = document.getElementById("main-content");
     expect(mainContent).toBeInTheDocument();
@@ -111,7 +127,11 @@ describe("RootLayout — skip link accessibility", () => {
   });
 
   it("renders the Footer component inside main-content", () => {
-    render(<RootLayout><div>Test</div></RootLayout>);
+    render(
+      <RootLayout>
+        <div>Test</div>
+      </RootLayout>,
+    );
 
     const footer = screen.getByTestId("footer");
     expect(footer).toBeInTheDocument();
@@ -121,7 +141,11 @@ describe("RootLayout — skip link accessibility", () => {
   });
 
   it("renders html element with lang='fr'", () => {
-    const { container } = render(<RootLayout><div>Test</div></RootLayout>);
+    const { container } = render(
+      <RootLayout>
+        <div>Test</div>
+      </RootLayout>,
+    );
 
     // jsdom creates a default html element, so the component's html is a child
     // Verify the rendered output contains the expected attribute

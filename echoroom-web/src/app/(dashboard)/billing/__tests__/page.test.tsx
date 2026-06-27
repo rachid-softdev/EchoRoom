@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next-auth
 vi.mock("next-auth/react", () => ({
@@ -51,8 +51,11 @@ vi.mock("next/navigation", () => ({
 
 // Mock DashboardShell
 vi.mock("@/components/shared/DashboardShell", () => ({
-  DashboardShell: ({ children, title }: { children: React.ReactNode; title: string }) =>
-    <div data-testid="dashboard-shell" data-title={title}>{children}</div>,
+  DashboardShell: ({ children, title }: { children: React.ReactNode; title: string }) => (
+    <div data-testid="dashboard-shell" data-title={title}>
+      {children}
+    </div>
+  ),
 }));
 
 // Mock lucide-react
@@ -64,27 +67,54 @@ vi.mock("lucide-react", () => ({
 // Mock @/components/ui
 vi.mock("@/components/ui", () => ({
   Badge: ({ children, variant, className, ...props }: any) => (
-    <span data-variant={variant} className={className} {...props}>{children}</span>
+    <span data-variant={variant} className={className} {...props}>
+      {children}
+    </span>
   ),
   Button: ({ children, onClick, variant, className, disabled, size, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} data-size={size} className={className} disabled={disabled} {...props}>{children}</button>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
   ),
-  Card: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardContent: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardDescription: ({ children, className, ...props }: any) => <p className={className} {...props}>{children}</p>,
-  CardHeader: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardTitle: ({ children, className, ...props }: any) => <h2 className={className} {...props}>{children}</h2>,
+  Card: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardContent: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardDescription: ({ children, className, ...props }: any) => (
+    <p className={className} {...props}>
+      {children}
+    </p>
+  ),
+  CardHeader: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardTitle: ({ children, className, ...props }: any) => (
+    <h2 className={className} {...props}>
+      {children}
+    </h2>
+  ),
 }));
 
 import { api } from "@/lib/trpc";
 import BillingPage from "../page";
 
-const mockCreditsQuery = api.billing.getCredits.useQuery as ReturnType<
-  typeof vi.fn
->;
-const mockPurchasesQuery = api.billing.getPurchases.useQuery as ReturnType<
-  typeof vi.fn
->;
+const mockCreditsQuery = api.billing.getCredits.useQuery as ReturnType<typeof vi.fn>;
+const mockPurchasesQuery = api.billing.getPurchases.useQuery as ReturnType<typeof vi.fn>;
 
 describe("BillingPage", () => {
   afterEach(() => {

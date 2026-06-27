@@ -1,9 +1,9 @@
 "use client";
 
+import { Loader2, Phone } from "lucide-react";
 import Link from "next/link";
-import { Phone, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui";
 import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui";
 
 export function MarketingNav() {
   const { data: session, status } = useSession();

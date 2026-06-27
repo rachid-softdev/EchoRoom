@@ -3,6 +3,7 @@ import twilio from "twilio";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
 import { createTwilioToken, verifyTwilioToken } from "@/server/lib/twilioToken";
+import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
 import { generateResponse } from "@/server/services/ai/conversationEngine";
 import { checkContent } from "@/server/services/ai/moderation";
 import { uploadAudioBuffer } from "@/server/services/audio/r2";
@@ -17,7 +18,6 @@ import {
   setConversationStatus,
 } from "@/server/services/telephony/conversationState";
 import { detectGoodbye } from "@/server/services/telephony/goodbyeDetector";
-import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
 
 const log = createLogger("handle-input");
 

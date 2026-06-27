@@ -4,10 +4,6 @@ const log = createLogger("circuit-breaker");
 
 export class CircuitBreakerOpenError extends Error {
   override name = "CircuitBreakerOpenError";
-
-  constructor(message: string) {
-    super(message);
-  }
 }
 
 type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
@@ -36,7 +32,12 @@ export class CircuitBreaker {
   private readonly openTimeoutMs: number;
   private readonly name: string;
 
-  constructor(failureThreshold: number, successThreshold: number, openTimeoutMs: number, name: string) {
+  constructor(
+    failureThreshold: number,
+    successThreshold: number,
+    openTimeoutMs: number,
+    name: string,
+  ) {
     this.failureThreshold = failureThreshold;
     this.successThreshold = successThreshold;
     this.openTimeoutMs = openTimeoutMs;

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DemoAudioForm } from "../DemoAudioForm";
 
 afterEach(() => {
@@ -36,9 +36,7 @@ describe("DemoAudioForm", () => {
     const button = screen.getByRole("button", { name: "Prévenir" });
     await user.click(button);
 
-    expect(alertSpy).toHaveBeenCalledWith(
-      "Merci ! Vous serez prévenu du lancement.",
-    );
+    expect(alertSpy).toHaveBeenCalledWith("Merci ! Vous serez prévenu du lancement.");
     expect(input).toHaveValue("");
     alertSpy.mockRestore();
   });
@@ -65,9 +63,7 @@ describe("DemoAudioForm", () => {
     const form = input.closest("form")!;
     fireEvent.submit(form);
 
-    expect(alertSpy).toHaveBeenCalledWith(
-      "Merci ! Vous serez prévenu du lancement.",
-    );
+    expect(alertSpy).toHaveBeenCalledWith("Merci ! Vous serez prévenu du lancement.");
     expect(input).toHaveValue("");
 
     alertSpy.mockRestore();

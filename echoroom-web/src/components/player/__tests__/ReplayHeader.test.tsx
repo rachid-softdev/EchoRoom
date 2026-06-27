@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { ReplayHeader } from "../ReplayHeader";
 
 afterEach(() => {
@@ -108,9 +108,7 @@ describe("ReplayHeader", () => {
   });
 
   it("has four grid items", () => {
-    const { container } = render(
-      <ReplayHeader scenarioTitle="Test" />,
-    );
+    const { container } = render(<ReplayHeader scenarioTitle="Test" />);
 
     // Check that the grid container exists
     const gridDiv = container.firstChild as HTMLElement;

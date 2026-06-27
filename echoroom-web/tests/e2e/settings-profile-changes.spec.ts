@@ -1,12 +1,15 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 // ── Helpers ──
 
 /**
  * Mock the session endpoint with authenticated user data.
  */
-async function mockSession(page: import("@playwright/test").Page, overrides?: Record<string, unknown>) {
+async function mockSession(
+  page: import("@playwright/test").Page,
+  overrides?: Record<string, unknown>,
+) {
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       status: 200,
@@ -35,9 +38,7 @@ async function mockUpdateProfile(page: import("@playwright/test").Page) {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: { success: true } } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
     });
   });
 }
@@ -73,9 +74,7 @@ async function mockChangePassword(
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { success: true } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
       });
     }
   });
@@ -90,7 +89,7 @@ test.describe("P3 — Settings save button enable/disable", () => {
   );
 
   function readSettingsSource(): string {
-    return require("fs").readFileSync(SETTINGS_PATH, "utf-8");
+    return require("node:fs").readFileSync(SETTINGS_PATH, "utf-8");
   }
 
   test("source: hasChanges tracks username vs originalUsername", () => {
@@ -236,7 +235,7 @@ test.describe("P8 — Password change in Settings", () => {
   );
 
   function readSettingsSource(): string {
-    return require("fs").readFileSync(SETTINGS_PATH, "utf-8");
+    return require("node:fs").readFileSync(SETTINGS_PATH, "utf-8");
   }
 
   test("source: password change section is present", () => {
@@ -312,7 +311,9 @@ test.describe("P8 — Password change in Settings", () => {
     await expect(changeButton).toBeDisabled();
   });
 
-  test("mock: change password button disabled when confirmPassword does not match newPassword", async ({ page }) => {
+  test("mock: change password button disabled when confirmPassword does not match newPassword", async ({
+    page,
+  }) => {
     await mockSession(page);
     await page.goto("/settings");
     await page.waitForLoadState("networkidle");
@@ -335,7 +336,9 @@ test.describe("P8 — Password change in Settings", () => {
     await expect(changeButton).toBeDisabled();
   });
 
-  test("mock: change password button disabled when newPassword is too short (< 8 chars)", async ({ page }) => {
+  test("mock: change password button disabled when newPassword is too short (< 8 chars)", async ({
+    page,
+  }) => {
     await mockSession(page);
     await page.goto("/settings");
     await page.waitForLoadState("networkidle");

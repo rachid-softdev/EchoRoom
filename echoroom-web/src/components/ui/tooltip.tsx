@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useId, useState } from "react";
 
 interface TooltipProps {
   content: string;
@@ -27,10 +27,15 @@ export function Tooltip({ content, children, side = "top" }: TooltipProps) {
   return (
     <div
       className="relative inline-flex"
+      role="button"
+      tabIndex={0}
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
       onFocus={() => setIsVisible(true)}
       onBlur={() => setIsVisible(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setIsVisible(false);
+      }}
     >
       <div aria-describedby={tooltipId}>{children}</div>
       {isVisible && (

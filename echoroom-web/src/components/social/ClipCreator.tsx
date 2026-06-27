@@ -1,52 +1,48 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Input, Button } from "@/components/ui"
-import { Scissors } from "lucide-react"
-import { api } from "@/lib/trpc"
-import { toast } from "@/components/ui"
+import { Scissors } from "lucide-react";
+import { useState } from "react";
+import { Button, Input, toast } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 interface ClipCreatorProps {
-  callId: string
-  durationSeconds: number
+  callId: string;
+  durationSeconds: number;
 }
 
 export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
-  const [title, setTitle] = useState("")
-  const [startTime, setStartTime] = useState(0)
-  const [endTime, setEndTime] = useState(durationSeconds)
+  const [title, setTitle] = useState("");
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(durationSeconds);
 
   const createMutation = api.social.createClip.useMutation({
     onSuccess: () => {
       toast({
         title: "Clip créé !",
         variant: "default",
-      })
-      setTitle("")
-      setStartTime(0)
-      setEndTime(durationSeconds)
+      });
+      setTitle("");
+      setStartTime(0);
+      setEndTime(durationSeconds);
     },
     onError: (err) => {
       toast({
         title: err.message || "Erreur lors de la création du clip",
         variant: "destructive",
-      })
+      });
     },
-  })
+  });
 
-  const isValid =
-    startTime >= 0 &&
-    endTime > startTime &&
-    endTime <= durationSeconds
+  const isValid = startTime >= 0 && endTime > startTime && endTime <= durationSeconds;
 
   function handleSubmit() {
-    if (!isValid) return
+    if (!isValid) return;
     createMutation.mutate({
       callId,
       title: title.trim() || undefined,
       startTime,
       endTime,
-    })
+    });
   }
 
   return (
@@ -57,10 +53,7 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
       </div>
 
       <div>
-        <label
-          htmlFor="clip-title"
-          className="block text-xs text-muted-foreground mb-1"
-        >
+        <label htmlFor="clip-title" className="block text-xs text-muted-foreground mb-1">
           Titre (optionnel)
         </label>
         <Input
@@ -75,10 +68,7 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label
-            htmlFor="clip-start"
-            className="block text-xs text-muted-foreground mb-1"
-          >
+          <label htmlFor="clip-start" className="block text-xs text-muted-foreground mb-1">
             Début (secondes)
           </label>
           <Input
@@ -93,10 +83,7 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
           />
         </div>
         <div>
-          <label
-            htmlFor="clip-end"
-            className="block text-xs text-muted-foreground mb-1"
-          >
+          <label htmlFor="clip-end" className="block text-xs text-muted-foreground mb-1">
             Fin (secondes)
           </label>
           <Input
@@ -107,9 +94,7 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
             value={endTime}
             step={1}
             onChange={(e) =>
-              setEndTime(
-                Math.min(durationSeconds, Math.max(0, Math.round(Number(e.target.value)))),
-              )
+              setEndTime(Math.min(durationSeconds, Math.max(0, Math.round(Number(e.target.value)))))
             }
             className="text-sm"
           />
@@ -131,5 +116,5 @@ export function ClipCreator({ callId, durationSeconds }: ClipCreatorProps) {
         {createMutation.isPending ? "Création..." : "Créer le clip"}
       </Button>
     </div>
-  )
+  );
 }

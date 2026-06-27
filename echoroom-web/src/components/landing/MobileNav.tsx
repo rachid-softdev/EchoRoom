@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui";
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { Button } from "@/components/ui";
 
 export function MobileNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -22,7 +22,7 @@ export function MobileNav() {
       </div>
       <div
         className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          mobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="border-b border-border bg-card px-4 py-4 flex flex-col gap-4">
@@ -42,10 +42,14 @@ export function MobileNav() {
           </Link>
           <div className="flex gap-3 pt-2 border-t border-border">
             <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="ghost" size="sm" className="w-full">Connexion</Button>
+              <Button variant="ghost" size="sm" className="w-full">
+                Connexion
+              </Button>
             </Link>
             <Link href="/register" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-              <Button size="sm" className="w-full">S&apos;inscrire</Button>
+              <Button size="sm" className="w-full">
+                S&apos;inscrire
+              </Button>
             </Link>
           </div>
         </div>

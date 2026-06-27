@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfirmDialog } from "../ConfirmDialog";
 
 afterEach(() => {
@@ -27,19 +27,11 @@ describe("ConfirmDialog", () => {
     render(<ConfirmDialog {...defaultProps} />);
 
     expect(screen.getByRole("button", { name: "Annuler" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Confirmer" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirmer" })).toBeInTheDocument();
   });
 
   it("renders custom button labels", () => {
-    render(
-      <ConfirmDialog
-        {...defaultProps}
-        confirmLabel="Oui"
-        cancelLabel="Non"
-      />,
-    );
+    render(<ConfirmDialog {...defaultProps} confirmLabel="Oui" cancelLabel="Non" />);
 
     expect(screen.getByRole("button", { name: "Oui" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Non" })).toBeInTheDocument();
@@ -55,9 +47,7 @@ describe("ConfirmDialog", () => {
 
   it("calls onOpenChange(false) when cancel is clicked", () => {
     const onOpenChange = vi.fn();
-    render(
-      <ConfirmDialog {...defaultProps} onOpenChange={onOpenChange} />,
-    );
+    render(<ConfirmDialog {...defaultProps} onOpenChange={onOpenChange} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Annuler" }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -77,12 +67,8 @@ describe("ConfirmDialog", () => {
   it("disables only confirm button when confirmDisabled is true", () => {
     render(<ConfirmDialog {...defaultProps} confirmDisabled={true} />);
 
-    expect(
-      screen.getByRole("button", { name: "Confirmer" }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Annuler" }),
-    ).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirmer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Annuler" })).not.toBeDisabled();
   });
 
   it("does not render content when closed", () => {

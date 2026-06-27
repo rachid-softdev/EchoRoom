@@ -1,54 +1,50 @@
-"use client"
+"use client";
 
-import { Share2, ExternalLink, MessageCircle, Music } from "lucide-react"
-import { Button } from "@/components/ui"
-import { toast } from "@/components/ui"
-import { api } from "@/lib/trpc"
+import { ExternalLink, MessageCircle, Music, Share2 } from "lucide-react";
+import { Button, toast } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 interface ShareButtonsProps {
-  scenarioId: string
-  title: string
-  description?: string
+  scenarioId: string;
+  title: string;
+  description?: string;
 }
 
 function getBaseUrl(): string {
-  if (typeof window !== "undefined") return window.location.origin
-  return ""
+  if (typeof window !== "undefined") return window.location.origin;
+  return "";
 }
 
-export function ShareButtons({
-  scenarioId,
-  title,
-  description,
-}: ShareButtonsProps) {
-  const trackMutation = api.social.trackShare.useMutation()
-  const url = `${getBaseUrl()}/scenario/${scenarioId}`
-  const encodedUrl = encodeURIComponent(url)
-  const encodedTitle = encodeURIComponent(title)
+export function ShareButtons({ scenarioId, title, description }: ShareButtonsProps) {
+  const trackMutation = api.social.trackShare.useMutation();
+  const url = `${getBaseUrl()}/scenario/${scenarioId}`;
+  const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
 
   function handleShare(platform: "TWITTER" | "DISCORD" | "TIKTOK" | "COPY_LINK" | "WEB_SHARE") {
-    trackMutation.mutate({ scenarioId, platform })
+    trackMutation.mutate({ scenarioId, platform });
   }
 
   function shareTwitter() {
-    const text = description
-      ? encodeURIComponent(`${title}\n\n${description}`)
-      : encodedTitle
+    const text = description ? encodeURIComponent(`${title}\n\n${description}`) : encodedTitle;
     window.open(
       `https://twitter.com/intent/tweet?text=${text}&url=${encodedUrl}`,
       "_blank",
       "noopener,noreferrer",
-    )
-    handleShare("TWITTER")
+    );
+    handleShare("TWITTER");
   }
 
   function copyLink(platform: "DISCORD" | "TIKTOK" | "COPY_LINK" | "WEB_SHARE") {
-    navigator.clipboard.writeText(url).then(() => {
-      toast({ title: "Lien copié !", variant: "default" });
-      handleShare(platform);
-    }).catch(() => {
-      toast({ title: "Échec de la copie", variant: "destructive" });
-    });
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast({ title: "Lien copié !", variant: "default" });
+        handleShare(platform);
+      })
+      .catch(() => {
+        toast({ title: "Échec de la copie", variant: "destructive" });
+      });
   }
 
   async function shareNative() {
@@ -58,13 +54,13 @@ export function ShareButtons({
           title,
           text: description ?? title,
           url,
-        })
-        handleShare("WEB_SHARE")
+        });
+        handleShare("WEB_SHARE");
       } catch {
         // user cancelled
       }
     } else {
-      copyLink("WEB_SHARE")
+      copyLink("WEB_SHARE");
     }
   }
 
@@ -111,5 +107,5 @@ export function ShareButtons({
         <span className="sr-only sm:not-sr-only">Partager</span>
       </Button>
     </div>
-  )
+  );
 }

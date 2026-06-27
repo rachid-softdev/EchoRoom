@@ -23,7 +23,10 @@ export function SegmentedControl<T extends string>({
   className,
 }: SegmentedControlProps<T>) {
   return (
-    <div className={cn("flex gap-1 p-1 rounded-xl bg-muted border border-border w-fit", className)} role="radiogroup">
+    <div
+      className={cn("flex gap-1 p-1 rounded-xl bg-muted border border-border w-fit", className)}
+      role="radiogroup"
+    >
       {options.map((opt) => (
         <button
           key={opt.value}

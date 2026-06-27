@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Open Graph Image Route tests
@@ -185,9 +185,7 @@ describe("GET /api/og", () => {
     const response = await GET(req);
 
     expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toBe(
-      "https://cdn.example.com/avatar.png",
-    );
+    expect(response.headers.get("location")).toBe("https://cdn.example.com/avatar.png");
   });
 
   it("should throw when findFirst throws and fallback findUnique also throws (unhandled)", async () => {

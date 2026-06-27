@@ -1,13 +1,13 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui'
-import { Loader2, ArrowDown } from 'lucide-react'
+import { ArrowDown, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui";
 
 interface PaginatedGridProps {
-  hasMore: boolean
-  isLoadingMore: boolean
-  onLoadMore: () => void
-  children: React.ReactNode
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+  children: React.ReactNode;
 }
 
 export function PaginatedGrid({
@@ -18,17 +18,10 @@ export function PaginatedGrid({
 }: PaginatedGridProps) {
   return (
     <div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {children}
-      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">{children}</div>
       {hasMore && (
         <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={onLoadMore}
-            disabled={isLoadingMore}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={onLoadMore} disabled={isLoadingMore} className="gap-2">
             {isLoadingMore ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -39,5 +32,5 @@ export function PaginatedGrid({
         </div>
       )}
     </div>
-  )
+  );
 }

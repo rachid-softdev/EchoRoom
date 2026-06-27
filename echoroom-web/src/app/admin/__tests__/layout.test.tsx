@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock AdminSidebar
 vi.mock("@/components/admin/AdminSidebar", () => ({
@@ -53,7 +53,11 @@ describe("AdminLayout", () => {
   });
 
   it("renders the AdminSidebar", () => {
-    render(<AdminLayout><div>Content</div></AdminLayout>);
+    render(
+      <AdminLayout>
+        <div>Content</div>
+      </AdminLayout>,
+    );
 
     expect(screen.getByTestId("admin-sidebar")).toBeInTheDocument();
   });

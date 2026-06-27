@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin authorization tests
@@ -37,16 +37,12 @@ vi.mock("@/server/procedures", () => {
         handler: async (opts: any) => {
           const session = opts.ctx?.session;
           if (!session?.user?.id) {
-            const err: any = new Error(
-              "Vous devez être connecté pour accéder à cette ressource",
-            );
+            const err: any = new Error("Vous devez être connecté pour accéder à cette ressource");
             err.code = "UNAUTHORIZED";
             throw err;
           }
           if (requiredRole && session.user.role !== requiredRole) {
-            const err: any = new Error(
-              "Accès réservé aux administrateurs",
-            );
+            const err: any = new Error("Accès réservé aux administrateurs");
             err.code = "FORBIDDEN";
             throw err;
           }
@@ -58,16 +54,12 @@ vi.mock("@/server/procedures", () => {
         handler: async (opts: any) => {
           const session = opts.ctx?.session;
           if (!session?.user?.id) {
-            const err: any = new Error(
-              "Vous devez être connecté pour accéder à cette ressource",
-            );
+            const err: any = new Error("Vous devez être connecté pour accéder à cette ressource");
             err.code = "UNAUTHORIZED";
             throw err;
           }
           if (requiredRole && session.user.role !== requiredRole) {
-            const err: any = new Error(
-              "Accès réservé aux administrateurs",
-            );
+            const err: any = new Error("Accès réservé aux administrateurs");
             err.code = "FORBIDDEN";
             throw err;
           }
@@ -253,10 +245,7 @@ describe("adminRouter authorization — queries", () => {
   });
 
   it("should allow ADMIN role and successfully execute query", async () => {
-    mockDb.featuredScenario = {
-      ...mockDb.featuredScenario,
-      findUnique: vi.fn().mockResolvedValue(null),
-    };
+    (mockDb.featuredScenario as any).findUnique = vi.fn().mockResolvedValue(null);
 
     const { adminRouter } = await import("../admin");
     const handler = (adminRouter as any).getFeaturedScenario.handler;

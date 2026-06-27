@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import type { NextRequest } from "next/server";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // CSRF Middleware tests
@@ -55,10 +55,7 @@ describe("isOriginAllowed", () => {
     const { isOriginAllowed } = await import("../csrf");
     const config = {
       appUrl: "https://echoroom.app",
-      trustedOrigins: [
-        "https://staging.echoroom.app",
-        "https://admin.echoroom.app",
-      ],
+      trustedOrigins: ["https://staging.echoroom.app", "https://admin.echoroom.app"],
     };
     expect(isOriginAllowed("https://staging.echoroom.app", config)).toBe(true);
     expect(isOriginAllowed("https://admin.echoroom.app", config)).toBe(true);
@@ -88,7 +85,9 @@ describe("isOriginAllowed", () => {
 
   it("should handle malformed URL characters in origin", async () => {
     const { isOriginAllowed } = await import("../csrf");
-    expect(isOriginAllowed("https://evil.com/<script>alert(1)</script>", defaultConfig)).toBe(false);
+    expect(isOriginAllowed("https://evil.com/<script>alert(1)</script>", defaultConfig)).toBe(
+      false,
+    );
   });
 
   it("should handle null/undefined origin gracefully", async () => {

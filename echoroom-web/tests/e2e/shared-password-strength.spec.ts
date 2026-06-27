@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("PasswordStrengthMeter — Composant Partagé", () => {
   test.beforeEach(async ({ page }) => {
@@ -9,9 +9,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
 
   // ─── Password vide → mètre caché ────────────────────────────────────
 
-  test("password vide → le mètre n'est pas rendu (retourne null)", async ({
-    page,
-  }) => {
+  test("password vide → le mètre n'est pas rendu (retourne null)", async ({ page }) => {
     const passwordInput = page.locator("#password");
     await expect(passwordInput).toBeVisible();
 
@@ -27,9 +25,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
 
   // ─── Score 0 (1 char) → "Très faible", 5 barres bg-muted ────────────
 
-  test("score 0 (1 caractère) → label 'Très faible' et 5 barres bg-muted", async ({
-    page,
-  }) => {
+  test("score 0 (1 caractère) → label 'Très faible' et 5 barres bg-muted", async ({ page }) => {
     const passwordInput = page.locator("#password");
     await passwordInput.fill("a");
 
@@ -48,9 +44,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
 
   // ─── Score 5 (Abcdef1!@#$) → "Très fort", 5 barres colorées ────────
 
-  test("score 5 (Abcdef1!@#$) → label 'Très fort' et 5 barres colorées", async ({
-    page,
-  }) => {
+  test("score 5 (Abcdef1!@#$) → label 'Très fort' et 5 barres colorées", async ({ page }) => {
     const passwordInput = page.locator("#password");
     await passwordInput.fill("Abcdef1!@#$");
 
@@ -92,9 +86,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
     }
   });
 
-  test("checks individuels — ✗ quand le check échoue, ✓ quand il réussit", async ({
-    page,
-  }) => {
+  test("checks individuels — ✗ quand le check échoue, ✓ quand il réussit", async ({ page }) => {
     const passwordInput = page.locator("#password");
     const checks = () => page.locator("ul > li");
 
@@ -115,106 +107,90 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
     }
   });
 
-  test("check '8 caractères minimum' — ✗ pour 7, ✓ pour 8", async ({
-    page,
-  }) => {
+  test("check '8 caractères minimum' — ✗ pour 7, ✓ pour 8", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // 7 caractères
     await passwordInput.fill("abcdefg");
     const check8 = page.getByText("8 caractères minimum");
-    await expect(
-      check8.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-destructive/);
+    await expect(check8.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // 8 caractères
     await passwordInput.fill("abcdefgh");
-    await expect(
-      check8.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-green-500/);
+    await expect(check8.locator("xpath=..").locator("span").first()).toHaveClass(/text-green-500/);
   });
 
-  test("check '12 caractères minimum' — ✗ pour 11, ✓ pour 12", async ({
-    page,
-  }) => {
+  test("check '12 caractères minimum' — ✗ pour 11, ✓ pour 12", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // 11 caractères
     await passwordInput.fill("abcdefghijk");
     const check12 = page.getByText("12 caractères minimum");
-    await expect(
-      check12.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-destructive/);
+    await expect(check12.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // 12 caractères
     await passwordInput.fill("abcdefghijkl");
-    await expect(
-      check12.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-green-500/);
+    await expect(check12.locator("xpath=..").locator("span").first()).toHaveClass(/text-green-500/);
   });
 
-  test("check 'Une lettre majuscule' — ✗ sans majuscule, ✓ avec majuscule", async ({
-    page,
-  }) => {
+  test("check 'Une lettre majuscule' — ✗ sans majuscule, ✓ avec majuscule", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // Sans majuscule
     await passwordInput.fill("abcdefgh1");
     const upperCheck = page.getByText("Une lettre majuscule");
-    await expect(
-      upperCheck.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-destructive/);
+    await expect(upperCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // Avec majuscule
     await passwordInput.fill("Abcdefgh1");
-    await expect(
-      upperCheck.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-green-500/);
+    await expect(upperCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-green-500/,
+    );
   });
 
-  test("check 'Un chiffre' — ✗ sans chiffre, ✓ avec chiffre", async ({
-    page,
-  }) => {
+  test("check 'Un chiffre' — ✗ sans chiffre, ✓ avec chiffre", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // Sans chiffre
     await passwordInput.fill("abcdefgh");
     const digitCheck = page.getByText("Un chiffre");
-    await expect(
-      digitCheck.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-destructive/);
+    await expect(digitCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // Avec chiffre
     await passwordInput.fill("abcdefgh1");
-    await expect(
-      digitCheck.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-green-500/);
+    await expect(digitCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-green-500/,
+    );
   });
 
-  test("check 'Un caractère spécial' — ✗ sans spécial, ✓ avec spécial", async ({
-    page,
-  }) => {
+  test("check 'Un caractère spécial' — ✗ sans spécial, ✓ avec spécial", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // Sans caractère spécial
     await passwordInput.fill("Abcdefgh1");
     const specialCheck = page.getByText("Un caractère spécial");
-    await expect(
-      specialCheck.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-destructive/);
+    await expect(specialCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // Avec caractère spécial
     await passwordInput.fill("Abcdef1!@");
-    await expect(
-      specialCheck.locator("xpath=..").locator("span").first(),
-    ).toHaveClass(/text-green-500/);
+    await expect(specialCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-green-500/,
+    );
   });
 
   // ─── Mise à jour en temps réel au fur et à mesure de la frappe ──────
 
-  test("score et checks se mettent à jour en temps réel quand on tape", async ({
-    page,
-  }) => {
+  test("score et checks se mettent à jour en temps réel quand on tape", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // Commence vide → mètre caché
@@ -249,9 +225,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
     await expect(page.getByText("Force :")).toHaveCount(0);
   });
 
-  test("le score baisse quand on supprime des caractères", async ({
-    page,
-  }) => {
+  test("le score baisse quand on supprime des caractères", async ({ page }) => {
     const passwordInput = page.locator("#password");
 
     // Mot de passe fort
@@ -269,9 +243,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
 
   // ─── Structure des barres de score ──────────────────────────────────
 
-  test("les barres sont dans un conteneur flex avec gap-1", async ({
-    page,
-  }) => {
+  test("les barres sont dans un conteneur flex avec gap-1", async ({ page }) => {
     const passwordInput = page.locator("#password");
     await passwordInput.fill("Abcdef1!@#$");
 
@@ -284,9 +256,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
     await expect(barChildren).toHaveCount(5);
   });
 
-  test("les barres ont les classes de base h-1.5 flex-1 rounded-full", async ({
-    page,
-  }) => {
+  test("les barres ont les classes de base h-1.5 flex-1 rounded-full", async ({ page }) => {
     const passwordInput = page.locator("#password");
     await passwordInput.fill("Abcdef1!@#$");
 
@@ -308,9 +278,7 @@ test.describe("PasswordStrengthMeter — Composant Partagé", () => {
     await expect(container).toBeVisible();
   });
 
-  test("le label 'Force :' s'affiche en texte muted et petite taille", async ({
-    page,
-  }) => {
+  test("le label 'Force :' s'affiche en texte muted et petite taille", async ({ page }) => {
     const passwordInput = page.locator("#password");
     await passwordInput.fill("abc");
 

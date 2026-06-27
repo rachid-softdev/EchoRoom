@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // CallReplayPage tests — Client Component with tRPC + DataLoader
@@ -79,11 +79,7 @@ vi.mock("@/components/shared/DataLoader", () => ({
       );
     }
     if (!query.data || isEmpty?.(query.data)) {
-      return (
-        <div data-testid="dataloader-empty">
-          {empty ?? "Aucun résultat"}
-        </div>
-      );
+      return <div data-testid="dataloader-empty">{empty ?? "Aucun résultat"}</div>;
     }
     return <div data-testid="dataloader-content">{children(query.data)}</div>;
   },
@@ -91,9 +87,7 @@ vi.mock("@/components/shared/DataLoader", () => ({
 
 // Mock player components
 vi.mock("@/components/player/ReplayHeader", () => ({
-  ReplayHeader: (props: any) => (
-    <div data-testid="replay-header" {...props} />
-  ),
+  ReplayHeader: (props: any) => <div data-testid="replay-header" {...props} />,
 }));
 
 vi.mock("@/components/player/AudioPlayer", () => ({
@@ -250,9 +244,7 @@ describe("CallReplayPage", () => {
     const mod = await import("../page");
     render(<mod.default />);
 
-    expect(
-      screen.getByText("Impossible de charger les données. Réessayez."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les données. Réessayez.")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -463,9 +455,7 @@ describe("CallReplayPage", () => {
     mockHistoryQuery.mockReturnValue({
       isLoading: false,
       data: {
-        items: [
-          { id: "other-call", scenario: { title: "Other" } },
-        ],
+        items: [{ id: "other-call", scenario: { title: "Other" } }],
       },
       isError: false,
       refetch: vi.fn(),

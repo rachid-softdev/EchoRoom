@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getR2Key } from "../r2";
 
 describe("getR2Key", () => {
@@ -36,7 +36,9 @@ describe("getR2Key", () => {
   });
 
   it("should pass through bare key with nested path", () => {
-    expect(getR2Key("recordings/audio/callSid/2_1717000000001")).toBe("recordings/audio/callSid/2_1717000000001");
+    expect(getR2Key("recordings/audio/callSid/2_1717000000001")).toBe(
+      "recordings/audio/callSid/2_1717000000001",
+    );
   });
 
   it("should pass through key with trailing slash", () => {
@@ -62,13 +64,13 @@ describe("getR2Key", () => {
   });
 
   it("should trim whitespace around URL", () => {
-    expect(getR2Key("  https://bucket.com/audio/sid/1_1717000000000  "))
-      .toBe("audio/sid/1_1717000000000");
+    expect(getR2Key("  https://bucket.com/audio/sid/1_1717000000000  ")).toBe(
+      "audio/sid/1_1717000000000",
+    );
   });
 
   it("should trim whitespace around bare key", () => {
-    expect(getR2Key("  audio/sid/1_1717000000000  "))
-      .toBe("audio/sid/1_1717000000000");
+    expect(getR2Key("  audio/sid/1_1717000000000  ")).toBe("audio/sid/1_1717000000000");
   });
 
   it("should return null for unparseable string that looks like a URL", () => {

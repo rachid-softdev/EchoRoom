@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // cleanupOldAuditLogs tests
@@ -42,7 +42,7 @@ describe("cleanupOldAuditLogs", () => {
     expect(result).toBe(42);
 
     expect(mockDeleteMany).toHaveBeenCalledTimes(1);
-    const callArgs = mockDeleteMany.mock.calls[0][0];
+    const callArgs = mockDeleteMany.mock.calls[0]![0];
     expect(callArgs.where.createdAt.lte).toBeInstanceOf(Date);
     // Verify cutoff is approximately 90 days ago (accounting for DST)
     const cutoffMs = callArgs.where.createdAt.lte.getTime();
@@ -71,7 +71,7 @@ describe("cleanupOldAuditLogs", () => {
 
     expect(result).toBe(5);
 
-    const callArgs = mockDeleteMany.mock.calls[0][0];
+    const callArgs = mockDeleteMany.mock.calls[0]![0];
     const cutoffMs = callArgs.where.createdAt.lte.getTime();
     const nowMs = Date.now();
     const yearMs = 365 * 24 * 60 * 60 * 1000;
@@ -95,7 +95,7 @@ describe("cleanupOldAuditLogs", () => {
     const { cleanupOldAuditLogs } = await import("../cleanupAuditLogs");
     await cleanupOldAuditLogs(7);
 
-    const callArgs = mockDeleteMany.mock.calls[0][0];
+    const callArgs = mockDeleteMany.mock.calls[0]![0];
     const cutoffMs = callArgs.where.createdAt.lte.getTime();
     const nowMs = Date.now();
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // extractTextFromInput tests
@@ -297,8 +297,6 @@ describe("withContentModeration orchestration (via extractTextFromInput + checkC
     expect(() => authGuard({ session: {} })).toThrow("Authentication required");
 
     // Simulate authenticated call — no throw
-    expect(() =>
-      authGuard({ session: { user: { id: "user-1" } } }),
-    ).not.toThrow();
+    expect(() => authGuard({ session: { user: { id: "user-1" } } })).not.toThrow();
   });
 });

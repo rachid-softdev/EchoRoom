@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Transcription Service Tests — transcribeAudio
@@ -27,9 +27,6 @@ vi.mock("@/server/lib/circuitBreaker", () => ({
   })),
   CircuitBreakerOpenError: class extends Error {
     override name = "CircuitBreakerOpenError";
-    constructor(message: string) {
-      super(message);
-    }
   },
 }));
 
@@ -264,14 +261,12 @@ describe("transcribeAudio", () => {
   // -----------------------------------------------------------------------
 
   it("should propagate CircuitBreakerOpenError when circuit is open", async () => {
-    mockCBCall.mockRejectedValue(
-      new Error("Deepgram temporairement indisponible"),
-    );
+    mockCBCall.mockRejectedValue(new Error("Deepgram temporairement indisponible"));
 
     const { transcribeAudio } = await import("../transcription");
-    await expect(
-      transcribeAudio(new ArrayBuffer(128)),
-    ).rejects.toThrow("Deepgram temporairement indisponible");
+    await expect(transcribeAudio(new ArrayBuffer(128))).rejects.toThrow(
+      "Deepgram temporairement indisponible",
+    );
   });
 
   // -----------------------------------------------------------------------

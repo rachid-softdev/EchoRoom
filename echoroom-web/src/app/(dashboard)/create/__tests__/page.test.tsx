@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mocks for vi.mock factories
 const mockCharactersQuery = vi.hoisted(() => vi.fn());
@@ -61,7 +61,11 @@ vi.mock("next/navigation", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock lucide-react
@@ -104,14 +108,16 @@ vi.mock("@/components/ui", () => ({
     />
   ),
   Badge: ({ children, variant, className, ...props }: any) => (
-    <span data-variant={variant} className={className} {...props}>{children}</span>
+    <span data-variant={variant} className={className} {...props}>
+      {children}
+    </span>
   ),
   toast: mockToast,
 }));
 
 // Mock DataLoader
 vi.mock("@/components/shared/DataLoader", () => ({
-  DataLoader: ({ query, children, isEmpty, skeletonCount, empty }: any) => {
+  DataLoader: ({ query, children, isEmpty, empty }: any) => {
     if (query.isLoading) {
       return <div data-testid="loader-loading">Chargement des personnages...</div>;
     }
@@ -319,8 +325,12 @@ describe("CreatePage", () => {
 
     expect(screen.getByPlaceholderText("Ex: Le speed dating catastrophique")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Décrivez le contexte du scénario...")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Ce que le personnage dit au début de l'appel...")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Instructions détaillées pour le comportement de l'IA...")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Ce que le personnage dit au début de l'appel..."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Instructions détaillées pour le comportement de l'IA..."),
+    ).toBeInTheDocument();
   });
 
   it("shows character count for AI instructions", () => {

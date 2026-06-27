@@ -1,9 +1,9 @@
 import { redis } from "@/lib/redis";
-import { scenarioRepository } from "@/server/repositories";
 import { decryptPhoneNumber, encryptPhoneNumber } from "@/server/lib/encryption";
 import { createLogger } from "@/server/lib/logger";
-import { CONVERSATION_TTL_S } from "./constants";
+import { scenarioRepository } from "@/server/repositories";
 import { buildSystemPrompt } from "@/server/services/telephony/prompts";
+import { CONVERSATION_TTL_S } from "./constants";
 
 const log = createLogger("conversation-state");
 

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -68,13 +68,20 @@ vi.mock("@/components/shared/DataLoader", () => ({
     empty,
   }: {
     children: (data: unknown) => React.ReactNode;
-    query: { data: unknown; isLoading: boolean; isError: boolean; error: { message?: string } | null };
+    query: {
+      data: unknown;
+      isLoading: boolean;
+      isError: boolean;
+      error: { message?: string } | null;
+    };
     isEmpty?: (data: unknown) => boolean;
     empty?: React.ReactNode;
   }) => {
     if (query.isLoading) return <div data-testid="loader-loading">Loading...</div>;
-    if (query.isError) return <div data-testid="loader-error">Error: {query.error?.message ?? "Unknown"}</div>;
-    if (query.data === null || query.data === undefined) return <div data-testid="loader-empty">Aucun résultat</div>;
+    if (query.isError)
+      return <div data-testid="loader-error">Error: {query.error?.message ?? "Unknown"}</div>;
+    if (query.data === null || query.data === undefined)
+      return <div data-testid="loader-empty">Aucun résultat</div>;
     if (isEmpty && isEmpty(query.data)) return <>{empty}</>;
     return <>{children(query.data)}</>;
   },

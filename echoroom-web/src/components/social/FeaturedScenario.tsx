@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Heart, Play, Star } from "lucide-react"
+import { Heart, Play, Star } from "lucide-react";
+import Link from "next/link";
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
   Card,
   CardContent,
-  Button,
-  Badge,
   Skeleton,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui"
-import { api } from "@/lib/trpc"
+} from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 export function FeaturedScenario() {
-  const featuredQuery = api.social.getFeatured.useQuery()
+  const featuredQuery = api.social.getFeatured.useQuery();
 
   if (featuredQuery.isLoading) {
     return (
@@ -31,14 +31,14 @@ export function FeaturedScenario() {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const scenario = featuredQuery.data
-  if (!scenario) return null
+  const scenario = featuredQuery.data;
+  if (!scenario) return null;
 
-  const playCount = scenario.playCount ?? 0
-  const likeCount = scenario.likeCount ?? 0
+  const playCount = scenario.playCount ?? 0;
+  const likeCount = scenario.likeCount ?? 0;
 
   return (
     <Card className="border-primary/20 bg-primary/5 mb-8 overflow-hidden">
@@ -48,10 +48,7 @@ export function FeaturedScenario() {
           {scenario.character && (
             <Avatar className="w-16 h-16 shrink-0 ring-2 ring-primary/20">
               {scenario.character.avatarUrl ? (
-                <AvatarImage
-                  src={scenario.character.avatarUrl}
-                  alt={scenario.character.name}
-                />
+                <AvatarImage src={scenario.character.avatarUrl} alt={scenario.character.name} />
               ) : null}
               <AvatarFallback className="text-lg bg-primary/10 text-primary">
                 {scenario.character.name?.charAt(0) ?? "?"}
@@ -70,9 +67,7 @@ export function FeaturedScenario() {
             </Badge>
 
             {/* Title */}
-            <h3 className="text-lg font-bold mb-1 truncate">
-              {scenario.title}
-            </h3>
+            <h3 className="text-lg font-bold mb-1 truncate">{scenario.title}</h3>
 
             {/* Description */}
             {scenario.description && (
@@ -91,11 +86,7 @@ export function FeaturedScenario() {
                 <Play className="w-3 h-3" />
                 {playCount}
               </span>
-              {scenario.creator && (
-                <span>
-                  par {scenario.creator.username}
-                </span>
-              )}
+              {scenario.creator && <span>par {scenario.creator.username}</span>}
             </div>
 
             {/* CTA */}
@@ -109,5 +100,5 @@ export function FeaturedScenario() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

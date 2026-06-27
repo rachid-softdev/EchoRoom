@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the client component
 vi.mock("../BlockedNumbersPageClient", () => ({
@@ -24,8 +24,6 @@ describe("BlockedNumbersPage (server component)", () => {
   it("should render the BlockedNumbersPageClient component", () => {
     render(<BlockedNumbersPage />);
 
-    expect(
-      screen.getByTestId("blocked-numbers-page-client"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("blocked-numbers-page-client")).toBeInTheDocument();
   });
 });

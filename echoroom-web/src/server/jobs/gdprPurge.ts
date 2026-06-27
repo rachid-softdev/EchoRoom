@@ -1,13 +1,15 @@
+import { redis } from "@/lib/redis";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
-import { redis } from "@/lib/redis";
 
 const log = createLogger("gdpr-purge");
 const BATCH_SIZE = 50;
 const LOCK_KEY = "job:gdpr-purge:lock";
 const LOCK_TTL_SECONDS = 300;
 
-export async function purgeAnonymizedUsers(retentionDays: number = 30): Promise<{ deletedUsers: number }> {
+export async function purgeAnonymizedUsers(
+  retentionDays: number = 30,
+): Promise<{ deletedUsers: number }> {
   if (redis) {
     const lock = await redis.set(LOCK_KEY, "1", { nx: true, ex: LOCK_TTL_SECONDS });
     if (!lock) {
@@ -93,7 +95,9 @@ async function hardDeleteUser(userId: string): Promise<void> {
     await tx.purchase.deleteMany({ where: { userId } });
     await tx.dailyCallLimit.deleteMany({ where: { userId } });
     // Niveau 3: modération et audit
-    await tx.abuseReport.deleteMany({ where: { OR: [{ reporterId: userId }, { reviewedById: userId }] } });
+    await tx.abuseReport.deleteMany({
+      where: { OR: [{ reporterId: userId }, { reviewedById: userId }] },
+    });
     await tx.auditLog.deleteMany({ where: { adminId: userId } });
     await tx.blockedNumber.deleteMany({ where: { blockedById: userId } });
     await tx.comment.updateMany({

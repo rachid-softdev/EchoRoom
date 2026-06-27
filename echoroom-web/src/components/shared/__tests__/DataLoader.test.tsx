@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DataLoader } from "../DataLoader";
 
 afterEach(() => {
@@ -12,13 +12,15 @@ afterEach(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createMockQuery<T>(overrides: Partial<{
-  data: T;
-  isLoading: boolean;
-  isError: boolean;
-  error: { message?: string } | null;
-  refetch: () => void;
-}> = {}) {
+function createMockQuery<T>(
+  overrides: Partial<{
+    data: T;
+    isLoading: boolean;
+    isError: boolean;
+    error: { message?: string } | null;
+    refetch: () => void;
+  }> = {},
+) {
   return {
     data: undefined,
     isLoading: false,
@@ -38,11 +40,7 @@ describe("DataLoader", () => {
 
   it("renders skeleton grid (default 3 items) when isLoading is true", () => {
     const query = createMockQuery({ isLoading: true });
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     // Default skeleton renders a grid with 3 skeleton items
     // We check for skeleton elements by looking at the grid structure
@@ -50,9 +48,7 @@ describe("DataLoader", () => {
     expect(skeletonContainer).toBeInTheDocument();
 
     // The default skeleton renders 3 skeleton wrappers
-    const skeletonWrappers = document.querySelectorAll(
-      ".rounded-xl.border.border-border.p-4",
-    );
+    const skeletonWrappers = document.querySelectorAll(".rounded-xl.border.border-border.p-4");
     expect(skeletonWrappers).toHaveLength(3);
   });
 
@@ -64,19 +60,14 @@ describe("DataLoader", () => {
       </DataLoader>,
     );
 
-    const skeletonWrappers = document.querySelectorAll(
-      ".rounded-xl.border.border-border.p-4",
-    );
+    const skeletonWrappers = document.querySelectorAll(".rounded-xl.border.border-border.p-4");
     expect(skeletonWrappers).toHaveLength(5);
   });
 
   it("renders custom skeleton when provided", () => {
     const query = createMockQuery({ isLoading: true });
     render(
-      <DataLoader
-        query={query}
-        skeleton={<div data-testid="custom-skeleton">Chargement...</div>}
-      >
+      <DataLoader query={query} skeleton={<div data-testid="custom-skeleton">Chargement...</div>}>
         {() => <div>data</div>}
       </DataLoader>,
     );
@@ -99,11 +90,7 @@ describe("DataLoader", () => {
       refetch,
     });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     // Should show error title
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
@@ -129,16 +116,10 @@ describe("DataLoader", () => {
       refetch,
     });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     // Should show default error message
-    expect(
-      screen.getByText("Impossible de charger les données. Réessayez."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les données. Réessayez.")).toBeInTheDocument();
   });
 
   it("shows error message even when error is null but isError is true", () => {
@@ -147,16 +128,10 @@ describe("DataLoader", () => {
       error: null,
     });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
-    expect(
-      screen.getByText("Impossible de charger les données. Réessayez."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les données. Réessayez.")).toBeInTheDocument();
   });
 
   // ── Empty data state ─────────────────────────────────────────────
@@ -164,11 +139,7 @@ describe("DataLoader", () => {
   it('shows "Aucun résultat" when data is null', () => {
     const query = createMockQuery({ data: null });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     expect(screen.getByText("Aucun résultat")).toBeInTheDocument();
   });
@@ -176,11 +147,7 @@ describe("DataLoader", () => {
   it('shows "Aucun résultat" when data is undefined', () => {
     const query = createMockQuery({ data: undefined });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     expect(screen.getByText("Aucun résultat")).toBeInTheDocument();
   });
@@ -189,10 +156,7 @@ describe("DataLoader", () => {
     const query = createMockQuery({ data: null });
 
     render(
-      <DataLoader
-        query={query}
-        empty={<div data-testid="custom-empty">Rien à voir ici</div>}
-      >
+      <DataLoader query={query} empty={<div data-testid="custom-empty">Rien à voir ici</div>}>
         {() => <div>data</div>}
       </DataLoader>,
     );
@@ -244,10 +208,7 @@ describe("DataLoader", () => {
     const query = createMockQuery({ data });
 
     render(
-      <DataLoader
-        query={query}
-        isEmpty={(d: typeof data) => d.items.length === 0}
-      >
+      <DataLoader query={query} isEmpty={(d: typeof data) => d.items.length === 0}>
         {(loadedData) => <div>Items: {loadedData.items.length}</div>}
       </DataLoader>,
     );
@@ -261,11 +222,7 @@ describe("DataLoader", () => {
   it('shows "Aucun résultat" when data is an empty array', () => {
     const query = createMockQuery({ data: [] });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     // An empty array is truthy, so it won't match the !query.data branch.
     // But isEmpty callback can catch it. Without isEmpty, the component
@@ -297,9 +254,7 @@ describe("DataLoader", () => {
 
     render(
       <DataLoader query={query}>
-        {(loadedData) => (
-          <div data-testid="loaded-data">{loadedData.name}</div>
-        )}
+        {(loadedData) => <div data-testid="loaded-data">{loadedData.name}</div>}
       </DataLoader>,
     );
 
@@ -339,11 +294,7 @@ describe("DataLoader", () => {
       error: { message: "Some error" },
     });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     // Loading takes priority over error
     const skeletonContainer = document.querySelector(".grid.md\\:grid-cols-3");
@@ -358,11 +309,7 @@ describe("DataLoader", () => {
       error: { message: "Error" },
     });
 
-    render(
-      <DataLoader query={query}>
-        {() => <div>data</div>}
-      </DataLoader>,
-    );
+    render(<DataLoader query={query}>{() => <div>data</div>}</DataLoader>);
 
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
     expect(screen.queryByText("Aucun résultat")).not.toBeInTheDocument();

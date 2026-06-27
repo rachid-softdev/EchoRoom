@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Mock le endpoint calls.replay
@@ -11,9 +11,7 @@ async function mockReplay(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -29,9 +27,7 @@ async function mockHistory(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: { items } } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: { items } } } }]),
     });
   });
 }
@@ -57,18 +53,6 @@ async function mockAuthenticatedSession(page: import("@playwright/test").Page) {
   });
 }
 
-/**
- * Mock session non authentifiée
- */
-async function mockUnauthenticatedSession(page: import("@playwright/test").Page) {
-  await page.route("**/api/auth/session", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ user: null, expires: new Date(Date.now() + 86_400_000).toISOString() }),
-    });
-  });
-}
 
 test.describe("Call Replay — AudioPlayer", () => {
   test.beforeEach(async ({ page }) => {
@@ -78,7 +62,9 @@ test.describe("Call Replay — AudioPlayer", () => {
 
   // ─── AudioPlayer : play/pause toggle ───────────────────────────
 
-  test("AudioPlayer : le bouton play/pause alterne entre les icônes Play et Pause", async ({ page }) => {
+  test("AudioPlayer : le bouton play/pause alterne entre les icônes Play et Pause", async ({
+    page,
+  }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio-test.mp3",
       transcript: null,
@@ -106,7 +92,9 @@ test.describe("Call Replay — AudioPlayer", () => {
     await expect(toggleBtn).toBeVisible();
   });
 
-  test("AudioPlayer : le bouton de lecture a la taille lg (rounded-full w-16 h-16)", async ({ page }) => {
+  test("AudioPlayer : le bouton de lecture a la taille lg (rounded-full w-16 h-16)", async ({
+    page,
+  }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio-test.mp3",
       transcript: null,
@@ -149,7 +137,9 @@ test.describe("Call Replay — AudioPlayer", () => {
     }
   });
 
-  test("AudioPlayer : le slider a les classes CSS personnalisées pour le thumb", async ({ page }) => {
+  test("AudioPlayer : le slider a les classes CSS personnalisées pour le thumb", async ({
+    page,
+  }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio-test.mp3",
       transcript: null,
@@ -227,16 +217,16 @@ test.describe("Call Replay — AudioPlayer", () => {
 
   // ─── AudioPlayer : loading state ───────────────────────────────
 
-  test("AudioPlayer : affiche le spinner de chargement pendant le chargement audio", async ({ page }) => {
+  test("AudioPlayer : affiche le spinner de chargement pendant le chargement audio", async ({
+    page,
+  }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio-slow.mp3",
       transcript: null,
     });
 
     // Bloquer l'URL audio pour empêcher le chargement
-    await page.route("https://example.com/audio-slow.mp3", (route) =>
-      route.abort("timedout"),
-    );
+    await page.route("https://example.com/audio-slow.mp3", (route) => route.abort("timedout"));
 
     await page.goto("/call/test-call-id");
     await page.waitForLoadState("networkidle");
@@ -256,9 +246,7 @@ test.describe("Call Replay — AudioPlayer", () => {
       transcript: null,
     });
 
-    await page.route("https://example.com/audio-slow2.mp3", (route) =>
-      route.abort("timedout"),
-    );
+    await page.route("https://example.com/audio-slow2.mp3", (route) => route.abort("timedout"));
 
     await page.goto("/call/test-call-id");
     await page.waitForLoadState("networkidle");
@@ -336,7 +324,9 @@ test.describe("Call Replay — AudioPlayer", () => {
 
   // ─── AudioPlayer : cleanup on unmount ──────────────────────────
 
-  test("AudioPlayer : le composant nettoie l'audio au démontage (navigating away)", async ({ page }) => {
+  test("AudioPlayer : le composant nettoie l'audio au démontage (navigating away)", async ({
+    page,
+  }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio-cleanup.mp3",
       transcript: null,
@@ -359,7 +349,9 @@ test.describe("Call Replay — AudioPlayer", () => {
 
   // ─── AudioPlayer : empty state (recordingUrl = null) ───────────
 
-  test("AudioPlayer : affiche 'Aucun enregistrement disponible' quand recordingUrl est null", async ({ page }) => {
+  test("AudioPlayer : affiche 'Aucun enregistrement disponible' quand recordingUrl est null", async ({
+    page,
+  }) => {
     await mockReplay(page, { recordingUrl: null, transcript: null });
 
     await page.goto("/call/test-call-id");
@@ -375,7 +367,9 @@ test.describe("Call Replay — AudioPlayer", () => {
 
   // ─── AudioPlayer : download button ─────────────────────────────
 
-  test("AudioPlayer : le bouton de téléchargement a l'URL correcte et l'attribut download", async ({ page }) => {
+  test("AudioPlayer : le bouton de téléchargement a l'URL correcte et l'attribut download", async ({
+    page,
+  }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio-dl.mp3",
       transcript: null,
@@ -389,7 +383,7 @@ test.describe("Call Replay — AudioPlayer", () => {
     if (redirected) return;
 
     // Lien de téléchargement
-    const downloadLink = page.locator('a[download]');
+    const downloadLink = page.locator("a[download]");
     if (await downloadLink.isVisible().catch(() => false)) {
       await expect(downloadLink).toHaveAttribute("href", "https://example.com/audio-dl.mp3");
       await expect(page.getByText("Télécharger")).toBeVisible();
@@ -570,7 +564,9 @@ test.describe("Call Replay — TranscriptView", () => {
     expect(count).toBeGreaterThanOrEqual(5);
   });
 
-  test("TranscriptView : les squelettes ont la classe rounded-full pour les avatars", async ({ page }) => {
+  test("TranscriptView : les squelettes ont la classe rounded-full pour les avatars", async ({
+    page,
+  }) => {
     await page.route("**/api/trpc/calls.replay*", async () => {
       // Jamais résolue
     });
@@ -590,7 +586,9 @@ test.describe("Call Replay — TranscriptView", () => {
 
   // ─── TranscriptView : null state "Transcript en cours" ─────────
 
-  test("TranscriptView : affiche 'Transcript en cours de traitement…' quand null", async ({ page }) => {
+  test("TranscriptView : affiche 'Transcript en cours de traitement…' quand null", async ({
+    page,
+  }) => {
     await mockReplay(page, { recordingUrl: null, transcript: null });
 
     await page.goto("/call/test-call-id");
@@ -621,7 +619,9 @@ test.describe("Call Replay — TranscriptView", () => {
 
   // ─── TranscriptView : empty state ──────────────────────────────
 
-  test("TranscriptView : affiche 'Aucune transcription disponible' quand tableau vide", async ({ page }) => {
+  test("TranscriptView : affiche 'Aucune transcription disponible' quand tableau vide", async ({
+    page,
+  }) => {
     await mockReplay(page, { recordingUrl: null, transcript: [] });
 
     await page.goto("/call/test-call-id");
@@ -665,9 +665,7 @@ test.describe("Call Replay — TranscriptView", () => {
   });
 
   test("TranscriptView : icône IA avec le texte 'IA' dans un cercle", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Salut !" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Salut !" }];
     await mockReplay(page, { recordingUrl: null, transcript });
 
     await page.goto("/call/test-call-id");
@@ -697,7 +695,9 @@ test.describe("Call Replay — TranscriptView", () => {
     await expect(page.getByText("Moi")).toBeVisible();
   });
 
-  test("TranscriptView : le label 'Vous' apparaît pour les messages utilisateur", async ({ page }) => {
+  test("TranscriptView : le label 'Vous' apparaît pour les messages utilisateur", async ({
+    page,
+  }) => {
     const transcript = [
       { speaker: "assistant", text: "Hello" },
       { speaker: "user", text: "Bonjour" },
@@ -717,9 +717,7 @@ test.describe("Call Replay — TranscriptView", () => {
   // ─── TranscriptView : timestamps ───────────────────────────────
 
   test("TranscriptView : affiche le timestamp formaté (mm:ss) quand présent", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Bonjour", timestamp: 65 },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bonjour", timestamp: 65 }];
     await mockReplay(page, { recordingUrl: null, transcript });
 
     await page.goto("/call/test-call-id");
@@ -734,9 +732,7 @@ test.describe("Call Replay — TranscriptView", () => {
   });
 
   test("TranscriptView : cache le timestamp quand il est undefined", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Bonjour" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bonjour" }];
     await mockReplay(page, { recordingUrl: null, transcript });
 
     await page.goto("/call/test-call-id");
@@ -769,9 +765,7 @@ test.describe("Call Replay — TranscriptView", () => {
       },
     ]);
 
-    const transcript = [
-      { speaker: "assistant", text: "Bienvenue à la consultation" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bienvenue à la consultation" }];
     await mockReplay(page, { recordingUrl: null, transcript });
 
     await page.goto("/call/test-call-id");
@@ -787,9 +781,7 @@ test.describe("Call Replay — TranscriptView", () => {
 
   test("TranscriptView : fallback 'Personnage IA' sans scenarioName", async ({ page }) => {
     // Pas de scenario title dans l'history
-    const transcript = [
-      { speaker: "assistant", text: "Bonjour" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bonjour" }];
     await mockReplay(page, { recordingUrl: null, transcript });
 
     await page.goto("/call/test-call-id");
@@ -804,7 +796,9 @@ test.describe("Call Replay — TranscriptView", () => {
 });
 
 test.describe("Call Replay — FORBIDDEN (non-propriétaire)", () => {
-  test("FORBIDDEN : utilisateur non propriétaire du call voit une erreur ou redirection", async ({ page }) => {
+  test("FORBIDDEN : utilisateur non propriétaire du call voit une erreur ou redirection", async ({
+    page,
+  }) => {
     // Session d'un utilisateur différent
     await mockAuthenticatedSession(page);
     // History vide → pas de matchingCall → pas de ReplayHeader

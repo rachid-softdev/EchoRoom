@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/app/admin/audit/AuditPageClient.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/app/admin/audit/AuditPageClient.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("Admin Audit page", () => {
@@ -28,9 +25,8 @@ test.describe("Admin Audit page", () => {
 
   test("action filter dropdown has 9 options", () => {
     const source = readComponent();
-    const actionOptions = source.match(/{ label:/g);
     // Count actionOptions array entries
-    const actionSection = source.split("entityTypeOptions")[0];
+    const actionSection = source.split("entityTypeOptions")[0]!;
     const optionMatches = actionSection.match(/{ label:/g);
     expect(optionMatches).toBeTruthy();
     expect(optionMatches!.length).toBe(9);
@@ -38,7 +34,7 @@ test.describe("Admin Audit page", () => {
 
   test("entity type filter dropdown has 5 options", () => {
     const source = readComponent();
-    const entitySection = source.split("entityTypeOptions")[1].split("];")[0];
+    const entitySection = source.split("entityTypeOptions")[1]!.split("];")[0]!;
     const optionMatches = entitySection.match(/{ label:/g);
     expect(optionMatches).toBeTruthy();
     expect(optionMatches!.length).toBe(6);
@@ -79,7 +75,7 @@ test.describe("Admin Audit page", () => {
 
   test("load more button disabled when isFetching", () => {
     const source = readComponent();
-    expect(source).toContain('disabled={auditQuery.isFetching}');
+    expect(source).toContain("disabled={auditQuery.isFetching}");
   });
 
   test("uses admin.getAuditLogs query", () => {

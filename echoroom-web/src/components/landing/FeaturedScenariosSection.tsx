@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { Badge, Button } from "@/components/ui";
-import { api } from "@/lib/trpc";
+import Link from "next/link";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { ScenarioCard } from "@/components/shared/ScenarioCard";
+import { Badge, Button } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 export function FeaturedScenariosSection() {
   const featuredQuery = api.social.getFeatured.useQuery();
@@ -23,8 +23,7 @@ export function FeaturedScenariosSection() {
               Scénario du jour
             </div>
             <h2 className="text-fluid-section font-black tracking-tight text-balance">
-              Celui qui explose{" "}
-              <span className="text-primary">en ce moment</span>
+              Celui qui explose <span className="text-primary">en ce moment</span>
             </h2>
           </div>
           <Link href="/explore">

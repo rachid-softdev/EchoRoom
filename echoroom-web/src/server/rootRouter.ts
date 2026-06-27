@@ -1,30 +1,30 @@
-import { router } from "./trpc";
-import { authRouter } from "./routers/auth";
-import { charactersRouter } from "./routers/characters";
-import { scenariosRouter } from "./routers/scenarios";
-import { callsRouter } from "./routers/calls";
-import { billingRouter } from "./routers/billing";
-import { communityRouter } from "./routers/community";
 import { adminRouter } from "./routers/admin";
-import { socialRouter } from "./routers/social";
+import { authRouter } from "./routers/auth";
+import { billingRouter } from "./routers/billing";
+import { callsRouter } from "./routers/calls";
+import { charactersRouter } from "./routers/characters";
 import { clipsRouter } from "./routers/clips";
-import { profileRouter } from "./routers/profile";
-import { userRouter } from "./routers/user";
+import { communityRouter } from "./routers/community";
 import { dashboardRouter } from "./routers/dashboard";
+import { profileRouter } from "./routers/profile";
+import { scenariosRouter } from "./routers/scenarios";
+import { socialRouter } from "./routers/social";
+import { userRouter } from "./routers/user";
 import {
-  scenariosV1Router,
-  authV1Router,
-  charactersV1Router,
-  callsV1Router,
-  billingV1Router,
-  communityV1Router,
   adminV1Router,
-  socialV1Router,
+  authV1Router,
+  billingV1Router,
+  callsV1Router,
+  charactersV1Router,
   clipsV1Router,
-  profileV1Router,
-  userV1Router,
+  communityV1Router,
   dashboardV1Router,
+  profileV1Router,
+  scenariosV1Router,
+  socialV1Router,
+  userV1Router,
 } from "./routers/v1";
+import { router } from "./trpc";
 
 /**
  * Versioned API namespace — frozen v1 contracts for backward compatibility.

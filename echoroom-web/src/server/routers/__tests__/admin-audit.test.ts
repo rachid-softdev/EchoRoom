@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin audit logs tests
@@ -71,10 +71,7 @@ describe("adminRouter.getAuditLogs", () => {
   });
 
   it("should return audit logs with pagination", async () => {
-    const logs = [
-      makeLog("log-1", "APPROVE_SCENARIO"),
-      makeLog("log-2", "REJECT_SCENARIO"),
-    ];
+    const logs = [makeLog("log-1", "APPROVE_SCENARIO"), makeLog("log-2", "REJECT_SCENARIO")];
     mockDb.auditLog.findMany.mockResolvedValue(logs);
     mockRedis.get.mockResolvedValue(null);
 

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // LegalLayout tests — Server Component with nav bar, content area, and footer
@@ -45,14 +45,22 @@ describe("LegalLayout", () => {
   // --- Navigation bar ---
 
   it("renders a navigation bar", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const nav = document.querySelector("nav");
     expect(nav).toBeInTheDocument();
   });
 
   it("renders the back-to-home link with correct href", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const backLink = screen.getByRole("link", { name: /retour à l'accueil/i });
     expect(backLink).toBeInTheDocument();
@@ -60,39 +68,57 @@ describe("LegalLayout", () => {
   });
 
   it("renders the arrow-left icon in the back link", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const arrowIcon = document.querySelector('[data-testid="icon-arrow-left"]');
     expect(arrowIcon).toBeInTheDocument();
   });
 
   it("renders the EchoRoom brand link with correct href", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const brandLinks = screen.getAllByRole("link", { name: /EchoRoom/i });
     // The brand link with the Phone icon
-    const brandLink = brandLinks.find(
-      (link) => link.getAttribute("href") === "/",
-    );
+    const brandLink = brandLinks.find((link) => link.getAttribute("href") === "/");
     expect(brandLink).toBeInTheDocument();
     expect(brandLink).toHaveAttribute("href", "/");
   });
 
   it("renders the phone icon next to the brand name", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const phoneIcon = document.querySelector('[data-testid="icon-phone"]');
     expect(phoneIcon).toBeInTheDocument();
   });
 
   it("displays the brand name 'EchoRoom' in the nav", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     expect(screen.getByText("EchoRoom")).toBeInTheDocument();
   });
 
   it("renders the navigation with sticky positioning classes", () => {
-    const { container } = render(<LegalLayout><div>Content</div></LegalLayout>);
+    const { container } = render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const nav = container.querySelector("nav");
     expect(nav).toBeInTheDocument();
@@ -104,23 +130,33 @@ describe("LegalLayout", () => {
   // --- Footer ---
 
   it("renders a footer", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const footer = document.querySelector("footer");
     expect(footer).toBeInTheDocument();
   });
 
   it("renders the copyright notice with the current year", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const currentYear = new Date().getFullYear();
-    expect(
-      screen.getByText(new RegExp(`© ${currentYear} EchoRoom AI`)),
-    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`© ${currentYear} EchoRoom AI`))).toBeInTheDocument();
   });
 
   it("renders the 'Aide' footer link pointing to /help", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const link = screen.getByRole("link", { name: /Aide/i });
     expect(link).toBeInTheDocument();
@@ -128,7 +164,11 @@ describe("LegalLayout", () => {
   });
 
   it("renders the 'Confidentialité' footer link pointing to /privacy", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const link = screen.getByRole("link", { name: /Confidentialité/i });
     expect(link).toBeInTheDocument();
@@ -136,7 +176,11 @@ describe("LegalLayout", () => {
   });
 
   it("renders the 'Conditions' footer link pointing to /terms", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const link = screen.getByRole("link", { name: /Conditions/i });
     expect(link).toBeInTheDocument();
@@ -144,7 +188,11 @@ describe("LegalLayout", () => {
   });
 
   it("renders the footer with border-top class", () => {
-    const { container } = render(<LegalLayout><div>Content</div></LegalLayout>);
+    const { container } = render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const footer = container.querySelector("footer");
     expect(footer?.className).toContain("border-t");
@@ -176,13 +224,15 @@ describe("LegalLayout", () => {
   });
 
   it("wraps children in a responsive content container", () => {
-    const { container } = render(<LegalLayout><div>Content</div></LegalLayout>);
+    const { container } = render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     // The content div is a direct child of the root div, after the nav
     // It should have the responsive spacing classes
-    const contentDiv = container.querySelector(
-      "div > div.max-w-4xl.mx-auto.px-6",
-    );
+    const contentDiv = container.querySelector("div > div.max-w-4xl.mx-auto.px-6");
     expect(contentDiv).toBeInTheDocument();
     expect(contentDiv?.className).toContain("py-12");
   });
@@ -190,7 +240,11 @@ describe("LegalLayout", () => {
   // --- Accessibility ---
 
   it("has a semantic nav landmark", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const nav = document.querySelector("nav");
     expect(nav).toBeInTheDocument();
@@ -199,7 +253,11 @@ describe("LegalLayout", () => {
   });
 
   it("has a semantic footer landmark", () => {
-    render(<LegalLayout><div>Content</div></LegalLayout>);
+    render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const footer = document.querySelector("footer");
     expect(footer).toBeInTheDocument();
@@ -208,7 +266,11 @@ describe("LegalLayout", () => {
   // --- Responsive structure ---
 
   it("uses a max-width container for layout consistency", () => {
-    const { container } = render(<LegalLayout><div>Content</div></LegalLayout>);
+    const { container } = render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     // Both nav and footer use max-w-4xl
     const navDiv = container.querySelector("nav > div");
@@ -219,7 +281,11 @@ describe("LegalLayout", () => {
   });
 
   it("applies px-6 padding consistently across nav, content, and footer", () => {
-    const { container } = render(<LegalLayout><div>Content</div></LegalLayout>);
+    const { container } = render(
+      <LegalLayout>
+        <div>Content</div>
+      </LegalLayout>,
+    );
 
     const navDiv = container.querySelector("nav > div");
     const contentDiv = container.querySelector("div > div.max-w-4xl");

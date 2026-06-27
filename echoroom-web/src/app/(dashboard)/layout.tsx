@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -17,11 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
   if (!session?.user) {

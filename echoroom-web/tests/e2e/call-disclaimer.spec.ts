@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
-import fs from "fs";
+import fs from "node:fs";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 const STORAGE_KEY = "echoroom-call-disclaimer-accepted";
 const COMPONENT_SOURCE_PATH = path.resolve(
@@ -51,9 +51,7 @@ test.describe("CallDisclaimerDialog component", () => {
     expect(source).toContain("Avant de commencer l&apos;appel");
 
     // Description text
-    expect(source).toContain(
-      "Veuillez prendre connaissance des informations suivantes",
-    );
+    expect(source).toContain("Veuillez prendre connaissance des informations suivantes");
   });
 
   // ── 3. Four info bullets ───────────────────────────────────────────
@@ -67,9 +65,7 @@ test.describe("CallDisclaimerDialog component", () => {
     expect(liMatches!.length).toBeGreaterThanOrEqual(4);
 
     // Bullet 1: audio recordings for moderation
-    expect(source).toContain(
-      "Les enregistrements audio peuvent être utilisés à des fins de",
-    );
+    expect(source).toContain("Les enregistrements audio peuvent être utilisés à des fins de");
     expect(source).toContain("modération et d&apos;amélioration du service");
 
     // Bullet 2: do not share sensitive personal data
@@ -81,15 +77,13 @@ test.describe("CallDisclaimerDialog component", () => {
     expect(source).toContain("15, 17, 18");
 
     // Bullet 4: auto-moderation active
-    expect(source).toContain(
-      "Une modération automatique du contenu est active pour",
-    );
+    expect(source).toContain("Une modération automatique du contenu est active pour");
     expect(source).toContain("prévenir les abus");
   });
 
   // ── 4. Checkbox ────────────────────────────────────────────────────
 
-  test("checkbox with id=\"disclaimer-accept\" and correct label", () => {
+  test('checkbox with id="disclaimer-accept" and correct label', () => {
     const source = readComponentSource();
 
     // The Checkbox component is imported
@@ -164,22 +158,13 @@ test.describe("CallDisclaimerDialog component", () => {
       localStorage.removeItem("echoroom-call-disclaimer-accepted");
     });
 
-    let stored = await page.evaluate(
-      (key) => localStorage.getItem(key),
-      STORAGE_KEY,
-    );
+    let stored = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
     expect(stored).toBeNull();
 
     // Simulate the accept flow: set localStorage to "true" (as the component does)
-    await page.evaluate(
-      (key) => localStorage.setItem(key, "true"),
-      STORAGE_KEY,
-    );
+    await page.evaluate((key) => localStorage.setItem(key, "true"), STORAGE_KEY);
 
-    stored = await page.evaluate(
-      (key) => localStorage.getItem(key),
-      STORAGE_KEY,
-    );
+    stored = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
     expect(stored).toBe("true");
   });
 
@@ -192,10 +177,10 @@ test.describe("CallDisclaimerDialog component", () => {
     expect(source).toContain("const [hasAcceptedBefore, setHasAcceptedBefore] = useState(false)");
 
     // It reads from localStorage with the STORAGE_KEY
-    expect(source).toContain('localStorage.getItem(STORAGE_KEY)');
+    expect(source).toContain("localStorage.getItem(STORAGE_KEY)");
 
     // If stored value is "true", hasAcceptedBefore is set to true
-    expect(source).toContain('setHasAcceptedBefore(true)');
+    expect(source).toContain("setHasAcceptedBefore(true)");
 
     // Early return when hasAcceptedBefore is true
     expect(source).toMatch(/if\s*\(!mounted\s*\|\|\s*hasAcceptedBefore\)/);
@@ -213,7 +198,7 @@ test.describe("CallDisclaimerDialog component", () => {
       try {
         // Mock localStorage.getItem to throw
         const originalGetItem = Storage.prototype.getItem;
-        Storage.prototype.getItem = function () {
+        Storage.prototype.getItem = () => {
           throw new Error("localStorage not available");
         };
 
@@ -250,7 +235,7 @@ test.describe("CallDisclaimerDialog component", () => {
     const result = await page.evaluate(() => {
       try {
         const originalSetItem = Storage.prototype.setItem;
-        Storage.prototype.setItem = function () {
+        Storage.prototype.setItem = () => {
           throw new Error("localStorage not available");
         };
 

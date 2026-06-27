@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // OpenAI client singleton tests
@@ -29,7 +29,10 @@ let mockOpenAIInstance: { defaultHeaders: Record<string, unknown> } | null = nul
 let shouldConstructorThrow = false;
 
 vi.mock("openai", () => ({
-  default: vi.fn(function OpenAI(this: { defaultHeaders: Record<string, unknown> }, ...args: unknown[]) {
+  default: vi.fn(function OpenAI(
+    this: { defaultHeaders: Record<string, unknown> },
+    ...args: unknown[]
+  ) {
     openaiConstructorCalls.push(args[0]);
     if (shouldConstructorThrow) throw new Error("Constructor failed");
     return mockOpenAIInstance;
@@ -88,7 +91,7 @@ describe("getOpenAIClient", () => {
     const client = mod.getOpenAIClient();
 
     // The getter should return the current request ID
-    const headers = client!.defaultHeaders as { "X-Request-Id": string };
+    const headers = (client as any).defaultHeaders;
     expect(headers["X-Request-Id"]).toBe("req-456");
   });
 
@@ -107,7 +110,7 @@ describe("getOpenAIClient", () => {
     const mod = await import("../openai");
     const client = mod.getOpenAIClient();
 
-    const headers = client!.defaultHeaders as { "X-Request-Id": string };
+    const headers = (client as any).defaultHeaders;
     expect(headers["X-Request-Id"]).toBe("no-request-id");
   });
 });

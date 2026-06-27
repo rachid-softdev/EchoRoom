@@ -1,12 +1,22 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Settings, LayoutDashboard, PlusCircle, Library, Clock, Users, Trophy, CreditCard, Phone } from 'lucide-react'
-import { Button, cn } from '@/components/ui'
-import { CreditDisplay } from './CreditDisplay'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { Breadcrumbs } from './Breadcrumbs'
+import {
+  Clock,
+  CreditCard,
+  LayoutDashboard,
+  Library,
+  Phone,
+  PlusCircle,
+  Settings,
+  Trophy,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button, cn } from "@/components/ui";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Breadcrumbs } from "./Breadcrumbs";
+import { CreditDisplay } from "./CreditDisplay";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,27 +29,22 @@ const navLinks = [
 ];
 
 interface DashboardShellProps {
-  title: string
-  subtitle?: string
-  backHref?: string
-  actions?: React.ReactNode
-  children: React.ReactNode
+  title: string;
+  subtitle?: string;
+  backHref?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
   /** User object for SSR mode. When provided, skips `useSession()` for user data. */
   user?: {
-    id: string
-    email: string
-    username: string
-    role: "USER" | "ADMIN" | "MODERATOR"
-    image: string | null
-  } | null
+    id: string;
+    email: string;
+    username: string;
+    role: "USER" | "ADMIN" | "MODERATOR";
+    image: string | null;
+  } | null;
 }
 
-export function DashboardShell({
-  title,
-  subtitle,
-  actions,
-  children,
-}: DashboardShellProps) {
+export function DashboardShell({ title, subtitle, actions, children }: DashboardShellProps) {
   const pathname = usePathname();
   return (
     <div className="flex flex-col min-h-screen">
@@ -56,7 +61,9 @@ export function DashboardShell({
         <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar mx-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href));
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/dashboard" && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}
@@ -66,7 +73,7 @@ export function DashboardShell({
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap",
                   isActive
                     ? "bg-primary/10 text-primary shadow-[0_0_12px_-4px] shadow-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -100,5 +107,5 @@ export function DashboardShell({
         </div>
       </section>
     </div>
-  )
+  );
 }

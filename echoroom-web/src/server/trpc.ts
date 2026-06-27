@@ -1,15 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { initTRPC, TRPCError } from "@trpc/server";
+import type { NextRequest } from "next/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "./db";
-import { checkRateLimit } from "./middleware/rateLimit";
-import { checkContentBlocklist } from "./services/ai/moderation";
-import { validateCSRF, CSRFFailure } from "./middleware/csrf";
 import { createLogger } from "./lib/logger";
 import { runWithContext } from "./lib/requestContext";
+import { CSRFFailure, validateCSRF } from "./middleware/csrf";
+import { checkRateLimit } from "./middleware/rateLimit";
+import { checkContentBlocklist } from "./services/ai/moderation";
+
 export { withIPRateLimit } from "./middleware/ipRateLimit";
 
 const log = createLogger("trpc");
@@ -28,11 +29,11 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
   if (opts?.req && opts.req.method === "POST") {
     try {
       validateCSRF(opts.req, {
-        appUrl: process.env['NEXT_PUBLIC_APP_URL'] ?? "http://localhost:3000",
-        trustedOrigins: parseTrustedOrigins(process.env['TRUSTED_ORIGINS']),
+        appUrl: process.env["NEXT_PUBLIC_APP_URL"] ?? "http://localhost:3000",
+        trustedOrigins: parseTrustedOrigins(process.env["TRUSTED_ORIGINS"]),
         // In production, require Origin header (strict CSRF).
         // In development, allow missing Origin for mobile apps and tools.
-        allowMissingOrigin: process.env['NODE_ENV'] !== "production",
+        allowMissingOrigin: process.env["NODE_ENV"] !== "production",
       });
     } catch (error) {
       if (error instanceof CSRFFailure) {
@@ -64,7 +65,10 @@ export async function createTRPCContext(opts?: CreateContextOptions) {
 
 function parseTrustedOrigins(raw?: string): string[] {
   if (!raw) return [];
-  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /** Sanitize and truncate client-supplied request IDs to prevent log bloat */
@@ -166,10 +170,11 @@ interface RateLimitConfig {
 
 export function withRateLimit(config: RateLimitConfig) {
   return middleware(async ({ ctx, next, path }) => {
-    const identifier = ctx.session?.user?.id
-      ?? ctx.headers?.get("x-forwarded-for")
-      ?? ctx.headers?.get("x-real-ip")
-      ?? "anonymous";
+    const identifier =
+      ctx.session?.user?.id ??
+      ctx.headers?.get("x-forwarded-for") ??
+      ctx.headers?.get("x-real-ip") ??
+      "anonymous";
 
     await checkRateLimit({
       identifier: `${path}:${identifier}`,
@@ -184,9 +189,8 @@ export function withRateLimit(config: RateLimitConfig) {
 const withTracing = middleware(({ ctx, next }) => {
   const requestId = ctx.requestId;
   const userId = ctx.session?.user?.id;
-  return runWithContext(
-    { requestId, ...(userId ? { userId } : {}), source: "tRPC" },
-    () => next({ ctx: { ...ctx, requestId } }),
+  return runWithContext({ requestId, ...(userId ? { userId } : {}), source: "tRPC" }, () =>
+    next({ ctx: { ...ctx, requestId } }),
   );
 });
 
@@ -205,9 +209,9 @@ const TEXT_FIELDS = [
 export function extractTextFromInput(input: unknown): string | null {
   if (!input || typeof input !== "object") return null;
   const obj = input as Record<string, unknown>;
-  const textParts = TEXT_FIELDS
-    .map((field) => obj[field])
-    .filter((v): v is string => typeof v === "string");
+  const textParts = TEXT_FIELDS.map((field) => obj[field]).filter(
+    (v): v is string => typeof v === "string",
+  );
   return textParts.length > 0 ? textParts.join(" ") : null;
 }
 

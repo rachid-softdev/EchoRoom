@@ -1,60 +1,60 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { Ban, PhoneOff, Unlock } from "lucide-react";
+import { useState } from "react";
+import { DataLoader } from "@/components/shared/DataLoader";
 import {
+  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-} from "@/components/ui"
-import { Button } from "@/components/ui"
-import { Input } from "@/components/ui"
-import { DataLoader } from "@/components/shared/DataLoader"
-import { api } from "@/lib/trpc"
-import { toast } from "@/components/ui"
-import { Ban, Unlock, PhoneOff } from "lucide-react"
+  Input,
+  toast,
+} from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 export default function BlockedNumbersPageClient() {
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [reason, setReason] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [reason, setReason] = useState("");
 
-  const blockedQuery = api.admin.getBlockedNumbers.useQuery()
+  const blockedQuery = api.admin.getBlockedNumbers.useQuery();
   const blockMutation = api.admin.blockNumber.useMutation({
     onSuccess: () => {
-      toast({ title: "Numéro bloqué", variant: "success" })
-      setPhoneNumber("")
-      setReason("")
-      blockedQuery.refetch()
+      toast({ title: "Numéro bloqué", variant: "success" });
+      setPhoneNumber("");
+      setReason("");
+      blockedQuery.refetch();
     },
     onError: (err) => {
       toast({
         title: err.message ?? "Erreur lors du blocage",
         variant: "destructive",
-      })
+      });
     },
-  })
+  });
 
   const unblockMutation = api.admin.unblockNumber.useMutation({
     onSuccess: () => {
-      toast({ title: "Numéro débloqué", variant: "success" })
-      blockedQuery.refetch()
+      toast({ title: "Numéro débloqué", variant: "success" });
+      blockedQuery.refetch();
     },
     onError: (err) => {
       toast({
         title: err.message ?? "Erreur lors du déblocage",
         variant: "destructive",
-      })
+      });
     },
-  })
+  });
 
   function handleBlock(e: React.FormEvent) {
-    e.preventDefault()
-    if (!phoneNumber.trim()) return
+    e.preventDefault();
+    if (!phoneNumber.trim()) return;
     blockMutation.mutate({
       phoneNumber: phoneNumber.trim(),
       reason: reason.trim() || undefined,
-    })
+    });
   }
 
   return (
@@ -75,9 +75,7 @@ export default function BlockedNumbersPageClient() {
             <Ban className="w-5 h-5 text-destructive" />
             <div>
               <CardTitle>Bloquer un numéro</CardTitle>
-              <CardDescription>
-                Ajoutez un numéro à la liste de blocage
-              </CardDescription>
+              <CardDescription>Ajoutez un numéro à la liste de blocage</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -121,9 +119,7 @@ export default function BlockedNumbersPageClient() {
             empty={
               <div className="py-12 text-center">
                 <PhoneOff className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Aucun numéro bloqué pour le moment.
-                </p>
+                <p className="text-muted-foreground">Aucun numéro bloqué pour le moment.</p>
               </div>
             }
           >
@@ -135,13 +131,9 @@ export default function BlockedNumbersPageClient() {
                     className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/50"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-mono text-sm font-medium">
-                        {entry.phoneNumber}
-                      </p>
+                      <p className="font-mono text-sm font-medium">{entry.phoneNumber}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {entry.reason ? (
-                          <>Motif : {entry.reason} — </> 
-                        ) : null}
+                        {entry.reason ? <>Motif : {entry.reason} — </> : null}
                         Bloqué par {entry.blockedBy?.username ?? "inconnu"} le{" "}
                         {new Date(entry.createdAt).toLocaleDateString("fr-FR", {
                           day: "numeric",
@@ -168,5 +160,5 @@ export default function BlockedNumbersPageClient() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

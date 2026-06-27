@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaBadgeRepository tests
@@ -119,9 +119,9 @@ describe("PrismaBadgeRepository — createUserBadge", () => {
   it("should throw on duplicate (unique constraint)", async () => {
     mockCreate.mockRejectedValue(new Error("Unique constraint violation"));
 
-    await expect(
-      repo.createUserBadge("user-1", "badge-1"),
-    ).rejects.toThrow("Unique constraint violation");
+    await expect(repo.createUserBadge("user-1", "badge-1")).rejects.toThrow(
+      "Unique constraint violation",
+    );
   });
 });
 

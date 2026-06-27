@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import type { NextRequest } from "next/server";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Rotate Featured Scenario Cron Route tests
@@ -136,9 +136,7 @@ describe("GET /api/cron/rotate-featured", () => {
     const { rotateFeaturedScenario } = await import(
       "@/server/services/community/rotateFeaturedScenario"
     );
-    (rotateFeaturedScenario as any).mockRejectedValue(
-      new Error("Rotation query failed"),
-    );
+    (rotateFeaturedScenario as any).mockRejectedValue(new Error("Rotation query failed"));
 
     const { GET } = await import("../route");
     const req = createRequest(`Bearer ${CRON_SECRET}`);

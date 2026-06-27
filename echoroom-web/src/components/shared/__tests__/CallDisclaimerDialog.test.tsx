@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mock useFocusTrap (used by DialogContent)
@@ -48,29 +48,13 @@ describe("CallDisclaimerDialog", () => {
   // ── Dialog renders when open and not accepted ────────────────────
 
   it("renders dialog with content when open and not accepted", () => {
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        onAccept={vi.fn()}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={vi.fn()} onAccept={vi.fn()} />);
 
     // Should be visible after hydration (mounted state)
-    expect(
-      screen.getByText("Avant de commencer l'appel"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Je comprends et j'accepte ces conditions",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /démarrer l'appel/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /annuler/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Avant de commencer l'appel")).toBeInTheDocument();
+    expect(screen.getByText("Je comprends et j'accepte ces conditions")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /démarrer l'appel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /annuler/i })).toBeInTheDocument();
   });
 
   // ── Checkbox enables start button ─────────────────────────────────
@@ -78,13 +62,7 @@ describe("CallDisclaimerDialog", () => {
   it("checkbox enables the start button", async () => {
     const user = userEvent.setup();
 
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        onAccept={vi.fn()}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={vi.fn()} onAccept={vi.fn()} />);
 
     const startButton = screen.getByRole("button", {
       name: /démarrer l'appel/i,
@@ -105,13 +83,7 @@ describe("CallDisclaimerDialog", () => {
     const onOpenChange = vi.fn();
     const user = userEvent.setup();
 
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={onOpenChange}
-        onAccept={onAccept}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={onOpenChange} onAccept={onAccept} />);
 
     // Check checkbox and click start
     const checkbox = screen.getByRole("checkbox");
@@ -133,13 +105,7 @@ describe("CallDisclaimerDialog", () => {
     const onOpenChange = vi.fn();
     const user = userEvent.setup();
 
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={onOpenChange}
-        onAccept={vi.fn()}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={onOpenChange} onAccept={vi.fn()} />);
 
     const cancelButton = screen.getByRole("button", { name: /annuler/i });
     await user.click(cancelButton);
@@ -159,13 +125,7 @@ describe("CallDisclaimerDialog", () => {
     // Pre-set localStorage to simulate already accepted
     localStorage.setItem(STORAGE_KEY, "true");
 
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        onAccept={vi.fn()}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={vi.fn()} onAccept={vi.fn()} />);
 
     // After the effect runs and sees localStorage = "true", it should render nothing
     expect(screen.queryByText("Avant de commencer l'appel")).not.toBeInTheDocument();
@@ -177,13 +137,7 @@ describe("CallDisclaimerDialog", () => {
     // Set localStorage before mounting
     setLocalStorageAccepted("true");
 
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        onAccept={vi.fn()}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={vi.fn()} onAccept={vi.fn()} />);
 
     expect(screen.queryByText("Avant de commencer l'appel")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -215,42 +169,26 @@ describe("CallDisclaimerDialog", () => {
 
   it("handles localStorage errors gracefully", () => {
     // Mock localStorage.getItem to throw
-    const getItemSpy = vi
-      .spyOn(Storage.prototype, "getItem")
-      .mockImplementationOnce(() => {
-        throw new Error("localStorage not available");
-      });
+    const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementationOnce(() => {
+      throw new Error("localStorage not available");
+    });
 
     // Should not crash
     expect(() => {
-      render(
-        <CallDisclaimerDialog
-          open={true}
-          onOpenChange={vi.fn()}
-          onAccept={vi.fn()}
-        />,
-      );
+      render(<CallDisclaimerDialog open={true} onOpenChange={vi.fn()} onAccept={vi.fn()} />);
     }).not.toThrow();
 
     getItemSpy.mockRestore();
   });
 
   it("handles localStorage setItem errors gracefully", async () => {
-    const setItemSpy = vi
-      .spyOn(Storage.prototype, "setItem")
-      .mockImplementationOnce(() => {
-        throw new Error("localStorage not available");
-      });
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+      throw new Error("localStorage not available");
+    });
 
     const user = userEvent.setup();
 
-    render(
-      <CallDisclaimerDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        onAccept={vi.fn()}
-      />,
-    );
+    render(<CallDisclaimerDialog open={true} onOpenChange={vi.fn()} onAccept={vi.fn()} />);
 
     // Check checkbox and click start
     const checkbox = screen.getByRole("checkbox");

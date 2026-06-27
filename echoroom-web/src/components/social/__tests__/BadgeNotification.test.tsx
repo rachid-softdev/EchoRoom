@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, cleanup } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BadgeNotification } from "../BadgeNotification";
 
 const mockBadge = {
@@ -22,9 +22,7 @@ describe("BadgeNotification", () => {
   });
 
   it("returns null when badge prop is null", () => {
-    const { container } = render(
-      <BadgeNotification badge={null} onClose={vi.fn()} />,
-    );
+    const { container } = render(<BadgeNotification badge={null} onClose={vi.fn()} />);
 
     expect(container.innerHTML).toBe("");
   });
@@ -62,9 +60,7 @@ describe("BadgeNotification", () => {
 
   it("clears timer on unmount", () => {
     const onClose = vi.fn();
-    const { unmount } = render(
-      <BadgeNotification badge={mockBadge} onClose={onClose} />,
-    );
+    const { unmount } = render(<BadgeNotification badge={mockBadge} onClose={onClose} />);
 
     unmount();
 

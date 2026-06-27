@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ describe("adminRouter.blockNumber", () => {
     });
 
     // reason should not be in the data when not provided
-    const createData = mockDb.blockedNumber.create.mock.calls[0][0].data;
+    const createData = mockDb.blockedNumber.create.mock.calls[0]![0].data;
     expect(createData).not.toHaveProperty("reason");
   });
 
@@ -216,7 +216,7 @@ describe("adminRouter.blockNumber", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    const auditCall = mockDb.auditLog.create.mock.calls[0][0];
+    const auditCall = mockDb.auditLog.create.mock.calls[0]![0];
     const metadata = auditCall.data.metadata;
     expect(metadata).toBeDefined();
     expect(metadata.phoneNumber).toMatch(/^blocked-[0-9a-f]{16}$/);
@@ -266,7 +266,7 @@ describe("adminRouter.blockNumber", () => {
     });
 
     expect(result).toEqual({ success: true, id: "blocked-1" });
-    const createData = mockDb.blockedNumber.create.mock.calls[0][0].data;
+    const createData = mockDb.blockedNumber.create.mock.calls[0]![0].data;
     expect(createData.reason).toHaveLength(500);
   });
 });
@@ -346,7 +346,7 @@ describe("adminRouter.unblockNumber", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    const auditCall = mockDb.auditLog.create.mock.calls[0][0];
+    const auditCall = mockDb.auditLog.create.mock.calls[0]![0];
     expect(auditCall.data.metadata.phoneNumber).toMatch(/^blocked-[0-9a-f]{16}$/);
   });
 });
@@ -369,10 +369,7 @@ describe("adminRouter.getBlockedNumbers", () => {
   });
 
   it("should return all blocked numbers", async () => {
-    const items = [
-      makeBlocked("b-1", "+33612345678"),
-      makeBlocked("b-2", "+33687654321"),
-    ];
+    const items = [makeBlocked("b-1", "+33612345678"), makeBlocked("b-2", "+33687654321")];
     mockRedis.get.mockResolvedValue(null);
     mockDb.blockedNumber.findMany.mockResolvedValue(items);
 
@@ -425,11 +422,9 @@ describe("adminRouter.getBlockedNumbers", () => {
     });
 
     expect(result.items).toHaveLength(1);
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      "admin:blockedNumbers",
-      JSON.stringify({ items }),
-      { ex: 30 },
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith("admin:blockedNumbers", JSON.stringify({ items }), {
+      ex: 30,
+    });
   });
 
   it("should invalidate cache after blocking a number", async () => {

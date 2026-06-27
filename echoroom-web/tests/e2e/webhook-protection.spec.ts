@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Twilio webhook protection — security tests", () => {
   test("should return 403 when x-twilio-signature header is missing", async ({ page }) => {
@@ -108,7 +108,9 @@ test.describe("Twilio webhook protection — security tests", () => {
     expect(response.status()).toBe(403);
   });
 
-  test("should accept valid Content-Type for webhook (application/x-www-form-urlencoded)", async ({ page }) => {
+  test("should accept valid Content-Type for webhook (application/x-www-form-urlencoded)", async ({
+    page,
+  }) => {
     // Playwright's request.post with form: sends as application/x-www-form-urlencoded
     const response = await page.request.post("/api/webhooks/twilio", {
       form: {

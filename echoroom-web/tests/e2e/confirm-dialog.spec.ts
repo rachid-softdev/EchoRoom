@@ -1,14 +1,13 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/ConfirmDialog.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ConfirmDialog component", () => {
-
   // 1. Named export
   test("component is exported as a named export", () => {
     const source = readComponent();
@@ -19,10 +18,19 @@ test.describe("ConfirmDialog component", () => {
   test("uses shadcn/ui Dialog primitives", () => {
     const source = readComponent();
     expect(source).toContain("<Dialog");
-    const dialogComponents = ["DialogContent", "DialogHeader", "DialogTitle", "DialogDescription", "DialogFooter"];
+    const dialogComponents = [
+      "DialogContent",
+      "DialogHeader",
+      "DialogTitle",
+      "DialogDescription",
+      "DialogFooter",
+    ];
     for (const comp of dialogComponents) {
       if (!source.includes(`<${comp}>`)) {
-        test.info().annotations.push({ type: "info", description: `Component ${comp} not found with exact JSX tag - may use dynamic or different format` });
+        test.info().annotations.push({
+          type: "info",
+          description: `Component ${comp} not found with exact JSX tag - may use dynamic or different format`,
+        });
       }
     }
   });
@@ -32,8 +40,8 @@ test.describe("ConfirmDialog component", () => {
     const source = readComponent();
     expect(source).toContain("open");
     expect(source).toContain("onOpenChange");
-    expect(source).toContain('open={open}');
-    expect(source).toContain('onOpenChange={onOpenChange}');
+    expect(source).toContain("open={open}");
+    expect(source).toContain("onOpenChange={onOpenChange}");
   });
 
   // 4. Renders title and description
@@ -47,7 +55,7 @@ test.describe("ConfirmDialog component", () => {
   test("cancel button calls onOpenChange(false)", () => {
     const source = readComponent();
     expect(source).toContain("Annuler");
-    expect(source).toContain('onClick={() => onOpenChange(false)}');
+    expect(source).toContain("onClick={() => onOpenChange(false)}");
   });
 
   // 6. Confirm button with onConfirm

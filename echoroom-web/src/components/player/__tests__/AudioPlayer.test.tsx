@@ -1,8 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import React from "react";
+import { cleanup, render, screen } from "@testing-library/react";
+import type React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mock Audio constructor and HTMLAudioElement methods
@@ -14,23 +13,16 @@ function createMockAudio() {
   return {
     play: vi.fn().mockResolvedValue(undefined),
     pause: vi.fn(),
-    addEventListener: vi.fn(
-      (event: string, handler: (...args: unknown[]) => void) => {
-        if (!eventListeners[event]) eventListeners[event] = [];
-        eventListeners[event].push(handler);
-      },
-    ),
+    addEventListener: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      if (!eventListeners[event]) eventListeners[event] = [];
+      eventListeners[event].push(handler);
+    }),
     removeEventListener: vi.fn(),
     currentTime: 0,
     duration: 120,
     playbackRate: 1,
     preload: "",
   };
-}
-
-function triggerAudioEvent(event: string, ...args: unknown[]) {
-  const handlers = eventListeners[event] || [];
-  handlers.forEach((h) => h(...args));
 }
 
 function clearEventListeners() {
@@ -97,7 +89,10 @@ describe("AudioPlayer", () => {
     vi.restoreAllMocks();
 
     mockAudio = createMockAudio();
-    vi.stubGlobal("Audio", vi.fn(() => mockAudio));
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(() => mockAudio),
+    );
 
     const mod = await import("../AudioPlayer");
     AudioPlayer = mod.AudioPlayer;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // charactersV1Router tests
@@ -165,10 +165,7 @@ describe("charactersV1Router.list", () => {
 
     await handler({ input: {}, ctx: {} });
 
-    expect(mockSetCachedCharacters).toHaveBeenCalledWith(
-      MOCK_CHARACTERS,
-      {},
-    );
+    expect(mockSetCachedCharacters).toHaveBeenCalledWith(MOCK_CHARACTERS, {});
   });
 
   it("should cache characters with category param after DB query", async () => {
@@ -180,10 +177,9 @@ describe("charactersV1Router.list", () => {
 
     await handler({ input: { category: "ROMANTIC" }, ctx: {} });
 
-    expect(mockSetCachedCharacters).toHaveBeenCalledWith(
-      [MOCK_CHARACTERS[0]!],
-      { category: "ROMANTIC" },
-    );
+    expect(mockSetCachedCharacters).toHaveBeenCalledWith([MOCK_CHARACTERS[0]!], {
+      category: "ROMANTIC",
+    });
   });
 
   it("should not cache characters when cache read returns data", async () => {
@@ -221,9 +217,7 @@ describe("charactersV1Router.list", () => {
     const result = await handler({ input: undefined, ctx: {} });
 
     expect(result).toEqual(MOCK_CHARACTERS);
-    expect(mockDb.character.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: {} }),
-    );
+    expect(mockDb.character.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
   });
 });
 

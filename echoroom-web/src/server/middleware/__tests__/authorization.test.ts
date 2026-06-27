@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Authorization Middleware Tests
@@ -18,7 +18,7 @@ const mockMiddleware = vi.hoisted(() => {
   return {
     // isAuthenticated callback (mirrors src/server/trpc.ts lines 129-149)
     isAuthenticated: async ({ ctx, next }: { ctx: Record<string, unknown>; next: Function }) => {
-      const session = ctx.session as { user?: { id?: string } } | null;
+      const session = (ctx as any).session as { user?: { id?: string } } | null;
       if (!session?.user?.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -34,7 +34,7 @@ const mockMiddleware = vi.hoisted(() => {
     },
     // isAdmin callback (mirrors src/server/trpc.ts lines 151-160)
     isAdmin: async ({ ctx, next }: { ctx: Record<string, unknown>; next: Function }) => {
-      const session = ctx.session as { user?: { role?: string } } | null;
+      const session = (ctx as any).session as { user?: { role?: string } } | null;
       if (session?.user?.role !== "ADMIN") {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -65,13 +65,13 @@ describe("isAuthenticated", () => {
     const { isAuthenticated } = await import("@/server/trpc");
     const next = createNext();
 
-    await expect(
-      (isAuthenticated as any)({ ctx: { session: null }, next }),
-    ).rejects.toThrow(TRPCError);
+    await expect((isAuthenticated as any)({ ctx: { session: null }, next })).rejects.toThrow(
+      TRPCError,
+    );
 
-    await expect(
-      (isAuthenticated as any)({ ctx: { session: null }, next }),
-    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect((isAuthenticated as any)({ ctx: { session: null }, next })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
 
     expect(next).not.toHaveBeenCalled();
   });
@@ -120,8 +120,8 @@ describe("isAuthenticated", () => {
 
     expect(next).toHaveBeenCalledTimes(1);
     const nextCtx = next.mock.calls[0]![0].ctx as Record<string, unknown>;
-    expect((nextCtx.session as any).user.id).toBe("user-123");
-    expect((nextCtx.session as any).user.role).toBe("USER");
+    expect(((nextCtx as any).session as any).user.id).toBe("user-123");
+    expect(((nextCtx as any).session as any).user.role).toBe("USER");
   });
 
   it("should forward the session user data to next context", async () => {
@@ -146,9 +146,9 @@ describe("isAuthenticated", () => {
 
     expect(next).toHaveBeenCalledTimes(1);
     const nextCtx = next.mock.calls[0]![0].ctx as Record<string, unknown>;
-    expect(nextCtx.extraField).toBe("should-be-kept");
-    expect((nextCtx.session as any).user.id).toBe("user-456");
-    expect((nextCtx.session as any).user.image).toBe("https://avatar.example.com/img.png");
+    expect((nextCtx as any).extraField).toBe("should-be-kept");
+    expect(((nextCtx as any).session as any).user.id).toBe("user-456");
+    expect(((nextCtx as any).session as any).user.image).toBe("https://avatar.example.com/img.png");
   });
 });
 
@@ -165,9 +165,10 @@ describe("isAdmin", () => {
     const { isAdmin } = await import("@/server/trpc");
     const next = createNext();
 
-    await expect(
-      (isAdmin as any)({ ctx: { session: null }, next }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringContaining("administrateurs") });
+    await expect((isAdmin as any)({ ctx: { session: null }, next })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringContaining("administrateurs"),
+    });
 
     expect(next).not.toHaveBeenCalled();
   });
@@ -180,7 +181,13 @@ describe("isAdmin", () => {
       (isAdmin as any)({
         ctx: {
           session: {
-            user: { id: "user-1", role: "USER", email: "user@test.com", username: "user", image: null },
+            user: {
+              id: "user-1",
+              role: "USER",
+              email: "user@test.com",
+              username: "user",
+              image: null,
+            },
             expires: "2025-01-01",
           },
         },
@@ -199,7 +206,13 @@ describe("isAdmin", () => {
       (isAdmin as any)({
         ctx: {
           session: {
-            user: { id: "mod-1", role: "MODERATOR", email: "mod@test.com", username: "mod", image: null },
+            user: {
+              id: "mod-1",
+              role: "MODERATOR",
+              email: "mod@test.com",
+              username: "mod",
+              image: null,
+            },
             expires: "2025-01-01",
           },
         },
@@ -217,7 +230,13 @@ describe("isAdmin", () => {
     await (isAdmin as any)({
       ctx: {
         session: {
-          user: { id: "admin-1", role: "ADMIN", email: "admin@test.com", username: "admin", image: null },
+          user: {
+            id: "admin-1",
+            role: "ADMIN",
+            email: "admin@test.com",
+            username: "admin",
+            image: null,
+          },
           expires: "2025-01-01",
         },
       },
@@ -267,9 +286,9 @@ describe("isAdmin", () => {
       expires: "2099-01-01",
     };
 
-    await expect(
-      (isAdmin as any)({ ctx: { session: fakeAdmin }, next }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect((isAdmin as any)({ ctx: { session: fakeAdmin }, next })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
 
     expect(next).not.toHaveBeenCalled();
   });

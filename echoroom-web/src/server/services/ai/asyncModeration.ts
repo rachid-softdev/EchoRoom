@@ -1,13 +1,11 @@
-import { checkContent } from "./moderation";
 import { db } from "@/server/db";
-import { commentRepository } from "@/server/repositories";
 import { createLogger } from "@/server/lib/logger";
+import { commentRepository } from "@/server/repositories";
+import { checkContent } from "./moderation";
 
 const log = createLogger("async-moderation");
 
-type ModerationTarget =
-  | { type: "comment"; id: string }
-  | { type: "scenario"; id: string };
+type ModerationTarget = { type: "comment"; id: string } | { type: "scenario"; id: string };
 
 // Maximum number of concurrent moderation jobs
 const MAX_CONCURRENT_JOBS = 5;
@@ -33,7 +31,10 @@ function releaseSlot(): void {
   }
 }
 
-export async function scheduleAsyncModeration(text: string, target: ModerationTarget): Promise<void> {
+export async function scheduleAsyncModeration(
+  text: string,
+  target: ModerationTarget,
+): Promise<void> {
   // Fire-and-forget: schedule moderation on next microtask
   Promise.resolve().then(async () => {
     await acquireSlot();

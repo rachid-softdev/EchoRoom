@@ -1,14 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Login page", () => {
   test("should load the login page successfully", async ({ page }) => {
     await page.goto("/login");
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Connectez-vous pour accéder à votre dashboard"),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
+    await expect(page.getByText("Connectez-vous pour accéder à votre dashboard")).toBeVisible();
   });
 
   test("should display the email input field", async ({ page }) => {
@@ -36,16 +32,12 @@ test.describe("Login page", () => {
 
   test("should show the forgot password link", async ({ page }) => {
     await page.goto("/login");
-    await expect(
-      page.getByRole("link", { name: "Mot de passe oublié ?" }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Mot de passe oublié ?" })).toBeVisible();
   });
 
   test("should display the registration link", async ({ page }) => {
     await page.goto("/login");
-    await expect(
-      page.getByRole("link", { name: /S'inscrire/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /S'inscrire/ })).toBeVisible();
   });
 
   test("should navigate to register page when clicking inscription link", async ({ page }) => {
@@ -69,9 +61,7 @@ test.describe("Login page", () => {
 
     // We should still be on the login page (form was not submitted)
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("should show an error message after submitting invalid credentials", async ({ page }) => {
@@ -83,8 +73,6 @@ test.describe("Login page", () => {
     await page.getByRole("button", { name: "Se connecter" }).click();
 
     // The sign-in attempt will fail and show an error message
-    await expect(
-      page.getByText("Email ou mot de passe incorrect"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Email ou mot de passe incorrect")).toBeVisible({ timeout: 10000 });
   });
 });

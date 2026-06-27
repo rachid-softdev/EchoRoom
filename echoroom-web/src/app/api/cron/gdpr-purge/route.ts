@@ -1,8 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { createLogger } from "@/server/lib/logger";
 import { purgeAnonymizedUsers } from "@/server/jobs/gdprPurge";
+import { createLogger } from "@/server/lib/logger";
 
 const log = createLogger("cron-gdpr-purge");
 
@@ -18,32 +18,23 @@ export async function GET(request: NextRequest) {
   try {
     // ── Authentication ──────────────────────────────────────────────
     const authHeader = request.headers.get("authorization");
-    const expected = process.env['CRON_SECRET'] ?? '';
+    const expected = process.env["CRON_SECRET"] ?? "";
 
     if (!authHeader || !expected) {
-      return NextResponse.json(
-        { error: "Non autorisé" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : authHeader;
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
     // Constant-time comparison — mitigates timing side-channel attacks
     const tokenBuf = Buffer.from(token);
     const expectedBuf = Buffer.from(expected);
 
     const isValid =
-      tokenBuf.length === expectedBuf.length &&
-      timingSafeEqual(tokenBuf, expectedBuf);
+      tokenBuf.length === expectedBuf.length && timingSafeEqual(tokenBuf, expectedBuf);
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Non autorisé" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
     // ── Execute GDPR purge ──────────────────────────────────────────
@@ -56,10 +47,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     log.error("GDPR purge failed", { error });
 
-    return NextResponse.json(
-      { success: false, reason: "Erreur interne" },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, reason: "Erreur interne" }, { status: 500 });
   }
 }
 

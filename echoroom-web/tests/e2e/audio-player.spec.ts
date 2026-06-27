@@ -1,21 +1,22 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper to mock the tRPC calls.replay endpoint.
  * The response follows the tRPC batched JSON format:
  *   [ { result: { data: { json: { recordingUrl, transcript } } } } ]
  */
-async function mockReplay(page: import("@playwright/test").Page, data: {
-  recordingUrl: string | null;
-  transcript: unknown;
-}) {
+async function mockReplay(
+  page: import("@playwright/test").Page,
+  data: {
+    recordingUrl: string | null;
+    transcript: unknown;
+  },
+) {
   await page.route("**/api/trpc/calls.replay*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -31,9 +32,7 @@ async function mockHistory(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -81,17 +80,13 @@ test.describe("AudioPlayer component", () => {
     if (redirected) return;
 
     // Empty state text
-    await expect(
-      page.getByText("Aucun enregistrement disponible"),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun enregistrement disponible")).toBeVisible();
 
     // Clock icon
     await expect(page.locator("svg.lucide-clock")).toBeVisible();
 
     // No play button visible
-    await expect(
-      page.locator("svg.lucide-play, svg.lucide-pause"),
-    ).toHaveCount(0);
+    await expect(page.locator("svg.lucide-play, svg.lucide-pause")).toHaveCount(0);
   });
 
   test("shows empty state when recordingUrl is undefined", async ({ page }) => {
@@ -105,9 +100,7 @@ test.describe("AudioPlayer component", () => {
     test.skip(redirected, "Requires authentication");
     if (redirected) return;
 
-    await expect(
-      page.getByText("Aucun enregistrement disponible"),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun enregistrement disponible")).toBeVisible();
     await expect(page.locator("svg.lucide-clock")).toBeVisible();
   });
 
@@ -121,9 +114,7 @@ test.describe("AudioPlayer component", () => {
     });
 
     // Block the audio URL so it never finishes loading → keeps isLoaded = false
-    await page.route("https://example.com/audio.mp3", (route) =>
-      route.abort("timedout"),
-    );
+    await page.route("https://example.com/audio.mp3", (route) => route.abort("timedout"));
 
     await page.goto("/call/test-call-id");
     await page.waitForLoadState("networkidle");
@@ -135,9 +126,7 @@ test.describe("AudioPlayer component", () => {
     // Loader2 spinner with animate-spin class
     await expect(page.locator("svg.lucide-loader-2")).toBeVisible();
     // Loading text
-    await expect(
-      page.getByText("Préparation de l'audio..."),
-    ).toBeVisible();
+    await expect(page.getByText("Préparation de l'audio...")).toBeVisible();
   });
 
   // ─── Error state ───────────────────────────────────────────────────
@@ -149,9 +138,7 @@ test.describe("AudioPlayer component", () => {
     });
 
     // Block so the audio element fires an error
-    await page.route("https://example.com/audio.mp3", (route) =>
-      route.abort("connectionrefused"),
-    );
+    await page.route("https://example.com/audio.mp3", (route) => route.abort("connectionrefused"));
 
     await page.goto("/call/test-call-id");
     await page.waitForLoadState("networkidle");
@@ -166,13 +153,9 @@ test.describe("AudioPlayer component", () => {
     // AlertTriangle icon
     await expect(page.locator("svg.lucide-alert-triangle")).toBeVisible();
     // Error title
-    await expect(
-      page.getByText("Chargement impossible"),
-    ).toBeVisible();
+    await expect(page.getByText("Chargement impossible")).toBeVisible();
     // Error description
-    await expect(
-      page.getByText("L'audio n'est pas accessible. Réessayez."),
-    ).toBeVisible();
+    await expect(page.getByText("L'audio n'est pas accessible. Réessayez.")).toBeVisible();
   });
 
   // ─── Loaded state ─────────────────────────────────────────────────
@@ -248,9 +231,7 @@ test.describe("AudioPlayer component", () => {
     // Speed buttons contain the text pattern "0.5x", "0.75x", "1x", etc.
     const speedLabels = ["0.5x", "0.75x", "1x", "1.25x", "1.5x", "2x"];
     for (const label of speedLabels) {
-      await expect(
-        page.locator("button").filter({ hasText: label }),
-      ).toBeVisible();
+      await expect(page.locator("button").filter({ hasText: label })).toBeVisible();
     }
   });
 
@@ -293,12 +274,9 @@ test.describe("AudioPlayer component", () => {
     if (redirected) return;
 
     // Download link
-    const downloadLink = page.locator('a[download]');
+    const downloadLink = page.locator("a[download]");
     await expect(downloadLink).toBeVisible();
-    await expect(downloadLink).toHaveAttribute(
-      "href",
-      "https://example.com/audio.mp3",
-    );
+    await expect(downloadLink).toHaveAttribute("href", "https://example.com/audio.mp3");
 
     // Télécharger text
     await expect(page.getByText("Télécharger")).toBeVisible();
@@ -391,8 +369,6 @@ test.describe("AudioPlayer component", () => {
     if (redirected) return;
 
     // The title should be rendered in the loaded player
-    await expect(
-      page.getByText("Mon super scénario"),
-    ).toBeVisible();
+    await expect(page.getByText("Mon super scénario")).toBeVisible();
   });
 });

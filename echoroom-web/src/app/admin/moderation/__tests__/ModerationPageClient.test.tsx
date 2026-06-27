@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mutable mock variables
 const mockApproveMutate = vi.hoisted(() => vi.fn());
@@ -61,9 +61,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-const mockQueueQuery = api.admin.moderationQueue.useQuery as ReturnType<
-  typeof vi.fn
->;
+const mockQueueQuery = api.admin.moderationQueue.useQuery as ReturnType<typeof vi.fn>;
 
 const mockScenarios = {
   items: [
@@ -181,7 +179,7 @@ describe("ModerationPageClient", () => {
   it("calls approve mutation with scenarioId when approve button is clicked", () => {
     render(<ModerationPageClient />);
 
-    const approveButton = screen.getAllByTestId("icon-check")[0].closest("button");
+    const approveButton = screen.getAllByTestId("icon-check")[0]!.closest("button");
     expect(approveButton).not.toBeNull();
     fireEvent.click(approveButton!);
 
@@ -191,7 +189,7 @@ describe("ModerationPageClient", () => {
   it("calls reject mutation with scenarioId when reject button is clicked", () => {
     render(<ModerationPageClient />);
 
-    const rejectButton = screen.getAllByTestId("icon-x")[0].closest("button");
+    const rejectButton = screen.getAllByTestId("icon-x")[0]!.closest("button");
     expect(rejectButton).not.toBeNull();
     fireEvent.click(rejectButton!);
 
@@ -205,7 +203,7 @@ describe("ModerationPageClient", () => {
 
     render(<ModerationPageClient />);
 
-    const approveButton = screen.getAllByTestId("icon-check")[0].closest("button");
+    const approveButton = screen.getAllByTestId("icon-check")[0]!.closest("button");
     expect(approveButton).toBeDisabled();
   });
 
@@ -214,7 +212,7 @@ describe("ModerationPageClient", () => {
 
     render(<ModerationPageClient />);
 
-    const rejectButton = screen.getAllByTestId("icon-x")[0].closest("button");
+    const rejectButton = screen.getAllByTestId("icon-x")[0]!.closest("button");
     expect(rejectButton).toBeDisabled();
   });
 

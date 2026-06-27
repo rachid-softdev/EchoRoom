@@ -1,7 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Theme toggle", () => {
-  test("should display the theme toggle button with theme-related aria-label on the landing page", async ({ page }) => {
+  test("should display the theme toggle button with theme-related aria-label on the landing page", async ({
+    page,
+  }) => {
     await page.goto("/");
     // The ThemeToggle button has aria-label "Charger le thème" before hydration
     // and "Changer le thème" after hydration. Accept either value since we

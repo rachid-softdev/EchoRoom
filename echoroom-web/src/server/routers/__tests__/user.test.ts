@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // userRouter — GDPR Anonymization Tests (M3.2b)
@@ -70,7 +70,7 @@ vi.mock("@/server/lib/encryption", () => ({
   decryptPhoneNumber: vi.fn((phone: string) => phone),
   maskPhoneNumber: vi.fn((phone: string) => {
     if (phone.length < 6) return "******";
-    return phone.slice(0, 3) + "****" + phone.slice(-4);
+    return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
   }),
 }));
 
@@ -121,18 +121,18 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should anonymize email with random UUID, not userId", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            update: vi.fn().mockResolvedValue({}),
-          },
-        };
-        const { anonymizePersonalData: _anonymizePersonalData } = await import("@/server/services/user/anonymization");
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          update: vi.fn().mockResolvedValue({}),
+        },
+      };
+      const { anonymizePersonalData: _anonymizePersonalData } = await import(
+        "@/server/services/user/anonymization"
+      );
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -157,15 +157,13 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should use a valid bcrypt hash for passwordHash, not a sentinel string", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -189,15 +187,13 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should increment tokenVersion to invalidate all existing JWTs", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -218,15 +214,13 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should set deletedAt and anonymizedAt timestamps", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -248,15 +242,13 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should clear displayName, bio, and image", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -279,8 +271,8 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should require confirmation literal 'SUPPRIMER'", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => cb({ user: { update: vi.fn() } }),
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) =>
+      cb({ user: { update: vi.fn() } }),
     );
 
     // Test that input validation rejects non-matching confirmation
@@ -290,15 +282,13 @@ describe("deleteMyAccount — GDPR anonymization", () => {
   });
 
   it("should return success: true on completion", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     const result = await handler({
       input: { confirmation: "SUPPRIMER" },
@@ -346,7 +336,15 @@ describe("exportMyData — GDPR data portability", () => {
     });
     mockDb.scenario.findMany.mockResolvedValue([]);
     mockDb.call.findMany.mockResolvedValue([
-      { id: "call-1", phoneNumber: "+33612345678", status: "COMPLETED", durationSeconds: 120, costCredits: 5, createdAt: new Date(), endedAt: null },
+      {
+        id: "call-1",
+        phoneNumber: "+33612345678",
+        status: "COMPLETED",
+        durationSeconds: 120,
+        costCredits: 5,
+        createdAt: new Date(),
+        endedAt: null,
+      },
     ]);
     mockDb.comment.findMany.mockResolvedValue([]);
     mockDb.purchase.findMany.mockResolvedValue([]);
@@ -394,9 +392,7 @@ describe("exportMyData — GDPR data portability", () => {
   it("should throw NOT_FOUND when user does not exist", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      handler({ input: {}, ctx: validCtx }),
-    ).rejects.toThrow(TRPCError);
+    await expect(handler({ input: {}, ctx: validCtx })).rejects.toThrow(TRPCError);
 
     try {
       await handler({ input: {}, ctx: validCtx });
@@ -420,25 +416,23 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
 
     // Default: $transaction executes callback with mockTx that has all guards
     // (Pre-check mocks now live inside the transaction, not on mockDb)
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-            updateMany: vi.fn(),
-          },
-          scenario: { updateMany: vi.fn() },
-          comment: { updateMany: vi.fn() },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          updateMany: vi.fn(),
+        },
+        scenario: { updateMany: vi.fn() },
+        comment: { updateMany: vi.fn() },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     const { userRouter } = await import("../user");
     // @ts-expect-error
@@ -447,24 +441,22 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
 
   it("should set consentWithdrawnAt and increment tokenVersion", async () => {
     // Reset $transaction to test-specific mockTx
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          auditLog: {
-            create: vi.fn().mockResolvedValue({}),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        auditLog: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     const result = await handler({
       input: { confirmation: "RETIRER" },
@@ -475,25 +467,23 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should anonymize personal data after withdrawal", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-            updateMany: vi.fn(),
-          },
-          scenario: { updateMany: vi.fn() },
-          comment: { updateMany: vi.fn() },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          updateMany: vi.fn(),
+        },
+        scenario: { updateMany: vi.fn() },
+        comment: { updateMany: vi.fn() },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "RETIRER" },
@@ -505,67 +495,61 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should throw if an active call is in progress", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue({ id: "call-456" }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue({ id: "call-456" }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Impossible de retirer le consentement pendant un appel actif");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Impossible de retirer le consentement pendant un appel actif",
+    );
   });
 
   it("should throw if consent was already withdrawn", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: new Date() }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: new Date() }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Le consentement a déjà été retiré");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Le consentement a déjà été retiré",
+    );
   });
 
   it("should create an audit log entry on withdrawal", async () => {
     let capturedData: any = null;
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          auditLog: {
-            create: vi.fn((data: any) => {
-              capturedData = data;
-              return {};
-            }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        auditLog: {
+          create: vi.fn((data: any) => {
+            capturedData = data;
+            return {};
+          }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "RETIRER" },
@@ -578,24 +562,22 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should set consentWithdrawnAt and increment tokenVersion", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          auditLog: {
-            create: vi.fn().mockResolvedValue({}),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        auditLog: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     const result = await handler({
       input: { confirmation: "RETIRER" },
@@ -606,25 +588,23 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should anonymize personal data after withdrawal", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-            updateMany: vi.fn(),
-          },
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          scenario: { updateMany: vi.fn() },
-          comment: { updateMany: vi.fn() },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          updateMany: vi.fn(),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        scenario: { updateMany: vi.fn() },
+        comment: { updateMany: vi.fn() },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "RETIRER" },
@@ -637,68 +617,62 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
 
   it("should throw if an active call is in progress", async () => {
     // Override $transaction mock to return an active call
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue({ id: "call-456" }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue({ id: "call-456" }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Impossible de retirer le consentement pendant un appel actif");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Impossible de retirer le consentement pendant un appel actif",
+    );
   });
 
   it("should throw if consent was already withdrawn", async () => {
     // Override $transaction mock: no active call but consent already withdrawn
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: new Date() }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: new Date() }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Le consentement a déjà été retiré");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Le consentement a déjà été retiré",
+    );
   });
 
   it("should create an audit log entry on withdrawal", async () => {
     let capturedData: any = null;
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          auditLog: {
-            create: vi.fn((data: any) => {
-              capturedData = data;
-              return {};
-            }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        auditLog: {
+          create: vi.fn((data: any) => {
+            capturedData = data;
+            return {};
+          }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "RETIRER" },
@@ -711,28 +685,24 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should anonymize email with random UUID format", async () => {
-    let updateData: any = null;
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn((data: any) => {
-              updateData = data;
-              return {};
-            }),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          auditLog: {
-            create: vi.fn().mockResolvedValue({}),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn((_data: any) => {
+            return {};
+          }),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        auditLog: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "RETIRER" },
@@ -758,24 +728,22 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should NOT modify passwordHash during consent withdrawal", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          auditLog: {
-            create: vi.fn().mockResolvedValue({}),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        auditLog: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "RETIRER" },
@@ -801,69 +769,63 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
   });
 
   it("should throw CALLING status guard (same as PENDING, RINGING, ACTIVE)", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue({ id: "call-456" }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue({ id: "call-456" }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Impossible de retirer le consentement pendant un appel actif");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Impossible de retirer le consentement pendant un appel actif",
+    );
   });
 
   it("should fail double withdrawal (already withdrawn)", async () => {
     // Already withdrawn scenario
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: new Date() }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: new Date() }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Le consentement a déjà été retiré");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Le consentement a déjà été retiré",
+    );
   });
 
   it("should rollback when anonymizePersonalData fails during withdrawal", async () => {
     const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
     (anonymizePersonalData as any).mockRejectedValueOnce(new Error("Anonymization failed"));
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
-            update: vi.fn().mockResolvedValue({}),
-          },
-          call: {
-            findFirst: vi.fn().mockResolvedValue(null),
-          },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ consentWithdrawnAt: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        call: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Anonymization failed");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Anonymization failed",
+    );
   });
 });
 
@@ -1020,9 +982,7 @@ describe("myDeletionStatus — GDPR deletion status", () => {
   it("should throw NOT_FOUND when user does not exist", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      handler({ ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ ctx: validCtx })).rejects.toMatchObject({
       code: "NOT_FOUND",
       message: "Utilisateur introuvable",
     });
@@ -1055,16 +1015,14 @@ describe("reconsent — GDPR consent restoration", () => {
       consentWithdrawnAt: new Date("2026-06-01"),
     });
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        const result = await cb(mockTx);
-        return result;
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      const result = await cb(mockTx);
+      return result;
+    });
 
     const result = await handler({
       input: { consentAccepted: true },
@@ -1079,16 +1037,14 @@ describe("reconsent — GDPR consent restoration", () => {
       consentWithdrawnAt: new Date("2026-06-01"),
     });
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { consentAccepted: true },
@@ -1114,21 +1070,19 @@ describe("reconsent — GDPR consent restoration", () => {
       consentWithdrawnAt: new Date("2026-06-01"),
     });
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          auditLog: {
-            create: vi.fn((data: any) => {
-              capturedData = data;
-              return {};
-            }),
-          },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        auditLog: {
+          create: vi.fn((data: any) => {
+            capturedData = data;
+            return {};
+          }),
+        },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { consentAccepted: true },
@@ -1160,15 +1114,13 @@ describe("reconsent — GDPR consent restoration", () => {
       consentWithdrawnAt: new Date("2026-06-01"),
     });
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        return cb(mockTx);
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      return cb(mockTx);
+    });
 
     const result1 = await handler({
       input: { consentAccepted: true },
@@ -1183,15 +1135,13 @@ describe("reconsent — GDPR consent restoration", () => {
       consentWithdrawnAt: new Date("2026-06-01"),
     });
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        return cb(mockTx);
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      return cb(mockTx);
+    });
 
     const result = await handler({
       input: { consentAccepted: true },
@@ -1207,19 +1157,17 @@ describe("reconsent — GDPR consent restoration", () => {
     const dbModule2 = await import("@/server/db");
     const mockDb2 = dbModule2.db;
 
-    mockDb2.user.findUnique.mockResolvedValue({
+    (mockDb2.user.findUnique as any).mockResolvedValue({
       consentWithdrawnAt: new Date("2026-06-15"), // Withdrawn again
     });
 
-    mockDb2.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          auditLog: { create: vi.fn().mockResolvedValue({}) },
-        };
-        return cb(mockTx);
-      },
-    );
+    (mockDb2.$transaction as any).mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        auditLog: { create: vi.fn().mockResolvedValue({}) },
+      };
+      return cb(mockTx);
+    });
 
     const { userRouter: userRouter2 } = await import("../user");
     // @ts-expect-error
@@ -1294,9 +1242,7 @@ describe("getConsentStatus — current consent state", () => {
   it("should throw NOT_FOUND when user does not exist", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      handler({ ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ ctx: validCtx })).rejects.toMatchObject({
       code: "NOT_FOUND",
       message: "Utilisateur introuvable",
     });

@@ -1,13 +1,15 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─────────────────────────────────────────────────────────────
 // Hoisted mocks (must be before vi.mock calls)
 // ─────────────────────────────────────────────────────────────
 const mockFindUnique = vi.hoisted(() => vi.fn());
-const mockNotFound = vi.hoisted(
-  () => vi.fn(() => { throw new Error("NOT_FOUND"); }),
+const mockNotFound = vi.hoisted(() =>
+  vi.fn(() => {
+    throw new Error("NOT_FOUND");
+  }),
 );
 
 // ─────────────────────────────────────────────────────────────
@@ -28,7 +30,9 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: any) => (
-    <a href={href} {...props}>{children}</a>
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -52,19 +56,29 @@ vi.mock("@/components/shared/DashboardShell", () => ({
 
 vi.mock("@/components/ui", () => ({
   Card: ({ children, className, ...props }: any) => (
-    <div className={className} {...props}>{children}</div>
+    <div className={className} {...props}>
+      {children}
+    </div>
   ),
   CardContent: ({ children, className, ...props }: any) => (
-    <div className={className} {...props}>{children}</div>
+    <div className={className} {...props}>
+      {children}
+    </div>
   ),
   CardHeader: ({ children, className, ...props }: any) => (
-    <div className={className} {...props}>{children}</div>
+    <div className={className} {...props}>
+      {children}
+    </div>
   ),
   CardTitle: ({ children, className, ...props }: any) => (
-    <h3 className={className} {...props}>{children}</h3>
+    <h3 className={className} {...props}>
+      {children}
+    </h3>
   ),
   CardDescription: ({ children, className, ...props }: any) => (
-    <p className={className} {...props}>{children}</p>
+    <p className={className} {...props}>
+      {children}
+    </p>
   ),
   Badge: ({ children, variant, className, ...props }: any) => (
     <span data-variant={variant} className={className} {...props}>
@@ -76,11 +90,7 @@ vi.mock("@/components/ui", () => ({
 // ─────────────────────────────────────────────────────────────
 // Imports — MUST come after all vi.mock calls
 // ─────────────────────────────────────────────────────────────
-import ProfilePage, {
-  generateMetadata,
-  formatRelativeDate,
-  buildActivityFeed,
-} from "../page";
+import ProfilePage, { buildActivityFeed, formatRelativeDate, generateMetadata } from "../page";
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -145,45 +155,31 @@ describe("formatRelativeDate", () => {
   });
 
   it("returns 'À l'instant' for dates less than 1 minute ago", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 30_000))).toBe(
-      "À l'instant",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 30_000))).toBe("À l'instant");
   });
 
   it("returns minute format for dates < 1 hour", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 5 * 60_000))).toBe(
-      "Il y a 5 min",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 5 * 60_000))).toBe("Il y a 5 min");
   });
 
   it("returns 'Il y a 1 min' for exactly 1 minute ago", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 60_000))).toBe(
-      "Il y a 1 min",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 60_000))).toBe("Il y a 1 min");
   });
 
   it("returns hour format for dates < 24 hours", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 3 * 3_600_000))).toBe(
-      "Il y a 3h",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 3 * 3_600_000))).toBe("Il y a 3h");
   });
 
   it("returns 'Il y a 1h' for exactly 1 hour ago", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 3_600_000))).toBe(
-      "Il y a 1h",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 3_600_000))).toBe("Il y a 1h");
   });
 
   it("returns day format for dates < 7 days", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 5 * 86_400_000))).toBe(
-      "Il y a 5j",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 5 * 86_400_000))).toBe("Il y a 5j");
   });
 
   it("returns 'Il y a 1j' for exactly 1 day ago", () => {
-    expect(formatRelativeDate(new Date(NOW.getTime() - 86_400_000))).toBe(
-      "Il y a 1j",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() - 86_400_000))).toBe("Il y a 1j");
   });
 
   it("returns formatted short date for dates >= 7 days", () => {
@@ -206,9 +202,7 @@ describe("formatRelativeDate", () => {
 
   it("returns 'À l'instant' for future dates (negative diff)", () => {
     // A date 10 seconds in the future
-    expect(formatRelativeDate(new Date(NOW.getTime() + 10_000))).toBe(
-      "À l'instant",
-    );
+    expect(formatRelativeDate(new Date(NOW.getTime() + 10_000))).toBe("À l'instant");
   });
 
   it("handles exactly 0ms difference", () => {
@@ -254,9 +248,9 @@ describe("buildActivityFeed", () => {
 
     const result = buildActivityFeed(scenarios, calls);
 
-    expect(result[0].id).toBe("s-new"); // June
-    expect(result[1].id).toBe("c-mid"); // March
-    expect(result[2].id).toBe("s-old"); // January
+    expect(result[0]!.id).toBe("s-new"); // June
+    expect(result[1]!.id).toBe("c-mid"); // March
+    expect(result[2]!.id).toBe("s-old"); // January
   });
 
   it("limits the result to ACTIVITY_LIMIT (10) items", () => {
@@ -297,7 +291,7 @@ describe("buildActivityFeed", () => {
     ];
     const [item] = buildActivityFeed(scenarios, []);
 
-    expect(item.type).toBe("scenario");
+    expect(item!.type).toBe("scenario");
     expect(item).toHaveProperty("id", "s-1");
     expect(item).toHaveProperty("title", "Test");
     expect(item).toHaveProperty("playCount", 5);
@@ -305,12 +299,10 @@ describe("buildActivityFeed", () => {
   });
 
   it("sets type='call' on call items and preserves call fields", () => {
-    const calls = [
-      { id: "c-1", createdAt: new Date(), status: "COMPLETED", durationSeconds: 90 },
-    ];
+    const calls = [{ id: "c-1", createdAt: new Date(), status: "COMPLETED", durationSeconds: 90 }];
     const [item] = buildActivityFeed([], calls);
 
-    expect(item.type).toBe("call");
+    expect(item!.type).toBe("call");
     expect(item).toHaveProperty("id", "c-1");
     expect(item).toHaveProperty("status", "COMPLETED");
     expect(item).toHaveProperty("durationSeconds", 90);
@@ -419,9 +411,9 @@ describe("ProfilePage", () => {
     it("calls notFound() and does not render when db returns null", async () => {
       mockFindUnique.mockResolvedValue(null);
 
-      await expect(
-        ProfilePage({ params: { username: "nonexistent" } }),
-      ).rejects.toThrow("NOT_FOUND");
+      await expect(ProfilePage({ params: { username: "nonexistent" } })).rejects.toThrow(
+        "NOT_FOUND",
+      );
 
       expect(mockNotFound).toHaveBeenCalledTimes(1);
     });
@@ -429,9 +421,7 @@ describe("ProfilePage", () => {
     it("calls findUnique with the correct username", async () => {
       mockFindUnique.mockResolvedValue(null);
 
-      await expect(
-        ProfilePage({ params: { username: "ghost" } }),
-      ).rejects.toThrow("NOT_FOUND");
+      await expect(ProfilePage({ params: { username: "ghost" } })).rejects.toThrow("NOT_FOUND");
 
       expect(mockFindUnique).toHaveBeenCalledWith({
         where: { username: "ghost" },
@@ -471,9 +461,7 @@ describe("ProfilePage", () => {
       const page = await ProfilePage({ params: { username: "bob" } });
       render(page);
 
-      expect(
-        screen.getByText(/bob n'a pas encore créé/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/bob n'a pas encore créé/)).toBeInTheDocument();
     });
 
     it("displays stats as 0 for empty activity", async () => {
@@ -502,13 +490,8 @@ describe("ProfilePage", () => {
       const page = await ProfilePage({ params: { username: "testuser" } });
       render(page);
 
-      expect(screen.getByTestId("dashboard-shell")).toHaveAttribute(
-        "data-title",
-        "testuser",
-      );
-      expect(screen.getByTestId("shell-subtitle")).toHaveTextContent(
-        "Profil public",
-      );
+      expect(screen.getByTestId("dashboard-shell")).toHaveAttribute("data-title", "testuser");
+      expect(screen.getByTestId("shell-subtitle")).toHaveTextContent("Profil public");
     });
 
     it("displays user initials (first 2 chars uppercased)", async () => {
@@ -547,9 +530,7 @@ describe("ProfilePage", () => {
 
   describe("stats counters", () => {
     it("displays scenarios count and calls count", async () => {
-      mockFindUnique.mockResolvedValue(
-        createUser({ _count: { scenarios: 7, calls: 3 } }),
-      );
+      mockFindUnique.mockResolvedValue(createUser({ _count: { scenarios: 7, calls: 3 } }));
 
       const page = await ProfilePage({ params: { username: "testuser" } });
       render(page);
@@ -561,9 +542,7 @@ describe("ProfilePage", () => {
     });
 
     it("renders both stat cards with icons", async () => {
-      mockFindUnique.mockResolvedValue(
-        createUser({ _count: { scenarios: 1, calls: 2 } }),
-      );
+      mockFindUnique.mockResolvedValue(createUser({ _count: { scenarios: 1, calls: 2 } }));
 
       const page = await ProfilePage({ params: { username: "testuser" } });
       render(page);
@@ -782,9 +761,7 @@ describe("ProfilePage", () => {
       const page = await ProfilePage({ params: { username: "testuser" } });
       render(page);
 
-      expect(
-        screen.queryByText(/les plus récents/),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/les plus récents/)).not.toBeInTheDocument();
     });
 
     it("limits feed to 10 items when there are more", async () => {
@@ -846,10 +823,7 @@ describe("ProfilePage", () => {
 
       const badge = screen.getByText("Terminé");
       expect(badge).toBeInTheDocument();
-      expect(badge.closest("span")).toHaveAttribute(
-        "data-variant",
-        "secondary",
-      );
+      expect(badge.closest("span")).toHaveAttribute("data-variant", "secondary");
     });
 
     it('shows "Échoué" badge with variant "destructive" for FAILED calls', async () => {
@@ -873,10 +847,7 @@ describe("ProfilePage", () => {
 
       const badge = screen.getByText("Échoué");
       expect(badge).toBeInTheDocument();
-      expect(badge.closest("span")).toHaveAttribute(
-        "data-variant",
-        "destructive",
-      );
+      expect(badge.closest("span")).toHaveAttribute("data-variant", "destructive");
     });
 
     it('shows raw status with variant "outline" for unknown statuses', async () => {
@@ -900,10 +871,7 @@ describe("ProfilePage", () => {
 
       const badge = screen.getByText("PENDING");
       expect(badge).toBeInTheDocument();
-      expect(badge.closest("span")).toHaveAttribute(
-        "data-variant",
-        "outline",
-      );
+      expect(badge.closest("span")).toHaveAttribute("data-variant", "outline");
     });
 
     it('uses variant "outline" for ACTIVE status', async () => {
@@ -927,10 +895,7 @@ describe("ProfilePage", () => {
 
       const badge = screen.getByText("ACTIVE");
       expect(badge).toBeInTheDocument();
-      expect(badge.closest("span")).toHaveAttribute(
-        "data-variant",
-        "outline",
-      );
+      expect(badge.closest("span")).toHaveAttribute("data-variant", "outline");
     });
   });
 });

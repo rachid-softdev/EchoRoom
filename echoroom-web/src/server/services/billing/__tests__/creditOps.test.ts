@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // atomicDebit & atomicRefund — Credit operations tests
@@ -103,9 +103,7 @@ describe("atomicDebit", () => {
   });
 
   it("should prevent race conditions through atomic WHERE clause", async () => {
-    mockBillingUpdateMany
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 0 });
+    mockBillingUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
     mockFindUnique.mockResolvedValue({ id: "user-abc" });
 
     const { atomicDebit } = await import("../creditOps");
@@ -291,9 +289,7 @@ describe("atomicSafeDecrement", () => {
   });
 
   it("should prevent negative credits via WHERE credits gte guard", async () => {
-    mockBillingUpdateMany
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 0 });
+    mockBillingUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
     mockFindUnique.mockResolvedValue({ id: "user-abc" });
 
     const { atomicSafeDecrement } = await import("../creditOps");

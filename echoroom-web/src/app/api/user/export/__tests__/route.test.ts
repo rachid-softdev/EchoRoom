@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // GDPR Export Route — CSRF Origin Validation Tests
@@ -17,7 +17,7 @@ const FORBIDDEN_ORIGIN = "https://evil.com";
 const INVALID_ORIGIN_STRING = "not-a-url";
 
 // We'll set NEXT_PUBLIC_APP_URL before tests
-const originalEnv = process.env['NEXT_PUBLIC_APP_URL'];
+const originalEnv = process.env["NEXT_PUBLIC_APP_URL"];
 
 // Mock the auth, db, and logger modules
 vi.mock("@/lib/auth", () => ({
@@ -72,11 +72,11 @@ describe("POST /api/user/export — CSRF Origin Validation (M-4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Set the app URL to our test expected origin
-    process.env['NEXT_PUBLIC_APP_URL'] = VALID_ORIGIN;
+    process.env["NEXT_PUBLIC_APP_URL"] = VALID_ORIGIN;
   });
 
   afterAll(() => {
-    process.env['NEXT_PUBLIC_APP_URL'] = originalEnv;
+    process.env["NEXT_PUBLIC_APP_URL"] = originalEnv;
   });
 
   // -----------------------------------------------------------------------
@@ -193,7 +193,7 @@ describe("POST /api/user/export — CSRF Origin Validation (M-4)", () => {
   });
 
   it("should handle app URL with default localhost when NEXT_PUBLIC_APP_URL is unset", async () => {
-    delete process.env['NEXT_PUBLIC_APP_URL'];
+    delete process.env["NEXT_PUBLIC_APP_URL"];
 
     const { auth } = await import("@/lib/auth");
     (auth as any).mockResolvedValue(null);

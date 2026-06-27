@@ -1,4 +1,4 @@
-import type { PrismaClient, Comment, $Enums } from "@prisma/client";
+import type { $Enums, Comment, PrismaClient } from "@prisma/client";
 
 export interface ICommentRepository {
   findById(id: string): Promise<Comment | null>;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // webhookDLQ tests — pushToDLQ, retryDLQ
@@ -44,11 +44,17 @@ describe("pushToDLQ", () => {
     mockRedis.expire.mockResolvedValue(1);
 
     const { pushToDLQ } = await import("../webhookDLQ");
-    await pushToDLQ("stripe", "evt_123", "checkout.session.completed", { amount: 2000 }, "Webhook handler failed");
+    await pushToDLQ(
+      "stripe",
+      "evt_123",
+      "checkout.session.completed",
+      { amount: 2000 },
+      "Webhook handler failed",
+    );
 
     expect(mockRedis.lpush).toHaveBeenCalledTimes(1);
-    const lpushKey = mockRedis.lpush.mock.calls[0][0];
-    const lpushEntry = JSON.parse(mockRedis.lpush.mock.calls[0][1]);
+    const lpushKey = mockRedis.lpush.mock.calls[0]![0];
+    const lpushEntry = JSON.parse(mockRedis.lpush.mock.calls[0]![1]);
     expect(lpushKey).toBe("dlq:stripe");
     expect(lpushEntry).toMatchObject({
       eventId: "evt_123",
@@ -64,7 +70,7 @@ describe("pushToDLQ", () => {
 
   it("should log warning and return when Redis is null", async () => {
     // Temporarily override the mock
-    const redisModule = await import("@/lib/redis");
+    await import("@/lib/redis");
     // Since we can't easily change mocked exports, we rely on the mock already set up.
     // Instead, test the logic path: when redis.lpush throws, it's caught.
 
@@ -119,7 +125,7 @@ describe("pushToDLQ", () => {
     const { pushToDLQ } = await import("../webhookDLQ");
     await pushToDLQ("stripe", "evt_new", "event", {}, "err");
 
-    const entry = JSON.parse(mockRedis.lpush.mock.calls[0][1]);
+    const entry = JSON.parse(mockRedis.lpush.mock.calls[0]![1]);
     expect(entry.retryCount).toBe(0);
   });
 });
@@ -172,8 +178,8 @@ describe("retryDLQ", () => {
 
     // Both entries should be re-pushed with incremented retryCount
     expect(mockRedis.lpush).toHaveBeenCalledTimes(2);
-    const firstEntry = JSON.parse(mockRedis.lpush.mock.calls[0][1]);
-    const secondEntry = JSON.parse(mockRedis.lpush.mock.calls[1][1]);
+    const firstEntry = JSON.parse(mockRedis.lpush.mock.calls[0]![1]);
+    const secondEntry = JSON.parse(mockRedis.lpush.mock.calls[1]![1]);
     expect(firstEntry.retryCount).toBe(1);
     expect(firstEntry.eventId).toBe("evt_1");
     expect(secondEntry.retryCount).toBe(3);
@@ -210,17 +216,13 @@ describe("retryDLQ", () => {
     expect(result).toEqual({ retried: 1, failed: 1, total: 2 });
     // Only the entry under MAX_RETRIES should be re-pushed
     expect(mockRedis.lpush).toHaveBeenCalledTimes(1);
-    const pushedEntry = JSON.parse(mockRedis.lpush.mock.calls[0][1]);
+    const pushedEntry = JSON.parse(mockRedis.lpush.mock.calls[0]![1]);
     expect(pushedEntry.eventId).toBe("evt_ok");
     expect(pushedEntry.retryCount).toBe(2);
   });
 
   it("should count corrupted JSON entries as failed", async () => {
-    const entries = [
-      "valid-json-entry",
-      "not valid json",
-      "{also not valid",
-    ];
+    void(["valid-json-entry", "not valid json", "{also not valid"]); // used for documentation
 
     // Only the first one is valid JSON
     mockRedis.lrange.mockResolvedValue([
@@ -292,7 +294,7 @@ describe("retryDLQ", () => {
     // retryCount = 4 < MAX_RETRIES(5), so it should be retried (incremented to 5)
     expect(result).toEqual({ retried: 1, failed: 0, total: 1 });
 
-    const pushedEntry = JSON.parse(mockRedis.lpush.mock.calls[0][1]);
+    const pushedEntry = JSON.parse(mockRedis.lpush.mock.calls[0]![1]);
     expect(pushedEntry.retryCount).toBe(MAX_RETRIES);
   });
 
@@ -316,7 +318,7 @@ describe("retryDLQ", () => {
     const { retryDLQ } = await import("../webhookDLQ");
     await retryDLQ("stripe");
 
-    const pushedEntry = JSON.parse(mockRedis.lpush.mock.calls[0][1]);
+    const pushedEntry = JSON.parse(mockRedis.lpush.mock.calls[0]![1]);
     const lastAttempt = new Date(pushedEntry.lastAttempt);
     expect(lastAttempt.getTime()).toBeGreaterThanOrEqual(before.getTime());
   });

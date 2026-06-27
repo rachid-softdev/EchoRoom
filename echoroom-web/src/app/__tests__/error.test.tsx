@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Error Boundary (error.tsx) tests
@@ -71,33 +71,19 @@ describe("Error page", () => {
   it("should render error icon, title, and retry button", async () => {
     const ErrorComponent = (await import("../error")).default;
 
-    render(
-      <ErrorComponent
-        error={new Error("Something went wrong")}
-        reset={mockReset}
-      />,
-    );
+    render(<ErrorComponent error={new Error("Something went wrong")} reset={mockReset} />);
 
     expect(screen.getByTestId("icon-alert-triangle")).toBeInTheDocument();
-    expect(
-      screen.getByText("Une erreur est survenue"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
     expect(screen.getByText("Réessayer")).toBeInTheDocument();
   });
 
   it("should render error description", async () => {
     const ErrorComponent = (await import("../error")).default;
 
-    render(
-      <ErrorComponent
-        error={new Error("Something went wrong")}
-        reset={mockReset}
-      />,
-    );
+    render(<ErrorComponent error={new Error("Something went wrong")} reset={mockReset} />);
 
-    expect(
-      screen.getByText(/notifiée/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/notifiée/)).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -108,14 +94,12 @@ describe("Error page", () => {
     const ErrorComponent = (await import("../error")).default;
 
     const error = new Error("Test error");
-    error.digest = "ERR-12345";
+    (error as any).digest = "ERR-12345";
 
     render(<ErrorComponent error={error} reset={mockReset} />);
 
     expect(screen.getByText("Erreur #ERR-12345")).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Copier l'identifiant d'erreur"),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Copier l'identifiant d'erreur")).toBeInTheDocument();
   });
 
   it("should NOT render digest section when digest is missing", async () => {
@@ -127,9 +111,7 @@ describe("Error page", () => {
     render(<ErrorComponent error={error} reset={mockReset} />);
 
     expect(screen.queryByText(/Erreur #/)).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("Copier l'identifiant d'erreur"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Copier l'identifiant d'erreur")).not.toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -145,7 +127,7 @@ describe("Error page", () => {
     const ErrorComponent = (await import("../error")).default;
 
     const error = new Error("Test error");
-    error.digest = "ERR-12345";
+    ;(error as any).digest = "ERR-12345";
 
     render(<ErrorComponent error={error} reset={mockReset} />);
 
@@ -170,7 +152,7 @@ describe("Error page", () => {
     const ErrorComponent = (await import("../error")).default;
 
     const error = new Error("Test error");
-    error.digest = "ERR-12345";
+    ;(error as any).digest = "ERR-12345";
 
     render(<ErrorComponent error={error} reset={mockReset} />);
 
@@ -193,12 +175,7 @@ describe("Error page", () => {
   it("should call reset function when retry button is clicked", async () => {
     const ErrorComponent = (await import("../error")).default;
 
-    render(
-      <ErrorComponent
-        error={new Error("Something went wrong")}
-        reset={mockReset}
-      />,
-    );
+    render(<ErrorComponent error={new Error("Something went wrong")} reset={mockReset} />);
 
     const retryButton = screen.getByText("Réessayer");
     fireEvent.click(retryButton);

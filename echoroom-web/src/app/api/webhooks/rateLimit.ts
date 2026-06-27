@@ -1,6 +1,6 @@
 import { redis } from "@/lib/redis";
-import { inMemoryRateLimitStore } from "@/server/middleware/rateLimitStore";
 import { createLogger } from "@/server/lib/logger";
+import { inMemoryRateLimitStore } from "@/server/middleware/rateLimitStore";
 
 const log = createLogger("webhook-ratelimit");
 
@@ -14,21 +14,18 @@ export interface WebhookRateLimitConfig {
 }
 
 export const WEBHOOK_RATE_LIMITS: Record<string, WebhookRateLimitConfig> = {
-  "twilio:status":        { limit: 60,   windowSec: 60, perIp: false },
-  "twilio:voice:init":    { limit: 30,   windowSec: 60, perIp: true },
-  "twilio:voice:input":   { limit: 60,   windowSec: 60, perIp: true },
-  "twilio:voice:stream":  { limit: 30,   windowSec: 60, perIp: true },
-  "stripe:checkout":      { limit: 20,   windowSec: 60, perIp: false },
+  "twilio:status": { limit: 60, windowSec: 60, perIp: false },
+  "twilio:voice:init": { limit: 30, windowSec: 60, perIp: true },
+  "twilio:voice:input": { limit: 60, windowSec: 60, perIp: true },
+  "twilio:voice:stream": { limit: 30, windowSec: 60, perIp: true },
+  "stripe:checkout": { limit: 20, windowSec: 60, perIp: false },
 };
 
 /**
  * Shared webhook rate limiter.
  * Uses Redis sorted sets (sliding window) with in-memory fallback.
  */
-export async function checkWebhookRateLimit(
-  endpointKey: string,
-  ip: string,
-): Promise<boolean> {
+export async function checkWebhookRateLimit(endpointKey: string, ip: string): Promise<boolean> {
   const config = WEBHOOK_RATE_LIMITS[endpointKey];
   if (!config) {
     log.warn("Unknown webhook endpoint key, denying", { endpointKey });
@@ -39,9 +36,7 @@ export async function checkWebhookRateLimit(
   const windowMs = config.windowSec * 1000;
 
   // Build the rate limit key
-  const key = config.perIp
-    ? `webhook:${endpointKey}:${ip}`
-    : `webhook:${endpointKey}`;
+  const key = config.perIp ? `webhook:${endpointKey}:${ip}` : `webhook:${endpointKey}`;
 
   // Try Redis first
   if (redis) {
@@ -57,7 +52,10 @@ export async function checkWebhookRateLimit(
       }
 
       // Record this request
-      await redis.zadd(key, { score: now, member: `${now}:${Math.random().toString(36).slice(2, 8)}` });
+      await redis.zadd(key, {
+        score: now,
+        member: `${now}:${Math.random().toString(36).slice(2, 8)}`,
+      });
       await redis.expire(key, config.windowSec);
 
       return true;
@@ -69,8 +67,6 @@ export async function checkWebhookRateLimit(
 
   // In-memory fallback using the existing rate limit store
   // Align with Redis key strategy: respect config.perIp
-  const inMemKey = config.perIp
-    ? `${endpointKey}:${ip}`
-    : endpointKey;
+  const inMemKey = config.perIp ? `${endpointKey}:${ip}` : endpointKey;
   return inMemoryRateLimitStore.check(inMemKey, config.limit, config.windowSec);
 }

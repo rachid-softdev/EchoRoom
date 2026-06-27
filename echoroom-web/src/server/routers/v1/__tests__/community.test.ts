@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // communityV1Router tests
@@ -143,10 +143,10 @@ describe("communityV1Router.comment", () => {
       ctx: validCtx,
     });
 
-    expect(mockScheduleAsyncModeration).toHaveBeenCalledWith(
-      "Great scenario!",
-      { type: "comment", id: "cmt-1" },
-    );
+    expect(mockScheduleAsyncModeration).toHaveBeenCalledWith("Great scenario!", {
+      type: "comment",
+      id: "cmt-1",
+    });
   });
 
   it("should throw TOO_MANY_REQUESTS when spam is detected", async () => {
@@ -208,9 +208,27 @@ describe("communityV1Router.getComments", () => {
 
   it("should return approved comments with pagination", async () => {
     const mockComments = [
-      { id: "cmt-3", content: "Third", moderationStatus: "APPROVED", createdAt: new Date("2026-06-03"), user: { id: "u-1", username: "Alice", profile: { image: null } } },
-      { id: "cmt-2", content: "Second", moderationStatus: "APPROVED", createdAt: new Date("2026-06-02"), user: { id: "u-2", username: "Bob", profile: { image: "https://example.com/av.jpg" } } },
-      { id: "cmt-1", content: "First", moderationStatus: "APPROVED", createdAt: new Date("2026-06-01"), user: { id: "u-3", username: "Charlie", profile: { image: null } } },
+      {
+        id: "cmt-3",
+        content: "Third",
+        moderationStatus: "APPROVED",
+        createdAt: new Date("2026-06-03"),
+        user: { id: "u-1", username: "Alice", profile: { image: null } },
+      },
+      {
+        id: "cmt-2",
+        content: "Second",
+        moderationStatus: "APPROVED",
+        createdAt: new Date("2026-06-02"),
+        user: { id: "u-2", username: "Bob", profile: { image: "https://example.com/av.jpg" } },
+      },
+      {
+        id: "cmt-1",
+        content: "First",
+        moderationStatus: "APPROVED",
+        createdAt: new Date("2026-06-01"),
+        user: { id: "u-3", username: "Charlie", profile: { image: null } },
+      },
     ];
     mockDb.comment.findMany.mockResolvedValue(mockComments);
 
@@ -237,7 +255,13 @@ describe("communityV1Router.getComments", () => {
 
   it("should handle cursor-based pagination", async () => {
     mockDb.comment.findMany.mockResolvedValue([
-      { id: "cmt-5", content: "Newer", createdAt: new Date(), moderationStatus: "APPROVED", user: { id: "u-1", username: "A", profile: { image: null } } },
+      {
+        id: "cmt-5",
+        content: "Newer",
+        createdAt: new Date(),
+        moderationStatus: "APPROVED",
+        user: { id: "u-1", username: "A", profile: { image: null } },
+      },
     ]);
 
     const { communityV1Router } = await import("../community");
@@ -342,7 +366,11 @@ describe("communityV1Router.reportAbuse", () => {
     const handler = (communityV1Router as any).reportAbuse.handler;
 
     const result = await handler({
-      input: { targetType: "SCENARIO", targetId: "scenario-1", reason: "This is an abusive content!" },
+      input: {
+        targetType: "SCENARIO",
+        targetId: "scenario-1",
+        reason: "This is an abusive content!",
+      },
       ctx: validCtx,
     });
 
@@ -365,7 +393,11 @@ describe("communityV1Router.reportAbuse", () => {
 
     await expect(
       handler({
-        input: { targetType: "SCENARIO", targetId: "scenario-1", reason: "This is an abusive content!" },
+        input: {
+          targetType: "SCENARIO",
+          targetId: "scenario-1",
+          reason: "This is an abusive content!",
+        },
         ctx: validCtx,
       }),
     ).rejects.toMatchObject({
@@ -384,7 +416,11 @@ describe("communityV1Router.reportAbuse", () => {
     const handler = (communityV1Router as any).reportAbuse.handler;
 
     await handler({
-      input: { targetType: "SCENARIO", targetId: "scenario-1", reason: "This is an abusive content!" },
+      input: {
+        targetType: "SCENARIO",
+        targetId: "scenario-1",
+        reason: "This is an abusive content!",
+      },
       ctx: validCtx,
     });
 
@@ -406,7 +442,9 @@ describe("communityV1Router.reportAbuse", () => {
           targetId: z.string().min(1),
           reason: z.string().min(MIN_REPORT_REASON_LENGTH!).max(1000),
         });
-        expect(schema.safeParse({ targetType: "S", targetId: "1", reason: "Short" }).success).toBe(false);
+        expect(schema.safeParse({ targetType: "S", targetId: "1", reason: "Short" }).success).toBe(
+          false,
+        );
       });
     });
   });
@@ -418,7 +456,9 @@ describe("communityV1Router.reportAbuse", () => {
         targetId: z.string().min(1),
         reason: z.string().min(10).max(1000),
       });
-      expect(schema.safeParse({ targetType: "S", targetId: "1", reason: "x".repeat(1001) }).success).toBe(false);
+      expect(
+        schema.safeParse({ targetType: "S", targetId: "1", reason: "x".repeat(1001) }).success,
+      ).toBe(false);
     });
   });
 
@@ -429,7 +469,9 @@ describe("communityV1Router.reportAbuse", () => {
         targetId: z.string().min(1),
         reason: z.string().min(10).max(1000),
       });
-      expect(schema.safeParse({ targetType: "", targetId: "1", reason: "1234567890" }).success).toBe(false);
+      expect(
+        schema.safeParse({ targetType: "", targetId: "1", reason: "1234567890" }).success,
+      ).toBe(false);
     });
   });
 
@@ -440,7 +482,9 @@ describe("communityV1Router.reportAbuse", () => {
         targetId: z.string().min(1),
         reason: z.string().min(10).max(1000),
       });
-      expect(schema.safeParse({ targetType: "S", targetId: "", reason: "1234567890" }).success).toBe(false);
+      expect(
+        schema.safeParse({ targetType: "S", targetId: "", reason: "1234567890" }).success,
+      ).toBe(false);
     });
   });
 

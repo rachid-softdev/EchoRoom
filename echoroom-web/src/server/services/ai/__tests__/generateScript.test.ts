@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Generate Script Tests — generateScenarioScript, parseResponses
@@ -23,8 +23,7 @@ vi.mock("../conversationEngine", () => ({
 
 const defaultParams = {
   characterName: "Sophie",
-  characterPrompt:
-    "Tu es Sophie, une conseillère clientèle patiente et professionnelle.",
+  characterPrompt: "Tu es Sophie, une conseillère clientèle patiente et professionnelle.",
   title: "Service client",
   description: "Une cliente appelle car elle a un problème avec sa facture.",
   openingMessage: "Bonjour, vous avez besoin d'aide?",
@@ -64,15 +63,9 @@ describe("generateScenarioScript", () => {
       "Bonjour et bienvenue chez EchoRoom, comment puis-je vous aider aujourd'hui?",
     );
     expect(result.suggestedResponses).toHaveLength(3);
-    expect(result.suggestedResponses[0]).toBe(
-      "J'ai un problème avec ma facture.",
-    );
-    expect(result.suggestedResponses[1]).toBe(
-      "Pouvez-vous m'expliquer les frais?",
-    );
-    expect(result.suggestedResponses[2]).toBe(
-      "Merci, c'est plus clair maintenant.",
-    );
+    expect(result.suggestedResponses[0]).toBe("J'ai un problème avec ma facture.");
+    expect(result.suggestedResponses[1]).toBe("Pouvez-vous m'expliquer les frais?");
+    expect(result.suggestedResponses[2]).toBe("Merci, c'est plus clair maintenant.");
   });
 
   it("should call generateScript twice (opening + responses)", async () => {
@@ -180,9 +173,7 @@ describe("parseResponses", () => {
   it("should strip '- ' prefix from responses", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "- Première réponse\n- Deuxième réponse\n- Troisième réponse",
-      );
+      .mockResolvedValueOnce("- Première réponse\n- Deuxième réponse\n- Troisième réponse");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
@@ -197,26 +188,18 @@ describe("parseResponses", () => {
   it("should strip '* ' prefix from responses", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "* Réponse A\n* Réponse B\n* Réponse C",
-      );
+      .mockResolvedValueOnce("* Réponse A\n* Réponse B\n* Réponse C");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
 
-    expect(result.suggestedResponses).toEqual([
-      "Réponse A",
-      "Réponse B",
-      "Réponse C",
-    ]);
+    expect(result.suggestedResponses).toEqual(["Réponse A", "Réponse B", "Réponse C"]);
   });
 
   it("should strip '1. ' numbering prefix from responses", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "1. Premier point\n2. Deuxième point\n3. Troisième point",
-      );
+      .mockResolvedValueOnce("1. Premier point\n2. Deuxième point\n3. Troisième point");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
@@ -231,35 +214,23 @@ describe("parseResponses", () => {
   it("should strip '1) ' parenthesis numbering from responses", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "1) Option un\n2) Option deux\n3) Option trois",
-      );
+      .mockResolvedValueOnce("1) Option un\n2) Option deux\n3) Option trois");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
 
-    expect(result.suggestedResponses).toEqual([
-      "Option un",
-      "Option deux",
-      "Option trois",
-    ]);
+    expect(result.suggestedResponses).toEqual(["Option un", "Option deux", "Option trois"]);
   });
 
   it("should ignore empty lines between responses", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "- Réponse 1\n\n- Réponse 2\n\n\n- Réponse 3",
-      );
+      .mockResolvedValueOnce("- Réponse 1\n\n- Réponse 2\n\n\n- Réponse 3");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
 
-    expect(result.suggestedResponses).toEqual([
-      "Réponse 1",
-      "Réponse 2",
-      "Réponse 3",
-    ]);
+    expect(result.suggestedResponses).toEqual(["Réponse 1", "Réponse 2", "Réponse 3"]);
   });
 
   it("should return fallback when fewer than 2 responses are parsed", async () => {
@@ -278,9 +249,7 @@ describe("parseResponses", () => {
   });
 
   it("should return fallback when 0 responses are parsed (all empty lines)", async () => {
-    mockGenerateScript
-      .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce("   \n\n  \n   ");
+    mockGenerateScript.mockResolvedValueOnce("Opener").mockResolvedValueOnce("   \n\n  \n   ");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
@@ -293,9 +262,7 @@ describe("parseResponses", () => {
   });
 
   it("should return fallback when AI returns empty string", async () => {
-    mockGenerateScript
-      .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce("");
+    mockGenerateScript.mockResolvedValueOnce("Opener").mockResolvedValueOnce("");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
@@ -311,11 +278,9 @@ describe("parseResponses", () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
       .mockResolvedValueOnce(
-        [
-          "  -  Réponse avec espaces  ",
-          "  -  Réponse deuxième  ",
-          "  -  Réponse troisième  ",
-        ].join("\n"),
+        ["  -  Réponse avec espaces  ", "  -  Réponse deuxième  ", "  -  Réponse troisième  "].join(
+          "\n",
+        ),
       );
 
     const { generateScenarioScript } = await import("../generateScript");
@@ -331,26 +296,18 @@ describe("parseResponses", () => {
   it("should handle mixed prefix formats in the same response", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "- Réponse dash\n* Réponse star\n1. Réponse num",
-      );
+      .mockResolvedValueOnce("- Réponse dash\n* Réponse star\n1. Réponse num");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);
 
-    expect(result.suggestedResponses).toEqual([
-      "Réponse dash",
-      "Réponse star",
-      "Réponse num",
-    ]);
+    expect(result.suggestedResponses).toEqual(["Réponse dash", "Réponse star", "Réponse num"]);
   });
 
   it("should preserve response content that looks like a list but isn't prefixed", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Opener")
-      .mockResolvedValueOnce(
-        "- J'utilise - dans ma phrase\n- Une autre réponse\n- Et encore une",
-      );
+      .mockResolvedValueOnce("- J'utilise - dans ma phrase\n- Une autre réponse\n- Et encore une");
 
     const { generateScenarioScript } = await import("../generateScript");
     const result = await generateScenarioScript(defaultParams);

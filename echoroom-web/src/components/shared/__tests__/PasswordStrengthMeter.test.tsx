@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { PasswordStrengthMeter } from "../PasswordStrengthMeter";
 
 afterEach(() => {
@@ -36,8 +36,7 @@ describe("PasswordStrengthMeter", () => {
     expect(screen.getByText("Force : Très faible")).toBeInTheDocument();
 
     // All 5 segments should exist (we check that there are 5 segment divs)
-    const container = screen.getByText("Force : Très faible")
-      .previousElementSibling;
+    const container = screen.getByText("Force : Très faible").previousElementSibling;
     expect(container?.children).toHaveLength(5);
   });
 

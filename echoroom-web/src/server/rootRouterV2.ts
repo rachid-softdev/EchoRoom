@@ -8,19 +8,20 @@
  * New features and improvements should be added to the unversioned routers
  * (which represent "latest") and optionally backported to future versions.
  */
-import { router } from "./trpc";
-import { authRouter } from "./routers/auth";
-import { charactersRouter } from "./routers/characters";
-import { scenariosRouter } from "./routers/scenarios";
-import { callsRouter } from "./routers/calls";
-import { billingRouter } from "./routers/billing";
-import { communityRouter } from "./routers/community";
+
 import { adminRouter } from "./routers/admin";
-import { socialRouter } from "./routers/social";
+import { authRouter } from "./routers/auth";
+import { billingRouter } from "./routers/billing";
+import { callsRouter } from "./routers/calls";
+import { charactersRouter } from "./routers/characters";
 import { clipsRouter } from "./routers/clips";
-import { profileRouter } from "./routers/profile";
-import { userRouter } from "./routers/user";
+import { communityRouter } from "./routers/community";
 import { dashboardRouter } from "./routers/dashboard";
+import { profileRouter } from "./routers/profile";
+import { scenariosRouter } from "./routers/scenarios";
+import { socialRouter } from "./routers/social";
+import { userRouter } from "./routers/user";
+import { router } from "./trpc";
 
 export const appRouterV2 = router({
   auth: authRouter,

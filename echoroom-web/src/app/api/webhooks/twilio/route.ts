@@ -4,6 +4,8 @@ import twilio from "twilio";
 import { env } from "@/lib/env";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
+import { validateRecordingUrl } from "@/server/lib/ssrf";
+import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
 import { uploadAudioBuffer } from "@/server/services/audio/r2";
 import { transcribeAudio } from "@/server/services/audio/transcription";
 import { failCall } from "@/server/services/telephony/callLifecycle";
@@ -13,8 +15,6 @@ import {
   getConversationState,
   setConversationStatus,
 } from "@/server/services/telephony/conversationState";
-import { wrapTwilioWebhook } from "@/server/middleware/twilioWebhook";
-import { validateRecordingUrl } from "@/server/lib/ssrf";
 
 const log = createLogger("twilio-webhook");
 

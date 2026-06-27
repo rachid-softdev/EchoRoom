@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: mock une session authentifiée
@@ -105,9 +105,7 @@ test.describe("Library — Pagination et recherche", () => {
     test.skip(redirected, "La page /library n'a pas pu être chargée — mock insuffisant");
     if (redirected) return;
 
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par titre, personnage ou créateur...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par titre, personnage ou créateur...");
     await expect(searchInput).toBeVisible();
 
     // Rechercher avec des parenthèses
@@ -198,9 +196,7 @@ test.describe("Library — Pagination et recherche", () => {
     if (redirected) return;
 
     // Appliquer un filtre de recherche
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par titre, personnage ou créateur...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par titre, personnage ou créateur...");
     await searchInput.fill("Scénario");
     await page.waitForTimeout(300);
 
@@ -283,9 +279,7 @@ test.describe("Library — Pagination et recherche", () => {
     await expect(page.getByText("Histoire unique")).toBeVisible();
 
     // Rechercher un mot qui ne filtre qu'un seul résultat
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par titre, personnage ou créateur...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par titre, personnage ou créateur...");
     await searchInput.fill("Histoire unique");
     await page.waitForTimeout(300);
 
@@ -293,7 +287,10 @@ test.describe("Library — Pagination et recherche", () => {
     await expect(page.getByText("Histoire unique")).toBeVisible();
     // Les autres scénarios ne devraient plus être affichés
     // (ils sont filtrés côté client)
-    const scenarioAVisible = await page.getByText("Scénario A").isVisible().catch(() => false);
+    const scenarioAVisible = await page
+      .getByText("Scénario A")
+      .isVisible()
+      .catch(() => false);
     if (scenarioAVisible) {
       // Si le composant utilise le rendu conditionnel, Scénario A peut encore être dans le DOM
       // mais caché. On vérifie juste qu'il n'y a pas de crash.

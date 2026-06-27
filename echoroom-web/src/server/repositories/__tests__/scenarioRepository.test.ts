@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaScenarioRepository tests
@@ -126,9 +126,9 @@ describe("PrismaScenarioRepository — incrementPlayCount", () => {
   it("should handle missing scenario gracefully", async () => {
     mockUpdate.mockRejectedValue(new Error("Record to update not found."));
 
-    await expect(
-      repo.incrementPlayCount("nonexistent"),
-    ).rejects.toThrow("Record to update not found.");
+    await expect(repo.incrementPlayCount("nonexistent")).rejects.toThrow(
+      "Record to update not found.",
+    );
   });
 });
 
@@ -182,8 +182,6 @@ describe("PrismaScenarioRepository — create", () => {
   it("should reject creation with missing required fields (delegated to Prisma)", async () => {
     mockCreate.mockRejectedValue(new Error("Argument `title` is missing."));
 
-    await expect(
-      repo.create({} as any),
-    ).rejects.toThrow("Argument `title` is missing.");
+    await expect(repo.create({} as any)).rejects.toThrow("Argument `title` is missing.");
   });
 });

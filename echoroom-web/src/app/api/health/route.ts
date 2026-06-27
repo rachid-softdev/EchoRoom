@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/server/db";
 import { redis } from "@/lib/redis";
+import { db } from "@/server/db";
 
 /**
  * GET /api/health

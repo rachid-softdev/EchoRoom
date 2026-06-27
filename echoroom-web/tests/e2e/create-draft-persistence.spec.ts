@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: mock une session authentifiée (requise pour /create)
@@ -78,8 +78,8 @@ test.describe("Create page — Draft localStorage persistence (P6)", () => {
     });
 
     // Vérifier que le draft est présent
-    const hasDraftBefore = await page.evaluate(() =>
-      localStorage.getItem("echoroom-create-draft") !== null,
+    const hasDraftBefore = await page.evaluate(
+      () => localStorage.getItem("echoroom-create-draft") !== null,
     );
     expect(hasDraftBefore).toBe(true);
 
@@ -92,9 +92,7 @@ test.describe("Create page — Draft localStorage persistence (P6)", () => {
     await page.waitForURL(/\/dashboard/, { timeout: 5000 });
 
     // Vérifier que le draft a été effacé
-    const hasDraftAfter = await page.evaluate(() =>
-      localStorage.getItem("echoroom-create-draft"),
-    );
+    const hasDraftAfter = await page.evaluate(() => localStorage.getItem("echoroom-create-draft"));
     expect(hasDraftAfter).toBeNull();
   });
 
@@ -124,7 +122,9 @@ test.describe("Create page — Draft localStorage persistence (P6)", () => {
     await expect(titleInput).toHaveValue("");
   });
 
-  test("draft localStorage corrompu avec structure invalide → formulaire vide et pas de crash", async ({ page }) => {
+  test("draft localStorage corrompu avec structure invalide → formulaire vide et pas de crash", async ({
+    page,
+  }) => {
     // Cas où le JSON est valide mais n'a pas la bonne structure
     await page.goto("/create");
     await page.waitForLoadState("networkidle");
@@ -135,10 +135,7 @@ test.describe("Create page — Draft localStorage persistence (P6)", () => {
 
     // JSON valide mais structure incorrecte (pas les bonnes clés)
     await page.evaluate(() => {
-      localStorage.setItem(
-        "echoroom-create-draft",
-        JSON.stringify({ foo: "bar", baz: 123 }),
-      );
+      localStorage.setItem("echoroom-create-draft", JSON.stringify({ foo: "bar", baz: 123 }));
     });
 
     await page.reload();
@@ -211,7 +208,7 @@ test.describe("Create page — Draft localStorage persistence (P6)", () => {
   test("soumission réussie → draft localStorage effacé", async ({ page }) => {
     // Mock de la mutation scenarios.create
     await page.route("**/api/trpc/scenarios.create*", async (route) => {
-      const body = route.request().postData() ?? "";
+      route.request().postData(); // capture request body
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -297,9 +294,7 @@ test.describe("Create page — Draft localStorage persistence (P6)", () => {
     });
 
     // Vérifier que localStorage est toujours vide (pas d'erreur)
-    const hasDraft = await page.evaluate(() =>
-      localStorage.getItem("echoroom-create-draft"),
-    );
+    const hasDraft = await page.evaluate(() => localStorage.getItem("echoroom-create-draft"));
     expect(hasDraft).toBeNull();
   });
 });

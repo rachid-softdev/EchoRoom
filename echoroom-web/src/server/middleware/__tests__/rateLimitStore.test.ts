@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // InMemoryRateLimitStore Tests
@@ -38,35 +38,35 @@ describe("InMemoryRateLimitStore", () => {
 
   it("should deny requests exceeding the limit", () => {
     const limit = 3;
-    expect(store.check("user:2", limit, 60)).toBe(true);  // 1st
-    expect(store.check("user:2", limit, 60)).toBe(true);  // 2nd
-    expect(store.check("user:2", limit, 60)).toBe(true);  // 3rd
+    expect(store.check("user:2", limit, 60)).toBe(true); // 1st
+    expect(store.check("user:2", limit, 60)).toBe(true); // 2nd
+    expect(store.check("user:2", limit, 60)).toBe(true); // 3rd
     expect(store.check("user:2", limit, 60)).toBe(false); // 4th — denied!
     expect(store.check("user:2", limit, 60)).toBe(false); // 5th — still denied
   });
 
   it("should reset after the window expires", async () => {
     // Use a very short window (1 second)
-    expect(store.check("user:3", 1, 1)).toBe(true);  // 1st by user:3
+    expect(store.check("user:3", 1, 1)).toBe(true); // 1st by user:3
     expect(store.check("user:3", 1, 1)).toBe(false); // 2nd — denied
 
     // Wait for window to expire
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Should be allowed again
-    expect(store.check("user:3", 1, 1)).toBe(true);  // 1st again
+    expect(store.check("user:3", 1, 1)).toBe(true); // 1st again
   });
 
   it("should allow different keys independently", () => {
     // user:4 has limit 1, but user:5 should be allowed separately
-    expect(store.check("user:4", 1, 60)).toBe(true);  // user:4 — allowed
+    expect(store.check("user:4", 1, 60)).toBe(true); // user:4 — allowed
     expect(store.check("user:4", 1, 60)).toBe(false); // user:4 — denied
-    expect(store.check("user:5", 1, 60)).toBe(true);  // user:5 — independent, allowed
+    expect(store.check("user:5", 1, 60)).toBe(true); // user:5 — independent, allowed
     expect(store.check("user:5", 1, 60)).toBe(false); // user:5 — now denied
   });
 
   it("should handle limit of 1 correctly", () => {
-    expect(store.check("user:burst", 1, 60)).toBe(true);  // 1st — allowed
+    expect(store.check("user:burst", 1, 60)).toBe(true); // 1st — allowed
     expect(store.check("user:burst", 1, 60)).toBe(false); // 2nd — denied
   });
 
@@ -208,12 +208,12 @@ describe("InMemoryRateLimitStore", () => {
   it("should handle window alignment with different window sizes", () => {
     // Test with a 5-second window
     store.check("clock-5s", 2, 5);
-    expect(store.check("clock-5s", 2, 5)).toBe(true);  // 2nd
+    expect(store.check("clock-5s", 2, 5)).toBe(true); // 2nd
     expect(store.check("clock-5s", 2, 5)).toBe(false); // 3rd — denied
 
     // Test with a 30-second window
     store.check("clock-30s", 2, 30);
-    expect(store.check("clock-30s", 2, 30)).toBe(true);  // 2nd
+    expect(store.check("clock-30s", 2, 30)).toBe(true); // 2nd
     expect(store.check("clock-30s", 2, 30)).toBe(false); // 3rd — denied
   });
 
@@ -221,14 +221,14 @@ describe("InMemoryRateLimitStore", () => {
     // For a 1-second window, the clock boundary is every second.
     // After 1 second passes, the window should reset.
 
-    expect(store.check("boundary-test", 1, 1)).toBe(true);  // 1st
+    expect(store.check("boundary-test", 1, 1)).toBe(true); // 1st
     expect(store.check("boundary-test", 1, 1)).toBe(false); // 2nd — denied
 
     // Wait just over 1 second — window should reset if it's aligned to clock
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Should be allowed (window reset at clock boundary)
-    expect(store.check("boundary-test", 1, 1)).toBe(true);  // 1st of new window
+    expect(store.check("boundary-test", 1, 1)).toBe(true); // 1st of new window
     expect(store.check("boundary-test", 1, 1)).toBe(false); // 2nd — denied
   });
 });

@@ -1,7 +1,10 @@
-import type { PrismaClient, UserBilling, Purchase } from "@prisma/client";
-import type { PrismaTx, AtomicDebitResult } from "./types";
+import type { PrismaClient, Purchase, UserBilling } from "@prisma/client";
+import type { AtomicDebitResult, PrismaTx } from "./types";
 
-export type PurchaseHistoryItem = Pick<Purchase, "id" | "creditsPurchased" | "createdAt" | "refundedAt" | "disputedAt">;
+export type PurchaseHistoryItem = Pick<
+  Purchase,
+  "id" | "creditsPurchased" | "createdAt" | "refundedAt" | "disputedAt"
+>;
 
 export interface IUserBillingRepository {
   findByUserId(userId: string): Promise<Pick<UserBilling, "id" | "userId" | "credits"> | null>;
@@ -14,7 +17,9 @@ export interface IUserBillingRepository {
 export class PrismaUserBillingRepository implements IUserBillingRepository {
   constructor(private db: PrismaClient) {}
 
-  async findByUserId(userId: string): Promise<Pick<UserBilling, "id" | "userId" | "credits"> | null> {
+  async findByUserId(
+    userId: string,
+  ): Promise<Pick<UserBilling, "id" | "userId" | "credits"> | null> {
     return this.db.userBilling.findUnique({
       where: { userId },
       select: { id: true, userId: true, credits: true },

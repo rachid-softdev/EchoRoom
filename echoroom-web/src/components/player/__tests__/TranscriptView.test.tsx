@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TranscriptView } from "../TranscriptView";
 
 // Mock Skeleton from UI
@@ -22,9 +22,7 @@ describe("TranscriptView", () => {
   // ── Loading state ─────────────────────────────────────────────────
 
   it("renders 5 skeleton elements when isLoading is true", () => {
-    const { container } = render(
-      <TranscriptView transcript={null} isLoading={true} />,
-    );
+    const { container } = render(<TranscriptView transcript={null} isLoading={true} />);
 
     const skeletons = container.querySelectorAll('[data-testid="skeleton"]');
     expect(skeletons.length).toBe(15); // 5 groups * 3 skeletons each
@@ -32,10 +30,7 @@ describe("TranscriptView", () => {
 
   it("renders loading skeletons even when transcript data exists", () => {
     const { container } = render(
-      <TranscriptView
-        transcript={[{ speaker: "user", text: "Hello" }]}
-        isLoading={true}
-      />,
+      <TranscriptView transcript={[{ speaker: "user", text: "Hello" }]} isLoading={true} />,
     );
 
     const skeletons = container.querySelectorAll('[data-testid="skeleton"]');
@@ -48,31 +43,23 @@ describe("TranscriptView", () => {
   it('shows "Transcript en cours de traitement…" when transcript is null', () => {
     render(<TranscriptView transcript={null} isLoading={false} />);
 
-    expect(
-      screen.getByText("Transcript en cours de traitement…"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Transcript en cours de traitement…")).toBeInTheDocument();
   });
 
   it('shows "Aucune transcription disponible" when transcript is empty array', () => {
     render(<TranscriptView transcript={[]} isLoading={false} />);
 
-    expect(
-      screen.getByText("Aucune transcription disponible"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucune transcription disponible")).toBeInTheDocument();
   });
 
   it('shows "Aucune transcription disponible" when transcript is undefined', () => {
     render(<TranscriptView transcript={undefined} isLoading={false} />);
 
-    expect(
-      screen.getByText("Aucune transcription disponible"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucune transcription disponible")).toBeInTheDocument();
   });
 
   it("renders MessageSquare icon in empty state", () => {
-    const { container } = render(
-      <TranscriptView transcript={null} isLoading={false} />,
-    );
+    const { container } = render(<TranscriptView transcript={null} isLoading={false} />);
 
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
@@ -85,9 +72,7 @@ describe("TranscriptView", () => {
       { speaker: "user", text: "Très bien, merci !" },
     ];
 
-    render(
-      <TranscriptView transcript={transcript} isLoading={false} scenarioName="Mentor" />,
-    );
+    render(<TranscriptView transcript={transcript} isLoading={false} scenarioName="Mentor" />);
 
     expect(screen.getByText("Bonjour, comment allez-vous ?")).toBeInTheDocument();
     expect(screen.getByText("Très bien, merci !")).toBeInTheDocument();
@@ -98,34 +83,24 @@ describe("TranscriptView", () => {
   });
 
   it("renders IA speaker label with scenario name", () => {
-    const transcript = [
-      { speaker: "assistant", text: "Hello" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Hello" }];
 
-    render(
-      <TranscriptView transcript={transcript} isLoading={false} scenarioName="Dr. Smith" />,
-    );
+    render(<TranscriptView transcript={transcript} isLoading={false} scenarioName="Dr. Smith" />);
 
     expect(screen.getByText("Dr. Smith")).toBeInTheDocument();
     expect(screen.getByText("IA")).toBeInTheDocument();
   });
 
   it("renders fallback 'Personnage IA' when scenarioName is not provided", () => {
-    const transcript = [
-      { speaker: "assistant", text: "Hello" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Hello" }];
 
-    render(
-      <TranscriptView transcript={transcript} isLoading={false} />,
-    );
+    render(<TranscriptView transcript={transcript} isLoading={false} />);
 
     expect(screen.getByText("Personnage IA")).toBeInTheDocument();
   });
 
   it("renders 'Vous' for user speaker label", () => {
-    const transcript = [
-      { speaker: "user", text: "Hello" },
-    ];
+    const transcript = [{ speaker: "user", text: "Hello" }];
 
     render(<TranscriptView transcript={transcript} isLoading={false} />);
 
@@ -134,9 +109,7 @@ describe("TranscriptView", () => {
   });
 
   it("renders timestamp when provided", () => {
-    const transcript = [
-      { speaker: "assistant", text: "Hello", timestamp: 65 },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Hello", timestamp: 65 }];
 
     render(<TranscriptView transcript={transcript} isLoading={false} />);
 
@@ -145,9 +118,7 @@ describe("TranscriptView", () => {
   });
 
   it("handles zero timestamp (0 is falsy so conditional short-circuits)", () => {
-    const transcript = [
-      { speaker: "assistant", text: "Hello", timestamp: 0 },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Hello", timestamp: 0 }];
 
     render(<TranscriptView transcript={transcript} isLoading={false} />);
 
@@ -156,13 +127,13 @@ describe("TranscriptView", () => {
     expect(screen.getByText((content) => content.startsWith("Personnage IA"))).toBeInTheDocument();
     expect(screen.getByText("Hello")).toBeInTheDocument();
     // The number 0 leaks as a React text node from the falsy short-circuit
-    expect(screen.getByText((content) => content.startsWith("Personnage IA")).textContent).toContain("0");
+    expect(
+      screen.getByText((content) => content.startsWith("Personnage IA")).textContent,
+    ).toContain("0");
   });
 
   it("renders no timestamp when timestamp is undefined", () => {
-    const transcript = [
-      { speaker: "assistant", text: "Hello" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Hello" }];
 
     render(<TranscriptView transcript={transcript} isLoading={false} />);
 

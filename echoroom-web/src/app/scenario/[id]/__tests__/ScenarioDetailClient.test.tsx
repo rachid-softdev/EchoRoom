@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock hooks
 vi.mock("@/hooks", () => ({
@@ -28,7 +28,11 @@ vi.mock("next/navigation", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock child social components
@@ -69,15 +73,29 @@ vi.mock("lucide-react", () => ({
 // Mock @/components/ui (Button, Badge, Avatar, Skeleton)
 vi.mock("@/components/ui", () => ({
   Button: ({ children, onClick, variant, className, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} className={className} {...props}>{children}</button>
+    <button onClick={onClick} data-variant={variant} className={className} {...props}>
+      {children}
+    </button>
   ),
   Badge: ({ children, variant, className, ...props }: any) => (
-    <span data-variant={variant} className={className} {...props}>{children}</span>
+    <span data-variant={variant} className={className} {...props}>
+      {children}
+    </span>
   ),
-  Avatar: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
+  Avatar: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
   AvatarImage: (props: any) => <img {...props} />,
-  AvatarFallback: ({ children, className, ...props }: any) => <span className={className} {...props}>{children}</span>,
-  Skeleton: ({ className, ...props }: any) => <div data-testid="skeleton" className={className} {...props} />,
+  AvatarFallback: ({ children, className, ...props }: any) => (
+    <span className={className} {...props}>
+      {children}
+    </span>
+  ),
+  Skeleton: ({ className, ...props }: any) => (
+    <div data-testid="skeleton" className={className} {...props} />
+  ),
 }));
 
 import { useUser } from "@/hooks";
@@ -139,11 +157,7 @@ describe("ScenarioDetailClient", () => {
       isAuthenticated: false,
     });
 
-    render(
-      <ScenarioDetailClient
-        scenarioId="s-1"
-      />,
-    );
+    render(<ScenarioDetailClient scenarioId="s-1" />);
 
     // Loading state renders skeleton elements
     const skeletons = screen.getAllByTestId("skeleton");
@@ -164,11 +178,7 @@ describe("ScenarioDetailClient", () => {
       isAuthenticated: false,
     });
 
-    render(
-      <ScenarioDetailClient
-        scenarioId="s-1"
-      />,
-    );
+    render(<ScenarioDetailClient scenarioId="s-1" />);
 
     expect(screen.getByText(/scénario introuvable/i)).toBeInTheDocument();
   });
@@ -180,11 +190,7 @@ describe("ScenarioDetailClient", () => {
       isAuthenticated: true,
     });
 
-    render(
-      <ScenarioDetailClient
-        scenarioId="s-1"
-      />,
-    );
+    render(<ScenarioDetailClient scenarioId="s-1" />);
 
     // Should show the scenario title
     expect(screen.getByText("Test Scenario")).toBeInTheDocument();
@@ -197,15 +203,9 @@ describe("ScenarioDetailClient", () => {
       isAuthenticated: false,
     });
 
-    render(
-      <ScenarioDetailClient
-        scenarioId="s-1"
-      />,
-    );
+    render(<ScenarioDetailClient scenarioId="s-1" />);
 
     // Should show connect link for non-authenticated users
-    expect(
-      screen.getByText(/connectez-vous/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/connectez-vous/i)).toBeInTheDocument();
   });
 });

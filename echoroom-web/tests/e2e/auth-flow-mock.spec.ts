@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Mock the session endpoint to return authenticated user data.
@@ -36,19 +36,6 @@ async function mockCsrfToken(page: import("@playwright/test").Page) {
   });
 }
 
-/**
- * Mock the credentials callback to simulate a successful login.
- */
-async function mockCredentialsCallback(page: import("@playwright/test").Page) {
-  await page.route("**/api/auth/callback/credentials", async (route) => {
-    // Return a redirect to the callback URL
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ url: "http://localhost:3000/dashboard" }),
-    });
-  });
-}
 
 test.describe("Auth flows with mocked API", () => {
   // ── Login flow ──
@@ -91,9 +78,7 @@ test.describe("Auth flows with mocked API", () => {
     await mockAuthenticatedSession(page);
 
     await page.goto("/api/auth/session");
-    const body = await page.evaluate(() =>
-      fetch("/api/auth/session").then((r) => r.json())
-    );
+    const body = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()));
     expect(body).toBeTruthy();
     expect(body.user).toBeDefined();
     expect(body.user.email).toBe("test@example.com");
@@ -110,9 +95,7 @@ test.describe("Auth flows with mocked API", () => {
     });
 
     await page.goto("/api/auth/session");
-    const body = await page.evaluate(() =>
-      fetch("/api/auth/session").then((r) => r.json())
-    );
+    const body = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()));
     expect(body).toBeTruthy();
     // user should be null or undefined for unauthenticated
     expect(body.user).toBeFalsy();
@@ -207,9 +190,7 @@ test.describe("Auth flows with mocked API", () => {
     await page.getByRole("button", { name: "Se connecter" }).click();
 
     // Should show error message
-    await expect(
-      page.getByText("Email ou mot de passe incorrect")
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Email ou mot de passe incorrect")).toBeVisible({ timeout: 10000 });
   });
 
   // ── Session persistence ──
@@ -219,9 +200,7 @@ test.describe("Auth flows with mocked API", () => {
     await mockAuthenticatedSession(page);
 
     await page.goto("/api/auth/session");
-    const body1 = await page.evaluate(() =>
-      fetch("/api/auth/session").then((r) => r.json())
-    );
+    const body1 = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()));
     expect(body1).toBeTruthy();
     expect(body1.user).toBeTruthy();
     expect(body1.user.email).toBe("test@example.com");
@@ -256,25 +235,25 @@ test.describe("Auth flows with mocked API", () => {
 
     // Verify session exists
     await page.goto("/api/auth/session");
-    const body = await page.evaluate(() =>
-      fetch("/api/auth/session").then((r) => r.json())
-    );
+    const body = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()));
     expect(body).toBeTruthy();
     expect(body.user).toBeTruthy();
 
     // Now simulate signOut by returning null session
-    await page.route("**/api/auth/session", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ user: null }),
-      });
-    }, { times: 1 });
+    await page.route(
+      "**/api/auth/session",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ user: null }),
+        });
+      },
+      { times: 1 },
+    );
 
     await page.goto("/api/auth/session");
-    const body2 = await page.evaluate(() =>
-      fetch("/api/auth/session").then((r) => r.json())
-    );
+    const body2 = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()));
     expect(body2).toBeTruthy();
     expect(body2.user).toBeFalsy();
   });

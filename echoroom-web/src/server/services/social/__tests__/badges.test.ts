@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Badges Service Tests
@@ -41,7 +41,15 @@ vi.mock("@/server/repositories", () => ({
 }));
 
 // Badge factory helpers
-function makeBadge(overrides: Partial<{ id: string; name: string; description: string; iconUrl: string | null; criteria: { type: string; threshold?: number } }> = {}) {
+function makeBadge(
+  overrides: Partial<{
+    id: string;
+    name: string;
+    description: string;
+    iconUrl: string | null;
+    criteria: { type: string; threshold?: number };
+  }> = {},
+) {
   return {
     id: overrides.id ?? "badge-1",
     name: overrides.name ?? "Test Badge",
@@ -68,7 +76,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserCallsByStatus.mockResolvedValue(1); // 1 completed call
       mockBadgeRepository.findUserBadge.mockResolvedValue(null); // not awarded yet
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-1", userId: "user-1", badgeId: "badge-first-call", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-1",
+        userId: "user-1",
+        badgeId: "badge-first-call",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "FIRST_CALL");
@@ -79,8 +92,14 @@ describe("checkAndAwardBadges", () => {
         description: "Vous avez passé votre premier appel",
         iconUrl: null,
       });
-      expect(mockBadgeRepository.countUserCallsByStatus).toHaveBeenCalledWith("user-1", "COMPLETED");
-      expect(mockBadgeRepository.createUserBadge).toHaveBeenCalledWith("user-1", "badge-first-call");
+      expect(mockBadgeRepository.countUserCallsByStatus).toHaveBeenCalledWith(
+        "user-1",
+        "COMPLETED",
+      );
+      expect(mockBadgeRepository.createUserBadge).toHaveBeenCalledWith(
+        "user-1",
+        "badge-first-call",
+      );
     });
 
     it("should NOT award FIRST_CALL badge when user has 0 completed calls", async () => {
@@ -111,7 +130,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserCallsByStatus.mockResolvedValue(10);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-2", userId: "user-1", badgeId: "badge-ten-calls", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-2",
+        userId: "user-1",
+        badgeId: "badge-ten-calls",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "TEN_CALLS");
@@ -146,7 +170,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserCallsByStatus.mockResolvedValue(15); // above also works
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-3", userId: "user-1", badgeId: "badge-ten-calls", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-3",
+        userId: "user-1",
+        badgeId: "badge-ten-calls",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "TEN_CALLS");
@@ -166,7 +195,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserCallsByStatus.mockResolvedValue(100);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-4", userId: "user-1", badgeId: "badge-100-calls", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-4",
+        userId: "user-1",
+        badgeId: "badge-100-calls",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "HUNDRED_CALLS");
@@ -187,7 +221,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserScenarios.mockResolvedValue(1);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-5", userId: "user-1", badgeId: "badge-first-scenario", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-5",
+        userId: "user-1",
+        badgeId: "badge-first-scenario",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "FIRST_SCENARIO");
@@ -208,7 +247,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserScenarios.mockResolvedValue(10);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-6", userId: "user-1", badgeId: "badge-ten-scenarios", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-6",
+        userId: "user-1",
+        badgeId: "badge-ten-scenarios",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "TEN_SCENARIOS");
@@ -229,7 +273,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.sumLikesReceived.mockResolvedValue(1);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-7", userId: "user-1", badgeId: "badge-first-like", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-7",
+        userId: "user-1",
+        badgeId: "badge-first-like",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "LIKE_RECEIVED");
@@ -256,9 +305,19 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.sumLikesReceived.mockResolvedValue(150);
       // FIRST_LIKE_RECEIVED already exists → skip, HUNDRED_LIKES is new
       mockBadgeRepository.findUserBadge
-        .mockResolvedValueOnce({ id: "ub-existing", userId: "user-1", badgeId: "badge-first-like", awardedAt: new Date() }) // already has first-like
+        .mockResolvedValueOnce({
+          id: "ub-existing",
+          userId: "user-1",
+          badgeId: "badge-first-like",
+          awardedAt: new Date(),
+        }) // already has first-like
         .mockResolvedValueOnce(null); // doesn't have 100-likes yet
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-8", userId: "user-1", badgeId: "badge-100-likes", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-8",
+        userId: "user-1",
+        badgeId: "badge-100-likes",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "LIKE_RECEIVED");
@@ -283,7 +342,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badgeFirst, badgeHundred]);
       mockBadgeRepository.sumLikesReceived.mockResolvedValue(150);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null); // neither exists
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-9", userId: "user-1", badgeId: "badge-first-like", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-9",
+        userId: "user-1",
+        badgeId: "badge-first-like",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "LIKE_RECEIVED");
@@ -314,7 +378,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserCallsByStatus.mockResolvedValue(5);
       // Badge already exists
-      mockBadgeRepository.findUserBadge.mockResolvedValue({ id: "ub-existing", userId: "user-1", badgeId: "badge-first-call", awardedAt: new Date() });
+      mockBadgeRepository.findUserBadge.mockResolvedValue({
+        id: "ub-existing",
+        userId: "user-1",
+        badgeId: "badge-first-call",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "FIRST_CALL");
@@ -341,7 +410,12 @@ describe("checkAndAwardBadges", () => {
       mockBadgeRepository.findCandidateBadges.mockResolvedValue([badge]);
       mockBadgeRepository.countUserCallsByStatus.mockResolvedValue(1);
       mockBadgeRepository.findUserBadge.mockResolvedValue(null);
-      mockBadgeRepository.createUserBadge.mockResolvedValue({ id: "ub-10", userId: "user-1", badgeId: "badge-no-threshold", awardedAt: new Date() });
+      mockBadgeRepository.createUserBadge.mockResolvedValue({
+        id: "ub-10",
+        userId: "user-1",
+        badgeId: "badge-no-threshold",
+        awardedAt: new Date(),
+      });
 
       const { checkAndAwardBadges } = await import("../badges");
       const result = await checkAndAwardBadges("user-1", "FIRST_CALL");

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // tRPC Procedure Builders — procedures.ts tests
@@ -29,7 +29,10 @@ vi.mock("@/server/trpc", () => {
         use: vi.fn((mw: string) => {
           const currentIndex = chainIndex++;
           const names = ["publicProcedure", "protectedProcedure", "adminProcedure"];
-          procedureChains.push({ name: names[currentIndex] ?? `chain-${currentIndex}`, middlewares: [mw] });
+          procedureChains.push({
+            name: names[currentIndex] ?? `chain-${currentIndex}`,
+            middlewares: [mw],
+          });
 
           return {
             use: (mw2: string) => {

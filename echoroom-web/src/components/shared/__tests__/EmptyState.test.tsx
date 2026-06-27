@@ -1,7 +1,7 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
-import { EmptyState } from "../EmptyState";
+import { cleanup, render, screen } from "@testing-library/react";
 import { Search } from "lucide-react";
+import { afterEach, describe, expect, it } from "vitest";
+import { EmptyState } from "../EmptyState";
 
 afterEach(() => {
   cleanup();
@@ -10,17 +10,9 @@ afterEach(() => {
 
 describe("EmptyState", () => {
   it("renders icon, title and description", () => {
-    render(
-      <EmptyState
-        icon={Search}
-        title="No results"
-        description="Try a different search"
-      />,
-    );
+    render(<EmptyState icon={Search} title="No results" description="Try a different search" />);
 
-    expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent(
-      "No results",
-    );
+    expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent("No results");
     expect(screen.getByText("Try a different search")).toBeInTheDocument();
     // Icon should render as an SVG
     expect(document.querySelector("svg")).toBeInTheDocument();
@@ -49,9 +41,7 @@ describe("EmptyState", () => {
   });
 
   it("renders with correct accessible heading level", () => {
-    render(
-      <EmptyState icon={Search} title="Heading" description="Desc" />,
-    );
+    render(<EmptyState icon={Search} title="Heading" description="Desc" />);
 
     const heading = screen.getAllByRole("heading", { level: 3 })[0];
     expect(heading).toHaveTextContent("Heading");

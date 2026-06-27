@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
   cleanup();
@@ -24,9 +24,7 @@ describe("LegalPage (Mentions légales)", () => {
 
   it("renders the law reference paragraph", () => {
     render(<LegalPage />);
-    expect(
-      screen.getByText(/loi n° 2004-575 du 21 juin 2004/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/loi n° 2004-575 du 21 juin 2004/i)).toBeInTheDocument();
   });
 
   it("renders all section headings", () => {
@@ -41,9 +39,7 @@ describe("LegalPage (Mentions légales)", () => {
     ];
 
     for (const section of sections) {
-      expect(
-        screen.getByRole("heading", { name: section, level: 2 }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: section, level: 2 })).toBeInTheDocument();
     }
   });
 
@@ -56,21 +52,25 @@ describe("LegalPage (Mentions légales)", () => {
   it("renders contact email links", () => {
     render(<LegalPage />);
 
-    expect(
-      screen.getByRole("link", { name: "contact@echoroom.app" }),
-    ).toHaveAttribute("href", "mailto:contact@echoroom.app");
+    expect(screen.getByRole("link", { name: "contact@echoroom.app" })).toHaveAttribute(
+      "href",
+      "mailto:contact@echoroom.app",
+    );
 
-    expect(
-      screen.getByRole("link", { name: "support@echoroom.app" }),
-    ).toHaveAttribute("href", "mailto:support@echoroom.app");
+    expect(screen.getByRole("link", { name: "support@echoroom.app" })).toHaveAttribute(
+      "href",
+      "mailto:support@echoroom.app",
+    );
 
-    expect(
-      screen.getByRole("link", { name: "legal@echoroom.app" }),
-    ).toHaveAttribute("href", "mailto:legal@echoroom.app");
+    expect(screen.getByRole("link", { name: "legal@echoroom.app" })).toHaveAttribute(
+      "href",
+      "mailto:legal@echoroom.app",
+    );
 
-    expect(
-      screen.getByRole("link", { name: "dpo@echoroom.app" }),
-    ).toHaveAttribute("href", "mailto:dpo@echoroom.app");
+    expect(screen.getByRole("link", { name: "dpo@echoroom.app" })).toHaveAttribute(
+      "href",
+      "mailto:dpo@echoroom.app",
+    );
   });
 
   it("renders the hébergement section with Vercel info", () => {

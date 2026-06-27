@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Stripe client initialization tests
@@ -30,7 +30,7 @@ describe("Stripe client initialization", () => {
     }));
 
     const Stripe = (await import("stripe")).default;
-    const StripeConstructorSpy = vi.spyOn(Stripe.prototype as any, "constructor");
+    vi.spyOn(Stripe.prototype as any, "constructor"); // spy on constructor for coverage
 
     const mod = await import("../stripe");
 

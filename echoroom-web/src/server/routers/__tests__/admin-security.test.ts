@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin Security Tests — N2 tokenVersion on delete
@@ -151,9 +151,7 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
   });
 
   it("should call anonymizePersonalData inside the transaction", async () => {
-    const { anonymizePersonalData } = await import(
-      "@/server/services/user/anonymization"
-    );
+    const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
     const { adminRouter } = await import("../admin");
 
     // @ts-expect-error — mutation handler captured at import time
@@ -164,10 +162,7 @@ describe("adminRouter.deleteUser — N2 tokenVersion", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    expect(anonymizePersonalData).toHaveBeenCalledWith(
-      mockDb._mockTx,
-      "user-1",
-    );
+    expect(anonymizePersonalData).toHaveBeenCalledWith(mockDb._mockTx, "user-1");
   });
 
   it("should throw CONFLICT when user does not exist or is already deleted", async () => {
@@ -214,9 +209,7 @@ describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
     const updateCalls = mockDb._mockTx.user.update.mock.calls;
     expect(updateCalls.length).toBeGreaterThanOrEqual(1);
 
-    const tokenVersionCall = updateCalls.find(
-      (call: any[]) => call[0]?.data?.tokenVersion,
-    );
+    const tokenVersionCall = updateCalls.find((call: any[]) => call[0]?.data?.tokenVersion);
     expect(tokenVersionCall).toBeDefined();
     expect(tokenVersionCall![0].data.tokenVersion).toEqual({ increment: 1 });
   });
@@ -233,9 +226,7 @@ describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
     });
 
     const updateCalls = mockDb._mockTx.user.update.mock.calls;
-    const tokenVersionCall = updateCalls.find(
-      (call: any[]) => call[0]?.data?.tokenVersion,
-    );
+    const tokenVersionCall = updateCalls.find((call: any[]) => call[0]?.data?.tokenVersion);
     expect(tokenVersionCall).toBeDefined();
 
     const data = tokenVersionCall![0].data;
@@ -251,9 +242,7 @@ describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
   });
 
   it("should call anonymizePersonalData inside the transaction", async () => {
-    const { anonymizePersonalData } = await import(
-      "@/server/services/user/anonymization"
-    );
+    const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
     const { profileRouter } = await import("../profile");
 
     // @ts-expect-error — mutation handler captured at import time
@@ -264,10 +253,7 @@ describe("profileRouter.deleteMyAccount — N2 tokenVersion", () => {
       ctx: { session: { user: { id: "user-1" } } },
     });
 
-    expect(anonymizePersonalData).toHaveBeenCalledWith(
-      mockDb._mockTx,
-      "user-1",
-    );
+    expect(anonymizePersonalData).toHaveBeenCalledWith(mockDb._mockTx, "user-1");
   });
 });
 
@@ -298,17 +284,13 @@ describe("userRouter.withdrawConsent — N2 regression test", () => {
     const updateCalls = mockDb._mockTx.user.update.mock.calls;
 
     // At least one update call should contain tokenVersion
-    const tokenVersionCall = updateCalls.find(
-      (call: any[]) => call[0]?.data?.tokenVersion,
-    );
+    const tokenVersionCall = updateCalls.find((call: any[]) => call[0]?.data?.tokenVersion);
     expect(tokenVersionCall).toBeDefined();
     expect(tokenVersionCall![0].data.tokenVersion).toEqual({ increment: 1 });
   });
 
   it("should call anonymizePersonalData inside the transaction", async () => {
-    const { anonymizePersonalData } = await import(
-      "@/server/services/user/anonymization"
-    );
+    const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
     const { userRouter } = await import("../user");
 
     // @ts-expect-error — mutation handler captured at import time
@@ -319,9 +301,6 @@ describe("userRouter.withdrawConsent — N2 regression test", () => {
       ctx: { session: { user: { id: "user-1" } } },
     });
 
-    expect(anonymizePersonalData).toHaveBeenCalledWith(
-      mockDb._mockTx,
-      "user-1",
-    );
+    expect(anonymizePersonalData).toHaveBeenCalledWith(mockDb._mockTx, "user-1");
   });
 });

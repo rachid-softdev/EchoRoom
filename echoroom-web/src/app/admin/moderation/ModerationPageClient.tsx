@@ -1,27 +1,22 @@
 "use client";
 
+import { AlertTriangle, Check, X } from "lucide-react";
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
-import { api } from "@/lib/trpc";
-import { toast } from "@/components/ui";
-import { Check, X, AlertTriangle } from "lucide-react";
 import { CommentModerationTab } from "@/components/admin/CommentModerationTab";
+import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
+import { Badge, Button, Card, CardContent, toast } from "@/components/ui";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
+import { api } from "@/lib/trpc";
 
 type ModerationTab = "scenarios" | "comments";
 
 export default function ModerationPageClient() {
   const [activeTab, setActiveTab] = useState<ModerationTab>("scenarios");
   const paginated = usePaginatedQuery(
-    (args) => api.admin.moderationQueue.useQuery(args),
-    { limit: 20 },
-  );
+    // biome-ignore lint/correctness/useHookAtTopLevel: usePaginatedQuery lazily invokes the tRPC hook inside its body — this is a valid pattern
+    (args) => api.admin.moderationQueue.useQuery(args), {
+    limit: 20,
+  });
   const approveMutation = api.admin.approveScenario.useMutation({
     onSuccess: () => {
       toast({ title: "Scénario approuvé", variant: "success" });
@@ -86,9 +81,7 @@ export default function ModerationPageClient() {
                 <CardContent className="py-16 text-center">
                   <Check className="w-16 h-16 text-primary mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Tout est modéré</h3>
-                  <p className="text-muted-foreground">
-                    Aucun scénario en attente de validation.
-                  </p>
+                  <p className="text-muted-foreground">Aucun scénario en attente de validation.</p>
                 </CardContent>
               </Card>
             }
@@ -120,9 +113,7 @@ export default function ModerationPageClient() {
                           size="sm"
                           variant="ghost"
                           className="text-green-500 hover:text-green-400"
-                          onClick={() =>
-                            approveMutation.mutate({ scenarioId: item.id })
-                          }
+                          onClick={() => approveMutation.mutate({ scenarioId: item.id })}
                           disabled={approveMutation.isPending}
                         >
                           <Check className="w-4 h-4" />
@@ -131,9 +122,7 @@ export default function ModerationPageClient() {
                           size="sm"
                           variant="ghost"
                           className="text-destructive"
-                          onClick={() =>
-                            rejectMutation.mutate({ scenarioId: item.id })
-                          }
+                          onClick={() => rejectMutation.mutate({ scenarioId: item.id })}
                           disabled={rejectMutation.isPending}
                         >
                           <X className="w-4 h-4" />

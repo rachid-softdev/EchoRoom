@@ -1,65 +1,54 @@
-"use client"
+"use client";
 
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Skeleton,
-} from "@/components/ui"
-import { cn } from "@/components/ui"
-import { Trophy } from "lucide-react"
+import { Trophy } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage, cn, Skeleton } from "@/components/ui";
 
 interface LeaderboardEntry {
-  rank: number
-  id: string
-  name: string
-  image?: string | null
-  value: number
-  extra?: string
+  rank: number;
+  id: string;
+  name: string;
+  image?: string | null;
+  value: number;
+  extra?: string;
 }
 
 interface LeaderboardTableProps {
-  title: string
-  entries: LeaderboardEntry[]
-  valueLabel: string
-  isLoading: boolean
+  title: string;
+  entries: LeaderboardEntry[];
+  valueLabel: string;
+  isLoading: boolean;
 }
 
 function formatNumber(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return n.toLocaleString("fr-FR")
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return n.toLocaleString("fr-FR");
 }
 
 function getRankStyle(rank: number): string {
   switch (rank) {
     case 1:
-      return "text-yellow-400"
+      return "text-yellow-400";
     case 2:
-      return "text-gray-300"
+      return "text-gray-300";
     case 3:
-      return "text-amber-600"
+      return "text-amber-600";
     default:
-      return "text-muted-foreground"
+      return "text-muted-foreground";
   }
 }
 
 function getRankBadge(rank: number): React.ReactNode {
   if (rank <= 3) {
-    return <Trophy className={cn("w-4 h-4", getRankStyle(rank))} />
+    return <Trophy className={cn("w-4 h-4", getRankStyle(rank))} />;
   }
   return (
     <span className="text-xs text-muted-foreground w-4 h-4 flex items-center justify-center font-mono">
       {rank}
     </span>
-  )
+  );
 }
 
-export function LeaderboardTable({
-  title,
-  entries,
-  valueLabel,
-  isLoading,
-}: LeaderboardTableProps) {
+export function LeaderboardTable({ title, entries, valueLabel, isLoading }: LeaderboardTableProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -79,7 +68,7 @@ export function LeaderboardTable({
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   if (entries.length === 0) {
@@ -88,12 +77,10 @@ export function LeaderboardTable({
         <h3 className="text-lg font-semibold">{title}</h3>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Trophy className="w-12 h-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">
-            Aucune entrée dans le classement
-          </p>
+          <p className="text-muted-foreground">Aucune entrée dans le classement</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -117,9 +104,7 @@ export function LeaderboardTable({
 
             {/* Avatar */}
             <Avatar className="w-8 h-8">
-              {entry.image ? (
-                <AvatarImage src={entry.image} alt={entry.name} />
-              ) : null}
+              {entry.image ? <AvatarImage src={entry.image} alt={entry.name} /> : null}
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
                 {entry.name.charAt(0).toUpperCase()}
               </AvatarFallback>
@@ -129,22 +114,18 @@ export function LeaderboardTable({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{entry.name}</p>
               {entry.extra && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {entry.extra}
-                </p>
+                <p className="text-xs text-muted-foreground truncate">{entry.extra}</p>
               )}
             </div>
 
             {/* Value */}
             <div className="text-right">
-              <p className="text-sm font-semibold">
-                {formatNumber(entry.value)}
-              </p>
+              <p className="text-sm font-semibold">{formatNumber(entry.value)}</p>
               <p className="text-[10px] text-muted-foreground">{valueLabel}</p>
             </div>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }

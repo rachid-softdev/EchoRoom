@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, act, fireEvent } from "@testing-library/react";
-import { Avatar, AvatarImage, AvatarFallback } from "../avatar";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Avatar, AvatarFallback, AvatarImage } from "../avatar";
 
 // ---------------------------------------------------------------------------
 // Setup / teardown
@@ -98,10 +98,7 @@ describe("AvatarImage", () => {
   it("applies custom className to the image", () => {
     const { container } = render(
       <Avatar>
-        <AvatarImage
-          src="https://example.com/avatar.png"
-          className="custom-img"
-        />
+        <AvatarImage src="https://example.com/avatar.png" className="custom-img" />
       </Avatar>,
     );
 
@@ -188,11 +185,7 @@ describe("AvatarImage", () => {
 
     render(
       <Avatar>
-        <AvatarImage
-          ref={ref}
-          src="https://example.com/avatar.png"
-          alt="Ref"
-        />
+        <AvatarImage ref={ref} src="https://example.com/avatar.png" alt="Ref" />
       </Avatar>,
     );
 
@@ -370,4 +363,3 @@ describe("AvatarFallback", () => {
     expect(screen.getByText("MN")).toBeInTheDocument();
   });
 });
-

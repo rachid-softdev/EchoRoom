@@ -1,21 +1,27 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { redis } from "@/lib/redis";
+import { db } from "../db";
+import { withREDMetrics } from "../middleware/metrics";
 import {
-  router,
-  publicProcedure,
   protectedProcedure,
-  withRateLimit,
+  publicProcedure,
+  router,
   withContentModeration,
   withIPRateLimit,
+  withRateLimit,
 } from "../procedures";
-import { withREDMetrics } from "../middleware/metrics";
-import { db } from "../db";
-import { checkContentBlocklist } from "../services/ai/moderation";
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { generateScenarioScript } from "../services/ai/generateScript";
-import { getCachedFeed, setCachedFeed, invalidateFeedCache, getCachedTrendingFeed, setCachedTrendingFeed } from "../services/cache/scenarioCache";
-import { redis } from "@/lib/redis";
+import { checkContentBlocklist } from "../services/ai/moderation";
+import {
+  getCachedFeed,
+  getCachedTrendingFeed,
+  invalidateFeedCache,
+  setCachedFeed,
+  setCachedTrendingFeed,
+} from "../services/cache/scenarioCache";
 import { detectScenarioSpam } from "../services/security/spamDetection";
 
 /** Shape of a feed item returned by the scenarios.feed procedure */
@@ -73,7 +79,12 @@ export const scenariosRouter = router({
       void invalidateFeedCache();
 
       // Schedule async AI moderation (fire-and-forget)
-      const changedText = [input.title, input.description, input.openingMessage, input.aiInstructions]
+      const changedText = [
+        input.title,
+        input.description,
+        input.openingMessage,
+        input.aiInstructions,
+      ]
         .filter(Boolean)
         .join(" ");
       void scheduleAsyncModeration(changedText, { type: "scenario", id: scenario.id });
@@ -88,7 +99,10 @@ export const scenariosRouter = router({
         characterId: z.string().min(1, "Personnage requis"),
         title: z.string().min(1, "Titre requis").max(200, "Maximum 200 caractères"),
         description: z.string().min(1, "Description requise").max(500, "Maximum 500 caractères"),
-        openingMessage: z.string().min(1, "Message d'ouverture requis").max(500, "Maximum 500 caractères"),
+        openingMessage: z
+          .string()
+          .min(1, "Message d'ouverture requis")
+          .max(500, "Maximum 500 caractères"),
       }),
     )
     .mutation(async ({ input }) => {
@@ -122,7 +136,9 @@ export const scenariosRouter = router({
       z.object({
         cursor: z.string().min(1, "Curseur invalide").optional(),
         limit: z.number().int().min(1, "Minimum 1").max(20, "Maximum 20").default(10),
-        sort: z.enum(["CHRONOLOGICAL", "TRENDING", "TOP"], { message: "Tri invalide" }).default("CHRONOLOGICAL"),
+        sort: z
+          .enum(["CHRONOLOGICAL", "TRENDING", "TOP"], { message: "Tri invalide" })
+          .default("CHRONOLOGICAL"),
       }),
     )
     .query(async ({ input }): Promise<FeedResponse> => {
@@ -170,18 +186,17 @@ export const scenariosRouter = router({
             a.likeCount * 2 +
             a.playCount * 1 +
             a._count.comments * 3 -
-            (now - new Date(a.createdAt).getTime()) / (1000 * 60 * 60) * 0.5;
+            ((now - new Date(a.createdAt).getTime()) / (1000 * 60 * 60)) * 0.5;
           const scoreB =
             b.likeCount * 2 +
             b.playCount * 1 +
             b._count.comments * 3 -
-            (now - new Date(b.createdAt).getTime()) / (1000 * 60 * 60) * 0.5;
+            ((now - new Date(b.createdAt).getTime()) / (1000 * 60 * 60)) * 0.5;
           return scoreB - scoreA;
         });
       }
 
-      const nextCursor =
-        scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       // Cache first page (no cursor) for subsequent requests
       if (!input.cursor && redis) {
@@ -241,13 +256,9 @@ export const scenariosRouter = router({
         }),
       ]);
 
-      const reactionMap = new Map(
-        reactionCounts.map((r) => [r.scenarioId, r._count.id]),
-      );
+      const reactionMap = new Map(reactionCounts.map((r) => [r.scenarioId, r._count.id]));
       const callMap = new Map(callCounts.map((c) => [c.scenarioId, c._count.id]));
-      const commentMap = new Map(
-        commentCounts.map((c) => [c.scenarioId, c._count.id]),
-      );
+      const commentMap = new Map(commentCounts.map((c) => [c.scenarioId, c._count.id]));
 
       // Over-fetch to allow in-memory scoring
       const FETCH_CAP = 50;
@@ -278,10 +289,8 @@ export const scenariosRouter = router({
         const likes48h = reactionMap.get(s.id) ?? 0;
         const plays48h = callMap.get(s.id) ?? 0;
         const comments48h = commentMap.get(s.id) ?? 0;
-        const hoursSinceCreation =
-          (now - s.createdAt.getTime()) / (1000 * 60 * 60);
-        const score =
-          likes48h * 3 + plays48h * 1 + comments48h * 2 - hoursSinceCreation * 0.5;
+        const hoursSinceCreation = (now - s.createdAt.getTime()) / (1000 * 60 * 60);
+        const score = likes48h * 3 + plays48h * 1 + comments48h * 2 - hoursSinceCreation * 0.5;
         return { ...s, score };
       });
       withScore.sort((a, b) => b.score - a.score);
@@ -290,10 +299,7 @@ export const scenariosRouter = router({
         .slice(0, input.limit)
         .map(({ score: _score, ...rest }) => rest);
 
-      const nextCursor =
-        scenarios.length > input.limit
-          ? items[items.length - 1]?.id
-          : undefined;
+      const nextCursor = scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       // Cache first page
       if (!input.cursor && redis) {
@@ -367,18 +373,21 @@ export const scenariosRouter = router({
       z
         .object({
           id: z.string().min(1, "Identifiant requis"),
-          title: z.string().min(3, "Minimum 3 caractères").max(80, "Maximum 80 caractères").optional(),
+          title: z
+            .string()
+            .min(3, "Minimum 3 caractères")
+            .max(80, "Maximum 80 caractères")
+            .optional(),
           description: z.string().max(300, "Maximum 300 caractères").optional(),
           openingMessage: z.string().max(300, "Maximum 300 caractères").optional(),
           aiInstructions: z.string().max(3000, "Maximum 3000 caractères").optional(),
-          visibility: z.enum(["PRIVATE", "UNLISTED", "PUBLIC"], { message: "Visibilité invalide" }).optional(),
+          visibility: z
+            .enum(["PRIVATE", "UNLISTED", "PUBLIC"], { message: "Visibilité invalide" })
+            .optional(),
         })
         .refine(
           (data) =>
-            Object.keys(data).some(
-              (k) =>
-                k !== "id" && data[k as keyof typeof data] !== undefined,
-            ),
+            Object.keys(data).some((k) => k !== "id" && data[k as keyof typeof data] !== undefined),
           { message: "Au moins un champ doit être fourni" },
         ),
     )
@@ -397,12 +406,7 @@ export const scenariosRouter = router({
           message: "Vous n'êtes pas le créateur de ce scénario",
         });
 
-      const contentFields = [
-        "title",
-        "description",
-        "openingMessage",
-        "aiInstructions",
-      ] as const;
+      const contentFields = ["title", "description", "openingMessage", "aiInstructions"] as const;
       const contentChanged = contentFields.some(
         (f) => input[f] !== undefined && input[f] !== existing[f],
       );
@@ -498,10 +502,7 @@ export const scenariosRouter = router({
         },
       });
       const items = scenarios.slice(0, input.limit);
-      const nextCursor =
-        scenarios.length > input.limit
-          ? items[items.length - 1]?.id
-          : undefined;
+      const nextCursor = scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
       return { items, nextCursor };
     }),
 });

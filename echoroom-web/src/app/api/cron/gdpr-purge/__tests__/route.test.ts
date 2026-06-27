@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import type { NextRequest } from "next/server";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // GDPR Purge Cron Route tests

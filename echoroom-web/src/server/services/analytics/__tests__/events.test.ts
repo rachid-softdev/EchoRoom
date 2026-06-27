@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // L-6: posthog-node server analytics
@@ -153,7 +153,9 @@ describe("L-6: events with PostHog active", () => {
 
   it("should not throw when posthog.capture throws", async () => {
     const mockPosthog = {
-      capture: vi.fn(() => { throw new Error("PostHog error"); }),
+      capture: vi.fn(() => {
+        throw new Error("PostHog error");
+      }),
       identify: vi.fn(),
     };
 

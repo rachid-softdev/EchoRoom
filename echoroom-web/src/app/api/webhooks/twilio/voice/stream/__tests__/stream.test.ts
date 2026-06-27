@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // C-1: stream/route.ts — Twilio SDK instead of raw XML
@@ -21,7 +21,9 @@ vi.mock("@/lib/env", () => ({
 const mockHangup = vi.fn();
 const mockVoiceResponse = vi.fn().mockImplementation(() => ({
   hangup: mockHangup,
-  toString: vi.fn().mockReturnValue('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>'),
+  toString: vi
+    .fn()
+    .mockReturnValue('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>'),
 }));
 
 vi.mock("twilio", () => ({
@@ -64,7 +66,9 @@ describe("C-1: stream/route — GET handler", () => {
   it("should return valid TwiML XML with Hangup verb", async () => {
     const { GET } = await import("../route");
 
-    const req = { url: "https://api.echoroom.app/api/webhooks/twilio/voice/stream" } as unknown as NextRequest;
+    const req = {
+      url: "https://api.echoroom.app/api/webhooks/twilio/voice/stream",
+    } as unknown as NextRequest;
     const response = await GET(req);
 
     expect(response.status).toBe(200);
@@ -75,7 +79,7 @@ describe("C-1: stream/route — GET handler", () => {
     expect(response.headers.get("Content-Type")).toBe("text/xml");
 
     // Verify valid XML start
-    expect(text).toContain('<?xml');
+    expect(text).toContain("<?xml");
 
     // Verify Hangup verb
     expect(text).toContain("<Hangup/>");
@@ -90,7 +94,9 @@ describe("C-1: stream/route — GET handler", () => {
     // Defense-in-depth: ensure the TwiML is built via SDK, not raw string
     const { GET } = await import("../route");
 
-    const req = { url: "https://api.echoroom.app/api/webhooks/twilio/voice/stream" } as unknown as NextRequest;
+    const req = {
+      url: "https://api.echoroom.app/api/webhooks/twilio/voice/stream",
+    } as unknown as NextRequest;
     const response = await GET(req);
 
     const text = await response.text();
@@ -140,7 +146,7 @@ describe("C-1: stream/route — POST handler", () => {
     expect(response.headers.get("Content-Type")).toBe("text/xml");
 
     const text = await response.text();
-    expect(text).toContain('<?xml');
+    expect(text).toContain("<?xml");
     expect(text).toContain("<Hangup/>");
   });
 

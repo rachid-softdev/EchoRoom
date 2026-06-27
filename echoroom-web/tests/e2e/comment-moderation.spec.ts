@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 const COMPONENT_PATH = path.resolve(
   __dirname,
@@ -7,7 +7,7 @@ const COMPONENT_PATH = path.resolve(
 );
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("CommentModerationTab component", () => {
@@ -78,12 +78,12 @@ test.describe("CommentModerationTab component", () => {
 
   test("approve button disabled when approveMutation.isPending", () => {
     const source = readComponent();
-    expect(source).toContain('disabled={approveMutation.isPending}');
+    expect(source).toContain("disabled={approveMutation.isPending}");
   });
 
   test("reject button disabled when rejectMutation.isPending", () => {
     const source = readComponent();
-    expect(source).toContain('disabled={rejectMutation.isPending}');
+    expect(source).toContain("disabled={rejectMutation.isPending}");
   });
 
   test("uses admin.approveComment and admin.rejectComment mutations", () => {

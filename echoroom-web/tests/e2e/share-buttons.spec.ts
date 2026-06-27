@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/ShareButtons.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/social/ShareButtons.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ShareButtons component", () => {
@@ -64,9 +61,16 @@ test.describe("ShareButtons component", () => {
 
   test("Twitter uses window.open for sharing", () => {
     const source = readComponent();
-    const hasTwitterShare = source.includes("twitter") || source.includes("intent/tweet") || source.includes("Twitter") || source.includes("share");
+    const hasTwitterShare =
+      source.includes("twitter") ||
+      source.includes("intent/tweet") ||
+      source.includes("Twitter") ||
+      source.includes("share");
     if (!hasTwitterShare) {
-      test.info().annotations.push({ type: "info", description: "Twitter share pattern may use different URL or method" });
+      test.info().annotations.push({
+        type: "info",
+        description: "Twitter share pattern may use different URL or method",
+      });
     }
   });
 

@@ -1,22 +1,16 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/DataLoader.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/DataLoader.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 /**
  * Helper: retarde les appels tRPC pour observer l'état loading.
  */
-async function delayTrpcRoutes(
-  page: import("@playwright/test").Page,
-  delayMs = 10000,
-) {
+async function delayTrpcRoutes(page: import("@playwright/test").Page, delayMs = 10000) {
   await page.route("**/api/trpc/**", async (route) => {
     await new Promise((r) => setTimeout(r, delayMs));
     await route.continue();
@@ -68,9 +62,7 @@ test.describe("DataLoader — Composant Partagé", () => {
     expect(source).toContain("skeletonCount = 3");
   });
 
-  test("loading — live: skeleton grid avec md:grid-cols-3 visible", async ({
-    page,
-  }) => {
+  test("loading — live: skeleton grid avec md:grid-cols-3 visible", async ({ page }) => {
     await delayTrpcRoutes(page);
     await page.goto("/explore", { waitUntil: "commit" });
 
@@ -84,22 +76,16 @@ test.describe("DataLoader — Composant Partagé", () => {
     await page.goto("/explore", { waitUntil: "commit" });
 
     // 3 divs skeleton à l'intérieur de la grille
-    const skeletonItems = page.locator(
-      "div.grid.md\\:grid-cols-3 > div.rounded-xl",
-    );
+    const skeletonItems = page.locator("div.grid.md\\:grid-cols-3 > div.rounded-xl");
     await expect(skeletonItems).toHaveCount(3, { timeout: 5000 });
   });
 
-  test("loading — live: chaque skeleton contient des Skeleton components", async ({
-    page,
-  }) => {
+  test("loading — live: chaque skeleton contient des Skeleton components", async ({ page }) => {
     await delayTrpcRoutes(page);
     await page.goto("/explore", { waitUntil: "commit" });
 
     // Chaque item skeleton a 3 Skeleton (h-4 w-1/3, h-6 w-2/3, h-4 w-full)
-    const skeletonItems = page.locator(
-      "div.grid.md\\:grid-cols-3 > div.rounded-xl",
-    );
+    const skeletonItems = page.locator("div.grid.md\\:grid-cols-3 > div.rounded-xl");
     await expect(skeletonItems).toHaveCount(3, { timeout: 5000 });
 
     // Vérifie la présence de Skeleton (div with animate-pulse)
@@ -119,27 +105,21 @@ test.describe("DataLoader — Composant Partagé", () => {
     expect(source).toContain("RotateCcw");
   });
 
-  test("error — live: AlertTriangle visible quand tRPC échoue", async ({
-    page,
-  }) => {
+  test("error — live: AlertTriangle visible quand tRPC échoue", async ({ page }) => {
     await failTrpcRoutes(page);
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
     // Titre d'erreur
-    await expect(
-      page.getByText("Une erreur est survenue"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Une erreur est survenue")).toBeVisible({ timeout: 10000 });
 
     // Message par défaut
-    await expect(
-      page.getByText("Impossible de charger les données"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Impossible de charger les données")).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test("error — live: bouton Réessayer avec icône RotateCw visible", async ({
-    page,
-  }) => {
+  test("error — live: bouton Réessayer avec icône RotateCw visible", async ({ page }) => {
     await failTrpcRoutes(page);
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
@@ -160,9 +140,7 @@ test.describe("DataLoader — Composant Partagé", () => {
 
   test("error — layout centré avec py-16", () => {
     const source = readComponent();
-    expect(source).toContain(
-      "flex flex-col items-center justify-center py-16 text-center",
-    );
+    expect(source).toContain("flex flex-col items-center justify-center py-16 text-center");
     expect(source).toContain("w-12 h-12 text-destructive mb-4");
   });
 
@@ -173,9 +151,7 @@ test.describe("DataLoader — Composant Partagé", () => {
     expect(source).toContain("query.refetch()");
   });
 
-  test("refetch — live: clic Réessayer déclenche un nouvel appel API", async ({
-    page,
-  }) => {
+  test("refetch — live: clic Réessayer déclenche un nouvel appel API", async ({ page }) => {
     // Compte les appels tRPC
     let trpcCallCount = 0;
     await page.route("**/api/trpc/**", async (route) => {
@@ -205,9 +181,7 @@ test.describe("DataLoader — Composant Partagé", () => {
     await page.waitForLoadState("networkidle");
 
     // État erreur
-    await expect(
-      page.getByText("Une erreur est survenue"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Une erreur est survenue")).toBeVisible({ timeout: 10000 });
 
     // Clic Réessayer
     const retryButton = page.getByRole("button", { name: "Réessayer" });
@@ -218,9 +192,7 @@ test.describe("DataLoader — Composant Partagé", () => {
     expect(trpcCallCount).toBeGreaterThanOrEqual(2);
   });
 
-  test("refetch — live: après refetch réussi, les données s'affichent", async ({
-    page,
-  }) => {
+  test("refetch — live: après refetch réussi, les données s'affichent", async ({ page }) => {
     let isFirstCall = true;
     await page.route("**/api/trpc/explore.*", async (route) => {
       if (isFirstCall) {
@@ -258,18 +230,14 @@ test.describe("DataLoader — Composant Partagé", () => {
     await page.waitForLoadState("networkidle");
 
     // État erreur
-    await expect(
-      page.getByText("Une erreur est survenue"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Une erreur est survenue")).toBeVisible({ timeout: 10000 });
 
     // Clic Réessayer
     const retryButton = page.getByRole("button", { name: "Réessayer" });
     await retryButton.click();
 
     // Maintenant les données doivent être chargées
-    await expect(
-      page.getByText("Scénario après refetch"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Scénario après refetch")).toBeVisible({ timeout: 10000 });
   });
 
   // ─── Empty state custom (isEmpty callback) ──────────────────────────
@@ -291,9 +259,7 @@ test.describe("DataLoader — Composant Partagé", () => {
     // Si empty n'est pas fourni, rend le fallback "Aucun résultat"
   });
 
-  test("empty — live: recherche sans résultat affiche 'Aucun résultat'", async ({
-    page,
-  }) => {
+  test("empty — live: recherche sans résultat affiche 'Aucun résultat'", async ({ page }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -307,9 +273,7 @@ test.describe("DataLoader — Composant Partagé", () => {
     await expect(page.getByText("Aucun résultat")).toBeVisible();
   });
 
-  test("empty — live: empty personnalisé sur la home page", async ({
-    page,
-  }) => {
+  test("empty — live: empty personnalisé sur la home page", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
@@ -318,14 +282,9 @@ test.describe("DataLoader — Composant Partagé", () => {
 
     if (!customExists) {
       // Peut-être que des scénarios sont chargés, on skip gracieusement
-      const featuredCard = page
-        .locator('a[href^="/scenario/"]')
-        .first();
+      const featuredCard = page.locator('a[href^="/scenario/"]').first();
       const cardExists = await featuredCard.isVisible().catch(() => false);
-      test.skip(
-        !cardExists,
-        "Aucune donnée pour tester le empty state custom",
-      );
+      test.skip(!cardExists, "Aucune donnée pour tester le empty state custom");
       if (cardExists) return;
     }
 
@@ -348,28 +307,20 @@ test.describe("DataLoader — Composant Partagé", () => {
     expect(source).toContain('<div className="grid md:grid-cols-3 gap-4">');
   });
 
-  test("skeleton — live: 3 squelettes par défaut sur /explore (loading)", async ({
-    page,
-  }) => {
+  test("skeleton — live: 3 squelettes par défaut sur /explore (loading)", async ({ page }) => {
     await delayTrpcRoutes(page);
     await page.goto("/explore", { waitUntil: "commit" });
 
     // Vérifie le nombre de conteneurs skeleton
-    const skeletonContainers = page.locator(
-      "div.grid.md\\:grid-cols-3 > div.rounded-xl",
-    );
+    const skeletonContainers = page.locator("div.grid.md\\:grid-cols-3 > div.rounded-xl");
     await expect(skeletonContainers).toHaveCount(3, { timeout: 5000 });
   });
 
-  test("skeleton — structure du skeleton contient border border-border", async ({
-    page,
-  }) => {
+  test("skeleton — structure du skeleton contient border border-border", async ({ page }) => {
     await delayTrpcRoutes(page);
     await page.goto("/explore", { waitUntil: "commit" });
 
-    const skeletonItem = page
-      .locator("div.grid.md\\:grid-cols-3 > div.rounded-xl")
-      .first();
+    const skeletonItem = page.locator("div.grid.md\\:grid-cols-3 > div.rounded-xl").first();
     await expect(skeletonItem).toBeVisible({ timeout: 5000 });
 
     // La classe border et border-border

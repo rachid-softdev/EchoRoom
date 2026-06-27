@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from "react";
 import { Check } from "lucide-react";
+import * as React from "react";
 import { cn } from "./lib";
 
-interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
+interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
   label?: string;
 }
 
@@ -16,13 +15,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     return (
       <label htmlFor={inputId} className="flex items-start gap-3 cursor-pointer group">
         <span className="relative flex items-center justify-center shrink-0 mt-0.5">
-          <input
-            ref={ref}
-            id={inputId}
-            type="checkbox"
-            className="peer sr-only"
-            {...props}
-          />
+          <input ref={ref} id={inputId} type="checkbox" className="peer sr-only" {...props} />
           <span
             className={cn(
               "w-5 h-5 rounded-md border-2 border-border bg-background relative flex items-center justify-center",
@@ -47,5 +40,5 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
 );
 Checkbox.displayName = "Checkbox";
 
-export { Checkbox };
 export type { CheckboxProps };
+export { Checkbox };

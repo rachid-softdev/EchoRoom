@@ -1,8 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui";
-import { toast } from "@/components/ui";
 import { AlertTriangle, Copy, RotateCcw } from "lucide-react";
+import { Button, toast } from "@/components/ui";
 
 export default function Error({
   error,
@@ -20,18 +19,19 @@ export default function Error({
       </p>
       {error.digest && (
         <div className="flex items-center justify-center gap-2 mb-6">
-          <p className="text-xs text-muted-foreground font-mono">
-            Erreur #{error.digest}
-          </p>
+          <p className="text-xs text-muted-foreground font-mono">Erreur #{error.digest}</p>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => {
-              navigator.clipboard.writeText(error.digest ?? "").then(() => {
-                toast({ title: "Copié !", variant: "default" });
-              }).catch(() => {
-                toast({ title: "Échec de la copie", variant: "destructive" });
-              });
+              navigator.clipboard
+                .writeText(error.digest ?? "")
+                .then(() => {
+                  toast({ title: "Copié !", variant: "default" });
+                })
+                .catch(() => {
+                  toast({ title: "Échec de la copie", variant: "destructive" });
+                });
             }}
             aria-label="Copier l'identifiant d'erreur"
           >

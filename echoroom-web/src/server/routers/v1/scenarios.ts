@@ -8,19 +8,23 @@
  * Changes and improvements should go into v2+ routers.
  */
 import { z } from "zod";
+import { redis } from "@/lib/redis";
+import { db } from "../../db";
+import { withREDMetrics } from "../../middleware/metrics";
 import {
-  router,
-  publicProcedure,
   protectedProcedure,
-  withRateLimit,
+  publicProcedure,
+  router,
   withContentModeration,
   withIPRateLimit,
+  withRateLimit,
 } from "../../procedures";
-import { withREDMetrics } from "../../middleware/metrics";
-import { db } from "../../db";
 import { scheduleAsyncModeration } from "../../services/ai/asyncModeration";
-import { getCachedFeed, setCachedFeed, invalidateFeedCache } from "../../services/cache/scenarioCache";
-import { redis } from "@/lib/redis";
+import {
+  getCachedFeed,
+  invalidateFeedCache,
+  setCachedFeed,
+} from "../../services/cache/scenarioCache";
 
 export const scenariosV1Router = router({
   create: protectedProcedure
@@ -52,7 +56,12 @@ export const scenariosV1Router = router({
 
       void invalidateFeedCache();
 
-      const changedText = [input.title, input.description, input.openingMessage, input.aiInstructions]
+      const changedText = [
+        input.title,
+        input.description,
+        input.openingMessage,
+        input.aiInstructions,
+      ]
         .filter(Boolean)
         .join(" ");
       void scheduleAsyncModeration(changedText, { type: "scenario", id: scenario.id });
@@ -115,18 +124,17 @@ export const scenariosV1Router = router({
             a.likeCount * 2 +
             a.playCount * 1 +
             a._count.comments * 3 -
-            (now - new Date(a.createdAt).getTime()) / (1000 * 60 * 60) * 0.5;
+            ((now - new Date(a.createdAt).getTime()) / (1000 * 60 * 60)) * 0.5;
           const scoreB =
             b.likeCount * 2 +
             b.playCount * 1 +
             b._count.comments * 3 -
-            (now - new Date(b.createdAt).getTime()) / (1000 * 60 * 60) * 0.5;
+            ((now - new Date(b.createdAt).getTime()) / (1000 * 60 * 60)) * 0.5;
           return scoreB - scoreA;
         });
       }
 
-      const nextCursor =
-        scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = scenarios.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       if (!input.cursor && redis) {
         const cacheParams = { sort: input.sort, limit: input.limit };

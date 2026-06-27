@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: intercept all tRPC API routes to delay responses, keeping the
@@ -20,7 +20,9 @@ async function failTrpcRoutes(page: import("@playwright/test").Page) {
 
 test.describe("DataLoader component", () => {
   test.describe("Loading state", () => {
-    test("should show skeleton grid with md:grid-cols-3 when isLoading is true", async ({ page }) => {
+    test("should show skeleton grid with md:grid-cols-3 when isLoading is true", async ({
+      page,
+    }) => {
       // Delay API so loading state persists
       await delayTrpcRoutes(page);
       await page.goto("/explore", { waitUntil: "commit" });
@@ -42,7 +44,9 @@ test.describe("DataLoader component", () => {
   });
 
   test.describe("Error state", () => {
-    test("should show AlertTriangle icon, error text and Réessayer button on error", async ({ page }) => {
+    test("should show AlertTriangle icon, error text and Réessayer button on error", async ({
+      page,
+    }) => {
       // Intercept all tRPC calls and abort them to trigger isError
       await failTrpcRoutes(page);
       await page.goto("/explore");
@@ -56,14 +60,18 @@ test.describe("DataLoader component", () => {
       await expect(retryButton).toBeVisible();
     });
 
-    test("should display the default error message when no custom error is provided", async ({ page }) => {
+    test("should display the default error message when no custom error is provided", async ({
+      page,
+    }) => {
       await failTrpcRoutes(page);
       await page.goto("/explore");
       await page.waitForLoadState("networkidle");
 
       // Default fallback message: "Impossible de charger les données. Réessayez."
       // The error message is rendered in a <p> sibling below the title
-      await expect(page.getByText("Impossible de charger les données")).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText("Impossible de charger les données")).toBeVisible({
+        timeout: 10000,
+      });
     });
   });
 
@@ -100,7 +108,10 @@ test.describe("DataLoader component", () => {
         // Check if a featured card loaded instead (DataLoader rendered children)
         const featuredCard = page.locator('a[href^="/scenario/"]').first();
         const cardExists = await featuredCard.isVisible().catch(() => false);
-        test.skip(!cardExists, "No featured scenario section data available to test custom empty state");
+        test.skip(
+          !cardExists,
+          "No featured scenario section data available to test custom empty state",
+        );
         if (cardExists) return;
       }
 
@@ -137,7 +148,9 @@ test.describe("PaginatedDataLoader component", () => {
       await expect(spinner).toBeVisible();
     });
 
-    test("should show AlertTriangle, 'Une erreur est survenue', Réessayer button with RefreshCw icon on error", async ({ page }) => {
+    test("should show AlertTriangle, 'Une erreur est survenue', Réessayer button with RefreshCw icon on error", async ({
+      page,
+    }) => {
       // Abort tRPC calls to trigger error state
       await failTrpcRoutes(page);
       await page.goto("/library");
@@ -169,7 +182,10 @@ test.describe("PaginatedDataLoader component", () => {
       const cards = page.locator('a[href^="/scenario/"]');
 
       const hasEmptyState = await emptyState.isVisible().catch(() => false);
-      const hasCards = await cards.first().isVisible().catch(() => false);
+      const hasCards = await cards
+        .first()
+        .isVisible()
+        .catch(() => false);
 
       // If neither is visible, skip gracefully
       if (!hasEmptyState && !hasCards) {

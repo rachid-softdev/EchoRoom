@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReactionBar } from "../ReactionBar";
 
 // ---------------------------------------------------------------------------
@@ -216,9 +216,7 @@ describe("ReactionBar", () => {
   it("calls toggle mutation when an existing reaction is clicked", async () => {
     mockUseQuery.mockReturnValue({
       data: {
-        reactions: [
-          { emoji: "❤️", count: 5 },
-        ],
+        reactions: [{ emoji: "❤️", count: 5 }],
       },
       isLoading: false,
       refetch: mockRefetch,
@@ -286,9 +284,7 @@ describe("ReactionBar", () => {
 
     mockUseQuery.mockReturnValue({
       data: {
-        reactions: [
-          { emoji: "❤️", count: 5 },
-        ],
+        reactions: [{ emoji: "❤️", count: 5 }],
       },
       isLoading: false,
       refetch: mockRefetch,

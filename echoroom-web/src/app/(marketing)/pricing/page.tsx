@@ -1,30 +1,37 @@
 "use client";
 
+import { Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Check, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { MarketingNav } from "@/components/layout/MarketingNav";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
+import { PRICING_CONFIG } from "@/config/pricing";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
-import { PRICING_CONFIG } from "@/config/pricing";
-import { MarketingNav } from "@/components/layout/MarketingNav";
 
 interface Plan {
-  name: string
-  price: string
-  credits: number
-  priceId: string
-  features: string[]
-  cta: string
-  highlighted: boolean
+  name: string;
+  price: string;
+  credits: number;
+  priceId: string;
+  features: string[];
+  cta: string;
+  highlighted: boolean;
 }
 
 const plans: Plan[] = PRICING_CONFIG.map((tier) => ({
   name: tier.label,
-  price: tier.priceCents === 0 ? "Gratuit" : `${(tier.priceCents / 100).toFixed(2).replace(".", ",")} €`,
+  price:
+    tier.priceCents === 0 ? "Gratuit" : `${(tier.priceCents / 100).toFixed(2).replace(".", ",")} €`,
   credits: tier.credits,
   priceId: tier.stripePriceId,
   features: tier.features,
@@ -62,12 +69,9 @@ export default function PricingPage() {
           <Badge variant="secondary" className="mb-4">
             Tarifs
           </Badge>
-          <h1 className="text-fluid-section font-bold mb-3">
-            Un crédit = un appel IA
-          </h1>
+          <h1 className="text-fluid-section font-bold mb-3">Un crédit = un appel IA</h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Payez uniquement ce que vous utilisez. Pas d&apos;abonnement caché, pas de
-            surprise.
+            Payez uniquement ce que vous utilisez. Pas d&apos;abonnement caché, pas de surprise.
           </p>
         </div>
 
@@ -76,9 +80,7 @@ export default function PricingPage() {
             <Card
               key={plan.name}
               className={`relative ${
-                plan.highlighted
-                  ? "border-primary/50 ring-1 ring-primary/20"
-                  : ""
+                plan.highlighted ? "border-primary/50 ring-1 ring-primary/20" : ""
               }`}
             >
               {plan.highlighted && (
@@ -94,9 +96,7 @@ export default function PricingPage() {
                     <span className="text-muted-foreground ml-1">/ mois</span>
                   )}
                 </div>
-                <CardDescription className="mt-2">
-                  {plan.credits} crédits par mois
-                </CardDescription>
+                <CardDescription className="mt-2">{plan.credits} crédits par mois</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
@@ -120,11 +120,7 @@ export default function PricingPage() {
                     onClick={() => handleBuy(plan)}
                     disabled={checkout.isPending}
                   >
-                    {checkout.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      plan.cta
-                    )}
+                    {checkout.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : plan.cta}
                   </Button>
                 )}
               </CardContent>

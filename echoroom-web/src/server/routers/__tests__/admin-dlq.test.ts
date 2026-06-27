@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin Dead Letter Queue tests
@@ -67,10 +67,7 @@ describe("adminRouter.getDLQ", () => {
   });
 
   it("should return parsed DLQ items for a provider", async () => {
-    const entries = [
-      JSON.stringify(makeEntry("evt-1")),
-      JSON.stringify(makeEntry("evt-2")),
-    ];
+    const entries = [JSON.stringify(makeEntry("evt-1")), JSON.stringify(makeEntry("evt-2"))];
     mockRedis.lrange.mockResolvedValue(entries);
 
     const { adminRouter } = await import("../admin");

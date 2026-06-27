@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be defined before any imports
@@ -32,11 +32,11 @@ vi.mock("@/lib/auth", () => ({
   auth: vi.fn((handler: (req: any) => any) => handler),
 }));
 
+import { NextResponse } from "next/server";
 // ---------------------------------------------------------------------------
 // Imports after mocks are hoisted
 // ---------------------------------------------------------------------------
 import middleware from "@/middleware";
-import { NextResponse } from "next/server";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -180,9 +180,7 @@ describe("src/middleware.ts", () => {
 
       const redirectUrl = NextResponse.redirect.mock.calls[0][0] as URL;
       expect(redirectUrl.pathname).toBe("/login");
-      expect(redirectUrl.searchParams.get("callbackUrl")).toBe(
-        "/dashboard/settings",
-      );
+      expect(redirectUrl.searchParams.get("callbackUrl")).toBe("/dashboard/settings");
     });
 
     it("should redirect unauthenticated /call/abc-123 to /login with callbackUrl", async () => {
@@ -372,8 +370,7 @@ describe("src/middleware.ts", () => {
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Permissions-Policy":
-        "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
     };
 
     /** Extract the response object that was passed to withSecurityHeaders. */
@@ -443,9 +440,7 @@ describe("src/middleware.ts", () => {
       await middleware(req);
 
       const response = getResponse();
-      const setCalls = response.headers.set.mock.calls as Array<
-        [string, string]
-      >;
+      const setCalls = response.headers.set.mock.calls as Array<[string, string]>;
       const headerKeys = setCalls.map(([key]) => key);
 
       expect(headerKeys[0]).toBe("X-Content-Type-Options");

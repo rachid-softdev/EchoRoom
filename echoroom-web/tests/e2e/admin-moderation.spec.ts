@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Admin moderation page", () => {
   test("page heading File de modération is visible when authenticated", async ({ page }) => {
@@ -9,9 +9,7 @@ test.describe("Admin moderation page", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
     if (!isLoggedIn) return;
 
-    await expect(
-      page.getByRole("heading", { name: "File de modération" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "File de modération" })).toBeVisible();
   });
 
   test("tab buttons Scénarios and Commentaires are visible", async ({ page }) => {
@@ -22,12 +20,8 @@ test.describe("Admin moderation page", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
     if (!isLoggedIn) return;
 
-    await expect(
-      page.getByRole("button", { name: "Scénarios" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Commentaires" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Scénarios" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Commentaires" })).toBeVisible();
   });
 
   test("DataLoader renders content area after loading", async ({ page }) => {
@@ -104,12 +98,12 @@ test.describe("Admin moderation page", () => {
     test.skip(itemCount > 0, "Skipping: queue has items, cannot verify empty state");
     if (itemCount > 0) return;
 
-    await expect(
-      page.getByRole("heading", { name: "Tout est modéré" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tout est modéré" })).toBeVisible();
   });
 
-  test("badge En attente with AlertTriangle icon is present on scenario items", async ({ page }) => {
+  test("badge En attente with AlertTriangle icon is present on scenario items", async ({
+    page,
+  }) => {
     await page.goto("/admin/moderation");
     await page.waitForLoadState("networkidle");
 

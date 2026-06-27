@@ -23,10 +23,7 @@ export async function generateScenarioScript(params: {
 
 Génère 3 à 4 réponses courtes et naturelles que l'utilisateur pourrait dire dans cette conversation. Chaque réponse doit être cohérente avec la personnalité du personnage et le contexte du scénario. Retourne chaque réponse sur une ligne séparée commençant par "- ".`;
 
-    const responsesRaw = await generateScriptFromEngine(
-      params.characterPrompt,
-      responsesPrompt,
-    );
+    const responsesRaw = await generateScriptFromEngine(params.characterPrompt, responsesPrompt);
 
     const suggestedResponses = parseResponses(responsesRaw);
 
@@ -49,7 +46,10 @@ function parseResponses(raw: string): string[] {
   const responses: string[] = [];
   for (const line of lines) {
     // Strip common list prefixes: "- ", "* ", "1. ", "1) "
-    const cleaned = line.replace(/^[-*]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
+    const cleaned = line
+      .replace(/^[-*]\s*/, "")
+      .replace(/^\d+[.)]\s*/, "")
+      .trim();
     if (cleaned.length > 0) {
       responses.push(cleaned);
     }

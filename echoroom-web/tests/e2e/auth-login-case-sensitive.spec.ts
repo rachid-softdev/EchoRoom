@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 // ── Helpers ──
 
@@ -45,7 +45,7 @@ test.describe("P1 — Email case sensitivity fix", () => {
   const AUTH_PATH = path.resolve(__dirname, "../../src/lib/auth.ts");
 
   function readAuthModule(): string {
-    return require("fs").readFileSync(AUTH_PATH, "utf-8");
+    return require("node:fs").readFileSync(AUTH_PATH, "utf-8");
   }
 
   test("source: email is normalized to lowercase via .toLowerCase()", () => {
@@ -73,7 +73,9 @@ test.describe("P1 — Email case sensitivity fix", () => {
 
   // ── Live browser / mock E2E tests ──
 
-  test("mock: login with Test@Example.com (mixed case) succeeds via lowercase normalization", async ({ page }) => {
+  test("mock: login with Test@Example.com (mixed case) succeeds via lowercase normalization", async ({
+    page,
+  }) => {
     // Mock session and CSRF
     await mockAuthenticatedSession(page);
     await mockCsrfToken(page);

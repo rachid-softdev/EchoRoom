@@ -1,9 +1,9 @@
+import { Headphones, MessageCircle, Share2, Shield, Sparkles, Users, Zap } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
-import { Sparkles, MessageCircle, Share2, Zap, Headphones, Users, Shield } from "lucide-react";
+import { CallAudioVisualizer } from "@/components/landing/CallAudioVisualizer";
 import { FeaturedScenariosSection } from "@/components/landing/FeaturedScenariosSection";
 import { LiveCounter } from "@/components/landing/LiveCounter";
-import { CallAudioVisualizer } from "@/components/landing/CallAudioVisualizer";
+import { Button } from "@/components/ui";
 
 /* ─── Static community data ───────────────────────────── */
 const TRENDING_SCENARIOS = [
@@ -33,12 +33,14 @@ const FEATURES_SUPPORTING = [
   {
     icon: Sparkles,
     title: "Scénarios sur mesure",
-    description: "Crée tes propres scénarios absurdes ou pioche dans la bibliothèque communautaire.",
+    description:
+      "Crée tes propres scénarios absurdes ou pioche dans la bibliothèque communautaire.",
   },
   {
     icon: Share2,
     title: "Clips viraux",
-    description: "Extrais le meilleur moment en un clic et partage-le sur TikTok, Discord ou Twitter.",
+    description:
+      "Extrais le meilleur moment en un clic et partage-le sur TikTok, Discord ou Twitter.",
   },
   {
     icon: Shield,
@@ -88,7 +90,8 @@ function LiveCallPreview() {
               AI Character
             </p>
             <p className="text-sm leading-relaxed">
-              &ldquo;Bonjour. Votre CV est excellent mais… pourquoi avez-vous 47 expériences comme magicien ?&rdquo;
+              &ldquo;Bonjour. Votre CV est excellent mais… pourquoi avez-vous 47 expériences comme
+              magicien ?&rdquo;
             </p>
           </div>
 
@@ -115,10 +118,7 @@ function LiveCallPreview() {
           </div>
           <div className="flex -space-x-1.5">
             {["bg-primary", "bg-destructive/70", "bg-cyan-400", "bg-white/30"].map((color, i) => (
-              <div
-                key={i}
-                className={`h-5 w-5 rounded-full border-2 border-card ${color}`}
-              />
+              <div key={i} className={`h-5 w-5 rounded-full border-2 border-card ${color}`} />
             ))}
           </div>
         </div>
@@ -150,7 +150,10 @@ function CommunityProofStrip() {
             <span className="sm:hidden">🔥</span>
             <div className="flex items-center gap-3 flex-wrap">
               {TRENDING_SCENARIOS.map((name) => (
-                <span key={name} className="text-foreground/80 font-medium text-xs truncate max-w-[140px] sm:max-w-none">
+                <span
+                  key={name}
+                  className="text-foreground/80 font-medium text-xs truncate max-w-[140px] sm:max-w-none"
+                >
                   {name}
                 </span>
               ))}
@@ -272,7 +275,8 @@ export default function HomePage() {
           <div
             className="absolute inset-0 bg-cover bg-center opacity-30 lg:opacity-40"
             style={{
-              backgroundImage: 'url("https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1920&q=80")',
+              backgroundImage:
+                'url("https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1920&q=80")',
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/80" />
@@ -294,9 +298,9 @@ export default function HomePage() {
               </h1>
 
               <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl text-balance text-pretty">
-                Crée des conversations absurdes avec des personnages IA délirants,
-                lance des appels immersifs, écoute les réactions en direct et
-                transforme chaque moment en contenu viral.
+                Crée des conversations absurdes avec des personnages IA délirants, lance des appels
+                immersifs, écoute les réactions en direct et transforme chaque moment en contenu
+                viral.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -313,9 +317,19 @@ export default function HomePage() {
               </div>
 
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-0.5" role="img" aria-label="5 étoiles">
+                <span
+                  className="inline-flex items-center gap-0.5"
+                  role="img"
+                  aria-label="5 étoiles"
+                >
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <svg key={i} className="w-3.5 h-3.5 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <svg
+                      key={i}
+                      className="w-3.5 h-3.5 text-primary"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
@@ -364,12 +378,11 @@ export default function HomePage() {
             <Headphones className="h-7 w-7 text-primary" />
           </div>
           <h2 className="text-fluid-section font-black tracking-tight text-balance mb-4">
-            Prêt à faire du{" "}
-            <span className="text-primary">bruit</span> ?
+            Prêt à faire du <span className="text-primary">bruit</span> ?
           </h2>
           <p className="text-muted-foreground leading-relaxed max-w-lg mx-auto mb-10 text-pretty">
-            Rejoins les milliers de créateurs qui utilisent déjà EchoRoom pour
-            générer des appels IA viraux. Ton premier appel est offert.
+            Rejoins les milliers de créateurs qui utilisent déjà EchoRoom pour générer des appels IA
+            viraux. Ton premier appel est offert.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3">
             <Link href="/register">

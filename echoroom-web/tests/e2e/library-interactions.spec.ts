@@ -1,57 +1,55 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 test.describe("Library interactions", () => {
   // ── Source analysis for CRUD patterns ──
 
   test("Library page has scenario list rendered via DataLoader", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/(dashboard)/library/page.tsx"),
-      "utf-8"
+      "utf-8",
     );
     expect(source).toMatch(/DataLoader|PaginatedDataLoader/);
   });
 
   test("scenario items show action buttons (edit/delete)", () => {
     // Check the ScenarioCard component for action-related props
-    const cardSource = require("fs").readFileSync(
-      path.resolve(__dirname, "../../src/components/shared/ScenarioCard.tsx"),
-      "utf-8"
-    );
-
     // ScenarioCard may have props for actions
     // Or look at the library page for action buttons
-    const libSource = require("fs").readFileSync(
+    const libSource = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/(dashboard)/library/page.tsx"),
-      "utf-8"
+      "utf-8",
     );
-    const hasEditDelete = libSource.includes("delete") ||
-                          libSource.includes("supprimer") ||
-                          libSource.includes("edit") ||
-                          libSource.includes("modifier") ||
-                          libSource.includes("update") ||
-                          libSource.includes("visibility") ||
-                          libSource.includes("pencil") ||
-                          libSource.includes("trash");
+    const hasEditDelete =
+      libSource.includes("delete") ||
+      libSource.includes("supprimer") ||
+      libSource.includes("edit") ||
+      libSource.includes("modifier") ||
+      libSource.includes("update") ||
+      libSource.includes("visibility") ||
+      libSource.includes("pencil") ||
+      libSource.includes("trash");
     // This is optional — the library may only show scenarios without inline CRUD
     if (!hasEditDelete) {
       test.info().annotations.push({
         type: "info",
-        description: "Library page does not have inline edit/delete (CRUD may be handled via detail page)"
+        description:
+          "Library page does not have inline edit/delete (CRUD may be handled via detail page)",
       });
     }
   });
 
   test("Library search filters dynamically", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/(dashboard)/library/page.tsx"),
-      "utf-8"
+      "utf-8",
     );
-    const hasSearch = source.includes("search") ||
-                      source.includes("filter") ||
-                      source.includes("Search") ||
-                      source.includes("useState") ||
-                      source.includes("onChange");
+    const hasSearch =
+      source.includes("search") ||
+      source.includes("filter") ||
+      source.includes("Search") ||
+      source.includes("useState") ||
+      source.includes("onChange");
     expect(hasSearch).toBe(true);
   });
 
@@ -64,33 +62,39 @@ test.describe("Library interactions", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify([
-          { result: { data: { json: {
-            items: [
-              {
-                id: "scenario-1",
-                title: "Mon scénario de test",
-                description: "Une description intéressante",
-                character: { name: "TestBot" },
-                playCount: 42,
-                likeCount: 10,
-                _count: { comments: 3 },
-                category: { name: "Romantique" },
-                visibility: "PUBLIC",
+          {
+            result: {
+              data: {
+                json: {
+                  items: [
+                    {
+                      id: "scenario-1",
+                      title: "Mon scénario de test",
+                      description: "Une description intéressante",
+                      character: { name: "TestBot" },
+                      playCount: 42,
+                      likeCount: 10,
+                      _count: { comments: 3 },
+                      category: { name: "Romantique" },
+                      visibility: "PUBLIC",
+                    },
+                    {
+                      id: "scenario-2",
+                      title: "Second scénario",
+                      description: "Autre description",
+                      character: { name: "Assistant" },
+                      playCount: 17,
+                      likeCount: 5,
+                      _count: { comments: 1 },
+                      category: { name: "Corporate" },
+                      visibility: "PUBLIC",
+                    },
+                  ],
+                  nextCursor: null,
+                },
               },
-              {
-                id: "scenario-2",
-                title: "Second scénario",
-                description: "Autre description",
-                character: { name: "Assistant" },
-                playCount: 17,
-                likeCount: 5,
-                _count: { comments: 1 },
-                category: { name: "Corporate" },
-                visibility: "PUBLIC",
-              },
-            ],
-            nextCursor: null,
-          }}}}
+            },
+          },
         ]),
       });
     });
@@ -111,7 +115,10 @@ test.describe("Library interactions", () => {
     await page.waitForLoadState("networkidle");
 
     // Check if the mocked scenarios appear
-    const titleVisible = await page.getByText("Mon scénario de test").isVisible().catch(() => false);
+    const titleVisible = await page
+      .getByText("Mon scénario de test")
+      .isVisible()
+      .catch(() => false);
     if (titleVisible) {
       await expect(page.getByText("Mon scénario de test")).toBeVisible();
       await expect(page.getByText("Second scénario")).toBeVisible();
@@ -137,8 +144,12 @@ test.describe("Library interactions", () => {
 
     await page.route("**/api/auth/session", async (route) => {
       await route.fulfill({
-        status: 200, contentType: "application/json",
-        body: JSON.stringify({ user: { id: "u1", email: "t@t.com", role: "USER" }, expires: new Date(Date.now() + 86400000).toISOString() }),
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: "u1", email: "t@t.com", role: "USER" },
+          expires: new Date(Date.now() + 86400000).toISOString(),
+        }),
       });
     });
 
@@ -152,15 +163,33 @@ test.describe("Library interactions", () => {
     // Mock scenarios and session
     await page.route("**/api/auth/session", async (route) => {
       await route.fulfill({
-        status: 200, contentType: "application/json",
-        body: JSON.stringify({ user: { id: "u1", email: "t@t.com", role: "USER" }, expires: new Date(Date.now() + 86400000).toISOString() }),
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: "u1", email: "t@t.com", role: "USER" },
+          expires: new Date(Date.now() + 86400000).toISOString(),
+        }),
       });
     });
 
     await page.route("**/api/trpc/scenarios.list*", async (route) => {
       await route.fulfill({
-        status: 200, contentType: "application/json",
-        body: JSON.stringify([{ result: { data: { json: { items: [{ id: "s1", title: "Test", character: { name: "Bot" }, visibility: "PUBLIC" }], nextCursor: null } } } }]),
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            result: {
+              data: {
+                json: {
+                  items: [
+                    { id: "s1", title: "Test", character: { name: "Bot" }, visibility: "PUBLIC" },
+                  ],
+                  nextCursor: null,
+                },
+              },
+            },
+          },
+        ]),
       });
     });
 

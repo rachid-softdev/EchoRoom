@@ -3,12 +3,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/react-query";
 import { useState } from "react";
-import { api } from "./trpc";
 import superjson from "superjson";
+import { api } from "./trpc";
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return "";
-  if (process.env['NEXT_PUBLIC_APP_URL']) return process.env['NEXT_PUBLIC_APP_URL'];
+  if (process.env["NEXT_PUBLIC_APP_URL"]) return process.env["NEXT_PUBLIC_APP_URL"];
   return "http://localhost:3000";
 }
 

@@ -1,4 +1,4 @@
-import type { PrismaClient, Badge, UserBadge, $Enums } from "@prisma/client";
+import type { $Enums, Badge, PrismaClient, UserBadge } from "@prisma/client";
 
 export interface IBadgeRepository {
   findCandidateBadges(badgeTypes: string[]): Promise<Badge[]>;

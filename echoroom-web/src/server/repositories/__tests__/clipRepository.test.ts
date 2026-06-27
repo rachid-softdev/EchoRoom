@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaClipRepository tests
@@ -278,7 +278,9 @@ describe("PrismaClipRepository — update", () => {
   it("should propagate Prisma errors on update", async () => {
     mockUpdate.mockRejectedValue(new Error("Record not found"));
 
-    await expect(repo.update("nonexistent", { status: "FAILED" })).rejects.toThrow("Record not found");
+    await expect(repo.update("nonexistent", { status: "FAILED" })).rejects.toThrow(
+      "Record not found",
+    );
   });
 });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // callsRouter.todayCount tests
@@ -174,9 +174,7 @@ describe("callsRouter.todayCount", () => {
   });
 
   it("should return the correct count for different users independently", async () => {
-    mockDb.call.count
-      .mockResolvedValueOnce(3)
-      .mockResolvedValueOnce(7);
+    mockDb.call.count.mockResolvedValueOnce(3).mockResolvedValueOnce(7);
 
     const { callsRouter } = await import("../calls");
 
@@ -262,7 +260,10 @@ describe("callsRouter.start", () => {
   });
 
   it("should return FORBIDDEN when phone number is blocked", async () => {
-    mockDb.blockedNumber.findUnique.mockResolvedValue({ id: "block-1", phoneNumber: "+33612345678" });
+    mockDb.blockedNumber.findUnique.mockResolvedValue({
+      id: "block-1",
+      phoneNumber: "+33612345678",
+    });
 
     const { callsRouter } = await import("../calls");
 
@@ -322,7 +323,10 @@ describe("callsRouter.start", () => {
   it("should delete cache keys when invalidating history cache", async () => {
     mockDb.blockedNumber.findUnique.mockResolvedValue(null);
     mockDetectCallSpam.mockResolvedValue({ flagged: false });
-    mockRedis.keys.mockResolvedValue(["cache:calls:history:user-1:first:10", "cache:calls:history:user-1:abc:10"]);
+    mockRedis.keys.mockResolvedValue([
+      "cache:calls:history:user-1:first:10",
+      "cache:calls:history:user-1:abc:10",
+    ]);
 
     const { callsRouter } = await import("../calls");
     const { initiateCall } = await import("../../services/telephony/callLifecycle");
@@ -369,7 +373,9 @@ describe("callsRouter.start", () => {
     const { callsRouter } = await import("../calls");
     const { initiateCall } = await import("../../services/telephony/callLifecycle");
     const { AppError } = await import("../../lib/errors");
-    (initiateCall as Mock).mockRejectedValue(new AppError("SCENARIO_NOT_FOUND", "Scénario introuvable"));
+    (initiateCall as Mock).mockRejectedValue(
+      new AppError("SCENARIO_NOT_FOUND", "Scénario introuvable"),
+    );
 
     // @ts-expect-error — mutation handler is captured at module import time
     const handler: StartHandler = callsRouter.start.handler;
@@ -389,7 +395,9 @@ describe("callsRouter.start", () => {
     const { callsRouter } = await import("../calls");
     const { initiateCall } = await import("../../services/telephony/callLifecycle");
     const { AppError } = await import("../../lib/errors");
-    (initiateCall as Mock).mockRejectedValue(new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants"));
+    (initiateCall as Mock).mockRejectedValue(
+      new AppError("INSUFFICIENT_CREDITS", "Crédits insuffisants"),
+    );
 
     // @ts-expect-error — mutation handler is captured at module import time
     const handler: StartHandler = callsRouter.start.handler;
@@ -429,7 +437,9 @@ describe("callsRouter.start", () => {
     const { callsRouter } = await import("../calls");
     const { initiateCall } = await import("../../services/telephony/callLifecycle");
     const { AppError } = await import("../../lib/errors");
-    (initiateCall as Mock).mockRejectedValue(new AppError("DAILY_LIMIT_EXCEEDED", "Limite quotidienne"));
+    (initiateCall as Mock).mockRejectedValue(
+      new AppError("DAILY_LIMIT_EXCEEDED", "Limite quotidienne"),
+    );
 
     // @ts-expect-error — mutation handler is captured at module import time
     const handler: StartHandler = callsRouter.start.handler;
@@ -525,9 +535,24 @@ describe("callsRouter.history", () => {
 
   it("should return paginated call history with scenarios", async () => {
     const mockCalls = [
-      { id: "call-3", userId: "user-1", createdAt: new Date("2026-06-03"), scenario: { id: "s-1", title: "Scenario 1", character: { name: "Bot", slug: "bot" } } },
-      { id: "call-2", userId: "user-1", createdAt: new Date("2026-06-02"), scenario: { id: "s-2", title: "Scenario 2", character: { name: "Alice", slug: "alice" } } },
-      { id: "call-1", userId: "user-1", createdAt: new Date("2026-06-01"), scenario: { id: "s-3", title: "Scenario 3", character: { name: "Bob", slug: "bob" } } },
+      {
+        id: "call-3",
+        userId: "user-1",
+        createdAt: new Date("2026-06-03"),
+        scenario: { id: "s-1", title: "Scenario 1", character: { name: "Bot", slug: "bot" } },
+      },
+      {
+        id: "call-2",
+        userId: "user-1",
+        createdAt: new Date("2026-06-02"),
+        scenario: { id: "s-2", title: "Scenario 2", character: { name: "Alice", slug: "alice" } },
+      },
+      {
+        id: "call-1",
+        userId: "user-1",
+        createdAt: new Date("2026-06-01"),
+        scenario: { id: "s-3", title: "Scenario 3", character: { name: "Bob", slug: "bob" } },
+      },
     ];
 
     mockDb.call.findMany.mockResolvedValue(mockCalls);
@@ -638,9 +663,24 @@ describe("callsRouter.history", () => {
 
   it("should handle cursor-based pagination", async () => {
     const mockCalls = [
-      { id: "call-3", userId: "user-1", createdAt: new Date("2026-06-03"), scenario: { title: "S3", character: { name: "C", slug: "c" } } },
-      { id: "call-2", userId: "user-1", createdAt: new Date("2026-06-02"), scenario: { title: "S2", character: { name: "B", slug: "b" } } },
-      { id: "call-1", userId: "user-1", createdAt: new Date("2026-06-01"), scenario: { title: "S1", character: { name: "A", slug: "a" } } },
+      {
+        id: "call-3",
+        userId: "user-1",
+        createdAt: new Date("2026-06-03"),
+        scenario: { title: "S3", character: { name: "C", slug: "c" } },
+      },
+      {
+        id: "call-2",
+        userId: "user-1",
+        createdAt: new Date("2026-06-02"),
+        scenario: { title: "S2", character: { name: "B", slug: "b" } },
+      },
+      {
+        id: "call-1",
+        userId: "user-1",
+        createdAt: new Date("2026-06-01"),
+        scenario: { title: "S1", character: { name: "A", slug: "a" } },
+      },
     ];
     mockRedis.get.mockResolvedValue(null);
     mockDb.call.findMany.mockResolvedValue(mockCalls);
@@ -736,7 +776,12 @@ describe("callsRouter.listByScenario", () => {
 
   it("should return calls filtered by scenarioId with non-null recordingUrl", async () => {
     const mockCalls = [
-      { id: "call-1", durationSeconds: 120, createdAt: new Date("2026-06-01"), status: "COMPLETED" },
+      {
+        id: "call-1",
+        durationSeconds: 120,
+        createdAt: new Date("2026-06-01"),
+        status: "COMPLETED",
+      },
       { id: "call-2", durationSeconds: 60, createdAt: new Date("2026-06-02"), status: "COMPLETED" },
     ];
 

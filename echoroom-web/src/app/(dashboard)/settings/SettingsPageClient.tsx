@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
-import { User, Download, Trash2, Loader2, ShieldX, Lock } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { Download, Loader2, Lock, ShieldX, Trash2, User } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DashboardShell } from "@/components/shared/DashboardShell";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  toast,
+} from "@/components/ui";
 import { api } from "@/lib/trpc";
-import { toast } from "@/components/ui";
 import { useApiToast } from "@/lib/trpc-error";
-import { signOut } from "next-auth/react";
 
 export default function SettingsPageClient() {
   const { data: session } = useSession();
@@ -65,8 +70,7 @@ export default function SettingsPageClient() {
 
       toast({ title: "Export réussi", variant: "success" });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Erreur lors de l'export";
+      const message = err instanceof Error ? err.message : "Erreur lors de l'export";
       toast({ title: message, variant: "destructive" });
     } finally {
       setIsExporting(false);
@@ -234,11 +238,20 @@ export default function SettingsPageClient() {
           </div>
           <div className="flex justify-end pt-2">
             <Button
-              onClick={() => changePasswordMutation.mutate({
-                currentPassword,
-                newPassword,
-              })}
-              disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 8 || changePasswordMutation.isPending}
+              onClick={() =>
+                changePasswordMutation.mutate({
+                  currentPassword,
+                  newPassword,
+                })
+              }
+              disabled={
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword ||
+                newPassword !== confirmPassword ||
+                newPassword.length < 8 ||
+                changePasswordMutation.isPending
+              }
               className="gap-2"
             >
               {changePasswordMutation.isPending ? (
@@ -257,9 +270,7 @@ export default function SettingsPageClient() {
           <CardDescription>Personnalisez votre expérience</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Thème sombre activé par défaut.
-          </p>
+          <p className="text-sm text-muted-foreground">Thème sombre activé par défaut.</p>
         </CardContent>
       </Card>
 
@@ -300,8 +311,8 @@ export default function SettingsPageClient() {
               size="sm"
               className="gap-2"
               onClick={() => {
-                setConsentConfirmation("")
-                setConsentDialogOpen(true)
+                setConsentConfirmation("");
+                setConsentDialogOpen(true);
               }}
             >
               <ShieldX className="w-4 h-4" />
@@ -320,8 +331,8 @@ export default function SettingsPageClient() {
               size="sm"
               className="gap-2"
               onClick={() => {
-                setDeleteConfirmation("")
-                setDeleteDialogOpen(true)
+                setDeleteConfirmation("");
+                setDeleteDialogOpen(true);
               }}
             >
               <Trash2 className="w-4 h-4" />
@@ -334,13 +345,15 @@ export default function SettingsPageClient() {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={(open) => {
-          setDeleteDialogOpen(open)
-          if (!open) setDeleteConfirmation("")
+          setDeleteDialogOpen(open);
+          if (!open) setDeleteConfirmation("");
         }}
         title="Supprimer votre compte"
         description={
           <div className="space-y-3">
-            <p>Cette action est irréversible. Toutes vos données personnelles seront anonymisées.</p>
+            <p>
+              Cette action est irréversible. Toutes vos données personnelles seront anonymisées.
+            </p>
             <div className="space-y-2">
               <label htmlFor="delete-confirm" className="text-sm font-medium">
                 Tapez <strong>SUPPRIMER</strong> pour confirmer
@@ -358,7 +371,7 @@ export default function SettingsPageClient() {
         variant="destructive"
         confirmDisabled={deleteConfirmation !== "SUPPRIMER"}
         onConfirm={() => {
-          deleteMutation.mutate({ confirmation: "SUPPRIMER" })
+          deleteMutation.mutate({ confirmation: "SUPPRIMER" });
         }}
         loading={deleteMutation.isPending}
       />
@@ -366,13 +379,16 @@ export default function SettingsPageClient() {
       <ConfirmDialog
         open={consentDialogOpen}
         onOpenChange={(open) => {
-          setConsentDialogOpen(open)
-          if (!open) setConsentConfirmation("")
+          setConsentDialogOpen(open);
+          if (!open) setConsentConfirmation("");
         }}
         title="Retirer le consentement"
         description={
           <div className="space-y-3">
-            <p>Vos données personnelles seront anonymisées conformément au RGPD (Art. 7). Cette action est réversible via un nouveau consentement.</p>
+            <p>
+              Vos données personnelles seront anonymisées conformément au RGPD (Art. 7). Cette
+              action est réversible via un nouveau consentement.
+            </p>
             <div className="space-y-2">
               <label htmlFor="consent-confirm" className="text-sm font-medium">
                 Tapez <strong>RETIRER</strong> pour confirmer
@@ -390,7 +406,7 @@ export default function SettingsPageClient() {
         variant="destructive"
         confirmDisabled={consentConfirmation !== "RETIRER"}
         onConfirm={() => {
-          withdrawConsentMutation.mutate({ confirmation: "RETIRER" })
+          withdrawConsentMutation.mutate({ confirmation: "RETIRER" });
         }}
         loading={withdrawConsentMutation.isPending}
       />

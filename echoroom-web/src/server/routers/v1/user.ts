@@ -7,11 +7,12 @@
  * It maintains backward compatibility for clients that depend on the v1 shapes.
  * Changes and improvements should go into v2+ routers.
  */
-import { z } from "zod";
+
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withRateLimit } from "../../procedures";
-import { db } from "../../db";
+import { z } from "zod";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
+import { db } from "../../db";
+import { protectedProcedure, router, withRateLimit } from "../../procedures";
 export const userV1Router = router({
   myDeletionStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await db.user.findUnique({
@@ -59,7 +60,8 @@ export const userV1Router = router({
         if (activeCall) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
-            message: "Impossible de retirer le consentement pendant un appel actif. Veuillez terminer l'appel d'abord.",
+            message:
+              "Impossible de retirer le consentement pendant un appel actif. Veuillez terminer l'appel d'abord.",
           });
         }
 
@@ -136,19 +138,18 @@ export const userV1Router = router({
       return { success: true };
     }),
 
-  getConsentStatus: protectedProcedure
-    .query(async ({ ctx }) => {
-      const user = await db.user.findUnique({
-        where: { id: ctx.session.user.id },
-        select: { consentWithdrawnAt: true, consentAcceptedAt: true },
-      });
-      if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
-      }
-      return {
-        consentWithdrawnAt: user.consentWithdrawnAt,
-        consentAcceptedAt: user.consentAcceptedAt,
-        isConsentWithdrawn: user.consentWithdrawnAt !== null,
-      };
-    }),
+  getConsentStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { consentWithdrawnAt: true, consentAcceptedAt: true },
+    });
+    if (!user) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
+    }
+    return {
+      consentWithdrawnAt: user.consentWithdrawnAt,
+      consentAcceptedAt: user.consentAcceptedAt,
+      isConsentWithdrawn: user.consentWithdrawnAt !== null,
+    };
+  }),
 });

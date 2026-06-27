@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next";
 import LeaderboardPageClient from "./LeaderboardPageClient";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description:
         "Découvrez les scénarios et créateurs les plus populaires de la communauté EchoRoom.",
     },
-  }
+  };
 }
 
 export default function LeaderboardPage() {

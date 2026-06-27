@@ -1,12 +1,11 @@
-import type { Metadata } from "next"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { BarChart3, TrendingUp, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, BarChart3, TrendingUp } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Admin — Analytiques — EchoRoom AI",
-  description:
-    "Tableau de bord analytique de la plateforme EchoRoom AI.",
+  description: "Tableau de bord analytique de la plateforme EchoRoom AI.",
   robots: { index: false, follow: false },
 };
 
@@ -51,8 +50,8 @@ export default function AnalyticsPage() {
             <div className="space-y-2">
               <CardTitle>Tableau de bord analytique</CardTitle>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Les statistiques détaillées seront disponibles dans une prochaine mise à jour.
-                Elles incluront :
+                Les statistiques détaillées seront disponibles dans une prochaine mise à jour. Elles
+                incluront :
               </p>
               <ul className="text-sm text-muted-foreground space-y-1.5">
                 <li className="flex items-center gap-2">

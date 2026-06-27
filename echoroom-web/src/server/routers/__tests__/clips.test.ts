@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // clipsRouter tests — listByCall, listByUser, create, delete
@@ -68,10 +68,18 @@ vi.mock("@/server/middleware/metrics", () => ({
 type ListByCallInput = { input: { callId: string }; ctx: { session: { user: { id: string } } } };
 type ListByCallHandler = (opts: ListByCallInput) => Promise<unknown[]>;
 
-type ListByUserInput = { input: { cursor?: string; limit?: number }; ctx: { session: { user: { id: string } } } };
-type ListByUserHandler = (opts: ListByUserInput) => Promise<{ items: unknown[]; nextCursor?: string }>;
+type ListByUserInput = {
+  input: { cursor?: string; limit?: number };
+  ctx: { session: { user: { id: string } } };
+};
+type ListByUserHandler = (
+  opts: ListByUserInput,
+) => Promise<{ items: unknown[]; nextCursor?: string }>;
 
-type CreateInput = { input: { callId: string; startTime: number; endTime: number; title?: string }; ctx: { session: { user: { id: string } } } };
+type CreateInput = {
+  input: { callId: string; startTime: number; endTime: number; title?: string };
+  ctx: { session: { user: { id: string } } };
+};
 type CreateHandler = (opts: CreateInput) => Promise<{ clipId: string }>;
 
 type DeleteInput = { input: { clipId: string }; ctx: { session: { user: { id: string } } } };
@@ -265,7 +273,7 @@ describe("clipsRouter.create", () => {
       endTime: 15,
     });
     // Title should NOT be in the call
-    expect(mockClipsService.createClip.mock.calls[0][0]).not.toHaveProperty("title");
+    expect(mockClipsService.createClip.mock.calls[0]![0]).not.toHaveProperty("title");
   });
 
   it("should reject endTime <= startTime (Zod refine)", async () => {

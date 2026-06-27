@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Clip Extractor — extractAndUploadClip tests
@@ -63,13 +63,15 @@ vi.mock("@/lib/r2", () => ({
 }));
 
 // Helper to create a mock Response
-function createMockResponse(overrides: Partial<{
-  ok: boolean;
-  status: number;
-  statusText: string;
-  body: string;
-  headers: Record<string, string>;
-}> = {}) {
+function createMockResponse(
+  overrides: Partial<{
+    ok: boolean;
+    status: number;
+    statusText: string;
+    body: string;
+    headers: Record<string, string>;
+  }> = {},
+) {
   const {
     ok = true,
     status = 200,
@@ -150,7 +152,7 @@ describe("extractAndUploadClip", () => {
 
       // Verify R2 upload
       expect(mockR2Client.send).toHaveBeenCalledTimes(1);
-      const putCommand = mockR2Client.send.mock.calls[0][0];
+      const putCommand = mockR2Client.send.mock.calls[0]![0];
       expect(putCommand.input).toMatchObject({
         Bucket: "test-bucket",
         ContentType: "audio/x-mulaw",
@@ -164,7 +166,7 @@ describe("extractAndUploadClip", () => {
         (c: any[]) => c[0] === "clip-1" && c[1]?.status === "READY",
       );
       expect(updateCall).toBeDefined();
-      expect(updateCall[1].clipUrl).toMatch(/^https:\/\/media\.example\.com\/clips\/clip-1_\d+$/);
+      expect(updateCall![1].clipUrl).toMatch(/^https:\/\/media\.example\.com\/clips\/clip-1_\d+$/);
 
       expect(mockLogInstance.info).toHaveBeenCalledWith(
         "Clip extrait et téléversé avec succès",
@@ -206,7 +208,7 @@ describe("extractAndUploadClip", () => {
       );
       expect(updateCall).toBeDefined();
       // Without public URL, the clipUrl should be just the key
-      expect(updateCall[1].clipUrl).toMatch(/^clips\/clip-2_\d+$/);
+      expect(updateCall![1].clipUrl).toMatch(/^clips\/clip-2_\d+$/);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -238,7 +240,7 @@ describe("extractAndUploadClip", () => {
       const { extractAndUploadClip } = await import("../clipExtractor");
       await extractAndUploadClip("clip-3");
 
-      const putCommand = mockR2Client.send.mock.calls[0][0];
+      const putCommand = mockR2Client.send.mock.calls[0]![0];
       expect(putCommand.input).toMatchObject({ ContentType: "audio/basic" });
     } finally {
       globalThis.fetch = originalFetch;
@@ -271,7 +273,7 @@ describe("extractAndUploadClip", () => {
       const { extractAndUploadClip } = await import("../clipExtractor");
       await extractAndUploadClip("clip-4");
 
-      const putCommand = mockR2Client.send.mock.calls[0][0];
+      const putCommand = mockR2Client.send.mock.calls[0]![0];
       expect(putCommand.input).toMatchObject({ ContentType: "audio/mulaw" });
     } finally {
       globalThis.fetch = originalFetch;
@@ -384,7 +386,11 @@ describe("extractAndUploadClip", () => {
     mockGetPresignedUrl.mockResolvedValue("https://signed.url/recording");
     mockR2Client.send.mockResolvedValue({});
 
-    const mockResponse = createMockResponse({ ok: false, status: 416, statusText: "Range Not Satisfiable" });
+    const mockResponse = createMockResponse({
+      ok: false,
+      status: 416,
+      statusText: "Range Not Satisfiable",
+    });
     const originalFetch = globalThis.fetch;
     globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
 

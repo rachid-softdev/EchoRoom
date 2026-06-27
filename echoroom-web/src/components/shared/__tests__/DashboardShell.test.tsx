@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -97,9 +97,7 @@ describe("DashboardShell", () => {
       </DashboardShell>,
     );
 
-    expect(
-      screen.getByRole("heading", { name: /mon dashboard/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /mon dashboard/i })).toBeInTheDocument();
   });
 
   it("renders subtitle when provided", () => {
@@ -295,6 +293,6 @@ describe("DashboardShell", () => {
 
     // Check for max-w-6xl class
     const section = sections[0];
-    expect(section.className).toContain("max-w-6xl");
+    expect(section!.className).toContain("max-w-6xl");
   });
 });

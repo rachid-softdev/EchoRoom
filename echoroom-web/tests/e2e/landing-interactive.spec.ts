@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Landing page — composants interactifs", () => {
   // ─── LiveCounter : valeur aléatoire entre visites ────────────────
@@ -43,7 +43,9 @@ test.describe("Landing page — composants interactifs", () => {
     }
   });
 
-  test("LiveCounter s'affiche dans la barre des auditeurs avec le texte 'auditeurs'", async ({ page }) => {
+  test("LiveCounter s'affiche dans la barre des auditeurs avec le texte 'auditeurs'", async ({
+    page,
+  }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
@@ -52,7 +54,9 @@ test.describe("Landing page — composants interactifs", () => {
     await expect(listenerBar).toBeVisible();
 
     // Le compteur est un sibling span avec la classe tabular-nums
-    const counter = listenerBar.locator("xpath=preceding-sibling::span[contains(@class, 'tabular-nums')]");
+    const counter = listenerBar.locator(
+      "xpath=preceding-sibling::span[contains(@class, 'tabular-nums')]",
+    );
     await expect(counter).toBeVisible();
   });
 
@@ -76,7 +80,9 @@ test.describe("Landing page — composants interactifs", () => {
     expect(styleAttr).toContain("images.unsplash.com");
 
     // Vérifie la présence des overlays gradient
-    const gradientOverlays = heroSection.locator("div.bg-gradient-to-r, div.bg-gradient-to-t, div.bg-gradient-to-b");
+    const gradientOverlays = heroSection.locator(
+      "div.bg-gradient-to-r, div.bg-gradient-to-t, div.bg-gradient-to-b",
+    );
     const overlayCount = await gradientOverlays.count();
     expect(overlayCount).toBeGreaterThanOrEqual(1);
   });
@@ -111,7 +117,11 @@ test.describe("Landing page — composants interactifs", () => {
     await page.waitForLoadState("networkidle");
 
     // Première feature card
-    const firstFeature = page.locator("section").nth(1).locator("> div > div.space-y-20 > div").first();
+    const firstFeature = page
+      .locator("section")
+      .nth(1)
+      .locator("> div > div.space-y-20 > div")
+      .first();
 
     // Vérifie la présence du titre et de la description
     await expect(firstFeature.locator("h3")).toBeVisible();
@@ -288,7 +298,9 @@ test.describe("Landing page — composants interactifs", () => {
 
   // ─── Navigation Bar ─────────────────────────────────────────────
 
-  test("La barre de navigation MarketingNav est visible avec les liens principaux", async ({ page }) => {
+  test("La barre de navigation MarketingNav est visible avec les liens principaux", async ({
+    page,
+  }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 

@@ -1,13 +1,10 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mocks
 const mockUsePaginatedQuery = vi.hoisted(() => vi.fn());
-const mockItems = vi.hoisted(() => ({ current: [] as any[] }));
-const mockHasMore = vi.hoisted(() => ({ current: false }));
 const mockLoadMore = vi.hoisted(() => vi.fn());
-const mockIsFetchingMore = vi.hoisted(() => ({ current: false }));
 
 vi.mock("@/hooks/usePaginatedQuery", () => ({
   usePaginatedQuery: (...args: unknown[]) => mockUsePaginatedQuery(...args),
@@ -25,7 +22,11 @@ vi.mock("@/lib/trpc", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock lucide-react
@@ -39,7 +40,13 @@ vi.mock("lucide-react", () => ({
 // Mock @/components/ui
 vi.mock("@/components/ui", () => ({
   Button: ({ children, onClick, disabled, variant, className, ...props }: any) => (
-    <button onClick={onClick} disabled={disabled} data-variant={variant} className={className} {...props}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      data-variant={variant}
+      className={className}
+      {...props}
+    >
       {children}
     </button>
   ),
@@ -77,7 +84,7 @@ vi.mock("@/components/shared/CallHistoryRow", () => ({
 
 // Mock EmptyState
 vi.mock("@/components/shared/EmptyState", () => ({
-  EmptyState: ({ icon: Icon, title, description, action }: any) => (
+  EmptyState: ({ icon: _Icon, title, description, action }: any) => (
     <div data-testid="empty-state">
       <h3>{title}</h3>
       <p>{description}</p>
@@ -88,7 +95,7 @@ vi.mock("@/components/shared/EmptyState", () => ({
 
 // Mock PaginatedDataLoader
 vi.mock("@/components/shared/PaginatedDataLoader", () => ({
-  PaginatedDataLoader: ({ query, children, empty, loadingSkeleton }: any) => {
+  PaginatedDataLoader: ({ query, children, empty, loadingSkeleton: _loadingSkeleton }: any) => {
     if (query.isLoading) {
       return <div data-testid="loader-loading">Chargement...</div>;
     }
@@ -154,8 +161,13 @@ describe("HistoryPage", () => {
   it("renders the dashboard shell with title and subtitle", () => {
     render(<HistoryPage />);
 
-    expect(screen.getByTestId("dashboard-shell")).toHaveAttribute("data-title", "Historique des appels");
-    expect(screen.getByText("Consultez vos appels passés et réécoutez vos meilleurs moments")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-shell")).toHaveAttribute(
+      "data-title",
+      "Historique des appels",
+    );
+    expect(
+      screen.getByText("Consultez vos appels passés et réécoutez vos meilleurs moments"),
+    ).toBeInTheDocument();
   });
 
   it("renders call history rows", () => {
@@ -181,14 +193,18 @@ describe("HistoryPage", () => {
 
     expect(screen.getByTestId("empty-state")).toBeInTheDocument();
     expect(screen.getByText("Aucun appel pour le moment")).toBeInTheDocument();
-    expect(screen.getByText("Lancez votre premier appel pour voir votre historique ici.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Lancez votre premier appel pour voir votre historique ici."),
+    ).toBeInTheDocument();
   });
 
   it("renders search input", () => {
     render(<HistoryPage />);
 
     expect(screen.getByTestId("search-input")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Rechercher par scénario, personnage ou statut...")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Rechercher par scénario, personnage ou statut..."),
+    ).toBeInTheDocument();
   });
 
   it("filters calls by search query", () => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Explore page — filtres, URL sync et interactions avancées", () => {
   // ─── URL params sync ────────────────────────────────────────────
@@ -23,7 +23,9 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
     expect(page.url()).toContain("sort=TOP");
   });
 
-  test("URL se met à jour avec le paramètre ?category= au clic sur une catégorie", async ({ page }) => {
+  test("URL se met à jour avec le paramètre ?category= au clic sur une catégorie", async ({
+    page,
+  }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -95,7 +97,10 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
       }
     }
 
-    await expect(page.getByRole("button", { name: "Horreur" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Horreur" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("Paramètres URL invalides sont ignorés (fallback valeurs par défaut)", async ({ page }) => {
@@ -104,15 +109,23 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
     await page.waitForLoadState("networkidle");
 
     // Le tri par défaut TRENDING doit être actif
-    await expect(page.getByRole("radio", { name: "Tendance" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "Tendance" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
 
     // "Tous" doit être la catégorie active par défaut
-    await expect(page.getByRole("button", { name: "Tous" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Tous" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   // ─── Debounce recherche 300ms ──────────────────────────────────
 
-  test("La recherche est déboundée de 300ms (l'URL ne change pas immédiatement)", async ({ page }) => {
+  test("La recherche est déboundée de 300ms (l'URL ne change pas immédiatement)", async ({
+    page,
+  }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -204,7 +217,9 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
     await expect(chaosMessage).not.toBeVisible();
   });
 
-  test("Appuyer plusieurs fois sur 'Surprise-moi' mélange à nouveau (incrémente chaosKey)", async ({ page }) => {
+  test("Appuyer plusieurs fois sur 'Surprise-moi' mélange à nouveau (incrémente chaosKey)", async ({
+    page,
+  }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -229,8 +244,6 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
 
     // Vérifier que les catégories extra ne sont pas visibles initialement
     const horreurBtn = page.getByRole("button", { name: "Horreur" });
-    const cringeBtn = page.getByRole("button", { name: "Cringe" });
-
     // Au moins une des catégories extra devrait être cachée
     const horreurVisible = await horreurBtn.isVisible().catch(() => false);
 
@@ -300,9 +313,7 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { items: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { items: [] } } } }]),
       });
     });
 
@@ -317,19 +328,19 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
     // L'état vide pour recherche doit montrer "Aucun résultat"
     await expect(page.getByText("Aucun résultat")).toBeVisible();
     await expect(
-      page.getByText("Essaie d'autres mots-clés ou explore les catégories")
+      page.getByText("Essaie d'autres mots-clés ou explore les catégories"),
     ).toBeVisible();
   });
 
-  test("État vide pour catégorie sans scénario affiche 'Rien ici pour l'instant'", async ({ page }) => {
+  test("État vide pour catégorie sans scénario affiche 'Rien ici pour l'instant'", async ({
+    page,
+  }) => {
     // Mock pour retourner des données vides
     await page.route("**/api/trpc/scenarios.feed*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { items: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { items: [] } } } }]),
       });
     });
 
@@ -356,7 +367,7 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
     // L'état vide pour catégorie doit montrer "Rien ici pour l'instant"
     await expect(page.getByText("Rien ici pour l'instant")).toBeVisible();
     await expect(
-      page.getByText("La communauté n'a pas encore exploré cette catégorie")
+      page.getByText("La communauté n'a pas encore exploré cette catégorie"),
     ).toBeVisible();
   });
 
@@ -419,7 +430,10 @@ test.describe("Explore page — filtres, URL sync et interactions avancées", ()
 
     await page.getByRole("button", { name: "Chaotique" }).click();
     await expect(tousBtn).toHaveAttribute("aria-pressed", "false");
-    await expect(page.getByRole("button", { name: "Chaotique" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Chaotique" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("Le champ recherche a un placeholder et une icône Search", async ({ page }) => {

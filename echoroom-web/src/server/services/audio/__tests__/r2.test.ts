@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // R2 Server Service Tests — uploadAudioBuffer, getPresignedUrl,
@@ -74,12 +74,10 @@ describe("uploadAudioBuffer", () => {
     const buffer = Buffer.from("audio data");
     const result = await uploadAudioBuffer("call-abc", 1, buffer, "audio/mulaw");
 
-    expect(result).toBe(
-      `https://cdn.echoroom.app/audio/call-abc/1_${TIMESTAMP}`,
-    );
+    expect(result).toBe(`https://cdn.echoroom.app/audio/call-abc/1_${TIMESTAMP}`);
 
     expect(mockSend).toHaveBeenCalledTimes(1);
-    const command = mockSend.mock.calls[0][0];
+    const command = mockSend.mock.calls[0]![0];
     expect(command.input).toMatchObject({
       Bucket: "echoroom-audio",
       Key: `audio/call-abc/1_${TIMESTAMP}`,
@@ -94,7 +92,7 @@ describe("uploadAudioBuffer", () => {
     const { uploadAudioBuffer } = await import("../r2");
     await uploadAudioBuffer("call-xyz", 2, Buffer.from("data"));
 
-    const command = mockSend.mock.calls[0][0];
+    const command = mockSend.mock.calls[0]![0];
     expect(command.input.ContentType).toBe("audio/mulaw");
   });
 
@@ -129,7 +127,7 @@ describe("uploadAudioBuffer", () => {
     const { uploadAudioBuffer } = await import("../r2");
     await uploadAudioBuffer("custom-sid", 42, Buffer.from("test"));
 
-    const command = mockSend.mock.calls[0][0];
+    const command = mockSend.mock.calls[0]![0];
     const key = command.input.Key as string;
 
     expect(key).toBe(`audio/custom-sid/42_${TIMESTAMP}`);
@@ -147,9 +145,9 @@ describe("uploadAudioBuffer", () => {
     mockSend.mockRejectedValue(new Error("S3 upload failed: AccessDenied"));
 
     const { uploadAudioBuffer } = await import("../r2");
-    await expect(
-      uploadAudioBuffer("call-fail", 1, Buffer.from("data")),
-    ).rejects.toThrow("S3 upload failed: AccessDenied");
+    await expect(uploadAudioBuffer("call-fail", 1, Buffer.from("data"))).rejects.toThrow(
+      "S3 upload failed: AccessDenied",
+    );
   });
 });
 
@@ -164,9 +162,7 @@ describe("getPresignedUrl", () => {
   });
 
   it("should sign URL with default TTL of 3600 seconds", async () => {
-    mockGetSignedUrl.mockResolvedValue(
-      "https://presigned.example.com/audio/key",
-    );
+    mockGetSignedUrl.mockResolvedValue("https://presigned.example.com/audio/key");
 
     const { getPresignedUrl } = await import("../r2");
     const result = await getPresignedUrl("audio/call-sid/1_1717000000000");
@@ -185,9 +181,7 @@ describe("getPresignedUrl", () => {
   });
 
   it("should use custom TTL when provided", async () => {
-    mockGetSignedUrl.mockResolvedValue(
-      "https://presigned.example.com/audio/key?ttl=300",
-    );
+    mockGetSignedUrl.mockResolvedValue("https://presigned.example.com/audio/key?ttl=300");
 
     const { getPresignedUrl } = await import("../r2");
     const result = await getPresignedUrl("audio/call-sid/2_1717000000001", {
@@ -195,11 +189,9 @@ describe("getPresignedUrl", () => {
     });
 
     expect(result).toBe("https://presigned.example.com/audio/key?ttl=300");
-    expect(mockGetSignedUrl).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      { expiresIn: 300 },
-    );
+    expect(mockGetSignedUrl).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      expiresIn: 300,
+    });
   });
 
   it("should return null when storedUrl is null", async () => {
@@ -224,9 +216,7 @@ describe("getPresignedUrl", () => {
   });
 
   it("should extract key from full URL format", async () => {
-    mockGetSignedUrl.mockResolvedValue(
-      "https://presigned.example.com/path",
-    );
+    mockGetSignedUrl.mockResolvedValue("https://presigned.example.com/path");
 
     const { getPresignedUrl } = await import("../r2");
     const result = await getPresignedUrl("https://cdn.echoroom.app/audio/sid/1_ts");
@@ -242,9 +232,7 @@ describe("getPresignedUrl", () => {
   });
 
   it("should return null and log error when signing fails", async () => {
-    mockGetSignedUrl.mockImplementation(
-      () => Promise.reject(new Error("Signing failed")),
-    );
+    mockGetSignedUrl.mockImplementation(() => Promise.reject(new Error("Signing failed")));
 
     const { getPresignedUrl } = await import("../r2");
     const result = await getPresignedUrl("audio/key");

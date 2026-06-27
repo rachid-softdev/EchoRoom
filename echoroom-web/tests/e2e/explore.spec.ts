@@ -1,14 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Explore page", () => {
   test("should load and display the page heading", async ({ page }) => {
     await page.goto("/explore");
-    await expect(
-      page.getByRole("heading", { name: /Explorer les scénarios/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/Découvrez les créations de la communauté/),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Explorer les scénarios/ })).toBeVisible();
+    await expect(page.getByText(/Découvrez les créations de la communauté/)).toBeVisible();
   });
 
   test("should display the search input", async ({ page }) => {
@@ -39,9 +35,7 @@ test.describe("Explore page", () => {
       "Weird",
     ];
     for (const category of categories) {
-      await expect(
-        page.getByRole("button", { name: category }),
-      ).toBeVisible();
+      await expect(page.getByRole("button", { name: category })).toBeVisible();
     }
   });
 
@@ -61,33 +55,32 @@ test.describe("Explore page", () => {
     await page.goto("/explore");
     const sortLabels = ["Chronologique", "Tendance", "Top"];
     for (const label of sortLabels) {
-      await expect(
-        page.getByRole("radio", { name: label }),
-      ).toBeVisible();
+      await expect(page.getByRole("radio", { name: label })).toBeVisible();
     }
   });
 
   test("should change active sort when clicking sort options", async ({ page }) => {
     await page.goto("/explore");
     // Default should be Chronologique
-    await expect(
-      page.getByRole("radio", { name: "Chronologique" }),
-    ).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "Chronologique" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
 
     // Click Tendance
     await page.getByRole("radio", { name: "Tendance" }).click();
-    await expect(
-      page.getByRole("radio", { name: "Tendance" }),
-    ).toHaveAttribute("aria-checked", "true");
-    await expect(
-      page.getByRole("radio", { name: "Chronologique" }),
-    ).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByRole("radio", { name: "Tendance" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await expect(page.getByRole("radio", { name: "Chronologique" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
 
     // Click Top
     await page.getByRole("radio", { name: "Top" }).click();
-    await expect(
-      page.getByRole("radio", { name: "Top" }),
-    ).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "Top" })).toHaveAttribute("aria-checked", "true");
   });
 
   test("should display either scenario cards or an empty state", async ({ page }) => {
@@ -117,15 +110,11 @@ test.describe("Explore page", () => {
 
   test("should display the back navigation link to home", async ({ page }) => {
     await page.goto("/explore");
-    await expect(
-      page.getByRole("link", { name: /Accueil/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Accueil/ })).toBeVisible();
   });
 
   test("should display the Connexion button for unauthenticated users", async ({ page }) => {
     await page.goto("/explore");
-    await expect(
-      page.getByRole("button", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Connexion" })).toBeVisible();
   });
 });

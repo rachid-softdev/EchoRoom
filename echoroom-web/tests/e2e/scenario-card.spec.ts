@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("ScenarioCard component", () => {
   /**
@@ -81,7 +81,9 @@ test.describe("ScenarioCard component", () => {
     expect(playText?.trim()).toMatch(/^\d+(\.\d+)?k?$/);
   });
 
-  test("should display creator as 'par {username}' when showCreator is true (default)", async ({ page }) => {
+  test("should display creator as 'par {username}' when showCreator is true (default)", async ({
+    page,
+  }) => {
     const { link, exists } = await getFirstCard(page);
     test.skip(!exists, "No scenarios available in the database");
     if (!exists) return;
@@ -133,7 +135,9 @@ test.describe("ScenarioCard component", () => {
     expect(numbers!.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("should display a share button on cards with showShare=true (home page)", async ({ page }) => {
+  test("should display a share button on cards with showShare=true (home page)", async ({
+    page,
+  }) => {
     // The home page renders FeaturedScenariosSection with showShare prop
     await page.goto("/");
     await page.waitForLoadState("networkidle");
@@ -143,8 +147,14 @@ test.describe("ScenarioCard component", () => {
     const shareButton = page.locator('a[href^="/scenario/"] button').filter({
       has: page.locator("svg.lucide-share2"),
     });
-    const shareExists = await shareButton.first().isVisible().catch(() => false);
-    test.skip(!shareExists, "Share button not visible — no featured scenarios with showShare on home page");
+    const shareExists = await shareButton
+      .first()
+      .isVisible()
+      .catch(() => false);
+    test.skip(
+      !shareExists,
+      "Share button not visible — no featured scenarios with showShare on home page",
+    );
     if (!shareExists) return;
 
     await expect(shareButton.first()).toBeVisible();

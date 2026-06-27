@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // M-5: Webhook rate limiting
@@ -32,9 +32,7 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
   });
 
   it("should allow requests under the limit", async () => {
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // First 5 requests should be allowed (limit = 5)
     for (let i = 0; i < 5; i++) {
@@ -45,9 +43,7 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
   });
 
   it("should deny requests exceeding the limit", async () => {
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // Use limit = 3
     await checkRateLimit({ identifier: "webhook:stripe-overload", limit: 3, window: 60 });
@@ -61,9 +57,7 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
   });
 
   it("should have independent counters for different endpoint keys", async () => {
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // Exhaust endpoint A's limit
     await checkRateLimit({ identifier: "webhook:twilio", limit: 2, window: 60 });
@@ -81,18 +75,16 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
   });
 
   it("should handle per-IP keying correctly", async () => {
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // IP-based rate limiting: different IPs have independent counters
     const ip1key = "webhook:twilio:192.168.1.1";
     const ip2key = "webhook:twilio:192.168.1.2";
 
     await checkRateLimit({ identifier: ip1key, limit: 1, window: 60 });
-    await expect(
-      checkRateLimit({ identifier: ip1key, limit: 1, window: 60 }),
-    ).rejects.toThrow("Trop de requêtes");
+    await expect(checkRateLimit({ identifier: ip1key, limit: 1, window: 60 })).rejects.toThrow(
+      "Trop de requêtes",
+    );
 
     // Different IP should still be allowed
     await expect(
@@ -102,12 +94,8 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
 
   it("should use correct key prefix for rate limiting", async () => {
     // Import the in-memory store to verify keys
-    const { inMemoryRateLimitStore } = await import(
-      "@/server/middleware/rateLimitStore"
-    );
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { inMemoryRateLimitStore } = await import("@/server/middleware/rateLimitStore");
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // Check initial size
     const initialSize = inMemoryRateLimitStore.size;
@@ -119,9 +107,7 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
   });
 
   it("should gracefully handle very low limits (limit=1)", async () => {
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // limit=1 means only 1 request allowed
     await expect(
@@ -135,9 +121,7 @@ describe("M-5: Webhook rate limiting with in-memory store", () => {
   });
 
   it("should reset after window expires", async () => {
-    const { checkRateLimit } = await import(
-      "@/server/middleware/rateLimit"
-    );
+    const { checkRateLimit } = await import("@/server/middleware/rateLimit");
 
     // Use a very short window (1 second)
     await expect(
@@ -302,11 +286,11 @@ describe("WEBHOOK_RATE_LIMITS configuration", () => {
 
     // These are the keys used by the webhook route handlers
     const routeKeys = [
-      "twilio:status",        // src/app/api/webhooks/twilio/route.ts
-      "twilio:voice:init",    // src/app/api/webhooks/twilio/voice/route.ts
-      "twilio:voice:input",   // src/app/api/webhooks/twilio/voice/handle-input/route.ts
-      "twilio:voice:stream",  // src/app/api/webhooks/twilio/voice/stream/route.ts
-      "stripe:checkout",      // src/app/api/webhooks/stripe/route.ts
+      "twilio:status", // src/app/api/webhooks/twilio/route.ts
+      "twilio:voice:init", // src/app/api/webhooks/twilio/voice/route.ts
+      "twilio:voice:input", // src/app/api/webhooks/twilio/voice/handle-input/route.ts
+      "twilio:voice:stream", // src/app/api/webhooks/twilio/voice/stream/route.ts
+      "stripe:checkout", // src/app/api/webhooks/stripe/route.ts
     ];
 
     for (const key of routeKeys) {

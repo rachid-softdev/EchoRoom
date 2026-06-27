@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/app/admin/users/UsersPageClient.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/app/admin/users/UsersPageClient.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("Admin Users page", () => {
@@ -34,8 +31,8 @@ test.describe("Admin Users page", () => {
   test("search has Search icon on left and X clear button on right", () => {
     const source = readComponent();
     expect(source).toMatch(/Search.*className="absolute left-3/);
-    expect(source).toContain("<X className=\"w-4 h-4\" />");
-    expect(source).toContain("setSearch(\"\")");
+    expect(source).toContain('<X className="w-4 h-4" />');
+    expect(source).toContain('setSearch("")');
   });
 
   test("search is debounced at 300ms", () => {

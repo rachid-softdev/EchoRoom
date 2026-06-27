@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Scenario detail page", () => {
   test("should show 404 not-found for a non-existent scenario ID", async ({ page }) => {
@@ -9,9 +9,7 @@ test.describe("Scenario detail page", () => {
     // Custom 404 page content
     await expect(page.getByText("404")).toBeVisible();
     await expect(page.getByText(/Oops/)).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: /Retour à l'accueil/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /Retour à l'accueil/ })).toBeVisible();
   });
 
   test("should show 404 for an empty scenario ID segment", async ({ page }) => {
@@ -54,9 +52,7 @@ test.describe("Scenario detail page", () => {
     await page.waitForLoadState("networkidle");
 
     // The reaction bar always renders — check for the "+" add reaction button
-    await expect(
-      page.getByRole("button", { name: "Ajouter une réaction" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Ajouter une réaction" })).toBeVisible();
   });
 
   test("should display the scenario title when a valid scenario loads", async ({ page }) => {
@@ -73,9 +69,7 @@ test.describe("Scenario detail page", () => {
     await page.waitForLoadState("networkidle");
 
     // Wait for scenario content to load by checking for stats or back link
-    await expect(
-      page.getByRole("link", { name: /Retour à la communauté/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Retour à la communauté/ })).toBeVisible();
 
     // The h1 title should be visible
     const title = page.locator("h1");
@@ -96,8 +90,6 @@ test.describe("Scenario detail page", () => {
     await scenarioLink.click();
     await page.waitForLoadState("networkidle");
 
-    await expect(
-      page.getByRole("link", { name: /Retour à la communauté/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Retour à la communauté/ })).toBeVisible();
   });
 });

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock tRPC
 vi.mock("@/lib/trpc", () => ({
@@ -35,8 +35,7 @@ afterEach(() => {
 });
 
 const mockListQuery = api.admin.listUsers.useQuery as ReturnType<typeof vi.fn>;
-const mockDetailQuery = api.admin.getUserDetail
-  .useQuery as ReturnType<typeof vi.fn>;
+const mockDetailQuery = api.admin.getUserDetail.useQuery as ReturnType<typeof vi.fn>;
 
 const sampleUser = {
   id: "u-1",
@@ -112,10 +111,7 @@ describe("UsersPageClient", () => {
     // useQuery signature: (input, options) where options.enabled controls
     // whether the query is active.
     mockDetailQuery.mockImplementation(
-      (
-        input: { userId?: string },
-        options?: { enabled?: boolean },
-      ) => ({
+      (input: { userId?: string }, options?: { enabled?: boolean }) => ({
         isLoading: false,
         data: options?.enabled && input?.userId ? sampleUserDetail : undefined,
         isError: false,
@@ -160,9 +156,7 @@ describe("UsersPageClient", () => {
     render(<UsersPageClient />);
 
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Réessayer/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Réessayer/i })).toBeInTheDocument();
   });
 
   it("should call refetch on retry", () => {
@@ -191,9 +185,7 @@ describe("UsersPageClient", () => {
     render(<UsersPageClient />);
 
     expect(screen.getByText("Aucun utilisateur")).toBeInTheDocument();
-    expect(
-      screen.getByText("Aucun utilisateur enregistré."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucun utilisateur enregistré.")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -205,9 +197,7 @@ describe("UsersPageClient", () => {
 
     render(<UsersPageClient />);
 
-    expect(
-      screen.getByRole("heading", { name: "Gestion des utilisateurs" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Gestion des utilisateurs" })).toBeInTheDocument();
     expect(
       screen.getByText("Recherchez et gérez les utilisateurs de la plateforme"),
     ).toBeInTheDocument();
@@ -222,9 +212,7 @@ describe("UsersPageClient", () => {
 
     render(<UsersPageClient />);
 
-    expect(
-      screen.getByPlaceholderText("Rechercher par nom ou email..."),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Rechercher par nom ou email...")).toBeInTheDocument();
   });
 
   it("should show clear button when search has text", () => {
@@ -232,13 +220,9 @@ describe("UsersPageClient", () => {
 
     render(<UsersPageClient />);
 
-    const searchInput = screen.getByPlaceholderText(
-      "Rechercher par nom ou email...",
-    );
+    const searchInput = screen.getByPlaceholderText("Rechercher par nom ou email...");
 
-    expect(
-      screen.queryByTestId("icon-x"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("icon-x")).not.toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "john" } });
 
@@ -251,9 +235,7 @@ describe("UsersPageClient", () => {
 
     render(<UsersPageClient />);
 
-    const searchInput = screen.getByPlaceholderText(
-      "Rechercher par nom ou email...",
-    );
+    const searchInput = screen.getByPlaceholderText("Rechercher par nom ou email...");
     fireEvent.change(searchInput, { target: { value: "john" } });
 
     // Click the X icon — event bubbles up to the parent <button>
@@ -264,23 +246,19 @@ describe("UsersPageClient", () => {
 
   it("should debounce the search value", async () => {
     vi.useFakeTimers();
-    mockListQuery.mockImplementation(
-      ({ search }: { search?: string }) => {
-        return {
-          isLoading: false,
-          data: { items: search ? [] : [sampleUser] },
-          isError: false,
-          error: null,
-          refetch: vi.fn(),
-        };
-      },
-    );
+    mockListQuery.mockImplementation(({ search }: { search?: string }) => {
+      return {
+        isLoading: false,
+        data: { items: search ? [] : [sampleUser] },
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      };
+    });
 
     render(<UsersPageClient />);
 
-    const searchInput = screen.getByPlaceholderText(
-      "Rechercher par nom ou email...",
-    );
+    const searchInput = screen.getByPlaceholderText("Rechercher par nom ou email...");
 
     // Type a search
     fireEvent.change(searchInput, { target: { value: "nonexistent" } });
@@ -345,9 +323,7 @@ describe("UsersPageClient", () => {
   });
 
   it("should render the user count in the card title", () => {
-    mockListQuery.mockReturnValue(
-      buildListQueryMock([sampleUser, sampleAdminUser]),
-    );
+    mockListQuery.mockReturnValue(buildListQueryMock([sampleUser, sampleAdminUser]));
 
     render(<UsersPageClient />);
 
@@ -385,9 +361,7 @@ describe("UsersPageClient", () => {
 
     render(<UsersPageClient />);
 
-    const searchInput = screen.getByPlaceholderText(
-      "Rechercher par nom ou email...",
-    );
+    const searchInput = screen.getByPlaceholderText("Rechercher par nom ou email...");
     fireEvent.change(searchInput, { target: { value: "xyz" } });
 
     act(() => {
@@ -459,9 +433,7 @@ describe("UsersPageClient", () => {
     fireEvent.click(backBtn);
 
     // Should be back in list view
-    expect(
-      screen.getByRole("heading", { name: "Gestion des utilisateurs" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Gestion des utilisateurs" })).toBeInTheDocument();
   });
 
   it("should render user ID in detail view", () => {
@@ -622,8 +594,6 @@ describe("UsersPageClient", () => {
 
     fireEvent.click(screen.getByText("johndoe"));
 
-    expect(
-      screen.getByRole("heading", { name: "johndoe" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "johndoe" })).toBeInTheDocument();
   });
 });

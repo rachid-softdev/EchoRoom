@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // checkRateLimit tests
@@ -65,9 +65,9 @@ describe("checkRateLimit", () => {
 
     const { checkRateLimit } = await import("../rateLimit");
 
-    await expect(
-      checkRateLimit({ identifier: "user-1", limit: 10, window: 60 }),
-    ).rejects.toThrow("Trop de requêtes");
+    await expect(checkRateLimit({ identifier: "user-1", limit: 10, window: 60 })).rejects.toThrow(
+      "Trop de requêtes",
+    );
 
     expect(mockZadd).not.toHaveBeenCalled();
     expect(mockExpire).not.toHaveBeenCalled();
@@ -78,9 +78,9 @@ describe("checkRateLimit", () => {
 
     const { checkRateLimit } = await import("../rateLimit");
 
-    await expect(
-      checkRateLimit({ identifier: "user-1", limit: 10, window: 60 }),
-    ).rejects.toThrow("Trop de requêtes");
+    await expect(checkRateLimit({ identifier: "user-1", limit: 10, window: 60 })).rejects.toThrow(
+      "Trop de requêtes",
+    );
   });
 
   it("should use correct Redis key format", async () => {
@@ -132,9 +132,9 @@ describe("checkRateLimit", () => {
 
     // Second request hits limit
     mockZcount.mockResolvedValue(1);
-    await expect(
-      checkRateLimit({ identifier: "user-1", limit: 1, window: 60 }),
-    ).rejects.toThrow("Trop de requêtes");
+    await expect(checkRateLimit({ identifier: "user-1", limit: 1, window: 60 })).rejects.toThrow(
+      "Trop de requêtes",
+    );
   });
 });
 
@@ -182,9 +182,9 @@ describe("checkRateLimit — Redis unavailable / failure", () => {
     ).resolves.toBeUndefined();
 
     // Fourth hits limit
-    await expect(
-      checkRateLimit({ identifier: "mem-user", limit: 3, window: 60 }),
-    ).rejects.toThrow("Trop de requêtes");
+    await expect(checkRateLimit({ identifier: "mem-user", limit: 3, window: 60 })).rejects.toThrow(
+      "Trop de requêtes",
+    );
   });
 
   it("should fallback to in-memory store when Redis zcount throws", async () => {

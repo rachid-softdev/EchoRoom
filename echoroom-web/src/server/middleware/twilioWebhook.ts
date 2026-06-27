@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
 import { env } from "@/lib/env";
 import { createLogger } from "@/server/lib/logger";
@@ -28,13 +28,19 @@ export function wrapTwilioWebhook(
     }
 
     // 2. IP extraction
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "unknown";
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
 
     // 3. Rate limiting
     try {
       const { checkWebhookRateLimit } = await import("@/app/api/webhooks/rateLimit");
       if (!(await checkWebhookRateLimit(rateLimitKey, ip))) {
-        return NextResponse.json({ error: "Trop de requêtes" }, { status: 429, headers: { "Retry-After": "60" } });
+        return NextResponse.json(
+          { error: "Trop de requêtes" },
+          { status: 429, headers: { "Retry-After": "60" } },
+        );
       }
     } catch (error) {
       const log = createLogger("twilio-middleware");
@@ -55,14 +61,12 @@ export function wrapTwilioWebhook(
     }
 
     const log = createLogger("twilio-middleware");
-    const isValid = twilio.validateRequest(
-      env.TWILIO_AUTH_TOKEN,
-      signature,
-      req.url,
-      rawParams,
-    );
+    const isValid = twilio.validateRequest(env.TWILIO_AUTH_TOKEN, signature, req.url, rawParams);
     if (!isValid) {
-      log.warn("Signature Twilio invalide", { url: req.url, signaturePreview: signature.substring(0, 10) + "..." });
+      log.warn("Signature Twilio invalide", {
+        url: req.url,
+        signaturePreview: `${signature.substring(0, 10)}...`,
+      });
       return NextResponse.json({ error: "Signature invalide" }, { status: 403 });
     }
 

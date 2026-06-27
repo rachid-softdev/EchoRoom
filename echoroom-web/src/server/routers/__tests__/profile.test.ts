@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // profileRouter — Tests for profile.ts (me, updateProfile, exportData, deleteMyAccount)
@@ -47,7 +47,7 @@ vi.mock("@/server/lib/encryption", () => ({
   decryptPhoneNumber: vi.fn((phone: string) => phone),
   maskPhoneNumber: vi.fn((phone: string) => {
     if (phone.length < 6) return "******";
-    return phone.slice(0, 3) + "****" + phone.slice(-4);
+    return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
   }),
 }));
 
@@ -167,9 +167,7 @@ describe("me — current user profile query", () => {
   it("should throw NOT_FOUND when user does not exist (deleted or never created)", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      handler({ ctx: validCtx }),
-    ).rejects.toThrow(TRPCError);
+    await expect(handler({ ctx: validCtx })).rejects.toThrow(TRPCError);
 
     try {
       await handler({ ctx: validCtx });
@@ -201,16 +199,14 @@ describe("updateProfile — username update", () => {
   });
 
   it("should update username and upsert displayName", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          userProfile: { upsert: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        userProfile: { upsert: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     const result = await handler({
       input: { username: "newname" },
@@ -259,22 +255,20 @@ describe("updateProfile — username update", () => {
   });
 
   it("should propagate error when user.update fails inside transaction", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: {
-            update: vi.fn().mockRejectedValue(new Error("Prisma error")),
-          },
-          userProfile: { upsert: vi.fn() },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: {
+          update: vi.fn().mockRejectedValue(new Error("Prisma error")),
+        },
+        userProfile: { upsert: vi.fn() },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { username: "newname" }, ctx: validCtx }),
-    ).rejects.toThrow("Prisma error");
+    await expect(handler({ input: { username: "newname" }, ctx: validCtx })).rejects.toThrow(
+      "Prisma error",
+    );
   });
 });
 
@@ -314,7 +308,11 @@ describe("exportData — GDPR data portability", () => {
     deletedAt: null,
     anonymizedAt: null,
     createdAt: new Date("2026-01-01"),
-    profile: { image: "https://example.com/avatar.png", displayName: "Test User", bio: "Hello world" },
+    profile: {
+      image: "https://example.com/avatar.png",
+      displayName: "Test User",
+      bio: "Hello world",
+    },
     social: { totalLikesReceived: 42, totalCallsMade: 10 },
     billing: { credits: 50 },
   };
@@ -322,13 +320,37 @@ describe("exportData — GDPR data portability", () => {
   it("should return complete export with all sections", async () => {
     mockDb.user.findUnique.mockResolvedValue(baseUser);
     mockDb.scenario.findMany.mockResolvedValue([
-      { id: "sc-1", title: "My Scenario", description: "Desc", visibility: "PUBLIC", moderationStatus: "APPROVED", playCount: 100, likeCount: 20, createdAt: new Date(), character: { name: "Char" } },
+      {
+        id: "sc-1",
+        title: "My Scenario",
+        description: "Desc",
+        visibility: "PUBLIC",
+        moderationStatus: "APPROVED",
+        playCount: 100,
+        likeCount: 20,
+        createdAt: new Date(),
+        character: { name: "Char" },
+      },
     ]);
     mockDb.call.findMany.mockResolvedValue([
-      { id: "call-1", phoneNumber: "+33612345678", status: "COMPLETED", durationSeconds: 120, costCredits: 5, createdAt: new Date(), endedAt: new Date() },
+      {
+        id: "call-1",
+        phoneNumber: "+33612345678",
+        status: "COMPLETED",
+        durationSeconds: 120,
+        costCredits: 5,
+        createdAt: new Date(),
+        endedAt: new Date(),
+      },
     ]);
     mockDb.comment.findMany.mockResolvedValue([
-      { id: "cmt-1", content: "Nice scenario!", moderationStatus: "APPROVED", createdAt: new Date(), scenario: { id: "sc-1", title: "My Scenario" } },
+      {
+        id: "cmt-1",
+        content: "Nice scenario!",
+        moderationStatus: "APPROVED",
+        createdAt: new Date(),
+        scenario: { id: "sc-1", title: "My Scenario" },
+      },
     ]);
     mockDb.purchase.findMany.mockResolvedValue([
       { id: "pch-1", creditsPurchased: 100, createdAt: new Date() },
@@ -373,7 +395,15 @@ describe("exportData — GDPR data portability", () => {
     mockDb.user.findUnique.mockResolvedValue(baseUser);
     mockDb.scenario.findMany.mockResolvedValue([]);
     mockDb.call.findMany.mockResolvedValue([
-      { id: "call-1", phoneNumber: "1234", status: "COMPLETED", durationSeconds: 60, costCredits: 3, createdAt: new Date(), endedAt: null },
+      {
+        id: "call-1",
+        phoneNumber: "1234",
+        status: "COMPLETED",
+        durationSeconds: 60,
+        costCredits: 3,
+        createdAt: new Date(),
+        endedAt: null,
+      },
     ]);
     mockDb.comment.findMany.mockResolvedValue([]);
     mockDb.purchase.findMany.mockResolvedValue([]);
@@ -413,9 +443,7 @@ describe("exportData — GDPR data portability", () => {
   it("should throw NOT_FOUND when user does not exist", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      handler({ input: {}, ctx: validCtx }),
-    ).rejects.toThrow(TRPCError);
+    await expect(handler({ input: {}, ctx: validCtx })).rejects.toThrow(TRPCError);
 
     try {
       await handler({ input: {}, ctx: validCtx });
@@ -445,18 +473,16 @@ describe("deleteMyAccount — GDPR account deletion (additional)", () => {
     handler = profileRouter.deleteMyAccount.handler;
 
     // Default: $transaction executes callback with mockTx
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          scenario: { updateMany: vi.fn() },
-          comment: { updateMany: vi.fn() },
-          call: { updateMany: vi.fn() },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        scenario: { updateMany: vi.fn() },
+        comment: { updateMany: vi.fn() },
+        call: { updateMany: vi.fn() },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
   });
 
   it("should be idempotent (double delete succeeds)", async () => {
@@ -479,22 +505,20 @@ describe("deleteMyAccount — GDPR account deletion (additional)", () => {
     const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
     (anonymizePersonalData as any).mockRejectedValueOnce(new Error("Anonymization failed"));
 
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-          scenario: { updateMany: vi.fn() },
-          comment: { updateMany: vi.fn() },
-          call: { updateMany: vi.fn() },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+        scenario: { updateMany: vi.fn() },
+        comment: { updateMany: vi.fn() },
+        call: { updateMany: vi.fn() },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
-    await expect(
-      handler({ input: { confirmation: "SUPPRIMER" }, ctx: validCtx }),
-    ).rejects.toThrow("Anonymization failed");
+    await expect(handler({ input: { confirmation: "SUPPRIMER" }, ctx: validCtx })).rejects.toThrow(
+      "Anonymization failed",
+    );
   });
 
   it("should not block deletion when user has active calls (unlike withdrawConsent)", async () => {
@@ -511,15 +535,13 @@ describe("deleteMyAccount — GDPR account deletion (additional)", () => {
   });
 
   it("should generate anonymized username in correct format", async () => {
-    mockDb.$transaction.mockImplementation(
-      async (cb: (tx: any) => Promise<unknown>) => {
-        const mockTx = {
-          user: { update: vi.fn().mockResolvedValue({}) },
-        };
-        await cb(mockTx);
-        return { success: true };
-      },
-    );
+    mockDb.$transaction.mockImplementation(async (cb: (tx: any) => Promise<unknown>) => {
+      const mockTx = {
+        user: { update: vi.fn().mockResolvedValue({}) },
+      };
+      await cb(mockTx);
+      return { success: true };
+    });
 
     await handler({
       input: { confirmation: "SUPPRIMER" },

@@ -16,9 +16,6 @@ export function getRequestId(): string {
   return asyncLocalStorage.getStore()?.requestId ?? "no-request-id";
 }
 
-export function runWithContext<T>(
-  context: RequestContext,
-  fn: () => Promise<T>,
-): Promise<T> {
+export function runWithContext<T>(context: RequestContext, fn: () => Promise<T>): Promise<T> {
   return asyncLocalStorage.run(context, fn);
 }

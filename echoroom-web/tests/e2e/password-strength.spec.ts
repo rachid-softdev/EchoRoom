@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("PasswordStrengthMeter component", () => {
   test.beforeEach(async ({ page }) => {
@@ -37,7 +37,9 @@ test.describe("PasswordStrengthMeter component", () => {
 
     // At minimum, the first bar should be filled (bg-destructive)
     // We verify by checking at least one bar has a non-muted background
-    const coloredBars = bars.locator('[class*="bg-destructive"], [class*="bg-orange-500"], [class*="bg-yellow-500"], [class*="bg-lime-500"], [class*="bg-green-500"]');
+    const coloredBars = bars.locator(
+      '[class*="bg-destructive"], [class*="bg-orange-500"], [class*="bg-yellow-500"], [class*="bg-lime-500"], [class*="bg-green-500"]',
+    );
     const coloredCount = await coloredBars.count();
     expect(coloredCount).toBeGreaterThanOrEqual(5);
 
@@ -85,7 +87,9 @@ test.describe("PasswordStrengthMeter component", () => {
     await passwordInput.fill("abc");
     const check8 = page.getByText("8 caractères minimum");
     // The check mark span before the text should be ✓ (green) or ✗ (destructive)
-    await expect(check8.locator("xpath=..").locator("span").first()).toHaveClass(/text-destructive/);
+    await expect(check8.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // 8 chars → check mark
     await passwordInput.fill("abcdefgh");
@@ -98,7 +102,9 @@ test.describe("PasswordStrengthMeter component", () => {
     // Less than 12 chars → no check
     await passwordInput.fill("abcdefgh");
     const check12 = page.getByText("12 caractères minimum");
-    await expect(check12.locator("xpath=..").locator("span").first()).toHaveClass(/text-destructive/);
+    await expect(check12.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // 12 chars → check mark
     await passwordInput.fill("abcdefghijkl");
@@ -111,11 +117,15 @@ test.describe("PasswordStrengthMeter component", () => {
     // No uppercase → ✗
     await passwordInput.fill("abcdefgh1");
     const upperCheck = page.getByText("Une lettre majuscule");
-    await expect(upperCheck.locator("xpath=..").locator("span").first()).toHaveClass(/text-destructive/);
+    await expect(upperCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // With uppercase → ✓
     await passwordInput.fill("Abcdefgh1");
-    await expect(upperCheck.locator("xpath=..").locator("span").first()).toHaveClass(/text-green-500/);
+    await expect(upperCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-green-500/,
+    );
   });
 
   test("shows check mark for digit", async ({ page }) => {
@@ -124,11 +134,15 @@ test.describe("PasswordStrengthMeter component", () => {
     // No digit → ✗
     await passwordInput.fill("abcdefgh");
     const digitCheck = page.getByText("Un chiffre");
-    await expect(digitCheck.locator("xpath=..").locator("span").first()).toHaveClass(/text-destructive/);
+    await expect(digitCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // With digit → ✓
     await passwordInput.fill("abcdefgh1");
-    await expect(digitCheck.locator("xpath=..").locator("span").first()).toHaveClass(/text-green-500/);
+    await expect(digitCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-green-500/,
+    );
   });
 
   test("shows check mark for special character", async ({ page }) => {
@@ -137,11 +151,15 @@ test.describe("PasswordStrengthMeter component", () => {
     // No special char → ✗
     await passwordInput.fill("Abcdefgh1");
     const specialCheck = page.getByText("Un caractère spécial");
-    await expect(specialCheck.locator("xpath=..").locator("span").first()).toHaveClass(/text-destructive/);
+    await expect(specialCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-destructive/,
+    );
 
     // With special char → ✓
     await passwordInput.fill("Abcdef1!@");
-    await expect(specialCheck.locator("xpath=..").locator("span").first()).toHaveClass(/text-green-500/);
+    await expect(specialCheck.locator("xpath=..").locator("span").first()).toHaveClass(
+      /text-green-500/,
+    );
   });
 
   test("shows cross for failed checks", async ({ page }) => {

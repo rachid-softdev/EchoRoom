@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 // ── Helpers ──
 
@@ -35,9 +35,7 @@ async function mockReplay(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -53,9 +51,7 @@ async function mockHistory(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -63,13 +59,10 @@ async function mockHistory(
 // ── Source analysis ──
 
 test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
-  const PLAYER_PATH = path.resolve(
-    __dirname,
-    "../../src/components/player/AudioPlayer.tsx",
-  );
+  const PLAYER_PATH = path.resolve(__dirname, "../../src/components/player/AudioPlayer.tsx");
 
   function readPlayerSource(): string {
-    return require("fs").readFileSync(PLAYER_PATH, "utf-8");
+    return require("node:fs").readFileSync(PLAYER_PATH, "utf-8");
   }
 
   test("source: useEffect has [recordingUrl] as dependency", () => {
@@ -95,7 +88,9 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
 
   // ── Mock E2E tests ──
 
-  test("mock: audio player shows loading state then empty state when switching between calls", async ({ page }) => {
+  test("mock: audio player shows loading state then empty state when switching between calls", async ({
+    page,
+  }) => {
     await mockSession(page);
 
     // First call: has a recording URL
@@ -140,7 +135,9 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
     expect(spinnerVisible || playVisible || emptyVisible).toBe(true);
   });
 
-  test("mock: changing from call with audio to call without audio shows empty state", async ({ page }) => {
+  test("mock: changing from call with audio to call without audio shows empty state", async ({
+    page,
+  }) => {
     await mockSession(page);
 
     // Step 1: Navigate to a call WITH recording URL
@@ -170,9 +167,7 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
 
     // The useEffect with [recordingUrl] should have reset the state,
     // so the component should render the empty state
-    await expect(
-      page.getByText("Aucun enregistrement disponible"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Aucun enregistrement disponible")).toBeVisible({ timeout: 10000 });
   });
 
   test("mock: switching between two different calls reloads audio", async ({ page }) => {
@@ -221,7 +216,9 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
     expect(secondCallUrl).toBeTruthy();
   });
 
-  test("mock: audio player shows loading indicator when switching to new recording URL", async ({ page }) => {
+  test("mock: audio player shows loading indicator when switching to new recording URL", async ({
+    page,
+  }) => {
     await mockSession(page);
 
     // First call
@@ -239,9 +236,7 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
     if (redirected) return;
 
     // Block the new audio URL so it stays in loading state
-    await page.route("https://audio.example.com/new-call.mp3", (route) =>
-      route.abort("timedout"),
-    );
+    await page.route("https://audio.example.com/new-call.mp3", (route) => route.abort("timedout"));
 
     // Switch to second call with different audio
     await mockReplay(page, {
@@ -255,15 +250,15 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
     // The loading state should be visible because:
     // 1. useEffect with [recordingUrl] resets isLoaded to false
     // 2. The audio URL is blocked so it never fires loadedmetadata
-    await expect(
-      page.getByText("Préparation de l'audio..."),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Préparation de l'audio...")).toBeVisible({ timeout: 10000 });
 
     // Loader2 spinner should be visible
     await expect(page.locator("svg.lucide-loader-2")).toBeVisible();
   });
 
-  test("mock: error from first call does not persist when switching to valid call", async ({ page }) => {
+  test("mock: error from first call does not persist when switching to valid call", async ({
+    page,
+  }) => {
     await mockSession(page);
 
     // Step 1: Navigate to a call with a FAILING audio URL
@@ -299,8 +294,6 @@ test.describe("P5 — AudioPlayer useEffect dependency fix", () => {
 
     // The useEffect with [recordingUrl] should have reset hasError to false,
     // so the error state should NOT be visible
-    await expect(
-      page.getByText("Chargement impossible"),
-    ).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Chargement impossible")).not.toBeVisible({ timeout: 5000 });
   });
 });

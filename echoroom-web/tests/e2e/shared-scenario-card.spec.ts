@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/ScenarioCard.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/ScenarioCard.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ScenarioCard — Composant Partagé", () => {
@@ -84,10 +81,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
     // Vérifie si le créateur est affiché
     const creatorText = cardLink.getByText(/^par\s+\S+/);
     const creatorExists = await creatorText.isVisible().catch(() => false);
-    test.skip(
-      !creatorExists,
-      "Creator non affiché (peut être undefined ou showCreator désactivé)",
-    );
+    test.skip(!creatorExists, "Creator non affiché (peut être undefined ou showCreator désactivé)");
     if (!creatorExists) return;
 
     await expect(creatorText).toBeVisible();
@@ -119,9 +113,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
     if (!exists) return;
 
     // Cherche le texte du play count dans la card
-    const playContainer = cardLink.locator(
-      "div.flex.items-center.gap-1.text-xs",
-    ).first();
+    const playContainer = cardLink.locator("div.flex.items-center.gap-1.text-xs").first();
     const playExists = await playContainer.isVisible().catch(() => false);
     test.skip(!playExists, "playCount non affiché");
     if (!playExists) return;
@@ -156,10 +148,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
       .first()
       .isVisible()
       .catch(() => false);
-    test.skip(
-      !shareExists,
-      "Bouton Share non visible — pas de scénario à la une avec showShare",
-    );
+    test.skip(!shareExists, "Bouton Share non visible — pas de scénario à la une avec showShare");
     if (!shareExists) return;
 
     await expect(shareButton.first()).toBeVisible();
@@ -205,9 +194,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
     expect(source).toContain("group-hover:text-primary transition-colors");
   });
 
-  test("hover — live: le titre change de couleur au survol", async ({
-    page,
-  }) => {
+  test("hover — live: le titre change de couleur au survol", async ({ page }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -242,9 +229,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
     expect(source).toContain("rounded-xl");
   });
 
-  test("focus-visible — live: le lien a les classes de focus ring", async ({
-    page,
-  }) => {
+  test("focus-visible — live: le lien a les classes de focus ring", async ({ page }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -276,9 +261,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
 
   test("playCount n'est pas rendu quand il est undefined", () => {
     const source = readComponent();
-    expect(source).toContain(
-      "{scenario.playCount !== undefined && (",
-    );
+    expect(source).toContain("{scenario.playCount !== undefined && (");
   });
 
   test("les icônes Heart, MessageCircle, Play, Share2 sont importées", () => {
@@ -291,6 +274,7 @@ test.describe("ScenarioCard — Composant Partagé", () => {
 
   test("le lien par défaut est /scenario/{id}", () => {
     const source = readComponent();
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: intentionally checking source for template literal
     expect(source).toContain("href = `/scenario/${scenario.id}`");
   });
 });

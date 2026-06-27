@@ -1,8 +1,10 @@
-import type { PrismaClient, Call, $Enums } from "@prisma/client";
+import type { $Enums, Call, PrismaClient } from "@prisma/client";
 
 export interface ICallRepository {
   findById(id: string): Promise<Call | null>;
-  findWithDetails(id: string): Promise<Pick<Call, "id" | "userId" | "costCredits" | "status"> | null>;
+  findWithDetails(
+    id: string,
+  ): Promise<Pick<Call, "id" | "userId" | "costCredits" | "status"> | null>;
   updateStatusWithGuard(
     id: string,
     currentStatus: $Enums.CallStatus,
@@ -27,7 +29,9 @@ export class PrismaCallRepository implements ICallRepository {
     return this.db.call.findUnique({ where: { id } });
   }
 
-  async findWithDetails(id: string): Promise<Pick<Call, "id" | "userId" | "costCredits" | "status"> | null> {
+  async findWithDetails(
+    id: string,
+  ): Promise<Pick<Call, "id" | "userId" | "costCredits" | "status"> | null> {
     return this.db.call.findUnique({
       where: { id },
       select: { id: true, userId: true, costCredits: true, status: true },

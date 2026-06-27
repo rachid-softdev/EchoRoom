@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/app/admin/reports/ReportsPageClient.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/app/admin/reports/ReportsPageClient.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("Admin Reports page", () => {
@@ -64,7 +61,7 @@ test.describe("Admin Reports page", () => {
 
   test("dismiss button disabled when mutation is pending", () => {
     const source = readComponent();
-    expect(source).toContain('disabled={dismissMutation.isPending}');
+    expect(source).toContain("disabled={dismissMutation.isPending}");
   });
 
   test("uses admin.getAbuseReports query", () => {
@@ -117,10 +114,7 @@ async function mockAdminSession(page: import("@playwright/test").Page) {
 /**
  * Construit une réponse tRPC paginée pour admin.getAbuseReports
  */
-function buildReportsResponse(
-  items: Array<Record<string, unknown>>,
-  nextCursor: string | null,
-) {
+function buildReportsResponse(items: Array<Record<string, unknown>>, nextCursor: string | null) {
   return JSON.stringify([
     {
       result: {
@@ -135,10 +129,7 @@ function buildReportsResponse(
 /**
  * Génère N signalements factices
  */
-function generateReports(
-  count: number,
-  startIndex: number = 0,
-): Array<Record<string, unknown>> {
+function generateReports(count: number, startIndex: number = 0): Array<Record<string, unknown>> {
   return Array.from({ length: count }, (_, i) => ({
     id: `report-${startIndex + i}`,
     targetType: "COMMENT",

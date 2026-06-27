@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 /**
  * Test that all CharacterCategory enum values from the Prisma schema
@@ -35,15 +35,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 describe("ScenarioCard — CATEGORY_LABELS coverage", () => {
-  it.each(ALL_CATEGORIES)(
-    'should have a label for CharacterCategory "%s"',
-    (category) => {
-      expect(CATEGORY_LABELS).toHaveProperty(category);
-      const label = CATEGORY_LABELS[category];
-      expect(label).toBeDefined();
-      expect(label!.length).toBeGreaterThan(0);
-    },
-  );
+  it.each(ALL_CATEGORIES)('should have a label for CharacterCategory "%s"', (category) => {
+    expect(CATEGORY_LABELS).toHaveProperty(category);
+    const label = CATEGORY_LABELS[category];
+    expect(label).toBeDefined();
+    expect(label!.length).toBeGreaterThan(0);
+  });
 
   it("should return a human-readable label for each category (no raw uppercase enum names except acronyms)", () => {
     for (const category of ALL_CATEGORIES) {

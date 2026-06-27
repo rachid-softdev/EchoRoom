@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Clips Service Tests
@@ -175,8 +175,30 @@ describe("getClips", () => {
 
   it("should return clips with presigned URLs", async () => {
     const clips = [
-      { id: "clip-1", clipUrl: "r2://audio/clip1.mp3", startTime: 0, endTime: 10, userId: "user-1", callId: "call-1", title: "Clip 1", status: "READY", createdAt: new Date(), updatedAt: new Date() },
-      { id: "clip-2", clipUrl: "r2://audio/clip2.mp3", startTime: 5, endTime: 15, userId: "user-1", callId: "call-1", title: "Clip 2", status: "READY", createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: "clip-1",
+        clipUrl: "r2://audio/clip1.mp3",
+        startTime: 0,
+        endTime: 10,
+        userId: "user-1",
+        callId: "call-1",
+        title: "Clip 1",
+        status: "READY",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "clip-2",
+        clipUrl: "r2://audio/clip2.mp3",
+        startTime: 5,
+        endTime: 15,
+        userId: "user-1",
+        callId: "call-1",
+        title: "Clip 2",
+        status: "READY",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ];
     mockClipRepository.findByCallId.mockResolvedValue(clips);
     mockGetPresignedUrl
@@ -187,15 +209,26 @@ describe("getClips", () => {
     const result = await getClips("call-1");
 
     expect(result).toHaveLength(2);
-    expect(result[0].clipUrl).toBe("https://signed.url/clip1.mp3");
-    expect(result[1].clipUrl).toBe("https://signed.url/clip2.mp3");
+    expect(result[0]!.clipUrl).toBe("https://signed.url/clip1.mp3");
+    expect(result[1]!.clipUrl).toBe("https://signed.url/clip2.mp3");
     expect(mockClipRepository.findByCallId).toHaveBeenCalledWith("call-1");
     expect(mockGetPresignedUrl).toHaveBeenCalledTimes(2);
   });
 
   it("should return null for clipUrl when clip.clipUrl is null", async () => {
     const clips = [
-      { id: "clip-3", clipUrl: null, startTime: 0, endTime: 5, userId: "user-1", callId: "call-1", title: "Clip 3", status: "PROCESSING", createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: "clip-3",
+        clipUrl: null,
+        startTime: 0,
+        endTime: 5,
+        userId: "user-1",
+        callId: "call-1",
+        title: "Clip 3",
+        status: "PROCESSING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ];
     mockClipRepository.findByCallId.mockResolvedValue(clips);
 
@@ -203,7 +236,7 @@ describe("getClips", () => {
     const result = await getClips("call-1");
 
     expect(result).toHaveLength(1);
-    expect(result[0].clipUrl).toBeNull();
+    expect(result[0]!.clipUrl).toBeNull();
     // getPresignedUrl should NOT be called for null clipUrl
     expect(mockGetPresignedUrl).not.toHaveBeenCalled();
   });
@@ -236,13 +269,13 @@ describe("getClips", () => {
     const { getClips } = await import("../clips");
     const result = await getClips("call-1");
 
-    expect(result[0].id).toBe("clip-4");
-    expect(result[0].startTime).toBe(2);
-    expect(result[0].endTime).toBe(8);
-    expect(result[0].userId).toBe("user-1");
-    expect(result[0].callId).toBe("call-1");
-    expect(result[0].title).toBe("My Clip");
-    expect(result[0].status).toBe("READY");
+    expect(result[0]!.id).toBe("clip-4");
+    expect(result[0]!.startTime).toBe(2);
+    expect(result[0]!.endTime).toBe(8);
+    expect(result[0]!.userId).toBe("user-1");
+    expect(result[0]!.callId).toBe("call-1");
+    expect(result[0]!.title).toBe("My Clip");
+    expect(result[0]!.status).toBe("READY");
   });
 });
 

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock tRPC
 vi.mock("@/lib/trpc", () => ({
@@ -37,8 +37,8 @@ vi.mock("lucide-react", () => ({
   RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
 }));
 
-import { api } from "@/lib/trpc";
 import { toast } from "@/components/ui";
+import { api } from "@/lib/trpc";
 import BlockedNumbersPageClient from "../BlockedNumbersPageClient";
 
 afterEach(() => {
@@ -46,15 +46,9 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-const mockBlockedQuery = api.admin.getBlockedNumbers.useQuery as ReturnType<
-  typeof vi.fn
->;
-const mockBlockMutation = api.admin.blockNumber.useMutation as ReturnType<
-  typeof vi.fn
->;
-const mockUnblockMutation = api.admin.unblockNumber.useMutation as ReturnType<
-  typeof vi.fn
->;
+const mockBlockedQuery = api.admin.getBlockedNumbers.useQuery as ReturnType<typeof vi.fn>;
+const mockBlockMutation = api.admin.blockNumber.useMutation as ReturnType<typeof vi.fn>;
+const mockUnblockMutation = api.admin.unblockNumber.useMutation as ReturnType<typeof vi.fn>;
 
 const sampleBlockedEntry = {
   id: "b-1",
@@ -141,9 +135,7 @@ describe("BlockedNumbersPageClient", () => {
 
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
     expect(screen.getByText("Erreur de chargement")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Réessayer/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Réessayer/i })).toBeInTheDocument();
   });
 
   it("should call refetch when retry is clicked", () => {
@@ -171,9 +163,7 @@ describe("BlockedNumbersPageClient", () => {
 
     render(<BlockedNumbersPageClient />);
 
-    expect(
-      screen.getByText("Aucun numéro bloqué pour le moment."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucun numéro bloqué pour le moment.")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -188,9 +178,7 @@ describe("BlockedNumbersPageClient", () => {
     // "Numéros bloqués" appears both as <h1> title and <h3> list heading
     const headings = screen.getAllByText("Numéros bloqués");
     expect(headings.length).toBeGreaterThanOrEqual(1);
-    expect(
-      screen.getByText("Gérez la liste des numéros de téléphone bloqués"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Gérez la liste des numéros de téléphone bloqués")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -202,12 +190,8 @@ describe("BlockedNumbersPageClient", () => {
 
     render(<BlockedNumbersPageClient />);
 
-    expect(
-      screen.getByRole("heading", { name: "Bloquer un numéro" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Ajoutez un numéro à la liste de blocage"),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bloquer un numéro" })).toBeInTheDocument();
+    expect(screen.getByText("Ajoutez un numéro à la liste de blocage")).toBeInTheDocument();
   });
 
   it("should render phone number and reason inputs", () => {
@@ -215,12 +199,8 @@ describe("BlockedNumbersPageClient", () => {
 
     render(<BlockedNumbersPageClient />);
 
-    expect(
-      screen.getByPlaceholderText("+33612345678"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText("Motif (optionnel)"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("+33612345678")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Motif (optionnel)")).toBeInTheDocument();
   });
 
   it("should render the block button", () => {
@@ -410,9 +390,7 @@ describe("BlockedNumbersPageClient", () => {
   });
 
   it("should render blocked numbers without reason", () => {
-    mockBlockedQuery.mockReturnValue(
-      buildQueryMock([sampleBlockedEntryNoReason]),
-    );
+    mockBlockedQuery.mockReturnValue(buildQueryMock([sampleBlockedEntryNoReason]));
 
     render(<BlockedNumbersPageClient />);
 
@@ -428,9 +406,7 @@ describe("BlockedNumbersPageClient", () => {
   });
 
   it("should render 'inconnu' when blockedBy is null", () => {
-    mockBlockedQuery.mockReturnValue(
-      buildQueryMock([sampleBlockedEntryNoBlocker]),
-    );
+    mockBlockedQuery.mockReturnValue(buildQueryMock([sampleBlockedEntryNoBlocker]));
 
     render(<BlockedNumbersPageClient />);
 
@@ -456,9 +432,7 @@ describe("BlockedNumbersPageClient", () => {
 
     render(<BlockedNumbersPageClient />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Débloquer/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Débloquer/i }));
 
     expect(mutate).toHaveBeenCalledWith({ id: "b-1" });
   });
@@ -472,9 +446,7 @@ describe("BlockedNumbersPageClient", () => {
 
     render(<BlockedNumbersPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: /Débloquer/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Débloquer/i })).toBeDisabled();
   });
 
   it("should show success toast and refetch on successful unblock", () => {

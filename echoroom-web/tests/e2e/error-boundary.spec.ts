@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Error boundary and 404 pages", () => {
   test("should show the Frown icon on the 404 page", async ({ page }) => {
@@ -14,9 +14,7 @@ test.describe("Error boundary and 404 pages", () => {
     await page.goto("/non-existent-route", {
       waitUntil: "networkidle",
     });
-    await expect(
-      page.getByText(/n'existe pas|déplacée/),
-    ).toBeVisible();
+    await expect(page.getByText(/n'existe pas|déplacée/)).toBeVisible();
   });
 
   test.describe("Runtime error page", () => {
@@ -62,7 +60,9 @@ test.describe("Error boundary and 404 pages", () => {
       });
     });
 
-    test("should display the error page with 'Une erreur est survenue' heading", async ({ page }) => {
+    test("should display the error page with 'Une erreur est survenue' heading", async ({
+      page,
+    }) => {
       await page.goto("/__test-error-boundary", {
         waitUntil: "networkidle",
       });
@@ -73,12 +73,12 @@ test.describe("Error boundary and 404 pages", () => {
       await page.goto("/__test-error-boundary", {
         waitUntil: "networkidle",
       });
-      await expect(
-        page.getByRole("button", { name: "Réessayer" }),
-      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Réessayer" })).toBeVisible();
     });
 
-    test("should display a copy button for the error digest on the error page", async ({ page }) => {
+    test("should display a copy button for the error digest on the error page", async ({
+      page,
+    }) => {
       await page.goto("/__test-error-boundary", {
         waitUntil: "networkidle",
       });
@@ -99,9 +99,7 @@ test.describe("Error boundary and 404 pages", () => {
   test("should have valid HTML structure on the landing page", async ({ page }) => {
     await page.goto("/");
     // Check that the html element has the correct lang attribute
-    const htmlLang = await page.evaluate(() =>
-      document.documentElement.getAttribute("lang"),
-    );
+    const htmlLang = await page.evaluate(() => document.documentElement.getAttribute("lang"));
     expect(htmlLang).toBe("fr");
 
     // Check that the page has a meaningful title

@@ -1,5 +1,5 @@
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
-import { randomBytes } from "crypto";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -90,7 +90,7 @@ function loadEnv(): EnvType {
       if (devDefault && value === devDefault) {
         throw new Error(
           `${label} is still set to the development default value. ` +
-          "Set a unique production value before deploying.",
+            "Set a unique production value before deploying.",
         );
       }
     }
@@ -115,7 +115,7 @@ function loadEnv(): EnvType {
     if (key === "NEXTAUTH_SECRET" && !envValue) {
       const generated = randomBytes(32).toString("hex");
       console.warn("⚠️  NEXTAUTH_SECRET not set — generating random key for this session");
-      process.env[key] = generated;  // Also set on process.env so NextAuth can find it
+      process.env[key] = generated; // Also set on process.env so NextAuth can find it
       merged[key] = generated;
     } else {
       merged[key] = (envValue as string) ?? DEV_DEFAULTS[key] ?? "";

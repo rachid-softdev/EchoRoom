@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Conversation Engine Tests — generateResponse, generateScript
@@ -23,9 +23,6 @@ vi.mock("@/server/lib/circuitBreaker", () => ({
   })),
   CircuitBreakerOpenError: class extends Error {
     override name = "CircuitBreakerOpenError";
-    constructor(message: string) {
-      super(message);
-    }
   },
 }));
 
@@ -145,9 +142,7 @@ describe("generateResponse", () => {
       messages: [{ role: "user", content: "Hello" }],
     });
 
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ max_tokens: 300 }),
-    );
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ max_tokens: 300 }));
   });
 
   // -----------------------------------------------------------------------
@@ -155,7 +150,7 @@ describe("generateResponse", () => {
   // -----------------------------------------------------------------------
 
   it("should return 'Désolé, le moteur de conversation n'est pas disponible' when OpenAI is null", async () => {
-    mockGetOpenAIClient.mockReturnValue(null);
+    mockGetOpenAIClient.mockReturnValue(null as any);
 
     const { generateResponse } = await import("../conversationEngine");
     const result = await generateResponse({
@@ -176,9 +171,7 @@ describe("generateResponse", () => {
 
   it("should propagate CircuitBreakerOpenError when circuit is open", async () => {
     const { CircuitBreakerOpenError } = await import("@/server/lib/circuitBreaker");
-    mockCBCall.mockRejectedValue(
-      new CircuitBreakerOpenError("OpenAI temporairement indisponible"),
-    );
+    mockCBCall.mockRejectedValue(new CircuitBreakerOpenError("OpenAI temporairement indisponible"));
 
     const { generateResponse } = await import("../conversationEngine");
     await expect(
@@ -230,9 +223,7 @@ describe("generateResponse", () => {
   // -----------------------------------------------------------------------
 
   it("should call moderateOutput on the response", async () => {
-    mockCreate.mockResolvedValue(
-      makeCompletionResponse({ content: "Some AI response" }),
-    );
+    mockCreate.mockResolvedValue(makeCompletionResponse({ content: "Some AI response" }));
 
     const { generateResponse } = await import("../conversationEngine");
     await generateResponse({
@@ -244,9 +235,7 @@ describe("generateResponse", () => {
   });
 
   it("should set wasModerated=true when moderateOutput modifies the response", async () => {
-    mockCreate.mockResolvedValue(
-      makeCompletionResponse({ content: "Contenu inapproprié" }),
-    );
+    mockCreate.mockResolvedValue(makeCompletionResponse({ content: "Contenu inapproprié" }));
     mockModerateOutput.mockResolvedValue(
       "Je suis désolé, je n'ai pas pu générer une réponse appropriée.",
     );
@@ -258,9 +247,7 @@ describe("generateResponse", () => {
     });
 
     expect(result.wasModerated).toBe(true);
-    expect(result.response).toBe(
-      "Je suis désolé, je n'ai pas pu générer une réponse appropriée.",
-    );
+    expect(result.response).toBe("Je suis désolé, je n'ai pas pu générer une réponse appropriée.");
   });
 
   // -----------------------------------------------------------------------
@@ -402,21 +389,16 @@ describe("generateScript", () => {
   });
 
   it("should return 'Moteur IA indisponible.' when OpenAI is null", async () => {
-    mockGetOpenAIClient.mockReturnValue(null);
+    mockGetOpenAIClient.mockReturnValue(null as any);
 
     const { generateScript } = await import("../conversationEngine");
-    const result = await generateScript(
-      "Tu es un assistant.",
-      "Parle-moi",
-    );
+    const result = await generateScript("Tu es un assistant.", "Parle-moi");
 
     expect(result).toBe("Moteur IA indisponible.");
   });
 
   it("should call moderateOutput on the generated response", async () => {
-    mockCreate.mockResolvedValue(
-      makeCompletionResponse({ content: "Réponse scriptée" }),
-    );
+    mockCreate.mockResolvedValue(makeCompletionResponse({ content: "Réponse scriptée" }));
 
     const { generateScript } = await import("../conversationEngine");
     await generateScript("Personnalité amicale", "Salut!");
@@ -428,10 +410,7 @@ describe("generateScript", () => {
     mockCreate.mockResolvedValue({ choices: [], usage: {} });
 
     const { generateScript } = await import("../conversationEngine");
-    const result = await generateScript(
-      "Personnalité triste",
-      "Ça va?",
-    );
+    const result = await generateScript("Personnalité triste", "Ça va?");
 
     expect(result).toBe("...");
   });

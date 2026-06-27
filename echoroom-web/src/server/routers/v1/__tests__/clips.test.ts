@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // clipsV1Router tests
@@ -136,9 +136,7 @@ describe("clipsV1Router.listByCall", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).listByCall.handler;
 
-    await expect(
-      handler({ input: { callId: "call-1" }, ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ input: { callId: "call-1" }, ctx: validCtx })).rejects.toMatchObject({
       code: "FORBIDDEN",
       message: "Accès refusé",
     });
@@ -148,9 +146,7 @@ describe("clipsV1Router.listByCall", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).listByCall.handler;
 
-    await expect(
-      handler({ input: { callId: "" }, ctx: validCtx }),
-    ).rejects.toThrow();
+    await expect(handler({ input: { callId: "" }, ctx: validCtx })).rejects.toThrow();
   });
 });
 
@@ -164,9 +160,21 @@ describe("clipsV1Router.listByUser", () => {
 
   it("should return paginated clips owned by the user", async () => {
     const mockClips = [
-      { id: "clip-3", createdAt: new Date("2026-06-03"), call: { scenario: { id: "s-1", title: "S1" } } },
-      { id: "clip-2", createdAt: new Date("2026-06-02"), call: { scenario: { id: "s-2", title: "S2" } } },
-      { id: "clip-1", createdAt: new Date("2026-06-01"), call: { scenario: { id: "s-3", title: "S3" } } },
+      {
+        id: "clip-3",
+        createdAt: new Date("2026-06-03"),
+        call: { scenario: { id: "s-1", title: "S1" } },
+      },
+      {
+        id: "clip-2",
+        createdAt: new Date("2026-06-02"),
+        call: { scenario: { id: "s-2", title: "S2" } },
+      },
+      {
+        id: "clip-1",
+        createdAt: new Date("2026-06-01"),
+        call: { scenario: { id: "s-3", title: "S3" } },
+      },
     ];
     mockDb.clip.findMany.mockResolvedValue(mockClips);
 
@@ -319,9 +327,9 @@ describe("clipsV1Router.create", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).create.handler;
 
-    await expect(
-      handler({ input: validInput, ctx: validCtx }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(handler({ input: validInput, ctx: validCtx })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 
   it("should map FORBIDDEN AppError to TRPCError FORBIDDEN", async () => {
@@ -331,9 +339,9 @@ describe("clipsV1Router.create", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).create.handler;
 
-    await expect(
-      handler({ input: validInput, ctx: validCtx }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(handler({ input: validInput, ctx: validCtx })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("should map unknown AppError to INTERNAL_SERVER_ERROR", async () => {
@@ -343,9 +351,9 @@ describe("clipsV1Router.create", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).create.handler;
 
-    await expect(
-      handler({ input: validInput, ctx: validCtx }),
-    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    await expect(handler({ input: validInput, ctx: validCtx })).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+    });
   });
 
   it("should re-throw non-AppError errors", async () => {
@@ -354,9 +362,7 @@ describe("clipsV1Router.create", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).create.handler;
 
-    await expect(
-      handler({ input: validInput, ctx: validCtx }),
-    ).rejects.toThrow("Database error");
+    await expect(handler({ input: validInput, ctx: validCtx })).rejects.toThrow("Database error");
   });
 
   it("should reject endTime equal to startTime (Zod refine)", async () => {
@@ -435,9 +441,9 @@ describe("clipsV1Router.delete", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).delete.handler;
 
-    await expect(
-      handler({ input: { clipId: "clip-other" }, ctx: validCtx }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(handler({ input: { clipId: "clip-other" }, ctx: validCtx })).rejects.toMatchObject(
+      { code: "FORBIDDEN" },
+    );
   });
 
   it("should map unknown AppError to INTERNAL_SERVER_ERROR", async () => {
@@ -447,9 +453,9 @@ describe("clipsV1Router.delete", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).delete.handler;
 
-    await expect(
-      handler({ input: { clipId: "clip-1" }, ctx: validCtx }),
-    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    await expect(handler({ input: { clipId: "clip-1" }, ctx: validCtx })).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+    });
   });
 
   it("should re-throw non-AppError errors", async () => {
@@ -458,17 +464,15 @@ describe("clipsV1Router.delete", () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).delete.handler;
 
-    await expect(
-      handler({ input: { clipId: "clip-1" }, ctx: validCtx }),
-    ).rejects.toThrow("Unexpected error");
+    await expect(handler({ input: { clipId: "clip-1" }, ctx: validCtx })).rejects.toThrow(
+      "Unexpected error",
+    );
   });
 
   it("should reject empty clipId (Zod)", async () => {
     const { clipsV1Router } = await import("../clips");
     const handler = (clipsV1Router as any).delete.handler;
 
-    await expect(
-      handler({ input: { clipId: "" }, ctx: validCtx }),
-    ).rejects.toThrow();
+    await expect(handler({ input: { clipId: "" }, ctx: validCtx })).rejects.toThrow();
   });
 });

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next-auth
 vi.mock("next-auth/react", () => ({
@@ -35,7 +35,11 @@ vi.mock("next/navigation", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock MarketingNav
@@ -52,22 +56,50 @@ vi.mock("lucide-react", () => ({
 // Mock @/components/ui (Badge, Button, Card, etc.)
 vi.mock("@/components/ui", () => ({
   Badge: ({ children, variant, className, ...props }: any) => (
-    <span data-variant={variant} className={className} {...props}>{children}</span>
+    <span data-variant={variant} className={className} {...props}>
+      {children}
+    </span>
   ),
   Button: ({ children, onClick, variant, className, disabled, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} className={className} disabled={disabled} {...props}>{children}</button>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      className={className}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
   ),
-  Card: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardContent: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardDescription: ({ children, className, ...props }: any) => <p className={className} {...props}>{children}</p>,
-  CardHeader: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardTitle: ({ children, className, ...props }: any) => <h2 className={className} {...props}>{children}</h2>,
+  Card: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardContent: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardDescription: ({ children, className, ...props }: any) => (
+    <p className={className} {...props}>
+      {children}
+    </p>
+  ),
+  CardHeader: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardTitle: ({ children, className, ...props }: any) => (
+    <h2 className={className} {...props}>
+      {children}
+    </h2>
+  ),
 }));
 
 import { useSession } from "next-auth/react";
 import PricingPage from "../page";
-
-const PRICING_PLANS = ["Gratuit", "Starter", "Pro"];
 
 describe("PricingPage", () => {
   afterEach(() => {

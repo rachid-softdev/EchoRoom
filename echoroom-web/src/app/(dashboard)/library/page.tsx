@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
-import { Button, Input } from "@/components/ui";
 import { Library as LibraryIcon, Plus, Search, X } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { PaginatedGrid } from "@/components/shared/PaginatedGrid";
-import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
+import { PaginatedGrid } from "@/components/shared/PaginatedGrid";
+import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard";
+import { Button, Input } from "@/components/ui";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
 import { api } from "@/lib/trpc";
 
@@ -61,6 +61,7 @@ export default function LibraryPage() {
         />
         {hasSearch && (
           <button
+            type="button"
             onClick={() => setSearch("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Effacer la recherche"
@@ -113,7 +114,10 @@ export default function LibraryPage() {
               onLoadMore={paginated.loadMore}
             >
               {filteredItems.map((scenario) => (
-                <ScenarioCard key={(scenario as ScenarioCardData).id} scenario={scenario as ScenarioCardData} />
+                <ScenarioCard
+                  key={(scenario as ScenarioCardData).id}
+                  scenario={scenario as ScenarioCardData}
+                />
               ))}
             </PaginatedGrid>
           );

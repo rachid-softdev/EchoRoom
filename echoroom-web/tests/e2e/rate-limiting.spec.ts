@@ -1,7 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Rate limiting — webhook API protection", () => {
-  test("should return 429 after exceeding the rate limit on the status webhook", async ({ page }) => {
+  test("should return 429 after exceeding the rate limit on the status webhook", async ({
+    page,
+  }) => {
     // The Twilio status webhook rate limit is 60 req/min (global, not per IP).
     // Send enough requests to exhaust it — even without valid signatures,
     // the rate limiter runs BEFORE the signature check in wrapTwilioWebhook.
@@ -70,7 +72,9 @@ test.describe("Rate limiting — webhook API protection", () => {
     expect(response.status()).not.toBe(429);
   });
 
-  test("should not expose internal error details in rate limited response body", async ({ page }) => {
+  test("should not expose internal error details in rate limited response body", async ({
+    page,
+  }) => {
     const requests = Array.from({ length: 70 }, (_, i) =>
       page.request.post("/api/webhooks/twilio", {
         form: {

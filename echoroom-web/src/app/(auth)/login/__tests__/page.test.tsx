@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next-auth
 vi.mock("next-auth/react", () => ({
@@ -16,7 +16,11 @@ vi.mock("next/navigation", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock lucide-react icons
@@ -34,18 +38,47 @@ vi.mock("@/components/layout/MarketingNav", () => ({
 // Mock @/components/ui
 vi.mock("@/components/ui", () => ({
   Button: ({ children, onClick, variant, className, disabled, type, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} className={className} disabled={disabled} type={type} {...props}>{children}</button>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      className={className}
+      disabled={disabled}
+      type={type}
+      {...props}
+    >
+      {children}
+    </button>
   ),
   Input: (props: any) => <input {...props} />,
-  Card: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardContent: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardDescription: ({ children, className, ...props }: any) => <p className={className} {...props}>{children}</p>,
-  CardHeader: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-  CardTitle: ({ children, className, ...props }: any) => <h2 className={className} {...props}>{children}</h2>,
+  Card: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardContent: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardDescription: ({ children, className, ...props }: any) => (
+    <p className={className} {...props}>
+      {children}
+    </p>
+  ),
+  CardHeader: ({ children, className, ...props }: any) => (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  ),
+  CardTitle: ({ children, className, ...props }: any) => (
+    <h2 className={className} {...props}>
+      {children}
+    </h2>
+  ),
 }));
 
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import LoginPage from "../page";
 
 describe("LoginPage", () => {
@@ -66,18 +99,13 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     // Use placeholder to avoid ambiguity with show/hide password button aria-label
     expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /se connecter/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /se connecter/i })).toBeInTheDocument();
   });
 
   it("shows register and forgot password links", () => {
     render(<LoginPage />);
 
-    expect(screen.getByRole("link", { name: /s'inscrire/i })).toHaveAttribute(
-      "href",
-      "/register",
-    );
+    expect(screen.getByRole("link", { name: /s'inscrire/i })).toHaveAttribute("href", "/register");
   });
 
   it("calls signIn with credentials on submit", async () => {
@@ -111,9 +139,7 @@ describe("LoginPage", () => {
     await user.type(screen.getByPlaceholderText("••••••••"), "wrong");
     await user.click(screen.getByRole("button", { name: /se connecter/i }));
 
-    expect(
-      await screen.findByText(/email ou mot de passe incorrect/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/email ou mot de passe incorrect/i)).toBeInTheDocument();
   });
 
   it("navigates to dashboard on success", async () => {

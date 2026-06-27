@@ -1,19 +1,20 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper to mock the tRPC calls.replay endpoint.
  */
-async function mockReplay(page: import("@playwright/test").Page, data: {
-  recordingUrl: string | null;
-  transcript: unknown;
-}) {
+async function mockReplay(
+  page: import("@playwright/test").Page,
+  data: {
+    recordingUrl: string | null;
+    transcript: unknown;
+  },
+) {
   await page.route("**/api/trpc/calls.replay*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -29,9 +30,7 @@ async function mockHistory(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -105,9 +104,7 @@ test.describe("TranscriptView component", () => {
     if (redirected) return;
 
     // Processing message
-    await expect(
-      page.getByText("Transcript en cours de traitement…"),
-    ).toBeVisible();
+    await expect(page.getByText("Transcript en cours de traitement…")).toBeVisible();
 
     // MessageSquare icon
     await expect(page.locator("svg.lucide-message-square")).toBeVisible();
@@ -125,9 +122,7 @@ test.describe("TranscriptView component", () => {
     test.skip(redirected, "Requires authentication");
     if (redirected) return;
 
-    await expect(
-      page.getByText("Aucune transcription disponible"),
-    ).toBeVisible();
+    await expect(page.getByText("Aucune transcription disponible")).toBeVisible();
 
     // MessageSquare icon
     await expect(page.locator("svg.lucide-message-square")).toBeVisible();
@@ -143,14 +138,10 @@ test.describe("TranscriptView component", () => {
     test.skip(redirected, "Requires authentication");
     if (redirected) return;
 
-    await expect(
-      page.getByText("Aucune transcription disponible"),
-    ).not.toBeVisible();
+    await expect(page.getByText("Aucune transcription disponible")).not.toBeVisible();
 
     // null transcript shows the "processing" message instead
-    await expect(
-      page.getByText("Transcript en cours de traitement…"),
-    ).toBeVisible();
+    await expect(page.getByText("Transcript en cours de traitement…")).toBeVisible();
   });
 
   // ─── Loaded transcript with AI and user messages ──────────────────
@@ -174,13 +165,9 @@ test.describe("TranscriptView component", () => {
     if (redirected) return;
 
     // Each message text should be visible
-    await expect(
-      page.getByText("Bonjour, comment allez-vous ?"),
-    ).toBeVisible();
+    await expect(page.getByText("Bonjour, comment allez-vous ?")).toBeVisible();
     await expect(page.getByText("Très bien, merci !")).toBeVisible();
-    await expect(
-      page.getByText("Parfait, commençons l'exercice."),
-    ).toBeVisible();
+    await expect(page.getByText("Parfait, commençons l'exercice.")).toBeVisible();
   });
 
   // ─── AI vs User alignment ─────────────────────────────────────────
@@ -223,9 +210,7 @@ test.describe("TranscriptView component", () => {
   // ─── AI avatar ────────────────────────────────────────────────────
 
   test("shows IA text in avatar circle for AI messages", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Salut l'utilisateur !" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Salut l'utilisateur !" }];
     await mockReplay(page, {
       recordingUrl: null,
       transcript,
@@ -268,9 +253,7 @@ test.describe("TranscriptView component", () => {
   // ─── Timestamp ────────────────────────────────────────────────────
 
   test("displays timestamp when chunk has timestamp", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Bonjour", timestamp: 65 },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bonjour", timestamp: 65 }];
     await mockReplay(page, {
       recordingUrl: null,
       transcript,
@@ -288,9 +271,7 @@ test.describe("TranscriptView component", () => {
   });
 
   test("does not show timestamp when timestamp is undefined", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Bonjour" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bonjour" }];
     await mockReplay(page, {
       recordingUrl: null,
       transcript,
@@ -304,17 +285,13 @@ test.describe("TranscriptView component", () => {
     if (redirected) return;
 
     // No mm:ss pattern should appear in the transcript area
-    await expect(
-      page.locator("text=/^\\d+:\\d{2}$/"),
-    ).toHaveCount(0);
+    await expect(page.locator("text=/^\\d+:\\d{2}$/")).toHaveCount(0);
   });
 
   // ─── Scenario name ────────────────────────────────────────────────
 
   test("shows scenario name as AI label when scenarioName is provided", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Bienvenue dans la simulation" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bienvenue dans la simulation" }];
     // Provide history with a matching scenario title
     await mockHistory(page, {
       items: [
@@ -343,9 +320,7 @@ test.describe("TranscriptView component", () => {
   });
 
   test("shows fallback Personnage IA when scenarioName is not provided", async ({ page }) => {
-    const transcript = [
-      { speaker: "assistant", text: "Bonjour" },
-    ];
+    const transcript = [{ speaker: "assistant", text: "Bonjour" }];
     await mockReplay(page, {
       recordingUrl: null,
       transcript,

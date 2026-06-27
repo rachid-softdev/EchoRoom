@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // ScenarioPage (server component) tests
@@ -55,9 +55,10 @@ describe("ScenarioPage (server component)", () => {
       render(element);
 
       expect(screen.getByTestId("scenario-detail-client")).toBeInTheDocument();
-      expect(
-        screen.getByTestId("scenario-detail-client"),
-      ).toHaveAttribute("data-scenario-id", "s-1");
+      expect(screen.getByTestId("scenario-detail-client")).toHaveAttribute(
+        "data-scenario-id",
+        "s-1",
+      );
       expect(mockNotFound).not.toHaveBeenCalled();
     });
 
@@ -92,7 +93,7 @@ describe("ScenarioPage (server component)", () => {
 
     beforeEach(() => {
       process.env = { ...OLD_ENV };
-      process.env['NEXT_PUBLIC_APP_URL'] = "https://echoroom.app";
+      process.env["NEXT_PUBLIC_APP_URL"] = "https://echoroom.app";
     });
 
     afterEach(() => {

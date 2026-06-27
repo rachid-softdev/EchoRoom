@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
-import { Checkbox } from "@/components/ui";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  Input,
+} from "@/components/ui";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
-import { MarketingNav } from "@/components/layout/MarketingNav";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -76,115 +82,122 @@ export default function RegisterPage() {
     <div className="flex min-h-screen flex-col">
       <MarketingNav />
       <div className="flex-1 flex items-center justify-center px-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle>Créer un compte</CardTitle>
-          <CardDescription>
-            5 crédits offerts pour commencer
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="vous@exemple.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                aria-describedby={error ? "register-error" : undefined}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium">
-                Nom d&apos;utilisateur
-              </label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Pseudo"
-                required
-                minLength={3}
-                maxLength={20}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={loading}
-                aria-describedby={error ? "register-error" : undefined}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Mot de passe
-              </label>
-              <div className="relative">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+            <CardTitle>Créer un compte</CardTitle>
+            <CardDescription>5 crédits offerts pour commencer</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
                 <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Minimum 8 caractères"
+                  id="email"
+                  type="email"
+                  placeholder="vous@exemple.com"
                   required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   aria-describedby={error ? "register-error" : undefined}
-                  className="pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
               </div>
-              {password.length > 0 && (
-                <PasswordStrengthMeter password={password} />
+              <div className="space-y-2">
+                <label htmlFor="username" className="text-sm font-medium">
+                  Nom d&apos;utilisateur
+                </label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Pseudo"
+                  required
+                  minLength={3}
+                  maxLength={20}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={loading}
+                  aria-describedby={error ? "register-error" : undefined}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Minimum 8 caractères"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    aria-describedby={error ? "register-error" : undefined}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={
+                      showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
+                    }
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {password.length > 0 && <PasswordStrengthMeter password={password} />}
+              </div>
+
+              {error && (
+                <p id="register-error" className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
               )}
-            </div>
 
-            {error && (
-              <p id="register-error" className="text-sm text-destructive" role="alert">{error}</p>
-            )}
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="consent"
+                  checked={consentAccepted}
+                  onChange={(e) => setConsentAccepted(e.target.checked)}
+                />
+                <label
+                  htmlFor="consent"
+                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+                >
+                  J&apos;accepte les{" "}
+                  <Link href="/terms" className="text-primary hover:underline">
+                    conditions d&apos;utilisation
+                  </Link>{" "}
+                  et la{" "}
+                  <Link href="/privacy" className="text-primary hover:underline">
+                    politique de confidentialité
+                  </Link>
+                  . En créant un compte, je confirme avoir au moins 13 ans.
+                </label>
+              </div>
 
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="consent"
-                checked={consentAccepted}
-                onChange={(e) => setConsentAccepted(e.target.checked)}
-              />
-              <label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                J&apos;accepte les{" "}
-                <Link href="/terms" className="text-primary hover:underline">conditions d&apos;utilisation</Link>{" "}
-                et la{" "}
-                <Link href="/privacy" className="text-primary hover:underline">politique de confidentialité</Link>.
-                En créant un compte, je confirme avoir au moins 13 ans.
-              </label>
-            </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || !consentAccepted || passwordStrength < 3}
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer mon compte"}
+              </Button>
+            </form>
 
-            <Button type="submit" className="w-full" disabled={loading || !consentAccepted || passwordStrength < 3}>
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Créer mon compte"
-              )}
-            </Button>
-          </form>
-
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Déjà un compte ?{" "}
-            <Link href="/login" className="text-primary hover:underline">
-              Se connecter
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              Déjà un compte ?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Se connecter
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Aide & FAQ — EchoRoom AI",
-  description: "Tout ce qu'il faut savoir pour utiliser EchoRoom : crédits, appels, scénarios, partage et plus.",
+  description:
+    "Tout ce qu'il faut savoir pour utiliser EchoRoom : crédits, appels, scénarios, partage et plus.",
 };
 
 const faqs = [
@@ -49,12 +50,10 @@ export default function HelpPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-3">
-          Aide & FAQ
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-3">Aide & FAQ</h1>
         <p className="text-muted-foreground max-w-xl">
-          Tout ce qu&apos;il faut savoir pour plonger dans le chaos EchoRoom.
-          Pas de jargon, pas de blabla — juste les réponses.
+          Tout ce qu&apos;il faut savoir pour plonger dans le chaos EchoRoom. Pas de jargon, pas de
+          blabla — juste les réponses.
         </p>
       </div>
 
@@ -68,7 +67,12 @@ export default function HelpPage() {
               {faq.q}
               <span className="shrink-0 ml-4 text-muted-foreground transition-transform duration-200 group-open:rotate-45">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M8 3v10M3 8h10"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </span>
             </summary>

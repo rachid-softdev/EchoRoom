@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Stripe webhook — checkout protection & validation", () => {
   // ── Body size limit ────────────────────────────────────────────────────
@@ -141,14 +141,14 @@ test.describe("Stripe webhook — checkout protection & validation", () => {
   // ── Idempotency ────────────────────────────────────────────────────────
 
   test("should reject duplicate webhook events (idempotency check)", async ({ page }) => {
-    const eventId = "evt_test_idempotent_" + Date.now();
+    const eventId = `evt_test_idempotent_${Date.now()}`;
     const body = JSON.stringify({
       id: eventId,
       type: "checkout.session.completed",
       data: {
         object: {
           metadata: { userId: "user_idem", credits: "10" },
-          payment_intent: "pi_idem_test_" + Date.now(),
+          payment_intent: `pi_idem_test_${Date.now()}`,
         },
       },
     });
@@ -178,7 +178,9 @@ test.describe("Stripe webhook — checkout protection & validation", () => {
 
   // ── Missing metadata ───────────────────────────────────────────────────
 
-  test("should return 400 when checkout.session.completed has no userId in metadata", async ({ page }) => {
+  test("should return 400 when checkout.session.completed has no userId in metadata", async ({
+    page,
+  }) => {
     const body = JSON.stringify({
       id: "evt_test_no_metadata",
       type: "checkout.session.completed",
@@ -203,7 +205,9 @@ test.describe("Stripe webhook — checkout protection & validation", () => {
     expect(response.status()).toBe(400);
   });
 
-  test("should return 400 when checkout.session.completed has no credits in metadata", async ({ page }) => {
+  test("should return 400 when checkout.session.completed has no credits in metadata", async ({
+    page,
+  }) => {
     const body = JSON.stringify({
       id: "evt_test_no_credits",
       type: "checkout.session.completed",
@@ -226,7 +230,9 @@ test.describe("Stripe webhook — checkout protection & validation", () => {
     expect(response.status()).toBe(400);
   });
 
-  test("should return 400 when checkout.session.completed has no payment_intent", async ({ page }) => {
+  test("should return 400 when checkout.session.completed has no payment_intent", async ({
+    page,
+  }) => {
     const body = JSON.stringify({
       id: "evt_test_no_pi",
       type: "checkout.session.completed",

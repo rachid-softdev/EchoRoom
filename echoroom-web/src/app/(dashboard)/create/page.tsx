@@ -1,18 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
-import { Textarea } from "@/components/ui";
-import { Badge } from "@/components/ui";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
-import { api } from "@/lib/trpc";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { DataLoader } from "@/components/shared/DataLoader";
-import { useApiToast } from "@/lib/trpc-error";
-import { toast } from "@/components/ui";
+import { Badge, Button, Input, Textarea, toast } from "@/components/ui";
 import { CATEGORY_LABELS } from "@/lib/constants";
+import { api } from "@/lib/trpc";
+import { useApiToast } from "@/lib/trpc-error";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -73,7 +69,10 @@ export default function CreatePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <Link href="/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" />
           Dashboard
         </Link>
@@ -93,9 +92,7 @@ export default function CreatePage() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Character selection */}
           <div>
-            <p className="text-sm font-medium mb-3 block">
-              Personnage IA
-            </p>
+            <p className="text-sm font-medium mb-3 block">Personnage IA</p>
             <DataLoader
               query={charactersQuery}
               isEmpty={(data) => data.length === 0}
@@ -207,9 +204,7 @@ export default function CreatePage() {
               onChange={(e) => setAiInstructions(e.target.value)}
               className="min-h-[120px]"
             />
-            <p className="text-xs text-muted-foreground">
-              {aiInstructions.length}/3000 caractères
-            </p>
+            <p className="text-xs text-muted-foreground">{aiInstructions.length}/3000 caractères</p>
           </div>
 
           {/* Visibility */}
@@ -241,7 +236,11 @@ export default function CreatePage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full gap-2" disabled={createScenario.isPending || selectedCharacter === ""}>
+          <Button
+            type="submit"
+            className="w-full gap-2"
+            disabled={createScenario.isPending || selectedCharacter === ""}
+          >
             {createScenario.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (

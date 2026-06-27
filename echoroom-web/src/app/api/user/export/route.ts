@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { db } from '@/server/db'
-import { decryptPhoneNumber, maskPhoneNumber } from '@/server/lib/encryption'
-import { getPresignedUrl } from '@/server/services/audio/r2'
-import { createLogger } from '@/server/lib/logger'
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/server/db";
+import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
+import { createLogger } from "@/server/lib/logger";
+import { getPresignedUrl } from "@/server/services/audio/r2";
 
-const log = createLogger('gdpr-export')
+const log = createLogger("gdpr-export");
 
 /**
  * POST /api/user/export — Download a JSON archive of the authenticated user's personal data.
@@ -21,27 +21,27 @@ const log = createLogger('gdpr-export')
  */
 export async function POST(req: NextRequest) {
   // CSRF defense via Origin header (SameSite=Lax for session cookies is primary defense)
-  const origin = req.headers.get('origin');
-  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000';
+  const origin = req.headers.get("origin");
+  const appUrl = process.env["NEXT_PUBLIC_APP_URL"] ?? "http://localhost:3000";
   if (origin) {
     try {
       const originUrl = new URL(origin);
       const appUrlObj = new URL(appUrl);
       if (originUrl.origin !== appUrlObj.origin) {
-        return NextResponse.json({ error: 'Origine non autorisée' }, { status: 403 });
+        return NextResponse.json({ error: "Origine non autorisée" }, { status: 403 });
       }
     } catch {
-      return NextResponse.json({ error: 'Origine invalide' }, { status: 400 });
+      return NextResponse.json({ error: "Origine invalide" }, { status: 400 });
     }
   }
 
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const userId = session.user.id
+  const userId = session.user.id;
 
   // Atomic rate-limit: only proceed if last export was > 1 hour ago.
   // updateMany with WHERE acts as an optimistic lock under READ COMMITTED.
@@ -54,26 +54,29 @@ export async function POST(req: NextRequest) {
       ],
     },
     data: { gdprDataExportedAt: new Date() },
-  })
+  });
 
   if (lockResult.count === 0) {
     // Either user doesn't exist or rate-limited
     const user = await db.user.findUnique({
       where: { id: userId },
       select: { gdprDataExportedAt: true },
-    })
+    });
     if (!user) {
-      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
+      return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
     }
     if (!user.gdprDataExportedAt) {
-      return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
+      return NextResponse.json({ error: "Erreur interne" }, { status: 500 });
     }
-    const hoursSinceLastExport = (Date.now() - user.gdprDataExportedAt.getTime()) / 1000 / 3600
-    const retryAfter = Math.ceil(3600 - hoursSinceLastExport * 3600)
+    const hoursSinceLastExport = (Date.now() - user.gdprDataExportedAt.getTime()) / 1000 / 3600;
+    const retryAfter = Math.ceil(3600 - hoursSinceLastExport * 3600);
     return NextResponse.json(
-      { error: 'Trop de requêtes. Vous pouvez exporter vos données une fois par heure.', retryAfterSeconds: retryAfter },
+      {
+        error: "Trop de requêtes. Vous pouvez exporter vos données une fois par heure.",
+        retryAfterSeconds: retryAfter,
+      },
       { status: 429 },
-    )
+    );
   }
 
   // Fetch user profile (includes sub-aggregates)
@@ -101,10 +104,10 @@ export async function POST(req: NextRequest) {
       social: { select: { totalLikesReceived: true, totalCallsMade: true } },
       billing: { select: { credits: true } },
     },
-  })
+  });
 
   if (!userData) {
-    return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
+    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
   }
 
   // Fetch scenarios
@@ -121,7 +124,7 @@ export async function POST(req: NextRequest) {
       createdAt: true,
       character: { select: { name: true } },
     },
-  })
+  });
 
   // Fetch calls with masked phone numbers
   const calls = await db.call.findMany({
@@ -135,20 +138,20 @@ export async function POST(req: NextRequest) {
       createdAt: true,
       endedAt: true,
     },
-  })
+  });
 
   const maskedCalls = calls.map((call) => {
-    let masked = '****'
+    let masked = "****";
     try {
-      const decrypted = decryptPhoneNumber(call.phoneNumber)
-      masked = maskPhoneNumber(decrypted)
+      const decrypted = decryptPhoneNumber(call.phoneNumber);
+      masked = maskPhoneNumber(decrypted);
     } catch {
       if (call.phoneNumber.length >= 4) {
-        masked = `xxxx${call.phoneNumber.slice(-4)}`
+        masked = `xxxx${call.phoneNumber.slice(-4)}`;
       }
     }
-    return { ...call, phoneNumber: masked }
-  })
+    return { ...call, phoneNumber: masked };
+  });
 
   // Fetch comments
   const comments = await db.comment.findMany({
@@ -160,7 +163,7 @@ export async function POST(req: NextRequest) {
       createdAt: true,
       scenario: { select: { id: true, title: true } },
     },
-  })
+  });
 
   // Fetch purchases
   const purchases = await db.purchase.findMany({
@@ -170,7 +173,7 @@ export async function POST(req: NextRequest) {
       creditsPurchased: true,
       createdAt: true,
     },
-  })
+  });
 
   // Fetch clips (missing from original exportMyData)
   const rawClips = await db.clip.findMany({
@@ -185,17 +188,15 @@ export async function POST(req: NextRequest) {
       status: true,
       createdAt: true,
     },
-  })
+  });
 
   // Presign clip URLs (24h TTL for export — user needs time to process the archive)
   const clips = await Promise.all(
     rawClips.map(async (clip) => ({
       ...clip,
-      clipUrl: clip.clipUrl
-        ? await getPresignedUrl(clip.clipUrl, { ttlSeconds: 86400 })
-        : null,
+      clipUrl: clip.clipUrl ? await getPresignedUrl(clip.clipUrl, { ttlSeconds: 86400 }) : null,
     })),
-  )
+  );
 
   // Fetch abuse reports (missing from original exportMyData)
   const abuseReports = await db.abuseReport.findMany({
@@ -208,7 +209,7 @@ export async function POST(req: NextRequest) {
       status: true,
       createdAt: true,
     },
-  })
+  });
 
   const exportData = {
     exportedAt: new Date().toISOString(),
@@ -219,27 +220,29 @@ export async function POST(req: NextRequest) {
     purchases,
     clips,
     abuseReports,
-  }
+  };
 
   // Create audit log entry for GDPR compliance (Article 15 — data access logging)
-  await db.auditLog.create({
-    data: {
-      action: 'GDPR_EXPORT',
-      entityType: 'User',
-      entityId: userId,
-      adminId: userId, // Self-service export
-    },
-  }).catch((error) => {
-    log.error('Failed to create audit log for GDPR export', { error, userId })
-  })
+  await db.auditLog
+    .create({
+      data: {
+        action: "GDPR_EXPORT",
+        entityType: "User",
+        entityId: userId,
+        adminId: userId, // Self-service export
+      },
+    })
+    .catch((error) => {
+      log.error("Failed to create audit log for GDPR export", { error, userId });
+    });
 
-  log.info('GDPR data exported', { userId })
+  log.info("GDPR data exported", { userId });
 
   return new NextResponse(JSON.stringify(exportData, null, 2), {
     status: 200,
     headers: {
-      'Content-Type': 'application/json',
-      'Content-Disposition': `attachment; filename="echoroom-export-${userId.substring(0, 8)}.json"`,
+      "Content-Type": "application/json",
+      "Content-Disposition": `attachment; filename="echoroom-export-${userId.substring(0, 8)}.json"`,
     },
-  })
+  });
 }

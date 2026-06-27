@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: mock une session authentifiée (requise pour /settings)
@@ -46,9 +46,7 @@ test.describe("Settings — Changement de mot de passe (P8)", () => {
     await expect(page.getByLabel("Confirmer le nouveau mot de passe")).toBeVisible();
 
     // Vérifier le bouton de soumission
-    await expect(
-      page.getByRole("button", { name: "Changer le mot de passe" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Changer le mot de passe" })).toBeVisible();
   });
 
   test("validation: champs vides → bouton désactivé", async ({ page }) => {
@@ -137,11 +135,10 @@ test.describe("Settings — Changement de mot de passe (P8)", () => {
   test("changement réussi → toast + champs vidés", async ({ page }) => {
     // Mock la mutation auth.changePassword
     let mutationCalled = false;
-    let mutationBody: string | null = null;
 
     await page.route("**/api/trpc/auth.changePassword*", async (route) => {
       mutationCalled = true;
-      mutationBody = route.request().postData();
+      route.request().postData(); // capture request body
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -194,14 +191,18 @@ test.describe("Settings — Changement de mot de passe (P8)", () => {
 
     // Vérifier le toast de succès
     // Le toast est affiché via le hook useApiToast avec success: "Mot de passe modifié avec succès"
-    const toastVisible = await page.getByText("Mot de passe modifié avec succès").isVisible().catch(() => false);
+    const toastVisible = await page
+      .getByText("Mot de passe modifié avec succès")
+      .isVisible()
+      .catch(() => false);
     if (toastVisible) {
       await expect(page.getByText("Mot de passe modifié avec succès")).toBeVisible();
     } else {
       // Le toast peut être auto-dissmissed, c'est acceptable
       test.info().annotations.push({
         type: "info",
-        description: "Le toast de succès peut avoir été auto-dissmissed — vérifier que les champs sont bien vidés",
+        description:
+          "Le toast de succès peut avoir été auto-dissmissed — vérifier que les champs sont bien vidés",
       });
     }
   });
@@ -323,7 +324,10 @@ test.describe("Settings — Changement de mot de passe (P8)", () => {
     // Vérifier que les inputs sont de type "password" (masqués)
     await expect(page.getByLabel("Mot de passe actuel")).toHaveAttribute("type", "password");
     await expect(page.getByLabel("Nouveau mot de passe")).toHaveAttribute("type", "password");
-    await expect(page.getByLabel("Confirmer le nouveau mot de passe")).toHaveAttribute("type", "password");
+    await expect(page.getByLabel("Confirmer le nouveau mot de passe")).toHaveAttribute(
+      "type",
+      "password",
+    );
   });
 
   test("les champs password ont les bons placeholders", async ({ page }) => {
@@ -335,7 +339,10 @@ test.describe("Settings — Changement de mot de passe (P8)", () => {
     if (redirected) return;
 
     await expect(page.getByLabel("Mot de passe actuel")).toHaveAttribute("placeholder", "••••••••");
-    await expect(page.getByLabel("Nouveau mot de passe")).toHaveAttribute("placeholder", "8 caractères minimum");
+    await expect(page.getByLabel("Nouveau mot de passe")).toHaveAttribute(
+      "placeholder",
+      "8 caractères minimum",
+    );
     await expect(page.getByLabel("Confirmer le nouveau mot de passe")).toHaveAttribute(
       "placeholder",
       "Retapez le nouveau mot de passe",

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
-import { Button, Input } from "@/components/ui";
 import { Clock, Phone, Search, X } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { CallHistoryRow } from "@/components/shared/CallHistoryRow";
+import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
+import { Button, Input } from "@/components/ui";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
 import { api } from "@/lib/trpc";
 
@@ -37,28 +37,39 @@ export default function HistoryPage() {
 
     // Carte de correspondance français -> anglais pour les statuts
     const statusTranslation: Record<string, string> = {
-      "terminé": "COMPLETED",
-      "termine": "COMPLETED",
-      "complété": "COMPLETED",
-      "complete": "COMPLETED",
-      "échoué": "FAILED",
-      "echoue": "FAILED",
-      "échec": "FAILED",
-      "echec": "FAILED",
+      terminé: "COMPLETED",
+      termine: "COMPLETED",
+      complété: "COMPLETED",
+      complete: "COMPLETED",
+      échoué: "FAILED",
+      echoue: "FAILED",
+      échec: "FAILED",
+      echec: "FAILED",
       "en cours": "IN_PROGRESS",
-      "bloqué": "BLOCKED",
-      "bloque": "BLOCKED",
-      "remboursé": "REFUNDED",
-      "rembourse": "REFUNDED",
+      bloqué: "BLOCKED",
+      bloque: "BLOCKED",
+      remboursé: "REFUNDED",
+      rembourse: "REFUNDED",
       "en attente": "PENDING",
-      "annulé": "CANCELLED",
-      "annule": "CANCELLED",
+      annulé: "CANCELLED",
+      annule: "CANCELLED",
     };
 
     const translateStatus = (status: string): string => {
       const lower = status.toLowerCase();
       // Si c'est déjà un statut anglais, le garder
-      if (["COMPLETED", "FAILED", "IN_PROGRESS", "BLOCKED", "REFUNDED", "PENDING", "CANCELLED"].includes(status)) return status;
+      if (
+        [
+          "COMPLETED",
+          "FAILED",
+          "IN_PROGRESS",
+          "BLOCKED",
+          "REFUNDED",
+          "PENDING",
+          "CANCELLED",
+        ].includes(status)
+      )
+        return status;
       // Sinon chercher la traduction
       return statusTranslation[lower] ?? status;
     };
@@ -96,6 +107,7 @@ export default function HistoryPage() {
         />
         {hasSearch && (
           <button
+            type="button"
             onClick={() => setSearch("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Effacer la recherche"

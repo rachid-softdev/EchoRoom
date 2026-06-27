@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // M-3: twilioToken.ts — TTL change (1 hour) and token verification
@@ -15,15 +15,15 @@ const TEST_SECRET = "test_token_secret_at_least_16_char_long!";
 
 let origTokenSecret: string | undefined;
 beforeAll(() => {
-  origTokenSecret = process.env['TWILIO_TOKEN_SECRET'];
-  process.env['TWILIO_TOKEN_SECRET'] = TEST_SECRET;
+  origTokenSecret = process.env["TWILIO_TOKEN_SECRET"];
+  process.env["TWILIO_TOKEN_SECRET"] = TEST_SECRET;
 });
 
 afterAll(() => {
   if (origTokenSecret === undefined) {
-    delete process.env['TWILIO_TOKEN_SECRET'];
+    delete process.env["TWILIO_TOKEN_SECRET"];
   } else {
-    process.env['TWILIO_TOKEN_SECRET'] = origTokenSecret;
+    process.env["TWILIO_TOKEN_SECRET"] = origTokenSecret;
   }
 });
 
@@ -93,7 +93,11 @@ describe("M-3: createTwilioToken", () => {
   it("should handle special characters in callId and scenarioId", async () => {
     const { createTwilioToken, verifyTwilioToken } = await import("../twilioToken");
 
-    const token = createTwilioToken("call-id_with_special_chars!@#$%", "scenario-id_123", "character-id_1");
+    const token = createTwilioToken(
+      "call-id_with_special_chars!@#$%",
+      "scenario-id_123",
+      "character-id_1",
+    );
     const payload = verifyTwilioToken(token);
 
     expect(payload).not.toBeNull();
@@ -146,7 +150,9 @@ describe("M-3: verifyTwilioToken", () => {
     // Tamper with the payload part by replacing with a different JSON string
     const parts = token.split(".");
     // Encode a completely different payload
-    const tamperedPayload = Buffer.from(JSON.stringify({ callId: "hacked", scenarioId: "evil", characterId: "villain", iat: 0 })).toString("base64url");
+    const tamperedPayload = Buffer.from(
+      JSON.stringify({ callId: "hacked", scenarioId: "evil", characterId: "villain", iat: 0 }),
+    ).toString("base64url");
     const tamperedToken = `${tamperedPayload}.${parts[1]}`;
 
     const payload = verifyTwilioToken(tamperedToken);
@@ -279,9 +285,7 @@ describe("M-3: characterId in Twilio token", () => {
     const payloadStr = JSON.stringify(oldPayload);
     const payloadB64 = Buffer.from(payloadStr).toString("base64url");
 
-    const signature = createHmac("sha256", TEST_SECRET)
-      .update(payloadStr)
-      .digest("base64url");
+    const signature = createHmac("sha256", TEST_SECRET).update(payloadStr).digest("base64url");
 
     const oldToken = `${payloadB64}.${signature}`;
 
@@ -351,7 +355,7 @@ describe("M-3: characterId in Twilio token", () => {
 
     // Replace the signature with a longer one
     const parts = token.split(".");
-    const longerSig = parts[1]! + "extra";
+    const longerSig = `${parts[1]!}extra`;
     const tamperedToken = `${parts[0]!}.${longerSig}`;
 
     const payload = verifyTwilioToken(tamperedToken);
@@ -366,19 +370,20 @@ describe("M-3: characterId in Twilio token", () => {
     // Re-create what createTwilioToken does internally to verify the algorithm
     const { createHmac } = await import("node:crypto");
 
-    const payloadStr = JSON.stringify({ callId: "call-1", scenarioId: "s-1", characterId: "c-1", iat: 0 });
+    const payloadStr = JSON.stringify({
+      callId: "call-1",
+      scenarioId: "s-1",
+      characterId: "c-1",
+      iat: 0,
+    });
     const expectedSignature = createHmac("sha256", TEST_SECRET)
       .update(payloadStr)
       .digest("base64url");
 
     // Create a token with different algorithms to verify only SHA256 matches
-    const sha384Sig = createHmac("sha384", TEST_SECRET)
-      .update(payloadStr)
-      .digest("base64url");
+    const sha384Sig = createHmac("sha384", TEST_SECRET).update(payloadStr).digest("base64url");
 
-    const sha512Sig = createHmac("sha512", TEST_SECRET)
-      .update(payloadStr)
-      .digest("base64url");
+    const sha512Sig = createHmac("sha512", TEST_SECRET).update(payloadStr).digest("base64url");
 
     // SHA-256 produces a specific length output
     expect(expectedSignature.length).not.toBe(sha384Sig.length);

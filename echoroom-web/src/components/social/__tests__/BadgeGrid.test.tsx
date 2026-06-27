@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BadgeGrid } from "../BadgeGrid";
 
 // ---------------------------------------------------------------------------
@@ -8,9 +8,7 @@ import { BadgeGrid } from "../BadgeGrid";
 // ---------------------------------------------------------------------------
 
 vi.mock("../BadgeDisplay", () => ({
-  BadgeDisplay: ({ userId }: { userId: string }) => (
-    <div data-testid="badge-display">{userId}</div>
-  ),
+  BadgeDisplay: ({ userId }: { userId: string }) => <div data-testid="badge-display">{userId}</div>,
 }));
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next";
 import UsersPageClient from "./UsersPageClient";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -6,7 +6,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Admin — Utilisateurs — EchoRoom AI",
     description: "Gestion des utilisateurs de la plateforme EchoRoom AI.",
     robots: { index: false, follow: false },
-  }
+  };
 }
 
 export default function UsersPage() {

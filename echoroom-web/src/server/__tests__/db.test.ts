@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Prisma Client Singleton — db tests
@@ -41,8 +41,8 @@ describe("db singleton", () => {
 
   it("should create PrismaClient with log config in non-production", async () => {
     // Save original NODE_ENV and set to development
-    const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    const origNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "development";
 
     // Clear module cache so the import re-evaluates
     delete (globalThis as any).prisma;
@@ -58,12 +58,12 @@ describe("db singleton", () => {
       }),
     );
 
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 
   it("should create PrismaClient with error-only log in production", async () => {
-    const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    const origNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "production";
 
     delete (globalThis as any).prisma;
     prismaConstructorCallCount = 0;
@@ -78,7 +78,7 @@ describe("db singleton", () => {
       }),
     );
 
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 
   it("should enforce singleton — only one PrismaClient created", async () => {
@@ -95,8 +95,8 @@ describe("db singleton", () => {
   });
 
   it("should set globalForPrisma.prisma in non-production", async () => {
-    const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    const origNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "development";
 
     delete (globalThis as any).prisma;
     prismaConstructorCallCount = 0;
@@ -104,12 +104,12 @@ describe("db singleton", () => {
     const { db } = await import("../db");
     expect((globalThis as any).prisma).toBe(db);
 
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 
   it("should NOT set globalForPrisma.prisma in production", async () => {
-    const origNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    const origNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "production";
 
     delete (globalThis as any).prisma;
     prismaConstructorCallCount = 0;
@@ -119,7 +119,7 @@ describe("db singleton", () => {
     // (the if check fails, so no assignment happens)
     expect((globalThis as any).prisma).toBeUndefined();
 
-    process.env.NODE_ENV = origNodeEnv;
+    (process.env as any).NODE_ENV = origNodeEnv;
   });
 
   it("should reuse existing globalForPrisma.prisma if already set", async () => {

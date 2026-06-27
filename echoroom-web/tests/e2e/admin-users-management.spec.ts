@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Admin users management — workflow", () => {
   test.beforeEach(async ({ page }) => {
@@ -17,9 +17,7 @@ test.describe("Admin users management — workflow", () => {
   test("page heading is Gestion des utilisateurs", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByRole("heading", { name: "Gestion des utilisateurs" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Gestion des utilisateurs" })).toBeVisible();
   });
 
   test("subtitle describes the page purpose", async ({ page }) => {
@@ -35,9 +33,7 @@ test.describe("Admin users management — workflow", () => {
   test("search input has correct placeholder", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByPlaceholder("Rechercher par nom ou email..."),
-    ).toBeVisible();
+    await expect(page.getByPlaceholder("Rechercher par nom ou email...")).toBeVisible();
   });
 
   test("search input accepts text", async ({ page }) => {
@@ -142,7 +138,9 @@ test.describe("Admin users management — workflow", () => {
     // Email
     await expect(firstUser.locator("p.text-sm.text-muted-foreground")).toBeVisible();
     // Role badge
-    await expect(firstUser.locator("div.inline-flex.items-center.rounded-full.border")).toBeVisible();
+    await expect(
+      firstUser.locator("div.inline-flex.items-center.rounded-full.border"),
+    ).toBeVisible();
     // Credits text
     await expect(firstUser.locator("span").filter({ hasText: /crédits/ })).toBeVisible();
     // Date (short format)
@@ -204,11 +202,15 @@ test.describe("Admin users management — workflow", () => {
     await page.waitForTimeout(500);
 
     // Detail view should show back button with ChevronLeft icon
-    const backBtn = page.getByRole("button").filter({ has: page.locator("svg.lucide-chevron-left") });
+    const backBtn = page
+      .getByRole("button")
+      .filter({ has: page.locator("svg.lucide-chevron-left") });
     await expect(backBtn).toBeVisible();
   });
 
-  test("user detail view shows Informations card with ID, credits, calls, likes, consent, date", async ({ page }) => {
+  test("user detail view shows Informations card with ID, credits, calls, likes, consent, date", async ({
+    page,
+  }) => {
     if (!skipIfNotAuthed(page)) return;
 
     const userItems = page.locator("button.w-full.flex.items-center.justify-between");
@@ -224,7 +226,10 @@ test.describe("Admin users management — workflow", () => {
     await expect(page.getByRole("heading", { name: "Informations" })).toBeVisible();
 
     // Check for info fields in the card
-    const infoCard = page.getByRole("heading", { name: "Informations" }).locator("..").locator("..");
+    const infoCard = page
+      .getByRole("heading", { name: "Informations" })
+      .locator("..")
+      .locator("..");
     await expect(infoCard).toContainText("ID");
     await expect(infoCard).toContainText("Crédits");
     await expect(infoCard).toContainText("Appels");
@@ -233,7 +238,9 @@ test.describe("Admin users management — workflow", () => {
     await expect(infoCard).toContainText("Inscrit le");
   });
 
-  test("user detail view shows Statistiques card with scenarios, comments, reactions", async ({ page }) => {
+  test("user detail view shows Statistiques card with scenarios, comments, reactions", async ({
+    page,
+  }) => {
     if (!skipIfNotAuthed(page)) return;
 
     const userItems = page.locator("button.w-full.flex.items-center.justify-between");
@@ -248,7 +255,10 @@ test.describe("Admin users management — workflow", () => {
     // Statistiques card
     await expect(page.getByRole("heading", { name: "Statistiques" })).toBeVisible();
 
-    const statsCard = page.getByRole("heading", { name: "Statistiques" }).locator("..").locator("..");
+    const statsCard = page
+      .getByRole("heading", { name: "Statistiques" })
+      .locator("..")
+      .locator("..");
     await expect(statsCard).toContainText("Scénarios");
     await expect(statsCard).toContainText("Commentaires");
     await expect(statsCard).toContainText("Réactions");
@@ -268,14 +278,14 @@ test.describe("Admin users management — workflow", () => {
     await page.waitForTimeout(500);
 
     // Click back button
-    const backBtn = page.getByRole("button").filter({ has: page.locator("svg.lucide-chevron-left") });
+    const backBtn = page
+      .getByRole("button")
+      .filter({ has: page.locator("svg.lucide-chevron-left") });
     await backBtn.click();
     await page.waitForTimeout(500);
 
     // Should return to list view
-    await expect(
-      page.getByRole("heading", { name: "Gestion des utilisateurs" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Gestion des utilisateurs" })).toBeVisible();
   });
 
   test("detail view shows username as heading and email as subtitle", async ({ page }) => {
@@ -288,8 +298,6 @@ test.describe("Admin users management — workflow", () => {
     if (!hasUsers) return;
 
     // Get the username text before clicking
-    const firstUsername = await userItems.first().locator("p.font-medium").textContent();
-
     await userItems.first().click();
     await page.waitForTimeout(500);
 

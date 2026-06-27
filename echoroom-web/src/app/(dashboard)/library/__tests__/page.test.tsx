@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mocks
 const mockUsePaginatedQuery = vi.hoisted(() => vi.fn());
@@ -22,7 +22,11 @@ vi.mock("@/lib/trpc", () => ({
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Mock lucide-react
@@ -36,7 +40,14 @@ vi.mock("lucide-react", () => ({
 // Mock @/components/ui
 vi.mock("@/components/ui", () => ({
   Button: ({ children, onClick, disabled, variant, size, className, ...props }: any) => (
-    <button onClick={onClick} disabled={disabled} data-variant={variant} data-size={size} className={className} {...props}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      {...props}
+    >
       {children}
     </button>
   ),
@@ -68,15 +79,19 @@ vi.mock("@/components/shared/ScenarioCard", () => ({
   ScenarioCard: ({ scenario }: any) => (
     <div data-testid={`scenario-card-${scenario.id}`}>
       <span data-testid={`scenario-title-${scenario.id}`}>{scenario.title}</span>
-      {scenario.character && <span data-testid={`scenario-character-${scenario.id}`}>{scenario.character.name}</span>}
-      {scenario.creator && <span data-testid={`scenario-creator-${scenario.id}`}>{scenario.creator.username}</span>}
+      {scenario.character && (
+        <span data-testid={`scenario-character-${scenario.id}`}>{scenario.character.name}</span>
+      )}
+      {scenario.creator && (
+        <span data-testid={`scenario-creator-${scenario.id}`}>{scenario.creator.username}</span>
+      )}
     </div>
   ),
 }));
 
 // Mock EmptyState
 vi.mock("@/components/shared/EmptyState", () => ({
-  EmptyState: ({ icon: Icon, title, description, action }: any) => (
+  EmptyState: ({ icon: _Icon, title, description, action }: any) => (
     <div data-testid="empty-state">
       <h3>{title}</h3>
       <p>{description}</p>
@@ -87,7 +102,7 @@ vi.mock("@/components/shared/EmptyState", () => ({
 
 // Mock PaginatedDataLoader
 vi.mock("@/components/shared/PaginatedDataLoader", () => ({
-  PaginatedDataLoader: ({ query, children, empty, loadingSkeleton }: any) => {
+  PaginatedDataLoader: ({ query, children, empty, loadingSkeleton: _loadingSkeleton }: any) => {
     if (query.isLoading) {
       return <div data-testid="loader-loading">Chargement...</div>;
     }
@@ -207,7 +222,9 @@ describe("LibraryPage", () => {
     expect(screen.getByTestId("empty-state")).toBeInTheDocument();
     expect(screen.getByText("Bibliothèque vide")).toBeInTheDocument();
     expect(
-      screen.getByText("Créez votre premier scénario ou explorez la communauté pour trouver l'inspiration."),
+      screen.getByText(
+        "Créez votre premier scénario ou explorez la communauté pour trouver l'inspiration.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -215,7 +232,9 @@ describe("LibraryPage", () => {
     render(<LibraryPage />);
 
     expect(screen.getByTestId("search-input")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Rechercher par titre, personnage ou créateur...")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Rechercher par titre, personnage ou créateur..."),
+    ).toBeInTheDocument();
   });
 
   it("filters scenarios by search query on title", () => {

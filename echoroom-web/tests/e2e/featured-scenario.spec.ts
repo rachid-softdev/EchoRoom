@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/FeaturedScenario.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/social/FeaturedScenario.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("FeaturedScenario component", () => {
@@ -28,10 +25,10 @@ test.describe("FeaturedScenario component", () => {
 
   test("loading state shows skeleton with rounded-full and 3 bars", () => {
     const source = readComponent();
-    expect(source).toContain("Skeleton className=\"w-16 h-16 rounded-full shrink-0\"");
-    expect(source).toContain("Skeleton className=\"h-4 w-32\"");
-    expect(source).toContain("Skeleton className=\"h-6 w-48\"");
-    expect(source).toContain("Skeleton className=\"h-4 w-full max-w-md\"");
+    expect(source).toContain('Skeleton className="w-16 h-16 rounded-full shrink-0"');
+    expect(source).toContain('Skeleton className="h-4 w-32"');
+    expect(source).toContain('Skeleton className="h-6 w-48"');
+    expect(source).toContain('Skeleton className="h-4 w-full max-w-md"');
   });
 
   test("null data returns null (hidden)", () => {

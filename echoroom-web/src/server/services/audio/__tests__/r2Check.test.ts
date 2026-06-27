@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // I-2: R2 bucket privacy check
@@ -126,10 +126,7 @@ describe("I-2: verifyBucketPrivacy", () => {
 
     await verifyBucketPrivacy();
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      "https://cdn.echoroom.app",
-      { method: "HEAD" },
-    );
+    expect(mockFetch).toHaveBeenCalledWith("https://cdn.echoroom.app", { method: "HEAD" });
   });
 
   it("should handle fetch errors gracefully (return isPrivate=true)", async () => {

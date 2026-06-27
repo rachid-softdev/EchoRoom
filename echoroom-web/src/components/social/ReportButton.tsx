@@ -1,10 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Flag } from "lucide-react"
-import { Button } from "@/components/ui"
-import { Textarea } from "@/components/ui"
+import { Flag } from "lucide-react";
+import { useState } from "react";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -12,59 +11,65 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui"
-import { toast } from "@/components/ui"
-import { api } from "@/lib/trpc"
-import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants"
+  Textarea,
+  toast,
+} from "@/components/ui";
+import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
+import { api } from "@/lib/trpc";
 
 interface ReportButtonProps {
-  targetType: "SCENARIO" | "COMMENT" | "USER"
-  targetId: string
-  variant?: "icon" | "text"
+  targetType: "SCENARIO" | "COMMENT" | "USER";
+  targetId: string;
+  variant?: "icon" | "text";
 }
 
-export function ReportButton({
-  targetType,
-  targetId,
-  variant = "icon",
-}: ReportButtonProps) {
-  const [open, setOpen] = useState(false)
-  const [reason, setReason] = useState("")
+export function ReportButton({ targetType, targetId, variant = "icon" }: ReportButtonProps) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
   const reportMutation = api.community.reportAbuse.useMutation({
     onSuccess: () => {
       toast({
         title: "Signalement envoyé",
         variant: "success",
-      })
-      setOpen(false)
-      setReason("")
+      });
+      setOpen(false);
+      setReason("");
     },
     onError: (err) => {
       toast({
         title: err.message ?? "Erreur lors de l'envoi du signalement",
         variant: "destructive",
-      })
+      });
     },
-  })
+  });
 
   function handleSubmit() {
-    if (reason.trim().length < MIN_REPORT_REASON_LENGTH) return
+    if (reason.trim().length < MIN_REPORT_REASON_LENGTH) return;
     reportMutation.mutate({
       targetType,
       targetId,
       reason: reason.trim(),
-    })
+    });
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {variant === "icon" ? (
-          <Button variant="ghost" size="icon" aria-label="Signaler" className="text-muted-foreground hover:text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Signaler"
+            className="text-muted-foreground hover:text-destructive"
+          >
             <Flag className="w-4 h-4" />
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-destructive">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground hover:text-destructive"
+          >
             <Flag className="w-4 h-4" />
             Signaler
           </Button>
@@ -94,8 +99,8 @@ export function ReportButton({
           <Button
             variant="outline"
             onClick={() => {
-              setOpen(false)
-              setReason("")
+              setOpen(false);
+              setReason("");
             }}
             disabled={reportMutation.isPending}
           >
@@ -111,5 +116,5 @@ export function ReportButton({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

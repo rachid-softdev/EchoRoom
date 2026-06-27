@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // DashboardLayout tests — Server Component with auth check + redirect
@@ -40,9 +40,7 @@ describe("DashboardLayout", () => {
     const DashboardLayout = mod.default;
 
     // Since redirect() throws, we expect the promise to reject
-    await expect(
-      DashboardLayout({ children: <div>Protected content</div> }),
-    ).rejects.toThrow();
+    await expect(DashboardLayout({ children: <div>Protected content</div> })).rejects.toThrow();
 
     expect(mockRedirect).toHaveBeenCalledWith("/login");
   });
@@ -53,9 +51,7 @@ describe("DashboardLayout", () => {
     const mod = await import("../layout");
     const DashboardLayout = mod.default;
 
-    await expect(
-      DashboardLayout({ children: <div>Protected content</div> }),
-    ).rejects.toThrow();
+    await expect(DashboardLayout({ children: <div>Protected content</div> })).rejects.toThrow();
 
     expect(mockRedirect).toHaveBeenCalledWith("/login");
   });

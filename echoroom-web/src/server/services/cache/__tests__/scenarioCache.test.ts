@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Scenario Cache Tests
@@ -124,9 +124,7 @@ describe("scenarioCache", () => {
 
     const { setCachedFeed } = await import("../scenarioCache");
 
-    await expect(
-      setCachedFeed({ sort: "recent", limit: 10 }, { x: 1 }),
-    ).resolves.toBeUndefined();
+    await expect(setCachedFeed({ sort: "recent", limit: 10 }, { x: 1 })).resolves.toBeUndefined();
 
     expect(mockLogInstance.warn).toHaveBeenCalledWith("Cache write failed", expect.any(Object));
   });
@@ -154,7 +152,10 @@ describe("scenarioCache", () => {
 
     await expect(invalidateFeedCache()).resolves.toBeUndefined();
 
-    expect(mockLogInstance.warn).toHaveBeenCalledWith("Cache invalidation failed", expect.any(Object));
+    expect(mockLogInstance.warn).toHaveBeenCalledWith(
+      "Cache invalidation failed",
+      expect.any(Object),
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -173,9 +174,7 @@ describe("scenarioCache", () => {
 
     // setCachedFeed should complete without error even if nothing is cached
     mockRedisInstance.set.mockRejectedValue(new Error("Cannot set"));
-    await expect(
-      setCachedFeed({ sort: "recent", limit: 10 }, { x: 1 }),
-    ).resolves.toBeUndefined();
+    await expect(setCachedFeed({ sort: "recent", limit: 10 }, { x: 1 })).resolves.toBeUndefined();
 
     // invalidateFeedCache should complete without error
     mockRedisInstance.incr.mockRejectedValue(new Error("Cannot incr"));
@@ -224,9 +223,7 @@ describe("scenarioCache", () => {
   });
 
   it("getCachedTrendingFeed should use 'first' when cursor is undefined", async () => {
-    mockRedisInstance.get
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce("data");
+    mockRedisInstance.get.mockResolvedValueOnce(2).mockResolvedValueOnce("data");
 
     const { getCachedTrendingFeed } = await import("../scenarioCache");
     await getCachedTrendingFeed({ limit: 20 });
@@ -235,9 +232,7 @@ describe("scenarioCache", () => {
   });
 
   it("getCachedTrendingFeed should return null on cache miss", async () => {
-    mockRedisInstance.get
-      .mockResolvedValueOnce(1)
-      .mockResolvedValueOnce(null);
+    mockRedisInstance.get.mockResolvedValueOnce(1).mockResolvedValueOnce(null);
 
     const { getCachedTrendingFeed } = await import("../scenarioCache");
     const result = await getCachedTrendingFeed({ limit: 5 });
@@ -252,7 +247,10 @@ describe("scenarioCache", () => {
     const result = await getCachedTrendingFeed({ limit: 10 });
 
     expect(result).toBeNull();
-    expect(mockLogInstance.warn).toHaveBeenCalledWith("Trending cache read failed", expect.any(Object));
+    expect(mockLogInstance.warn).toHaveBeenCalledWith(
+      "Trending cache read failed",
+      expect.any(Object),
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -294,10 +292,11 @@ describe("scenarioCache", () => {
     mockRedisInstance.set.mockRejectedValue(new Error("Write failed"));
 
     const { setCachedTrendingFeed } = await import("../scenarioCache");
-    await expect(
-      setCachedTrendingFeed({ limit: 10 }, { items: [] }),
-    ).resolves.toBeUndefined();
+    await expect(setCachedTrendingFeed({ limit: 10 }, { items: [] })).resolves.toBeUndefined();
 
-    expect(mockLogInstance.warn).toHaveBeenCalledWith("Trending cache write failed", expect.any(Object));
+    expect(mockLogInstance.warn).toHaveBeenCalledWith(
+      "Trending cache write failed",
+      expect.any(Object),
+    );
   });
 });

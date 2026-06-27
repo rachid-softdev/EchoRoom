@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // TTS Service Tests — synthesizeSpeech
@@ -28,9 +28,6 @@ vi.mock("@/server/lib/circuitBreaker", () => ({
   })),
   CircuitBreakerOpenError: class extends Error {
     override name = "CircuitBreakerOpenError";
-    constructor(message: string) {
-      super(message);
-    }
   },
 }));
 
@@ -152,7 +149,11 @@ describe("synthesizeSpeech", () => {
   it("should log request info with text length and voiceId", async () => {
     mockConvert.mockResolvedValue({
       [Symbol.asyncIterator]() {
-        return { next() { return Promise.resolve({ value: undefined, done: true }); } };
+        return {
+          next() {
+            return Promise.resolve({ value: undefined, done: true });
+          },
+        };
       },
     });
 
@@ -188,14 +189,12 @@ describe("synthesizeSpeech", () => {
   // -----------------------------------------------------------------------
 
   it("should propagate CircuitBreakerOpenError when circuit is open", async () => {
-    mockCBCall.mockRejectedValue(
-      new Error("Service temporairement indisponible"),
-    );
+    mockCBCall.mockRejectedValue(new Error("Service temporairement indisponible"));
 
     const { synthesizeSpeech } = await import("../tts");
-    await expect(
-      synthesizeSpeech("test", "voice-1"),
-    ).rejects.toThrow("Service temporairement indisponible");
+    await expect(synthesizeSpeech("test", "voice-1")).rejects.toThrow(
+      "Service temporairement indisponible",
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -237,18 +236,16 @@ describe("synthesizeSpeech", () => {
     mockConvert.mockRejectedValue(new Error("voice_id not found"));
 
     const { synthesizeSpeech } = await import("../tts");
-    await expect(
-      synthesizeSpeech("test", "nonexistent-voice"),
-    ).rejects.toThrow("voice_id not found");
+    await expect(synthesizeSpeech("test", "nonexistent-voice")).rejects.toThrow(
+      "voice_id not found",
+    );
   });
 
   it("should propagate error when ElevenLabs returns 400 for empty text", async () => {
     mockConvert.mockRejectedValue(new Error("text too short or empty"));
 
     const { synthesizeSpeech } = await import("../tts");
-    await expect(
-      synthesizeSpeech("", "voice-empty"),
-    ).rejects.toThrow("text too short or empty");
+    await expect(synthesizeSpeech("", "voice-empty")).rejects.toThrow("text too short or empty");
   });
 
   // -----------------------------------------------------------------------
@@ -257,27 +254,25 @@ describe("synthesizeSpeech", () => {
 
   it("should handle very long text (5000+ characters)", async () => {
     const longText = "A".repeat(5500);
-    const audioData = new Uint8Array([0xFF, 0xEE]);
+    const audioData = new Uint8Array([0xff, 0xee]);
 
-    mockConvert.mockImplementation(
-      (_voiceId: string, params: { text: string }, _options?: any) => {
-        expect(params.text.length).toBe(5500);
-        return Promise.resolve({
-          [Symbol.asyncIterator]() {
-            let returned = false;
-            return {
-              next() {
-                if (!returned) {
-                  returned = true;
-                  return Promise.resolve({ value: audioData, done: false });
-                }
-                return Promise.resolve({ value: undefined, done: true });
-              },
-            };
-          },
-        });
-      },
-    );
+    mockConvert.mockImplementation((_voiceId: string, params: { text: string }, _options?: any) => {
+      expect(params.text.length).toBe(5500);
+      return Promise.resolve({
+        [Symbol.asyncIterator]() {
+          let returned = false;
+          return {
+            next() {
+              if (!returned) {
+                returned = true;
+                return Promise.resolve({ value: audioData, done: false });
+              }
+              return Promise.resolve({ value: undefined, done: true });
+            },
+          };
+        },
+      });
+    });
 
     const { synthesizeSpeech } = await import("../tts");
     const result = await synthesizeSpeech(longText, "voice-long");

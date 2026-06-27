@@ -7,22 +7,17 @@
  * It maintains backward compatibility for clients that depend on the v1 shapes.
  * Changes and improvements should go into v2+ routers.
  */
-import { z } from "zod";
+
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
-import {
-  router,
-  protectedProcedure,
-  withRateLimit,
-} from "../../procedures";
-import { db } from "../../db";
+import { z } from "zod";
 import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
+import { db } from "../../db";
+import { protectedProcedure, router, withRateLimit } from "../../procedures";
 
 export const profileV1Router = router({
-  me: protectedProcedure
-    .use(withRateLimit({ limit: 120, window: 60 }))
-    .query(async ({ ctx }) => {
+  me: protectedProcedure.use(withRateLimit({ limit: 120, window: 60 })).query(async ({ ctx }) => {
     const user = await db.user.findUnique({
       where: { id: ctx.session.user.id },
       select: {

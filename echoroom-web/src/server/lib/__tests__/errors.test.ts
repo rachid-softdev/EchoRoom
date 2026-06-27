@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // AppError — Custom error class tests
@@ -68,8 +68,8 @@ describe("AppError", () => {
       throw new AppError("USER_NOT_FOUND", "User not found");
     } catch (error) {
       expect(error).toBeInstanceOf(AppError);
-      expect((error as AppError).code).toBe("USER_NOT_FOUND");
-      expect((error as AppError).message).toBe("User not found");
+      expect((error as any).code).toBe("USER_NOT_FOUND");
+      expect((error as any).message).toBe("User not found");
     }
   });
 });

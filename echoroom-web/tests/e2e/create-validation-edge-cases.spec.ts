@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: mock une session authentifiée (requise pour /create)
@@ -183,7 +183,9 @@ test.describe("Create page — Validation et cas limites", () => {
     expect(counterText).toContain("/3000 caractères");
   });
 
-  test("double clic sur 'Créer le scénario' — prévention de soumission multiple", async ({ page }) => {
+  test("double clic sur 'Créer le scénario' — prévention de soumission multiple", async ({
+    page,
+  }) => {
     // Mock scenarios.create mutation avec un délai artificiel
     let createCallCount = 0;
     await page.route("**/api/trpc/scenarios.create*", async (route) => {

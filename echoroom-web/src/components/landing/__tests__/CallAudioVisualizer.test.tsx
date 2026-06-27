@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { CallAudioVisualizer } from "../CallAudioVisualizer";
 
 afterEach(() => {
@@ -44,13 +44,13 @@ describe("CallAudioVisualizer", () => {
     expect(bars).toHaveLength(20);
 
     // The delay should increase by ~0.05 each bar (i * 0.05)
-    const delays = Array.from(bars!).map(
-      (bar) => parseFloat(bar.getAttribute("style")?.match(/animation-delay:\s*([\d.]+)s/)?.[1] ?? "0"),
+    const delays = Array.from(bars!).map((bar) =>
+      parseFloat(bar.getAttribute("style")?.match(/animation-delay:\s*([\d.]+)s/)?.[1] ?? "0"),
     );
 
     // Each delay should be >= previous delay (within floating point tolerance)
     for (let i = 1; i < delays.length; i++) {
-      expect(delays[i]).toBeGreaterThanOrEqual(delays[i - 1] - 0.001);
+      expect(delays[i]!).toBeGreaterThanOrEqual(delays[i - 1]! - 0.001);
     }
   });
 
@@ -60,8 +60,8 @@ describe("CallAudioVisualizer", () => {
     const bars = container.firstElementChild?.children;
     expect(bars).toHaveLength(20);
 
-    const heights = Array.from(bars!).map(
-      (bar) => parseFloat(bar.getAttribute("style")?.match(/height:\s*([\d.]+)%/)?.[1] ?? "0"),
+    const heights = Array.from(bars!).map((bar) =>
+      parseFloat(bar.getAttribute("style")?.match(/height:\s*([\d.]+)%/)?.[1] ?? "0"),
     );
 
     // All heights should be between 30 and 100

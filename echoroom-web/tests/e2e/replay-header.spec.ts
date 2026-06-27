@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/player/ReplayHeader.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/player/ReplayHeader.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ReplayHeader component", () => {
@@ -51,9 +48,13 @@ test.describe("ReplayHeader component", () => {
   test("COMPLETED status uses secondary badge variant", () => {
     const source = readComponent();
     expect(source).toContain("COMPLETED");
-    const hasVariantLogic = source.includes("secondary") && source.includes("outline") && source.includes("COMPLETED");
+    const hasVariantLogic =
+      source.includes("secondary") && source.includes("outline") && source.includes("COMPLETED");
     if (!hasVariantLogic) {
-      test.info().annotations.push({ type: "info", description: "Badge variant logic may use different pattern" });
+      test.info().annotations.push({
+        type: "info",
+        description: "Badge variant logic may use different pattern",
+      });
     }
   });
 

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SegmentedControl } from "../segmented-control";
 
 afterEach(() => {
@@ -16,13 +16,7 @@ describe("SegmentedControl", () => {
   ];
 
   it("renders all options as buttons", () => {
-    render(
-      <SegmentedControl
-        options={options}
-        value="pending"
-        onChange={vi.fn()}
-      />,
-    );
+    render(<SegmentedControl options={options} value="pending" onChange={vi.fn()} />);
 
     expect(screen.getByRole("radio", { name: "En attente" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Approuvé" })).toBeInTheDocument();
@@ -30,13 +24,7 @@ describe("SegmentedControl", () => {
   });
 
   it("marks the selected option as checked", () => {
-    render(
-      <SegmentedControl
-        options={options}
-        value="approved"
-        onChange={vi.fn()}
-      />,
-    );
+    render(<SegmentedControl options={options} value="approved" onChange={vi.fn()} />);
 
     const approved = screen.getByRole("radio", { name: "Approuvé" });
     expect(approved).toHaveAttribute("aria-checked", "true");
@@ -49,26 +37,14 @@ describe("SegmentedControl", () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
-    render(
-      <SegmentedControl
-        options={options}
-        value="pending"
-        onChange={handleChange}
-      />,
-    );
+    render(<SegmentedControl options={options} value="pending" onChange={handleChange} />);
 
     await user.click(screen.getByRole("radio", { name: "Approuvé" }));
     expect(handleChange).toHaveBeenCalledWith("approved");
   });
 
   it("highlights the selected option with bg-card class", () => {
-    render(
-      <SegmentedControl
-        options={options}
-        value="rejected"
-        onChange={vi.fn()}
-      />,
-    );
+    render(<SegmentedControl options={options} value="rejected" onChange={vi.fn()} />);
 
     const rejected = screen.getByRole("radio", { name: "Rejeté" });
     expect(rejected.className).toContain("bg-card");
@@ -76,13 +52,7 @@ describe("SegmentedControl", () => {
   });
 
   it("has radiogroup role on container", () => {
-    render(
-      <SegmentedControl
-        options={options}
-        value="pending"
-        onChange={vi.fn()}
-      />,
-    );
+    render(<SegmentedControl options={options} value="pending" onChange={vi.fn()} />);
 
     const group = screen.getByRole("radiogroup");
     expect(group).toBeInTheDocument();

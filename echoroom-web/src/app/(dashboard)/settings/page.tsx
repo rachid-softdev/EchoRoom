@@ -1,11 +1,10 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next";
 import SettingsPageClient from "./SettingsPageClient";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Paramètres — EchoRoom AI",
-    description:
-      "Gérez votre profil, vos préférences et vos données personnelles sur EchoRoom AI.",
+    description: "Gérez votre profil, vos préférences et vos données personnelles sur EchoRoom AI.",
     openGraph: {
       title: "Paramètres — EchoRoom AI",
       description:
@@ -23,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
       index: false,
       follow: false,
     },
-  }
+  };
 }
 
 export default function SettingsPage() {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // charactersRouter tests — list, getBySlug
@@ -147,7 +147,7 @@ describe("charactersRouter.list", () => {
     const result = await handler({ input: { category: "ROMANTIC" } });
 
     expect(result).toHaveLength(1);
-    expect(result[0]?.name).toBe("Alice");
+    expect((result[0] as any)?.name).toBe("Alice");
     expect(mockDb.character.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { category: "ROMANTIC" },

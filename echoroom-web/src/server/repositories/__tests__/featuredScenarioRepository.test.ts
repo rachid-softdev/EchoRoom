@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaFeaturedScenarioRepository tests
@@ -137,9 +137,9 @@ describe("PrismaFeaturedScenarioRepository — upsert", () => {
   it("should propagate Prisma errors", async () => {
     mockUpsert.mockRejectedValue(new Error("Unique constraint violation"));
 
-    await expect(
-      repo.upsert("2026-06-20", "scenario-1", "SCENARIO_OF_THE_DAY"),
-    ).rejects.toThrow("Unique constraint violation");
+    await expect(repo.upsert("2026-06-20", "scenario-1", "SCENARIO_OF_THE_DAY")).rejects.toThrow(
+      "Unique constraint violation",
+    );
   });
 });
 

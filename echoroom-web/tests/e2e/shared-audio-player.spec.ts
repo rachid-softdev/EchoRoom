@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/player/AudioPlayer.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/player/AudioPlayer.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 /**
@@ -21,9 +18,7 @@ async function mockReplay(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -60,9 +55,7 @@ async function mockHistory(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -96,9 +89,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     expect(source).toContain("Clock");
   });
 
-  test("recordingUrl=null — live: état vide avec icône Clock", async ({
-    page,
-  }) => {
+  test("recordingUrl=null — live: état vide avec icône Clock", async ({ page }) => {
     await mockReplay(page, { recordingUrl: null, transcript: null });
 
     await page.goto("/call/test-call-id");
@@ -109,17 +100,13 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     if (redirected) return;
 
     // Message d'état vide
-    await expect(
-      page.getByText("Aucun enregistrement disponible"),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun enregistrement disponible")).toBeVisible();
 
     // Icône Clock
     await expect(page.locator("svg.lucide-clock")).toBeVisible();
 
     // Aucun bouton play/pause
-    await expect(
-      page.locator("svg.lucide-play, svg.lucide-pause"),
-    ).toHaveCount(0);
+    await expect(page.locator("svg.lucide-play, svg.lucide-pause")).toHaveCount(0);
   });
 
   // ─── recordingUrl=undefined → même état vide ────────────────────────
@@ -130,9 +117,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     expect(source).toContain("if (!recordingUrl)");
   });
 
-  test("recordingUrl=undefined — live: même état vide que null", async ({
-    page,
-  }) => {
+  test("recordingUrl=undefined — live: même état vide que null", async ({ page }) => {
     await mockReplay(page, { recordingUrl: null, transcript: null });
 
     await page.goto("/call/test-call-id");
@@ -142,9 +127,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     test.skip(redirected, "Requiert une authentification");
     if (redirected) return;
 
-    await expect(
-      page.getByText("Aucun enregistrement disponible"),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun enregistrement disponible")).toBeVisible();
     await expect(page.locator("svg.lucide-clock")).toBeVisible();
   });
 
@@ -167,9 +150,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     });
 
     // Bloque l'URL audio pour qu'elle ne se charge jamais
-    await page.route("https://example.com/audio.mp3", (route) =>
-      route.abort("timedout"),
-    );
+    await page.route("https://example.com/audio.mp3", (route) => route.abort("timedout"));
 
     await page.goto("/call/test-call-id");
     await page.waitForLoadState("networkidle");
@@ -179,9 +160,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     if (redirected) return;
 
     await expect(page.locator("svg.lucide-loader-2")).toBeVisible();
-    await expect(
-      page.getByText("Préparation de l'audio..."),
-    ).toBeVisible();
+    await expect(page.getByText("Préparation de l'audio...")).toBeVisible();
   });
 
   // ─── Erreur audio → AlertTriangle + "Chargement impossible" ─────────
@@ -203,9 +182,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     });
 
     // Bloque l'audio pour causer une erreur
-    await page.route("https://example.com/audio.mp3", (route) =>
-      route.abort("connectionrefused"),
-    );
+    await page.route("https://example.com/audio.mp3", (route) => route.abort("connectionrefused"));
 
     await page.goto("/call/test-call-id");
     await page.waitForLoadState("networkidle");
@@ -218,12 +195,8 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     await page.waitForTimeout(2000);
 
     await expect(page.locator("svg.lucide-alert-triangle")).toBeVisible();
-    await expect(
-      page.getByText("Chargement impossible"),
-    ).toBeVisible();
-    await expect(
-      page.getByText("L'audio n'est pas accessible. Réessayez."),
-    ).toBeVisible();
+    await expect(page.getByText("Chargement impossible")).toBeVisible();
+    await expect(page.getByText("L'audio n'est pas accessible. Réessayez.")).toBeVisible();
   });
 
   // ─── Play/pause toggle (icône change) ───────────────────────────────
@@ -237,9 +210,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     expect(source).toContain("<Play");
   });
 
-  test("play/pause — live: bouton play visible quand l'audio est loaded", async ({
-    page,
-  }) => {
+  test("play/pause — live: bouton play visible quand l'audio est loaded", async ({ page }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio.mp3",
       transcript: null,
@@ -256,9 +227,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     await expect(page.locator("svg.lucide-play")).toBeVisible();
   });
 
-  test("play/pause — live: clic sur play fait apparaître pause", async ({
-    page,
-  }) => {
+  test("play/pause — live: clic sur play fait apparaître pause", async ({ page }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio.mp3",
       transcript: null,
@@ -271,16 +240,12 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     test.skip(redirected, "Requiert une authentification");
     if (redirected) return;
 
-    const playButton = page
-      .locator("button")
-      .filter({ has: page.locator("svg.lucide-play") });
+    const playButton = page.locator("button").filter({ has: page.locator("svg.lucide-play") });
     if (await playButton.isVisible()) {
       await playButton.click();
       // Après clic, l'icône devrait être Pause (ou Play si l'audio a échoué)
       // Au moins un des deux est visible
-      await expect(
-        page.locator("svg.lucide-pause, svg.lucide-play").first(),
-      ).toBeVisible();
+      await expect(page.locator("svg.lucide-pause, svg.lucide-play").first()).toBeVisible();
     }
   });
 
@@ -295,9 +260,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     expect(source).toContain("handleSeek");
   });
 
-  test("seek slider — live: range input présent quand loaded", async ({
-    page,
-  }) => {
+  test("seek slider — live: range input présent quand loaded", async ({ page }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio.mp3",
       transcript: null,
@@ -320,9 +283,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     }
   });
 
-  test("seek slider — live: temps formaté mm:ss présent", async ({
-    page,
-  }) => {
+  test("seek slider — live: temps formaté mm:ss présent", async ({ page }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio.mp3",
       transcript: null,
@@ -398,8 +359,7 @@ test.describe("AudioPlayer — Composant Partagé", () => {
       const classAttr = await activeSpeed.first().getAttribute("class");
       expect(classAttr).toBeTruthy();
       const hasPrimaryClass =
-        classAttr!.includes("bg-primary") ||
-        classAttr!.includes("text-primary");
+        classAttr!.includes("bg-primary") || classAttr!.includes("text-primary");
       expect(hasPrimaryClass).toBe(true);
     }
   });
@@ -409,14 +369,12 @@ test.describe("AudioPlayer — Composant Partagé", () => {
   test("download — lien <a download> avec href et attribut download", () => {
     const source = readComponent();
     expect(source).toContain("download");
-    expect(source).toContain('href={recordingUrl}');
+    expect(source).toContain("href={recordingUrl}");
     expect(source).toContain("Télécharger");
     expect(source).toContain("Download");
   });
 
-  test("download — live: lien de téléchargement avec href correct", async ({
-    page,
-  }) => {
+  test("download — live: lien de téléchargement avec href correct", async ({ page }) => {
     await mockReplay(page, {
       recordingUrl: "https://example.com/audio.mp3",
       transcript: null,
@@ -429,14 +387,11 @@ test.describe("AudioPlayer — Composant Partagé", () => {
     test.skip(redirected, "Requiert une authentification");
     if (redirected) return;
 
-    const downloadLink = page.locator('a[download]');
+    const downloadLink = page.locator("a[download]");
     const count = await downloadLink.count();
     if (count > 0) {
       await expect(downloadLink).toBeVisible();
-      await expect(downloadLink).toHaveAttribute(
-        "href",
-        "https://example.com/audio.mp3",
-      );
+      await expect(downloadLink).toHaveAttribute("href", "https://example.com/audio.mp3");
       await expect(page.getByText("Télécharger")).toBeVisible();
       await expect(page.locator("svg.lucide-download")).toBeVisible();
     }
@@ -490,16 +445,14 @@ test.describe("AudioPlayer — Composant Partagé", () => {
   test("conteneur audio loaded a className 'flex flex-col items-center py-6'", () => {
     const source = readComponent();
     // Vérifie le conteneur principal du loaded state
-    expect(source).toContain(
-      '<div className="flex flex-col items-center py-6">',
-    );
+    expect(source).toContain('<div className="flex flex-col items-center py-6">');
   });
 
   test("état loading a un cercle bg-muted avec Loader2", () => {
     const source = readComponent();
     // Loader2 dans un cercle bg-muted
     expect(source).toContain(
-      'w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4',
+      "w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4",
     );
   });
 });

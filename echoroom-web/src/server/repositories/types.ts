@@ -5,6 +5,11 @@ export type PrismaTx = Omit<
   "$connect" | "$disconnect" | "$on" | "$use" | "$transaction" | "$extends"
 >;
 
-export interface AtomicDebitSuccess { debited: true }
-export interface AtomicDebitFailure { debited: false; reason: "INSUFFICIENT_CREDITS" | "USER_NOT_FOUND" }
+export interface AtomicDebitSuccess {
+  debited: true;
+}
+export interface AtomicDebitFailure {
+  debited: false;
+  reason: "INSUFFICIENT_CREDITS" | "USER_NOT_FOUND";
+}
 export type AtomicDebitResult = AtomicDebitSuccess | AtomicDebitFailure;

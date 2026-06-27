@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Async Moderation Tests
@@ -34,14 +34,14 @@ const mockCommentUpdate = vi.fn().mockResolvedValue({});
 const mockScenarioUpdate = vi.fn().mockResolvedValue({});
 
 vi.mock("@/server/db", () => ({
-    db: {
-      comment: {
-        updateMany: mockCommentUpdate,
-      },
-      scenario: {
-        updateMany: mockScenarioUpdate,
-      },
+  db: {
+    comment: {
+      updateMany: mockCommentUpdate,
     },
+    scenario: {
+      updateMany: mockScenarioUpdate,
+    },
+  },
 }));
 
 describe("scheduleAsyncModeration", () => {
@@ -213,10 +213,10 @@ describe("scheduleAsyncModeration", () => {
 
   it("should handle multiple rapid calls correctly", async () => {
     mockCheckContent
-      .mockResolvedValueOnce({ approved: true })        // comment-1: approved
+      .mockResolvedValueOnce({ approved: true }) // comment-1: approved
       .mockResolvedValueOnce({ approved: false, reason: "bad" }) // comment-2: rejected
-      .mockRejectedValueOnce(new Error("fail"))          // comment-3: error
-      .mockResolvedValueOnce({ approved: true });        // scenario-1: approved
+      .mockRejectedValueOnce(new Error("fail")) // comment-3: error
+      .mockResolvedValueOnce({ approved: true }); // scenario-1: approved
 
     const { scheduleAsyncModeration } = await import("../asyncModeration");
 

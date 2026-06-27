@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Conversation State Tests — N1 callerNumber encryption
@@ -283,11 +283,9 @@ describe("appendMessage", () => {
 
     await appendMessage("CA_test_persist", { role: "user", content: "Test" });
 
-    expect(redis!.set).toHaveBeenCalledWith(
-      "conversation:CA_test_persist",
-      expect.any(String),
-      { ex: CONVERSATION_TTL_S },
-    );
+    expect(redis!.set).toHaveBeenCalledWith("conversation:CA_test_persist", expect.any(String), {
+      ex: CONVERSATION_TTL_S,
+    });
   });
 });
 
@@ -407,7 +405,10 @@ describe("setConversationStatus", () => {
     vi.mocked(redis!.set).mockResolvedValue("OK");
 
     const statuses: Array<"active" | "completed" | "timed_out" | "failed"> = [
-      "active", "completed", "timed_out", "failed",
+      "active",
+      "completed",
+      "timed_out",
+      "failed",
     ];
 
     for (const s of statuses) {
@@ -441,8 +442,6 @@ describe("deleteConversationState", () => {
 
     vi.mocked(redis!.del).mockResolvedValue(0);
 
-    await expect(
-      deleteConversationState("CA_test_nonexistent"),
-    ).resolves.toBeUndefined();
+    await expect(deleteConversationState("CA_test_nonexistent")).resolves.toBeUndefined();
   });
 });

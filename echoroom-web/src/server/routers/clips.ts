@@ -1,9 +1,15 @@
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withIPRateLimit, withRateLimit, withContentModeration } from "../procedures";
-import { withREDMetrics } from "../middleware/metrics";
+import { z } from "zod";
 import { db } from "../db";
 import { AppError } from "../lib/errors";
+import { withREDMetrics } from "../middleware/metrics";
+import {
+  protectedProcedure,
+  router,
+  withContentModeration,
+  withIPRateLimit,
+  withRateLimit,
+} from "../procedures";
 import { createClip, deleteClip, getClips } from "../services/social/clips";
 
 export const clipsRouter = router({
@@ -58,8 +64,7 @@ export const clipsRouter = router({
       });
 
       const items = clips.slice(0, input.limit);
-      const nextCursor =
-        clips.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = clips.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };
     }),

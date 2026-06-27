@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted mocks using vi.hoisted for variables referenced in vi.mock factories
 const mockSignOut = vi.hoisted(() => vi.fn());
@@ -99,10 +99,7 @@ vi.mock("@/components/shared/ConfirmDialog", () => ({
         >
           {loading ? "Loading..." : confirmLabel}
         </button>
-        <button
-          data-testid="cancel-button"
-          onClick={() => onOpenChange(false)}
-        >
+        <button data-testid="cancel-button" onClick={() => onOpenChange(false)}>
           Annuler
         </button>
       </div>
@@ -111,11 +108,19 @@ vi.mock("@/components/shared/ConfirmDialog", () => ({
 
 // Mock @/components/ui
 vi.mock("@/components/ui", () => ({
-  Card: ({ children, className }: any) => <div className={className} data-testid="card">{children}</div>,
+  Card: ({ children, className }: any) => (
+    <div className={className} data-testid="card">
+      {children}
+    </div>
+  ),
   CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
   CardDescription: ({ children }: any) => <p data-testid="card-description">{children}</p>,
   CardHeader: ({ children }: any) => <div data-testid="card-header">{children}</div>,
-  CardTitle: ({ children, className }: any) => <h3 className={className} data-testid="card-title">{children}</h3>,
+  CardTitle: ({ children, className }: any) => (
+    <h3 className={className} data-testid="card-title">
+      {children}
+    </h3>
+  ),
   Button: ({ children, onClick, disabled, variant, size, className, ...props }: any) => (
     <button
       onClick={onClick}
@@ -298,7 +303,10 @@ describe("SettingsPageClient", () => {
 
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({ title: expect.stringContaining("Erreur"), variant: "destructive" }),
+        expect.objectContaining({
+          title: expect.stringContaining("Erreur"),
+          variant: "destructive",
+        }),
       );
     });
   });
@@ -414,15 +422,13 @@ describe("SettingsPageClient", () => {
 
   it("shows error toast when profile update fails", async () => {
     // Re-create the mutation mock to call onError instead of onSuccess
-    vi.mocked(api.profile.updateProfile.useMutation).mockImplementation(
-      (opts?: any) => ({
-        mutate: (...args: unknown[]) => {
-          mockUpdateProfileMutate(...args);
-          opts?.onError?.({ message: "Erreur de mise à jour" });
-        },
-        isPending: false,
-      }),
-    );
+    vi.mocked(api.profile.updateProfile.useMutation).mockImplementation((opts?: any) => ({
+      mutate: (...args: unknown[]) => {
+        mockUpdateProfileMutate(...args);
+        opts?.onError?.({ message: "Erreur de mise à jour" });
+      },
+      isPending: false,
+    }) as any);
 
     render(<SettingsPageClient />);
 
@@ -441,15 +447,13 @@ describe("SettingsPageClient", () => {
   });
 
   it("shows generic error toast when profile update error has no message", () => {
-    vi.mocked(api.profile.updateProfile.useMutation).mockImplementation(
-      (opts?: any) => ({
-        mutate: (...args: unknown[]) => {
-          mockUpdateProfileMutate(...args);
-          opts?.onError?.({});
-        },
-        isPending: false,
-      }),
-    );
+    vi.mocked(api.profile.updateProfile.useMutation).mockImplementation((opts?: any) => ({
+      mutate: (...args: unknown[]) => {
+        mockUpdateProfileMutate(...args);
+        opts?.onError?.({});
+      },
+      isPending: false,
+    }) as any);
 
     render(<SettingsPageClient />);
 
@@ -486,15 +490,13 @@ describe("SettingsPageClient", () => {
   // ── Delete mutation error ────────────────────────────────────
 
   it("shows error toast when delete mutation fails", () => {
-    vi.mocked(api.profile.deleteMyAccount.useMutation).mockImplementation(
-      (opts?: any) => ({
-        mutate: (...args: unknown[]) => {
-          mockDeleteAccountMutate(...args);
-          opts?.onError?.({ message: "Erreur suppression" });
-        },
-        isPending: false,
-      }),
-    );
+    vi.mocked(api.profile.deleteMyAccount.useMutation).mockImplementation((opts?: any) => ({
+      mutate: (...args: unknown[]) => {
+        mockDeleteAccountMutate(...args);
+        opts?.onError?.({ message: "Erreur suppression" });
+      },
+      isPending: false,
+    }) as any);
 
     render(<SettingsPageClient />);
 
@@ -518,15 +520,13 @@ describe("SettingsPageClient", () => {
   // ── Consent withdrawal error ─────────────────────────────────
 
   it("shows error toast when consent withdrawal fails", () => {
-    vi.mocked(api.user.withdrawConsent.useMutation).mockImplementation(
-      (opts?: any) => ({
-        mutate: (...args: unknown[]) => {
-          mockWithdrawConsentMutate(...args);
-          opts?.onError?.({ message: "Erreur consentement" });
-        },
-        isPending: false,
-      }),
-    );
+    vi.mocked(api.user.withdrawConsent.useMutation).mockImplementation((opts?: any) => ({
+      mutate: (...args: unknown[]) => {
+        mockWithdrawConsentMutate(...args);
+        opts?.onError?.({ message: "Erreur consentement" });
+      },
+      isPending: false,
+    }) as any);
 
     render(<SettingsPageClient />);
 

@@ -1,6 +1,6 @@
+import { Frown, Home } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
-import { Home, Frown } from "lucide-react";
 
 export default function NotFound() {
   return (

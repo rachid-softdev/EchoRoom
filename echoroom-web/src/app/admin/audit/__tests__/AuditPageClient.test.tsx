@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock tRPC
 vi.mock("@/lib/trpc", () => ({
@@ -28,9 +28,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-const mockAuditQuery = api.admin.getAuditLogs.useQuery as ReturnType<
-  typeof vi.fn
->;
+const mockAuditQuery = api.admin.getAuditLogs.useQuery as ReturnType<typeof vi.fn>;
 
 const sampleAuditLog = {
   id: "log-1",
@@ -54,7 +52,7 @@ function buildData(items: any[] = [sampleAuditLog], nextCursor?: string) {
   return { items, nextCursor };
 }
 
-function buildMockQuery(overrides: Partial<ReturnType<typeof vi.fn>> = {}) {
+function buildMockQuery(overrides: Record<string, any> = {}) {
   return {
     isLoading: false,
     data: buildData(),
@@ -116,9 +114,7 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.getByText("Impossible de charger les données. Réessayez."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les données. Réessayez.")).toBeInTheDocument();
   });
 
   it("should call refetch when retry button is clicked", () => {
@@ -143,9 +139,7 @@ describe("AuditPageClient", () => {
   // -----------------------------------------------------------------------
 
   it("should show empty state when there are no audit logs", () => {
-    mockAuditQuery.mockReturnValue(
-      buildMockQuery({ data: buildData([], undefined) }),
-    );
+    mockAuditQuery.mockReturnValue(buildMockQuery({ data: buildData([], undefined) }));
 
     render(<AuditPageClient />);
 
@@ -164,9 +158,7 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.getByRole("heading", { name: /Journal d'audit/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Journal d'audit/i })).toBeInTheDocument();
     expect(
       screen.getByText("Consultez l'historique des actions administratives"),
     ).toBeInTheDocument();
@@ -194,9 +186,7 @@ describe("AuditPageClient", () => {
   });
 
   it("should display a dash when admin is null", () => {
-    mockAuditQuery.mockReturnValue(
-      buildMockQuery({ data: buildData([sampleAuditLogNoAdmin]) }),
-    );
+    mockAuditQuery.mockReturnValue(buildMockQuery({ data: buildData([sampleAuditLogNoAdmin]) }));
 
     render(<AuditPageClient />);
 
@@ -218,9 +208,7 @@ describe("AuditPageClient", () => {
       ...sampleAuditLog,
       action: "UNKNOWN_ACTION",
     };
-    mockAuditQuery.mockReturnValue(
-      buildMockQuery({ data: buildData([unknownLog]) }),
-    );
+    mockAuditQuery.mockReturnValue(buildMockQuery({ data: buildData([unknownLog]) }));
 
     render(<AuditPageClient />);
 
@@ -270,9 +258,7 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.getByRole("combobox", { name: /Filtrer par action/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /Filtrer par action/i })).toBeInTheDocument();
   });
 
   it("should render the entity type filter select", () => {
@@ -305,9 +291,7 @@ describe("AuditPageClient", () => {
 
     // Action filter is set to "Toutes les actions" (value="") which is undefined
     // No filter is active initially, so no reset button
-    expect(
-      screen.queryByRole("button", { name: /Réinitialiser/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Réinitialiser/i })).not.toBeInTheDocument();
   });
 
   it("should call handleResetFilters when reset button is clicked", () => {
@@ -352,9 +336,7 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: /Charger plus/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Charger plus/i })).toBeInTheDocument();
   });
 
   it("should not show 'Charger plus' button when nextCursor is absent", () => {
@@ -362,9 +344,7 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.queryByRole("button", { name: /Charger plus/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Charger plus/i })).not.toBeInTheDocument();
   });
 
   it("should show 'Chargement...' on pagination button when isFetching", () => {
@@ -377,9 +357,7 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: /Chargement.../i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Chargement.../i })).toBeInTheDocument();
   });
 
   it("should disable pagination button when isFetching", () => {
@@ -392,8 +370,6 @@ describe("AuditPageClient", () => {
 
     render(<AuditPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: /Chargement.../i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Chargement.../i })).toBeDisabled();
   });
 });

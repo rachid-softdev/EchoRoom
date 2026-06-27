@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Scenario detail page - additional scenarios", () => {
   test("should return a handled response for a valid scenario route", async ({ page }) => {
@@ -57,7 +57,9 @@ test.describe("Scenario detail page - additional scenarios", () => {
     await expect(title).not.toBeEmpty();
   });
 
-  test("should show a skeleton loading state before the scenario content renders", async ({ page }) => {
+  test("should show a skeleton loading state before the scenario content renders", async ({
+    page,
+  }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 
@@ -79,7 +81,10 @@ test.describe("Scenario detail page - additional scenarios", () => {
     // The skeleton uses animate-pulse utility classes from the Skeleton component
     // It should be present in the initial server-rendered DOM
     const skeletonElements = page.locator('[class*="animate-pulse"]');
-    const skeletonExists = await skeletonElements.first().isVisible().catch(() => false);
+    const skeletonExists = await skeletonElements
+      .first()
+      .isVisible()
+      .catch(() => false);
 
     if (skeletonExists) {
       // Confirm at least one skeleton placeholder is rendered while data loads
@@ -122,7 +127,9 @@ test.describe("Scenario detail page - additional scenarios", () => {
     await expect(callCta).toBeVisible();
   });
 
-  test("should display a related scenarios section when similar scenarios exist", async ({ page }) => {
+  test("should display a related scenarios section when similar scenarios exist", async ({
+    page,
+  }) => {
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
 

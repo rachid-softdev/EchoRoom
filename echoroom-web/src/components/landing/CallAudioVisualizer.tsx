@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 
 /**
  * Client-side audio visualizer bars with stable random heights generated
@@ -12,8 +12,8 @@ export function CallAudioVisualizer() {
       height: 30 + Math.random() * 70,
       duration: 0.4 + Math.random() * 0.6,
       delay: i * 0.05,
-    }))
-  )
+    })),
+  );
 
   return (
     <div className="flex items-center gap-0.5 h-6 px-1" aria-hidden="true">
@@ -29,5 +29,5 @@ export function CallAudioVisualizer() {
         />
       ))}
     </div>
-  )
+  );
 }

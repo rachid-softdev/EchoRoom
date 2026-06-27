@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // H-1: env.ts — Random dev secret for NEXTAUTH_SECRET
@@ -25,29 +25,29 @@ describe("H-1: env.ts NEXTAUTH_SECRET random dev secret", () => {
 
   it("should generate a random hex string when NEXTAUTH_SECRET is not set", async () => {
     // Ensure NEXTAUTH_SECRET is NOT set
-    delete process.env['NEXTAUTH_SECRET'];
+    delete process.env["NEXTAUTH_SECRET"];
 
     // Set minimum required env vars for env.ts to load
-    process.env['DATABASE_URL'] = "postgresql://localhost:5432/test";
-    process.env['NEXT_PUBLIC_APP_URL'] = "http://localhost:3000";
-    process.env['STRIPE_SECRET_KEY'] = "sk_test_placeholder";
-    process.env['STRIPE_WEBHOOK_SECRET'] = "whsec_placeholder";
-    process.env['TWILIO_ACCOUNT_SID'] = "AC_test";
-    process.env['TWILIO_AUTH_TOKEN'] = "test_token";
-    process.env['TWILIO_PHONE_NUMBER'] = "+15550000000";
-    process.env['OPENAI_API_KEY'] = "sk_test";
-    process.env['ELEVENLABS_API_KEY'] = "test_key";
-    process.env['DEEPGRAM_API_KEY'] = "test_key";
-    process.env['R2_ACCESS_KEY_ID'] = "test_key";
-    process.env['R2_SECRET_ACCESS_KEY'] = "test_secret";
-    process.env['R2_BUCKET_NAME'] = "test-bucket";
-    process.env['R2_ENDPOINT'] = "https://test.r2.dev";
-    process.env['POSTHOG_KEY'] = "phc_test";
-    process.env['POSTHOG_HOST'] = "https://us.i.posthog.com";
-    process.env['PHONE_ENCRYPTION_KEY'] = "test_key_for_env_dev_secret_test_32!";
-    process.env['TWILIO_TOKEN_SECRET'] = "test_token_secret_16_characters!";
-    process.env['NEXTAUTH_URL'] = "http://localhost:3000";
-    process.env['REDIS_URL'] = "https://localhost:6379";
+    process.env["DATABASE_URL"] = "postgresql://localhost:5432/test";
+    process.env["NEXT_PUBLIC_APP_URL"] = "http://localhost:3000";
+    process.env["STRIPE_SECRET_KEY"] = "sk_test_placeholder";
+    process.env["STRIPE_WEBHOOK_SECRET"] = "whsec_placeholder";
+    process.env["TWILIO_ACCOUNT_SID"] = "AC_test";
+    process.env["TWILIO_AUTH_TOKEN"] = "test_token";
+    process.env["TWILIO_PHONE_NUMBER"] = "+15550000000";
+    process.env["OPENAI_API_KEY"] = "sk_test";
+    process.env["ELEVENLABS_API_KEY"] = "test_key";
+    process.env["DEEPGRAM_API_KEY"] = "test_key";
+    process.env["R2_ACCESS_KEY_ID"] = "test_key";
+    process.env["R2_SECRET_ACCESS_KEY"] = "test_secret";
+    process.env["R2_BUCKET_NAME"] = "test-bucket";
+    process.env["R2_ENDPOINT"] = "https://test.r2.dev";
+    process.env["POSTHOG_KEY"] = "phc_test";
+    process.env["POSTHOG_HOST"] = "https://us.i.posthog.com";
+    process.env["PHONE_ENCRYPTION_KEY"] = "test_key_for_env_dev_secret_test_32!";
+    process.env["TWILIO_TOKEN_SECRET"] = "test_token_secret_16_characters!";
+    process.env["NEXTAUTH_URL"] = "http://localhost:3000";
+    process.env["REDIS_URL"] = "https://localhost:6379";
 
     vi.resetModules();
 
@@ -69,28 +69,28 @@ describe("H-1: env.ts NEXTAUTH_SECRET random dev secret", () => {
   });
 
   it("should use set NEXTAUTH_SECRET when provided", async () => {
-    process.env['NEXTAUTH_SECRET'] = "my_predefined_secret_key_that_is_32_chars_long!";
+    process.env["NEXTAUTH_SECRET"] = "my_predefined_secret_key_that_is_32_chars_long!";
     // Set minimum required env vars
-    process.env['DATABASE_URL'] = "postgresql://localhost:5432/test";
-    process.env['NEXT_PUBLIC_APP_URL'] = "http://localhost:3000";
-    process.env['STRIPE_SECRET_KEY'] = "sk_test_placeholder";
-    process.env['STRIPE_WEBHOOK_SECRET'] = "whsec_placeholder";
-    process.env['TWILIO_ACCOUNT_SID'] = "AC_test";
-    process.env['TWILIO_AUTH_TOKEN'] = "test_token";
-    process.env['TWILIO_PHONE_NUMBER'] = "+15550000000";
-    process.env['OPENAI_API_KEY'] = "sk_test";
-    process.env['ELEVENLABS_API_KEY'] = "test_key";
-    process.env['DEEPGRAM_API_KEY'] = "test_key";
-    process.env['R2_ACCESS_KEY_ID'] = "test_key";
-    process.env['R2_SECRET_ACCESS_KEY'] = "test_secret";
-    process.env['R2_BUCKET_NAME'] = "test-bucket";
-    process.env['R2_ENDPOINT'] = "https://test.r2.dev";
-    process.env['POSTHOG_KEY'] = "phc_test";
-    process.env['POSTHOG_HOST'] = "https://us.i.posthog.com";
-    process.env['PHONE_ENCRYPTION_KEY'] = "test_key_for_env_dev_secret_test_32!";
-    process.env['TWILIO_TOKEN_SECRET'] = "test_token_secret_16_characters!";
-    process.env['NEXTAUTH_URL'] = "http://localhost:3000";
-    process.env['REDIS_URL'] = "https://localhost:6379";
+    process.env["DATABASE_URL"] = "postgresql://localhost:5432/test";
+    process.env["NEXT_PUBLIC_APP_URL"] = "http://localhost:3000";
+    process.env["STRIPE_SECRET_KEY"] = "sk_test_placeholder";
+    process.env["STRIPE_WEBHOOK_SECRET"] = "whsec_placeholder";
+    process.env["TWILIO_ACCOUNT_SID"] = "AC_test";
+    process.env["TWILIO_AUTH_TOKEN"] = "test_token";
+    process.env["TWILIO_PHONE_NUMBER"] = "+15550000000";
+    process.env["OPENAI_API_KEY"] = "sk_test";
+    process.env["ELEVENLABS_API_KEY"] = "test_key";
+    process.env["DEEPGRAM_API_KEY"] = "test_key";
+    process.env["R2_ACCESS_KEY_ID"] = "test_key";
+    process.env["R2_SECRET_ACCESS_KEY"] = "test_secret";
+    process.env["R2_BUCKET_NAME"] = "test-bucket";
+    process.env["R2_ENDPOINT"] = "https://test.r2.dev";
+    process.env["POSTHOG_KEY"] = "phc_test";
+    process.env["POSTHOG_HOST"] = "https://us.i.posthog.com";
+    process.env["PHONE_ENCRYPTION_KEY"] = "test_key_for_env_dev_secret_test_32!";
+    process.env["TWILIO_TOKEN_SECRET"] = "test_token_secret_16_characters!";
+    process.env["NEXTAUTH_URL"] = "http://localhost:3000";
+    process.env["REDIS_URL"] = "https://localhost:6379";
 
     vi.resetModules();
 

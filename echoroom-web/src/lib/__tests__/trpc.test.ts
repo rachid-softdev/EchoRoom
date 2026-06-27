@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // tRPC client API object tests
@@ -34,11 +34,11 @@ describe("api — tRPC React client", () => {
     // The api object is a Proxy — accessing any property returns a
     // nested proxy that has useQuery, useMutation etc.
     expect(api).toBeDefined();
-    expect(typeof api.scenario?.useQuery).toBe("function");
+    expect(typeof (api as any).scenario?.useQuery).toBe("function");
   });
 
   it("should support router-proxied useMutation", async () => {
     const { api } = await import("../trpc");
-    expect(typeof api.scenario?.useMutation).toBe("function");
+    expect(typeof (api as any).scenario?.useMutation).toBe("function");
   });
 });

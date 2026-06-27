@@ -1,5 +1,5 @@
 import type { PrismaClient, User } from "@prisma/client";
-import type { PrismaTx, AtomicDebitResult } from "./types";
+import type { AtomicDebitResult, PrismaTx } from "./types";
 
 export interface IUserRepository {
   findById(id: string): Promise<User | null>;
@@ -29,7 +29,10 @@ export class PrismaUserRepository implements IUserRepository {
     return this.db.user.update({ where: { id }, data });
   }
 
-  async updateMany(where: { id?: string; deletedAt?: Date | null }, data: Partial<User>): Promise<number> {
+  async updateMany(
+    where: { id?: string; deletedAt?: Date | null },
+    data: Partial<User>,
+  ): Promise<number> {
     const result = await this.db.user.updateMany({ where, data });
     return result.count;
   }

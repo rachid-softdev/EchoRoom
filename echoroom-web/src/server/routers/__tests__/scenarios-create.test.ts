@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // scenariosRouter tests — create, feed, trending, getById
@@ -291,7 +291,9 @@ describe("scenariosRouter.create", () => {
       validInput.description,
       validInput.openingMessage,
       validInput.aiInstructions,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
     expect(scheduleAsyncModeration).toHaveBeenCalledWith(changedText, {
       type: "scenario",
       id: "scenario-new",
@@ -503,11 +505,9 @@ describe("scenariosRouter.feed", () => {
 
     expect(result.items).toHaveLength(2);
     // The second scenario has much higher engagement, should be first
-    expect(result.items[0]?.id).toBe("s-2");
+    expect((result.items[0] as any)?.id).toBe("s-2");
     // TRENDING sort uses FETCH_CAP=50
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 50 }),
-    );
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 50 }));
   });
 
   it("should sort by TOP using likeCount desc", async () => {
@@ -561,9 +561,7 @@ describe("scenariosRouter.feed", () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.nextCursor).toBeDefined();
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 2 }),
-    );
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 2 }));
   });
 
   it("should respect limit=20 boundary", async () => {
@@ -584,9 +582,7 @@ describe("scenariosRouter.feed", () => {
 
     expect(result.items).toHaveLength(20);
     expect(result.nextCursor).toBeDefined();
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 21 }),
-    );
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 21 }));
   });
 });
 
@@ -614,15 +610,9 @@ describe("scenariosRouter.trending", () => {
   });
 
   it("should return trending scenarios with 48h scores", async () => {
-    mockDb.reaction.groupBy.mockResolvedValue([
-      { scenarioId: "s-1", _count: { id: 5 } },
-    ]);
-    mockDb.call.groupBy.mockResolvedValue([
-      { scenarioId: "s-1", _count: { id: 3 } },
-    ]);
-    mockDb.comment.groupBy.mockResolvedValue([
-      { scenarioId: "s-1", _count: { id: 2 } },
-    ]);
+    mockDb.reaction.groupBy.mockResolvedValue([{ scenarioId: "s-1", _count: { id: 5 } }]);
+    mockDb.call.groupBy.mockResolvedValue([{ scenarioId: "s-1", _count: { id: 3 } }]);
+    mockDb.comment.groupBy.mockResolvedValue([{ scenarioId: "s-1", _count: { id: 2 } }]);
     mockDb.scenario.findMany.mockResolvedValue([baseScenario]);
 
     const { scenariosRouter } = await import("../scenarios");
@@ -634,7 +624,7 @@ describe("scenariosRouter.trending", () => {
     });
 
     expect(result.items).toHaveLength(1);
-    expect(result.items[0]?.id).toBe("s-1");
+    expect((result.items[0] as any)?.id).toBe("s-1");
     // Score should not leak into items
     expect(result.items[0]).not.toHaveProperty("score");
   });
@@ -717,9 +707,7 @@ describe("scenariosRouter.trending", () => {
       input: { limit: 10 },
     });
 
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 50 }),
-    );
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 50 }));
   });
 });
 
@@ -754,7 +742,7 @@ describe("scenariosRouter.getById", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe("s-1");
+    expect((result as any)?.id).toBe("s-1");
   });
 
   it("should NOT allow unauthenticated user to see PRIVATE scenario", async () => {
@@ -763,8 +751,7 @@ describe("scenariosRouter.getById", () => {
       // Simulate: non-auth user won't match PRIVATE scenarios
       if (where.OR && Array.isArray(where.OR)) {
         const matchesPublicApproved = where.OR.some(
-          (cond: any) =>
-            cond.visibility === "PUBLIC" && cond.moderationStatus === "APPROVED",
+          (cond: any) => cond.visibility === "PUBLIC" && cond.moderationStatus === "APPROVED",
         );
         // Since there's no userId or role in ctx.session for non-auth,
         // only the PUBLIC+APPROVED condition applies
@@ -817,7 +804,7 @@ describe("scenariosRouter.getById", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe("s-own");
+    expect((result as any)?.id).toBe("s-own");
   });
 
   it("should NOT allow non-creator to see PRIVATE scenario", async () => {
@@ -859,7 +846,7 @@ describe("scenariosRouter.getById", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe("s-anything");
+    expect((result as any)?.id).toBe("s-anything");
   });
 
   it("should return null for non-existent scenario", async () => {
@@ -937,6 +924,6 @@ describe("scenariosRouter.getById", () => {
     expect(result).toHaveProperty("character");
     expect(result).toHaveProperty("reactions");
     expect(result).toHaveProperty("_count");
-    expect(result?._count).toEqual({ comments: 5, reactions: 3 });
+    expect((result as any)?._count).toEqual({ comments: 5, reactions: 3 });
   });
 });
