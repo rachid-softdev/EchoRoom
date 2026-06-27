@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // webhookIdempotency tests — checkIdempotency
@@ -39,11 +39,10 @@ describe("checkIdempotency", () => {
     const result = await checkIdempotency("evt_123");
 
     expect(result).toBe(false);
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      `${KEY_PREFIX}evt_123`,
-      "1",
-      { nx: true, ex: IDEMPOTENCY_TTL },
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith(`${KEY_PREFIX}evt_123`, "1", {
+      nx: true,
+      ex: IDEMPOTENCY_TTL,
+    });
   });
 
   it("should return true when SET NX returns null (duplicate event)", async () => {
@@ -124,9 +123,9 @@ describe("checkIdempotency", () => {
 
   it("should handle different event IDs independently", async () => {
     mockRedis.set
-      .mockResolvedValueOnce("OK")   // First event: new
-      .mockResolvedValueOnce(null)   // Second event: duplicate
-      .mockResolvedValueOnce("OK");  // Third event: new
+      .mockResolvedValueOnce("OK") // First event: new
+      .mockResolvedValueOnce(null) // Second event: duplicate
+      .mockResolvedValueOnce("OK"); // Third event: new
 
     const { checkIdempotency } = await import("../webhookIdempotency");
 

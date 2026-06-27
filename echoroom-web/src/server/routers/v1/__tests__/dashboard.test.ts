@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // dashboardV1Router tests
@@ -187,9 +187,7 @@ describe("dashboardV1Router.getData", () => {
     });
 
     expect(result.calls).toHaveLength(3);
-    expect(mockDb.call.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 4 }),
-    );
+    expect(mockDb.call.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 4 }));
   });
 
   it("should respect custom scenariosLimit", async () => {
@@ -197,7 +195,13 @@ describe("dashboardV1Router.getData", () => {
       id: `sc-${i}`,
       title: `Scenario ${i}`,
       createdAt: new Date(`2026-06-${String(i + 1).padStart(2, "0")}T10:00:00Z`),
-      character: { id: `char-${i}`, name: `C${i}`, slug: `c${i}`, avatarUrl: null, category: "ROMANTIC" },
+      character: {
+        id: `char-${i}`,
+        name: `C${i}`,
+        slug: `c${i}`,
+        avatarUrl: null,
+        category: "ROMANTIC",
+      },
       _count: { reactions: 0, comments: 0 },
     }));
 
@@ -215,9 +219,7 @@ describe("dashboardV1Router.getData", () => {
     });
 
     expect(result.scenarios).toHaveLength(2);
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 3 }),
-    );
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 3 }));
   });
 
   it("should run all queries in parallel (Promise.all)", async () => {

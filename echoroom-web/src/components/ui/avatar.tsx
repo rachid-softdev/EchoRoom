@@ -21,15 +21,12 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
       <AvatarContext.Provider value={{ fallbackDelay }}>
         <div
           ref={ref}
-          className={cn(
-            "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-            className
-          )}
+          className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)}
           {...props}
         />
       </AvatarContext.Provider>
     );
-  }
+  },
 );
 Avatar.displayName = "Avatar";
 
@@ -39,9 +36,7 @@ interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
   ({ className, onLoadingStatusChange, alt = "", ...props }, ref) => {
-    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
-      "loading"
-    );
+    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">("loading");
 
     React.useEffect(() => {
       onLoadingStatusChange?.(status);
@@ -56,7 +51,7 @@ const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
           "aspect-square h-full w-full object-cover",
           status !== "loaded" && "hidden",
           status === "loaded" && "block",
-          className
+          className,
         )}
         loading="lazy"
         onLoad={() => setStatus("loaded")}
@@ -64,7 +59,7 @@ const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
         {...props}
       />
     );
-  }
+  },
 );
 AvatarImage.displayName = "AvatarImage";
 
@@ -90,14 +85,14 @@ const AvatarFallback = React.forwardRef<HTMLDivElement, AvatarFallbackProps>(
         ref={ref}
         className={cn(
           "flex h-full w-full items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground",
-          className
+          className,
         )}
         {...props}
       />
     );
-  }
+  },
 );
 AvatarFallback.displayName = "AvatarFallback";
 
-export { Avatar, AvatarImage, AvatarFallback };
-export type { AvatarProps, AvatarImageProps, AvatarFallbackProps };
+export type { AvatarFallbackProps, AvatarImageProps, AvatarProps };
+export { Avatar, AvatarFallback, AvatarImage };

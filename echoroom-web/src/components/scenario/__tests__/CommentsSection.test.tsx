@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -92,15 +92,16 @@ vi.mock("@/components/ui", async (importOriginal) => {
         {children}
       </button>
     ),
-    Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-      <input {...props} />
-    ),
-    Avatar: ({ children, className }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => (
-      <div className={className}>{children}</div>
-    ),
-    AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-      <img {...props} />
-    ),
+    Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+    Avatar: ({
+      children,
+      className,
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => <div className={className}>{children}</div>,
+    AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
     AvatarFallback: ({
       children,
       className,
@@ -109,7 +110,11 @@ vi.mock("@/components/ui", async (importOriginal) => {
       children: React.ReactNode;
       className?: string;
       [key: string]: unknown;
-    }) => <span className={className} {...props}>{children}</span>,
+    }) => (
+      <span className={className} {...props}>
+        {children}
+      </span>
+    ),
   };
 });
 
@@ -167,12 +172,8 @@ describe("CommentsSection", () => {
 
     render(<CommentsSection scenarioId="scenario-1" />);
 
-    expect(
-      screen.getByPlaceholderText("Ajouter un commentaire..."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /envoyer/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Ajouter un commentaire...")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /envoyer/i })).toBeInTheDocument();
   });
 
   it("shows login link for unauthenticated users", () => {
@@ -180,20 +181,14 @@ describe("CommentsSection", () => {
 
     const loginLink = screen.getByText("Connectez-vous pour commenter");
     expect(loginLink).toBeInTheDocument();
-    expect(loginLink.closest("a")).toHaveAttribute(
-      "href",
-      "/login?redirect=/scenario/scenario-1",
-    );
+    expect(loginLink.closest("a")).toHaveAttribute("href", "/login?redirect=/scenario/scenario-1");
   });
 
   it("redirect URL includes scenario path", () => {
     render(<CommentsSection scenarioId="scenario-42" />);
 
     const loginLink = screen.getByText("Connectez-vous pour commenter");
-    expect(loginLink.closest("a")).toHaveAttribute(
-      "href",
-      "/login?redirect=/scenario/scenario-42",
-    );
+    expect(loginLink.closest("a")).toHaveAttribute("href", "/login?redirect=/scenario/scenario-42");
   });
 
   // ── Comment count heading ─────────────────────────────────────────
@@ -435,9 +430,7 @@ describe("CommentsSection", () => {
 
     render(<CommentsSection scenarioId="scenario-1" />);
 
-    expect(
-      screen.getByRole("button", { name: /modérer/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /modérer/i })).toBeInTheDocument();
   });
 
   it("non-admin does NOT see moderate button", () => {
@@ -469,9 +462,7 @@ describe("CommentsSection", () => {
 
     render(<CommentsSection scenarioId="scenario-1" />);
 
-    expect(
-      screen.queryByRole("button", { name: /modérer/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /modérer/i })).not.toBeInTheDocument();
   });
 
   it("moderate button disabled during mutation", () => {
@@ -546,13 +537,9 @@ describe("CommentsSection", () => {
     await user.click(moderateBtn);
 
     // ConfirmDialog should appear
+    expect(screen.getByText("Modérer le commentaire")).toBeInTheDocument();
     expect(
-      screen.getByText("Modérer le commentaire"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Cette action supprimera le commentaire. Voulez-vous continuer ?",
-      ),
+      screen.getByText("Cette action supprimera le commentaire. Voulez-vous continuer ?"),
     ).toBeInTheDocument();
   });
 });

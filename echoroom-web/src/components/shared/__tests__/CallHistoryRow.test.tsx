@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { CallHistoryRow } from "../CallHistoryRow";
 
 afterEach(() => {
@@ -21,10 +21,7 @@ describe("CallHistoryRow", () => {
 
     expect(screen.getByText("Test Scenario")).toBeInTheDocument();
     expect(screen.getByText("Terminé")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /replay/i })).toHaveAttribute(
-      "href",
-      "/call/call-1",
-    );
+    expect(screen.getByRole("link", { name: /replay/i })).toHaveAttribute("href", "/call/call-1");
   });
 
   it("shows fallback title when no scenario title", () => {
@@ -45,9 +42,7 @@ describe("CallHistoryRow", () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         <CallHistoryRow call={{ ...baseCall, status: status as any }} />,
       );
-      expect(
-        screen.queryAllByRole("link", { name: /replay/i }),
-      ).toHaveLength(0);
+      expect(screen.queryAllByRole("link", { name: /replay/i })).toHaveLength(0);
       unmount();
     }
   });

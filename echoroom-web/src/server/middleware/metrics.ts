@@ -1,6 +1,6 @@
-import { middleware } from "../trpc";
 import { createLogger } from "@/server/lib/logger";
 import { trackEvent } from "@/server/services/analytics/events";
+import { middleware } from "../trpc";
 
 const log = createLogger("metrics");
 

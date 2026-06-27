@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Input, SegmentedControl, Button } from "@/components/ui";
-import { Search, Shuffle, ChevronDown, ChevronUp } from "lucide-react";
-import { api } from "@/lib/trpc";
+import { ChevronDown, ChevronUp, Search, Shuffle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { ScenarioCard } from "@/components/shared/ScenarioCard";
-import { MarketingNav } from "@/components/layout/MarketingNav";
+import { Button, Input, SegmentedControl } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 // Primary categories shown upfront; the rest are collapsed behind "Plus"
 const PRIMARY_CATEGORIES = ["Tous", "Chaotique", "Romantique", "Corporate", "NPC"];
@@ -33,14 +33,15 @@ const CATEGORY_TO_ENUM: Record<string, string> = {
 type SortValue = "CHRONOLOGICAL" | "TRENDING" | "TOP";
 
 function readInitialParams() {
-  const params = new URLSearchParams(
-    typeof window !== "undefined" ? window.location.search : ""
-  );
+  const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const sort = params.get("sort") as SortValue | null;
   const category = params.get("category");
   const search = params.get("search");
   return {
-    sort: sort && ["CHRONOLOGICAL", "TRENDING", "TOP"].includes(sort) ? sort : "TRENDING" as SortValue,
+    sort:
+      sort && ["CHRONOLOGICAL", "TRENDING", "TOP"].includes(sort)
+        ? sort
+        : ("TRENDING" as SortValue),
     category: category && ALL_CATEGORIES.includes(category) ? category : "Tous",
     search: search ?? "",
   };
@@ -87,19 +88,20 @@ export default function ExplorePage() {
   const visibleCategories = showAllCategories ? ALL_CATEGORIES : PRIMARY_CATEGORIES;
   const hiddenCount = ALL_CATEGORIES.length - PRIMARY_CATEGORIES.length;
 
-  const filteredItems = useMemo(() =>
-    feedQuery.data?.items.filter((scenario) => {
-      const matchesCategory =
-        activeCategory === "Tous" ||
-        scenario.character?.category === CATEGORY_TO_ENUM[activeCategory];
-      const matchesSearch =
-        debouncedQuery === "" ||
-        scenario.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-        scenario.description.toLowerCase().includes(debouncedQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    }) ?? [],
+  const filteredItems = useMemo(
+    () =>
+      feedQuery.data?.items.filter((scenario) => {
+        const matchesCategory =
+          activeCategory === "Tous" ||
+          scenario.character?.category === CATEGORY_TO_ENUM[activeCategory];
+        const matchesSearch =
+          debouncedQuery === "" ||
+          scenario.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+          scenario.description.toLowerCase().includes(debouncedQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      }) ?? [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [feedQuery.data, activeCategory, debouncedQuery, chaosKey]
+    [feedQuery.data, activeCategory, debouncedQuery],
   );
 
   const shuffledItems = useMemo(() => shuffleArray(filteredItems), [filteredItems]);
@@ -138,11 +140,7 @@ export default function ExplorePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <SegmentedControl
-            options={sortOptions}
-            value={sort}
-            onChange={setSort}
-          />
+          <SegmentedControl options={sortOptions} value={sort} onChange={setSort} />
         </div>
 
         {/* Categories — collapsed by default */}
@@ -186,9 +184,7 @@ export default function ExplorePage() {
         <DataLoader
           query={feedQuery}
           isEmpty={(data) =>
-            data.items.length === 0 &&
-            activeCategory === "Tous" &&
-            searchQuery === ""
+            data.items.length === 0 && activeCategory === "Tous" && searchQuery === ""
           }
         >
           {(data) => {

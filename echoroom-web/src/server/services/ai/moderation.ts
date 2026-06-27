@@ -1,7 +1,7 @@
-import { getOpenAIClient } from "@/lib/openai";
 import { env } from "@/lib/env";
-import { createLogger } from "@/server/lib/logger";
+import { getOpenAIClient } from "@/lib/openai";
 import { createOpenAICircuitBreaker } from "@/server/lib/circuitBreaker";
+import { createLogger } from "@/server/lib/logger";
 
 const log = createLogger("moderation");
 const openaiCircuitBreaker = createOpenAICircuitBreaker();
@@ -24,7 +24,7 @@ const forbiddenPatterns = [
   /porn/i,
   /nsfw/i,
   /nude/i,
-  /\bnue?\b/i,         // Fixed: removed capturing group, added \b (was /nu(e)?/i — ReDoS + false positive)
+  /\bnue?\b/i, // Fixed: removed capturing group, added \b (was /nu(e)?/i — ReDoS + false positive)
   /escort/i,
   /prostitut/i,
   /scam/i,
@@ -55,7 +55,7 @@ const forbiddenPatterns = [
   /putain/i,
   /merde/i,
   /nique/i,
-  /\b0[1-9]\d{8}\b/,   // Fixed: added \b word boundaries (was without)
+  /\b0[1-9]\d{8}\b/, // Fixed: added \b word boundaries (was without)
   /(?<!\d)\+33[1-9]\d{8}\b/, // Fixed: added \b word boundaries, (?<!\d) for + (was without)
 
   // Celebrity names
@@ -95,10 +95,7 @@ export function checkContentBlocklist(text: string): ModerationResult {
   return { approved: true };
 }
 
-export async function checkContent(
-  text: string,
-  signal?: AbortSignal,
-): Promise<ModerationResult> {
+export async function checkContent(text: string, signal?: AbortSignal): Promise<ModerationResult> {
   const resolvedSignal = signal ?? AbortSignal.timeout(5000);
 
   // Normalisation Unicode NFKC — empêche les homoglyphes
@@ -152,17 +149,17 @@ export async function checkContent(
  * On timeout, content is allowed through (fail-open for call continuity).
  * Blocked content is logged for audit/review.
  */
-export async function moderateOutput(
-  text: string,
-  timeoutMs: number = 2000,
-): Promise<string> {
+export async function moderateOutput(text: string, timeoutMs: number = 2000): Promise<string> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const result = await checkContent(text, controller.signal);
     if (!result.approved) {
-      log.warn("AI-generated content blocked", { reason: result.reason, contentLength: text.length });
+      log.warn("AI-generated content blocked", {
+        reason: result.reason,
+        contentLength: text.length,
+      });
       return "Je suis désolé, je n'ai pas pu générer une réponse appropriée. Puis-je vous aider avec autre chose ?";
     }
     return text;

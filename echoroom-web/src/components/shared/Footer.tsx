@@ -7,9 +7,7 @@ export function Footer() {
     <footer className="border-t border-border bg-background">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            EchoRoom AI &mdash; {year}
-          </p>
+          <p className="text-sm text-muted-foreground">EchoRoom AI &mdash; {year}</p>
           <nav className="flex items-center gap-6">
             <Link
               href="/help"

@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
-import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui";
 
 interface PaginatedQueryResult<T> {

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import React from "react";
+import type React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // TRPCReactProvider tests
@@ -107,7 +107,7 @@ describe("TRPCReactProvider", () => {
     );
 
     // In browser, getBaseUrl returns ""
-    const linkCall = mockHttpBatchLinkFn.mock.calls[0]?.[0] as Record<string, unknown>;
+    const linkCall = (mockHttpBatchLinkFn as any).mock.calls[0]?.[0];
     expect(linkCall).toBeDefined();
     expect(linkCall["url"]).toBe("/api/trpc");
   });
@@ -117,12 +117,7 @@ describe("TRPCReactProvider", () => {
     // the getBaseUrl logic by reading the source.
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const sourcePath = path.join(
-      process.cwd(),
-      "src",
-      "lib",
-      "trpc-provider.tsx",
-    );
+    const sourcePath = path.join(process.cwd(), "src", "lib", "trpc-provider.tsx");
     const source = fs.readFileSync(sourcePath, "utf-8");
 
     // Must check NEXT_PUBLIC_APP_URL when window is undefined
@@ -135,12 +130,7 @@ describe("TRPCReactProvider", () => {
     // Verify via source that getBaseUrl falls back to localhost
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const sourcePath = path.join(
-      process.cwd(),
-      "src",
-      "lib",
-      "trpc-provider.tsx",
-    );
+    const sourcePath = path.join(process.cwd(), "src", "lib", "trpc-provider.tsx");
     const source = fs.readFileSync(sourcePath, "utf-8");
 
     expect(source).toContain('return "http://localhost:3000"');
@@ -158,7 +148,7 @@ describe("TRPCReactProvider", () => {
       </TRPCReactProvider>,
     );
 
-    const linkCall = mockHttpBatchLinkFn.mock.calls[0]?.[0] as Record<string, unknown>;
+    const linkCall = (mockHttpBatchLinkFn as any).mock.calls[0]?.[0];
     // The fetch function should wrap fetch with credentials: "include"
     expect(linkCall["fetch"]).toBeDefined();
     expect(typeof linkCall["fetch"]).toBe("function");

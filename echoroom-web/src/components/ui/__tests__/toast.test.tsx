@@ -1,14 +1,8 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, act } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  ToastProvider,
-  Toaster,
-  useToast,
-  toast,
-  Toast,
-} from "../toast";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { Toast, Toaster, ToastProvider, toast, useToast } from "../toast";
 
 afterEach(() => {
   cleanup();
@@ -31,16 +25,13 @@ function ToastAdder({
   const { addToast, removeToast, toasts } = useToast();
   return (
     <div>
-      <button
-        data-testid="add-toast"
-        onClick={() => addToast({ message, variant, duration })}
-      >
+      <button data-testid="add-toast" onClick={() => addToast({ message, variant, duration })}>
         Add Toast
       </button>
       <button
         data-testid="remove-first"
         onClick={() => {
-          if (toasts.length > 0) removeToast(toasts[0].id);
+          if (toasts.length > 0) removeToast(toasts[0]!.id);
         }}
       >
         Remove First
@@ -106,13 +97,9 @@ describe("ToastProvider", () => {
 
   it("useToast throws error when used outside Toaster", () => {
     // Suppress console.error for expected errors
-    const consoleSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    expect(() => render(<ToastConsumer />)).toThrow(
-      "useToast must be used within <Toaster>",
-    );
+    expect(() => render(<ToastConsumer />)).toThrow("useToast must be used within <Toaster>");
 
     consoleSpy.mockRestore();
   });
@@ -148,12 +135,7 @@ describe("ToastProvider", () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
 
-    render(
-      <Toast
-        message="Closable toast"
-        onClose={onClose}
-      />,
-    );
+    render(<Toast message="Closable toast" onClose={onClose} />);
 
     expect(screen.getByText("Closable toast")).toBeInTheDocument();
     expect(screen.getByText("Fermer")).toBeInTheDocument();
@@ -180,7 +162,7 @@ describe("ToastProvider", () => {
     toast("Standalone message");
 
     expect(dispatchSpy).toHaveBeenCalled();
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent;
     expect(event.type).toBe("echoroom-toast");
     expect(event.detail.message).toBe("Standalone message");
     expect(event.detail.variant).toBe("default");
@@ -199,7 +181,7 @@ describe("ToastProvider", () => {
       duration: 2000,
     });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent;
     expect(event.detail.message).toBe("Title message");
     expect(event.detail.variant).toBe("destructive");
     expect(event.detail.duration).toBe(2000);
@@ -232,18 +214,14 @@ describe("ToastProvider", () => {
   });
 
   it("renders destructive variant with correct classes", () => {
-    const { container } = render(
-      <Toast message="Destructive" variant="destructive" />,
-    );
+    const { container } = render(<Toast message="Destructive" variant="destructive" />);
     const toastEl = container.firstChild as HTMLElement;
     expect(toastEl.className).toContain("bg-destructive");
     expect(toastEl.className).toContain("text-destructive-foreground");
   });
 
   it("renders success variant with correct classes", () => {
-    const { container } = render(
-      <Toast message="Success" variant="success" />,
-    );
+    const { container } = render(<Toast message="Success" variant="success" />);
     const toastEl = container.firstChild as HTMLElement;
     expect(toastEl.className).toContain("bg-primary/10");
     expect(toastEl.className).toContain("text-primary");
@@ -271,9 +249,7 @@ describe("ToastProvider", () => {
   // ── Close button ──────────────────────────────────────────────────
 
   it("close button has sr-only 'Fermer' text", () => {
-    render(
-      <Toast message="Test" onClose={vi.fn()} />,
-    );
+    render(<Toast message="Test" onClose={vi.fn()} />);
 
     const closeButton = screen.getByRole("button", { name: /fermer/i });
     expect(closeButton).toBeInTheDocument();

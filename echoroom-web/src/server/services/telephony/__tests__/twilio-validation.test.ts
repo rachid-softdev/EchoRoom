@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Twilio Webhook Signature Validation Tests (M3.2d)
@@ -109,7 +109,7 @@ describe("validateTwilioRequest — signature validation", () => {
 
     const req = {
       headers: {
-        get: (name: string) => name === "x-twilio-signature" ? "sig" : null,
+        get: (name: string) => (name === "x-twilio-signature" ? "sig" : null),
       },
       url: "https://api.echoroom.app/api/webhooks/twilio?customParam=test",
     } as unknown as NextRequest;

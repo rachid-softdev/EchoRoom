@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaUserBillingRepository — Implementation Tests
@@ -114,7 +114,9 @@ describe("PrismaUserBillingRepository.atomicDebit", () => {
     const dbError = new Error("Prisma connection error");
     mockTx.userBilling.update.mockRejectedValue(dbError);
 
-    await expect(repo.atomicDebit(mockTx as any, "user-123", 5)).rejects.toThrow("Prisma connection error");
+    await expect(repo.atomicDebit(mockTx as any, "user-123", 5)).rejects.toThrow(
+      "Prisma connection error",
+    );
   });
 });
 

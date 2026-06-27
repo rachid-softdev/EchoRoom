@@ -1,21 +1,19 @@
-'use client'
+"use client";
 
-import type {
-  UseMutationResult,
-} from '@tanstack/react-query'
-import type { TRPCClientErrorLike } from '@trpc/react-query'
-import type { AppRouter } from '@/server/rootRouter'
-import { toast } from '@/components/ui'
+import type { UseMutationResult } from "@tanstack/react-query";
+import type { TRPCClientErrorLike } from "@trpc/react-query";
+import { toast } from "@/components/ui";
+import type { AppRouter } from "@/server/rootRouter";
 
 type MutationLike<TData, TInput> = Pick<
   UseMutationResult<TData, TRPCClientErrorLike<AppRouter>, TInput>,
-  'mutateAsync' | 'mutate' | 'error' | 'isPending'
->
+  "mutateAsync" | "mutate" | "error" | "isPending"
+>;
 
 interface UseApiToastOptions<TData> {
-  success?: string
-  error?: string
-  onSuccess?: (data: TData) => void
+  success?: string;
+  error?: string;
+  onSuccess?: (data: TData) => void;
 }
 
 /**
@@ -36,31 +34,31 @@ export function useApiToast<TData, TInput>(
 ) {
   const wrappedMutate = async (input: TInput) => {
     try {
-      const data = await mutation.mutateAsync(input)
+      const data = await mutation.mutateAsync(input);
       if (options.success) {
         toast({
           title: options.success,
-          variant: 'default',
-        })
+          variant: "default",
+        });
       }
-      options.onSuccess?.(data)
-      return data
+      options.onSuccess?.(data);
+      return data;
     } catch (err) {
       const message =
         (err as TRPCClientErrorLike<AppRouter>)?.message ??
         options.error ??
-        'Une erreur est survenue'
+        "Une erreur est survenue";
       toast({
         title: message,
-        variant: 'destructive',
-      })
-      throw err
+        variant: "destructive",
+      });
+      throw err;
     }
-  }
+  };
 
   return {
     ...mutation,
     mutate: wrappedMutate as (input: TInput) => Promise<TData>,
     mutateAsync: wrappedMutate,
-  }
+  };
 }

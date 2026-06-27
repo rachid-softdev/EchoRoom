@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // GDPR Purge tests — purgeAnonymizedUsers & hardDeleteUser
@@ -18,7 +18,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockRedisSet = vi.fn();
 const mockRedisDel = vi.fn();
 // Use a mutable variable + getter so tests can set redis to null dynamically
-let mockRedisValue: { set: typeof mockRedisSet; del: typeof mockRedisDel } | null = { set: mockRedisSet, del: mockRedisDel };
+let mockRedisValue: { set: typeof mockRedisSet; del: typeof mockRedisDel } | null = {
+  set: mockRedisSet,
+  del: mockRedisDel,
+};
 
 const mockLogInstance = {
   error: vi.fn(),
@@ -32,7 +35,9 @@ vi.mock("@/server/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/redis", () => ({
-  get redis() { return mockRedisValue; },
+  get redis() {
+    return mockRedisValue;
+  },
 }));
 
 // Prisma db mock
@@ -352,7 +357,9 @@ describe("hardDeleteUser", () => {
     });
 
     // Verify scenarios were then deleted
-    expect(overrides.scenario.deleteMany).toHaveBeenCalledWith({ where: { creatorId: "user-with-scenarios" } });
+    expect(overrides.scenario.deleteMany).toHaveBeenCalledWith({
+      where: { creatorId: "user-with-scenarios" },
+    });
   });
 
   it("should handle moderation/comments where user is the moderator", async () => {

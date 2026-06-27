@@ -1,50 +1,34 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import {
-  Button,
-  Badge,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Skeleton,
-} from "@/components/ui"
-import {
-  Heart,
-  MessageCircle,
-  Play,
-  ArrowLeft,
-  AlertTriangle,
-  RotateCcw,
-} from "lucide-react"
-import { useUser } from "@/hooks"
-import { api } from "@/lib/trpc"
-import { ReactionBar } from "@/components/social/ReactionBar"
-import { ShareButtons } from "@/components/social/ShareButtons"
-import { ReportButton } from "@/components/social/ReportButton"
-import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard"
-import { ClipCreator } from "@/components/scenario/ClipCreator"
-import { CommentsSection } from "@/components/scenario/CommentsSection"
+import { AlertTriangle, ArrowLeft, Heart, MessageCircle, Play, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { ClipCreator } from "@/components/scenario/ClipCreator";
+import { CommentsSection } from "@/components/scenario/CommentsSection";
+import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard";
+import { ReactionBar } from "@/components/social/ReactionBar";
+import { ReportButton } from "@/components/social/ReportButton";
+import { ShareButtons } from "@/components/social/ShareButtons";
+import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Skeleton } from "@/components/ui";
+import { useUser } from "@/hooks";
+import { api } from "@/lib/trpc";
 
 interface ScenarioDetailClientProps {
-  scenarioId: string
+  scenarioId: string;
 }
 
 function formatNumber(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return n.toLocaleString("fr-FR")
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return n.toLocaleString("fr-FR");
 }
 
-export function ScenarioDetailClient({
-  scenarioId,
-}: ScenarioDetailClientProps) {
-  const { isAuthenticated } = useUser()
+export function ScenarioDetailClient({ scenarioId }: ScenarioDetailClientProps) {
+  const { isAuthenticated } = useUser();
 
-  const scenarioQuery = api.scenarios.getById.useQuery({ id: scenarioId })
+  const scenarioQuery = api.scenarios.getById.useQuery({ id: scenarioId });
   const feedQuery = api.scenarios.feed.useQuery({
     limit: 4,
     sort: "CHRONOLOGICAL",
-  })
+  });
 
   // ── Loading state ──────────────────────────────────────
   if (scenarioQuery.isLoading) {
@@ -62,7 +46,7 @@ export function ScenarioDetailClient({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Error state ────────────────────────────────────────
@@ -75,21 +59,17 @@ export function ScenarioDetailClient({
           <p className="text-sm text-muted-foreground mb-6">
             {scenarioQuery.error?.message ?? "Impossible de charger ce scénario"}
           </p>
-          <Button
-            variant="outline"
-            onClick={() => scenarioQuery.refetch()}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={() => scenarioQuery.refetch()} className="gap-2">
             <RotateCcw className="w-4 h-4" />
             Réessayer
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Empty state ────────────────────────────────────────
-  const scenario = scenarioQuery.data
+  const scenario = scenarioQuery.data;
   if (!scenario) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -103,12 +83,12 @@ export function ScenarioDetailClient({
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Derived data ───────────────────────────────────────
   const relatedScenarios =
-    feedQuery.data?.items.filter((s: ScenarioCardData) => s.id !== scenarioId).slice(0, 3) ?? []
+    feedQuery.data?.items.filter((s: ScenarioCardData) => s.id !== scenarioId).slice(0, 3) ?? [];
 
   // ── Content ────────────────────────────────────────────
   return (
@@ -128,10 +108,7 @@ export function ScenarioDetailClient({
           <div className="flex items-center gap-3 mb-3">
             <Avatar className="w-12 h-12 ring-2 ring-border">
               {scenario.character?.avatarUrl ? (
-                <AvatarImage
-                  src={scenario.character.avatarUrl}
-                  alt={scenario.character.name}
-                />
+                <AvatarImage src={scenario.character.avatarUrl} alt={scenario.character.name} />
               ) : null}
               <AvatarFallback className="bg-primary/10 text-primary">
                 {scenario.character?.name?.charAt(0) ?? "?"}
@@ -173,9 +150,7 @@ export function ScenarioDetailClient({
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MessageCircle className="w-4 h-4" />
-            <span className="font-medium">
-              {formatNumber(scenario._count?.comments ?? 0)}
-            </span>
+            <span className="font-medium">{formatNumber(scenario._count?.comments ?? 0)}</span>
             <span>commentaires</span>
           </div>
         </div>
@@ -221,16 +196,12 @@ export function ScenarioDetailClient({
             <h2 className="text-lg font-semibold mb-4">Scénarios similaires</h2>
             <div className="grid md:grid-cols-3 gap-4">
               {relatedScenarios.map((s: ScenarioCardData) => (
-                <ScenarioCard
-                  key={s.id}
-                  scenario={s}
-                  href={`/scenario/${s.id}`}
-                />
+                <ScenarioCard key={s.id} scenario={s} href={`/scenario/${s.id}`} />
               ))}
             </div>
           </section>
         )}
       </div>
     </div>
-  )
+  );
 }

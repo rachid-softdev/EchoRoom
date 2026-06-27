@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Rotate Featured Scenario Tests
@@ -68,9 +68,9 @@ describe("rotateFeaturedScenario", () => {
   it("should select scenario with highest engagement score (reactions×2 + plays×1)", async () => {
     mockFeaturedScenarioRepository.findByDate.mockResolvedValue(null);
     mockFeaturedScenarioRepository.findTopScenario.mockResolvedValue([
-      { id: "scenario-low", playCount: 5, reactionCount: 1 },  // score: 1×2 + 5×1 = 7
+      { id: "scenario-low", playCount: 5, reactionCount: 1 }, // score: 1×2 + 5×1 = 7
       { id: "scenario-high", playCount: 10, reactionCount: 20 }, // score: 20×2 + 10×1 = 50
-      { id: "scenario-mid", playCount: 20, reactionCount: 5 },   // score: 5×2 + 20×1 = 30
+      { id: "scenario-mid", playCount: 20, reactionCount: 5 }, // score: 5×2 + 20×1 = 30
     ]);
 
     const { rotateFeaturedScenario } = await import("../rotateFeaturedScenario");
@@ -144,7 +144,7 @@ describe("rotateFeaturedScenario", () => {
     // Setup scenarios with specific scores
     mockFeaturedScenarioRepository.findTopScenario.mockResolvedValue([
       { id: "s1", playCount: 100, reactionCount: 0 }, // score: 0 + 100 = 100
-      { id: "s2", playCount: 0, reactionCount: 50 },   // score: 100 + 0 = 100
+      { id: "s2", playCount: 0, reactionCount: 50 }, // score: 100 + 0 = 100
     ]);
 
     const { rotateFeaturedScenario } = await import("../rotateFeaturedScenario");
@@ -179,7 +179,7 @@ describe("rotateFeaturedScenario", () => {
     await rotateFeaturedScenario();
 
     // findTopScenario should receive a date 7 days ago: 2026-06-13
-    const sevenDaysAgo = mockFeaturedScenarioRepository.findTopScenario.mock.calls[0][0];
+    const sevenDaysAgo = mockFeaturedScenarioRepository.findTopScenario.mock.calls[0]![0];
     expect(sevenDaysAgo).toBeInstanceOf(Date);
     expect(sevenDaysAgo.toISOString()).toContain("2026-06-13");
 

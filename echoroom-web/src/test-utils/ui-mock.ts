@@ -1,5 +1,5 @@
-import { vi } from "vitest";
 import * as React from "react";
+import { vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -24,13 +24,17 @@ function createComponentStub(displayName: string, defaultTag = "div"): MockCompo
     const htmlProps = Object.fromEntries(
       Object.entries(rest).filter(([key]) => !key.startsWith("__")),
     );
-    return React.createElement(defaultTag, {
-      ...htmlProps,
-      ref,
-      className,
-      style,
-      "data-testid": displayName,
-    }, children);
+    return React.createElement(
+      defaultTag,
+      {
+        ...htmlProps,
+        ref,
+        className,
+        style,
+        "data-testid": displayName,
+      },
+      children,
+    );
   });
   Stub.displayName = displayName;
   return Stub;

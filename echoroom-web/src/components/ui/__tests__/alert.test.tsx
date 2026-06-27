@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
-import { Alert, AlertTitle, AlertDescription } from "../alert";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { Alert, AlertDescription, AlertTitle } from "../alert";
 
 afterEach(() => {
   cleanup();

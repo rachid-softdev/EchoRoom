@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // UserProfileRepository — Contract Tests (future partitioned repository)
@@ -35,7 +35,12 @@ interface UserProfileData {
 
 interface IUserProfileRepository {
   findById(id: string): Promise<UserProfileData | null>;
-  findByEmail(email: string): Promise<Pick<UserProfileData, "id" | "email" | "passwordHash" | "role" | "tokenVersion" | "deletedAt"> | null>;
+  findByEmail(
+    email: string,
+  ): Promise<Pick<
+    UserProfileData,
+    "id" | "email" | "passwordHash" | "role" | "tokenVersion" | "deletedAt"
+  > | null>;
   findByUsername(username: string): Promise<Pick<UserProfileData, "id" | "username"> | null>;
   create(data: {
     email: string;
@@ -151,7 +156,14 @@ describe("IUserProfileRepository — interface contract", () => {
       expect(result!.passwordHash).toBeDefined();
       expect(result!.tokenVersion).toBe(3);
       expect(Object.keys(result!)).toEqual(
-        expect.arrayContaining(["id", "email", "passwordHash", "role", "tokenVersion", "deletedAt"]),
+        expect.arrayContaining([
+          "id",
+          "email",
+          "passwordHash",
+          "role",
+          "tokenVersion",
+          "deletedAt",
+        ]),
       );
     });
 
@@ -218,9 +230,7 @@ describe("IUserProfileRepository — interface contract", () => {
     });
 
     it("should throw on duplicate email", async () => {
-      (mockRepo.create as any).mockRejectedValue(
-        new Error("Unique constraint failed on email"),
-      );
+      (mockRepo.create as any).mockRejectedValue(new Error("Unique constraint failed on email"));
 
       await expect(
         mockRepo.create({
@@ -260,29 +270,23 @@ describe("IUserProfileRepository — interface contract", () => {
 
   describe("incrementTokenVersion", () => {
     it("should increment tokenVersion atomically", async () => {
-      (mockRepo.incrementTokenVersion as any).mockImplementation(
-        async (_tx: any, _id: string) => {
-          // Token version was incremented
-          return;
-        },
-      );
+      (mockRepo.incrementTokenVersion as any).mockImplementation(async (_tx: any, _id: string) => {
+        // Token version was incremented
+        return;
+      });
 
-      await expect(
-        mockRepo.incrementTokenVersion({} as any, "user-1"),
-      ).resolves.not.toThrow();
+      await expect(mockRepo.incrementTokenVersion({} as any, "user-1")).resolves.not.toThrow();
     });
 
     it("should require a transaction for atomicity", async () => {
       const tx = { userProfile: { update: vi.fn().mockResolvedValue({ tokenVersion: 2 }) } };
 
-      (mockRepo.incrementTokenVersion as any).mockImplementation(
-        async (t: any, id: string) => {
-          await t.userProfile.update({
-            where: { id },
-            data: { tokenVersion: { increment: 1 } },
-          });
-        },
-      );
+      (mockRepo.incrementTokenVersion as any).mockImplementation(async (t: any, id: string) => {
+        await t.userProfile.update({
+          where: { id },
+          data: { tokenVersion: { increment: 1 } },
+        });
+      });
 
       await mockRepo.incrementTokenVersion(tx, "user-1");
 

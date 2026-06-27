@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin user management tests
@@ -92,7 +92,7 @@ describe("adminRouter.deleteUser", () => {
     expect(result).toEqual({ success: true });
     expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
 
-    const updateCall = mockTx.user.updateMany.mock.calls[0][0];
+    const updateCall = mockTx.user.updateMany.mock.calls[0]![0];
     expect(updateCall.where).toEqual({ id: "user-1", deletedAt: null });
     expect(updateCall.data).toHaveProperty("deletedAt");
     expect(updateCall.data).toHaveProperty("anonymizedAt");
@@ -141,12 +141,8 @@ describe("adminRouter.deleteUser", () => {
   });
 
   it("should NOT create audit log when anonymizePersonalData fails", async () => {
-    const { anonymizePersonalData } = await import(
-      "@/server/services/user/anonymization"
-    );
-    vi.mocked(anonymizePersonalData).mockRejectedValueOnce(
-      new Error("Anonymization failed"),
-    );
+    const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
+    vi.mocked(anonymizePersonalData).mockRejectedValueOnce(new Error("Anonymization failed"));
 
     const { adminRouter } = await import("../admin");
     const handler = (adminRouter as any).deleteUser.handler;
@@ -164,9 +160,7 @@ describe("adminRouter.deleteUser", () => {
   });
 
   it("should call anonymizePersonalData inside the transaction", async () => {
-    const { anonymizePersonalData } = await import(
-      "@/server/services/user/anonymization"
-    );
+    const { anonymizePersonalData } = await import("@/server/services/user/anonymization");
     const { adminRouter } = await import("../admin");
     const handler = (adminRouter as any).deleteUser.handler;
 

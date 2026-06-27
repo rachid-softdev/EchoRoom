@@ -1,22 +1,21 @@
-import Link from 'next/link'
-import { Badge } from '@/components/ui'
-import { Button } from '@/components/ui'
-import { Phone, Play } from 'lucide-react'
-import { STATUS_LABELS, STATUS_VARIANTS, formatDate, formatDuration } from '@/lib/constants'
+import { Phone, Play } from "lucide-react";
+import Link from "next/link";
+import { Badge, Button } from "@/components/ui";
+import { formatDate, formatDuration, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/constants";
 
 interface CallData {
-  id: string
-  status: string
-  durationSeconds: number
-  createdAt: string | Date
+  id: string;
+  status: string;
+  durationSeconds: number;
+  createdAt: string | Date;
   scenario?: {
-    title: string
-    character?: { name: string }
-  }
+    title: string;
+    character?: { name: string };
+  };
 }
 
 interface CallHistoryRowProps {
-  call: CallData
+  call: CallData;
 }
 
 export function CallHistoryRow({ call }: CallHistoryRowProps) {
@@ -27,21 +26,15 @@ export function CallHistoryRow({ call }: CallHistoryRowProps) {
           <Phone className="w-5 h-5 text-primary" />
         </div>
         <div className="min-w-0">
-          <p className="font-medium text-sm truncate">
-            {call.scenario?.title ?? 'Appel'}
-          </p>
+          <p className="font-medium text-sm truncate">{call.scenario?.title ?? "Appel"}</p>
           <div className="flex items-center gap-2 mt-1">
             <Badge
-              variant={
-                STATUS_VARIANTS[call.status] ?? 'outline'
-              }
+              variant={STATUS_VARIANTS[call.status] ?? "outline"}
               className="text-[10px] px-1.5 py-0"
             >
               {STATUS_LABELS[call.status] ?? call.status}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              {formatDate(call.createdAt)}
-            </span>
+            <span className="text-xs text-muted-foreground">{formatDate(call.createdAt)}</span>
             <span className="text-xs text-muted-foreground">
               {formatDuration(call.durationSeconds)}
             </span>
@@ -49,7 +42,7 @@ export function CallHistoryRow({ call }: CallHistoryRowProps) {
         </div>
       </div>
 
-      {call.status === 'COMPLETED' && (
+      {call.status === "COMPLETED" && (
         <Link href={`/call/${call.id}`}>
           <Button variant="ghost" size="sm" className="gap-2 shrink-0">
             <Play className="w-4 h-4" />
@@ -58,5 +51,5 @@ export function CallHistoryRow({ call }: CallHistoryRowProps) {
         </Link>
       )}
     </div>
-  )
+  );
 }

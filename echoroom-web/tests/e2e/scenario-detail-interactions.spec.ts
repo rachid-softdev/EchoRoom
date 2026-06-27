@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Mock session utilisateur
@@ -17,7 +17,10 @@ async function mockSession(
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ user: null, expires: new Date(Date.now() + 86_400_000).toISOString() }),
+        body: JSON.stringify({
+          user: null,
+          expires: new Date(Date.now() + 86_400_000).toISOString(),
+        }),
       });
     });
     return;
@@ -37,7 +40,10 @@ async function mockSession(
 /**
  * Mock scenarios.getById
  */
-async function mockScenario(page: import("@playwright/test").Page, overrides: Record<string, unknown> = {}) {
+async function mockScenario(
+  page: import("@playwright/test").Page,
+  overrides: Record<string, unknown> = {},
+) {
   const defaultScenario = {
     id: "scenario-1",
     title: "Scénario de test",
@@ -55,9 +61,7 @@ async function mockScenario(page: import("@playwright/test").Page, overrides: Re
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: { ...defaultScenario, ...overrides } } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: { ...defaultScenario, ...overrides } } } }]),
     });
   });
 }
@@ -65,14 +69,15 @@ async function mockScenario(page: import("@playwright/test").Page, overrides: Re
 /**
  * Mock scenarios.feed (pour les scénarios liés)
  */
-async function mockFeed(page: import("@playwright/test").Page, items: Array<Record<string, unknown>> = []) {
+async function mockFeed(
+  page: import("@playwright/test").Page,
+  items: Array<Record<string, unknown>> = [],
+) {
   await page.route("**/api/trpc/scenarios.feed*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: { items } } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: { items } } } }]),
     });
   });
 }
@@ -93,7 +98,11 @@ test.describe("Scenario Detail — interactions sociales", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify([
-          { result: { data: { json: { reactions: [{ emoji: "🔥", count: 5, hasReacted: false }] } } } },
+          {
+            result: {
+              data: { json: { reactions: [{ emoji: "🔥", count: 5, hasReacted: false }] } },
+            },
+          },
         ]),
       });
     });
@@ -116,9 +125,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { reactions: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { reactions: [] } } } }]),
       });
     });
 
@@ -127,9 +134,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { success: true } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
       });
     });
 
@@ -165,9 +170,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { reactions: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { reactions: [] } } } }]),
       });
     });
 
@@ -199,9 +202,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify([
-            { result: { data: { json: { reactions: [] } } } },
-          ]),
+          body: JSON.stringify([{ result: { data: { json: { reactions: [] } } } }]),
         });
       } else {
         // Appel suivant (refetch après mutation) — avec la nouvelle réaction
@@ -220,9 +221,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { success: true } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
       });
     });
 
@@ -274,9 +273,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { success: true } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
       });
     });
 
@@ -306,9 +303,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { success: true } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
       });
     });
 
@@ -344,7 +339,9 @@ test.describe("Scenario Detail — interactions sociales", () => {
 
     // Le dialog doit être visible
     await expect(page.getByText("Signaler un contenu")).toBeVisible();
-    await expect(page.getByText("Ce signalement sera examiné par notre équipe de modération")).toBeVisible();
+    await expect(
+      page.getByText("Ce signalement sera examiné par notre équipe de modération"),
+    ).toBeVisible();
   });
 
   test("ReportButton validation : bouton désactivé si < 10 caractères", async ({ page }) => {
@@ -434,15 +431,15 @@ test.describe("Scenario Detail — interactions sociales", () => {
 
   // ─── CommentsSection : Enter key submit ────────────────────────
 
-  test("CommentsSection permet de soumettre un commentaire avec la touche Entrée", async ({ page }) => {
+  test("CommentsSection permet de soumettre un commentaire avec la touche Entrée", async ({
+    page,
+  }) => {
     // Mock community.getComments
     await page.route("**/api/trpc/community.getComments*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { items: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { items: [] } } } }]),
       });
     });
 
@@ -451,9 +448,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { success: true } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { success: true } } } }]),
       });
     });
 
@@ -480,14 +475,14 @@ test.describe("Scenario Detail — interactions sociales", () => {
     // donc le input peut ne pas être vidé. On vérifie juste qu'il n'y a pas d'erreur.
   });
 
-  test("CommentsSection : le bouton d'envoi est désactivé quand l'input est vide", async ({ page }) => {
+  test("CommentsSection : le bouton d'envoi est désactivé quand l'input est vide", async ({
+    page,
+  }) => {
     await page.route("**/api/trpc/community.getComments*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { items: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { items: [] } } } }]),
       });
     });
 
@@ -505,7 +500,9 @@ test.describe("Scenario Detail — interactions sociales", () => {
 
   // ─── CommentsSection : non-auth link login ─────────────────────
 
-  test("CommentsSection : utilisateur non connecté voit un lien 'Connectez-vous pour commenter'", async ({ page }) => {
+  test("CommentsSection : utilisateur non connecté voit un lien 'Connectez-vous pour commenter'", async ({
+    page,
+  }) => {
     // Session non authentifiée
     await mockSession(page, null);
     await mockScenario(page);
@@ -514,9 +511,7 @@ test.describe("Scenario Detail — interactions sociales", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: { items: [] } } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: { items: [] } } } }]),
       });
     });
 
@@ -582,7 +577,12 @@ test.describe("Scenario Detail — interactions sociales", () => {
 
   test("CommentsSection : l'admin voit le bouton de modération (Trash2)", async ({ page }) => {
     // Session admin
-    await mockSession(page, { id: "admin-1", email: "admin@test.com", role: "ADMIN", username: "admin" });
+    await mockSession(page, {
+      id: "admin-1",
+      email: "admin@test.com",
+      role: "ADMIN",
+      username: "admin",
+    });
     await mockScenario(page);
 
     await page.route("**/api/trpc/community.getComments*", async (route) => {
@@ -623,7 +623,12 @@ test.describe("Scenario Detail — interactions sociales", () => {
   });
 
   test("CommentsSection : clic sur modérer ouvre le ConfirmDialog", async ({ page }) => {
-    await mockSession(page, { id: "admin-1", email: "admin@test.com", role: "ADMIN", username: "admin" });
+    await mockSession(page, {
+      id: "admin-1",
+      email: "admin@test.com",
+      role: "ADMIN",
+      username: "admin",
+    });
     await mockScenario(page);
 
     await page.route("**/api/trpc/community.getComments*", async (route) => {
@@ -669,7 +674,9 @@ test.describe("Scenario Detail — interactions sociales", () => {
 
   // ─── Stats row ─────────────────────────────────────────────────
 
-  test("La ligne de stats affiche les compteurs de likes, lectures et commentaires", async ({ page }) => {
+  test("La ligne de stats affiche les compteurs de likes, lectures et commentaires", async ({
+    page,
+  }) => {
     await page.goto("/scenario/scenario-1");
     await page.waitForLoadState("networkidle");
 

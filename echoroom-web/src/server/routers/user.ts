@@ -1,23 +1,22 @@
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withRateLimit } from "../procedures";
-import { db } from "../db";
+import { z } from "zod";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
+import { db } from "../db";
+import { protectedProcedure, router, withRateLimit } from "../procedures";
 export const userRouter = router({
-  badges: protectedProcedure
-    .query(async ({ ctx }) => {
-      const { db } = await import("@/server/db");
-      const userBadges = await db.userBadge.findMany({
-        where: { userId: ctx.session.user.id },
-        include: { badge: true },
-        orderBy: { awardedAt: "desc" },
-      });
-      return userBadges.map(ub => ({
-        id: ub.id,
-        badge: ub.badge,
-        awardedAt: ub.awardedAt,
-      }));
-    }),
+  badges: protectedProcedure.query(async ({ ctx }) => {
+    const { db } = await import("@/server/db");
+    const userBadges = await db.userBadge.findMany({
+      where: { userId: ctx.session.user.id },
+      include: { badge: true },
+      orderBy: { awardedAt: "desc" },
+    });
+    return userBadges.map((ub) => ({
+      id: ub.id,
+      badge: ub.badge,
+      awardedAt: ub.awardedAt,
+    }));
+  }),
 
   myDeletionStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await db.user.findUnique({
@@ -65,7 +64,8 @@ export const userRouter = router({
         if (activeCall) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
-            message: "Impossible de retirer le consentement pendant un appel actif. Veuillez terminer l'appel d'abord.",
+            message:
+              "Impossible de retirer le consentement pendant un appel actif. Veuillez terminer l'appel d'abord.",
           });
         }
 
@@ -142,19 +142,18 @@ export const userRouter = router({
       return { success: true };
     }),
 
-  getConsentStatus: protectedProcedure
-    .query(async ({ ctx }) => {
-      const user = await db.user.findUnique({
-        where: { id: ctx.session.user.id },
-        select: { consentWithdrawnAt: true, consentAcceptedAt: true },
-      });
-      if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
-      }
-      return {
-        consentWithdrawnAt: user.consentWithdrawnAt,
-        consentAcceptedAt: user.consentAcceptedAt,
-        isConsentWithdrawn: user.consentWithdrawnAt !== null,
-      };
-    }),
+  getConsentStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { consentWithdrawnAt: true, consentAcceptedAt: true },
+    });
+    if (!user) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
+    }
+    return {
+      consentWithdrawnAt: user.consentWithdrawnAt,
+      consentAcceptedAt: user.consentAcceptedAt,
+      isConsentWithdrawn: user.consentWithdrawnAt !== null,
+    };
+  }),
 });

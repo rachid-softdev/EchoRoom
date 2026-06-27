@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin GDPR purge tests
@@ -141,9 +141,7 @@ describe("adminRouter.purgeGDPR", () => {
   });
 
   it("should return deleted count from purge function", async () => {
-    mockDb.user.findMany.mockResolvedValueOnce([
-      { id: "user-to-purge-1" },
-    ]);
+    mockDb.user.findMany.mockResolvedValueOnce([{ id: "user-to-purge-1" }]);
     // Second call: after deletion, the next batch is empty
     mockDb.user.findMany.mockResolvedValueOnce([]);
 
@@ -176,11 +174,7 @@ describe("purgeAnonymizedUsers lock behavior", () => {
     const result = await purgeAnonymizedUsers(30);
 
     expect(result).toEqual({ deletedUsers: 0 });
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      "job:gdpr-purge:lock",
-      "1",
-      { nx: true, ex: 300 },
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith("job:gdpr-purge:lock", "1", { nx: true, ex: 300 });
   });
 
   it("should skip processing when lock is not acquired", async () => {
@@ -226,9 +220,7 @@ describe("purgeAnonymizedUsers lock behavior", () => {
       id: `user-batch2-${i + 1}`,
     }));
 
-    mockDb.user.findMany
-      .mockResolvedValueOnce(batch1)
-      .mockResolvedValueOnce(batch2);
+    mockDb.user.findMany.mockResolvedValueOnce(batch1).mockResolvedValueOnce(batch2);
 
     const { purgeAnonymizedUsers } = await import("../../jobs/gdprPurge");
 
@@ -247,20 +239,18 @@ describe("purgeAnonymizedUsers lock behavior", () => {
     }));
     const batch2: Array<{ id: string }> = [];
 
-    mockDb.user.findMany
-      .mockResolvedValueOnce(batch1)
-      .mockResolvedValueOnce(batch2);
+    mockDb.user.findMany.mockResolvedValueOnce(batch1).mockResolvedValueOnce(batch2);
 
     const { purgeAnonymizedUsers } = await import("../../jobs/gdprPurge");
 
     await purgeAnonymizedUsers(30);
 
     // First call: no cursor
-    expect(mockDb.user.findMany.mock.calls[0][0]).not.toHaveProperty("skip");
-    expect(mockDb.user.findMany.mock.calls[0][0]).not.toHaveProperty("cursor");
+    expect(mockDb.user.findMany.mock.calls[0]![0]).not.toHaveProperty("skip");
+    expect(mockDb.user.findMany.mock.calls[0]![0]).not.toHaveProperty("cursor");
 
     // Second call: should have skip=1, cursor=user-50 (last item in first batch)
-    expect(mockDb.user.findMany.mock.calls[1][0]).toMatchObject({
+    expect(mockDb.user.findMany.mock.calls[1]![0]).toMatchObject({
       skip: 1,
       cursor: { id: "user-50" },
     });

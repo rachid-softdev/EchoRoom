@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
 
 describe("ReportButton — MIN_REPORT_REASON_LENGTH constant", () => {
@@ -31,6 +31,6 @@ describe("ReportButton — MIN_REPORT_REASON_LENGTH constant", () => {
     expect(simulateHandleSubmit("a".repeat(MIN_REPORT_REASON_LENGTH + 10))).toBe(true);
     // Whitespace should be trimmed
     expect(simulateHandleSubmit("   short   ")).toBe(false);
-    expect(simulateHandleSubmit("   " + "a".repeat(MIN_REPORT_REASON_LENGTH) + "   ")).toBe(true);
+    expect(simulateHandleSubmit(`   ${"a".repeat(MIN_REPORT_REASON_LENGTH)}   `)).toBe(true);
   });
 });

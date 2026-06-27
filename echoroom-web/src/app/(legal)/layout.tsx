@@ -1,11 +1,7 @@
-import Link from "next/link";
 import { ArrowLeft, Phone } from "lucide-react";
+import Link from "next/link";
 
-export default function LegalLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation bar */}
@@ -26,9 +22,7 @@ export default function LegalLayout({
       </nav>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        {children}
-      </div>
+      <div className="max-w-4xl mx-auto px-6 py-12">{children}</div>
 
       {/* Footer note */}
       <footer className="border-t border-border">

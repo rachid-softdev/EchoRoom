@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/ConfirmDialog.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/ConfirmDialog.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ConfirmDialog — Composant Partagé", () => {
@@ -41,14 +38,10 @@ test.describe("ConfirmDialog — Composant Partagé", () => {
   test("variante destructive change le variant du bouton confirm en 'destructive'", () => {
     const source = readComponent();
     // Le bouton confirm prend la variante 'destructive' quand variant==='destructive'
-    expect(source).toMatch(
-      /variant=\{variant === 'destructive' \? 'destructive' : 'default'\}/,
-    );
+    expect(source).toMatch(/variant=\{variant === 'destructive' \? 'destructive' : 'default'\}/);
   });
 
-  test("variante destructive — live: settings page affiche un bouton danger", async ({
-    page,
-  }) => {
+  test("variante destructive — live: settings page affiche un bouton danger", async ({ page }) => {
     // On va sur la page settings pour observer le dialogue de suppression
     await page.goto("/settings");
     await page.waitForLoadState("networkidle");
@@ -85,13 +78,6 @@ test.describe("ConfirmDialog — Composant Partagé", () => {
   test("loading=true désactive le bouton cancel", () => {
     const source = readComponent();
     expect(source).toContain("disabled={loading}");
-    // Vérifie que le cancel button a disabled={loading}
-    const cancelButtonLine = source
-      .split("\n")
-      .find(
-        (line) =>
-          line.includes("variant=\"outline\"") && line.includes("Annuler"),
-      );
     // La ligne du bouton Annuler contient disabled={loading}
     expect(source).toContain("disabled={loading}");
   });
@@ -108,9 +94,7 @@ test.describe("ConfirmDialog — Composant Partagé", () => {
     expect(source).toContain("confirmLabel");
   });
 
-  test("loading=true — live: simulate loading state via props", async ({
-    page,
-  }) => {
+  test("loading=true — live: simulate loading state via props", async ({ page }) => {
     await page.goto("/settings");
     await page.waitForLoadState("networkidle");
 
@@ -193,9 +177,7 @@ test.describe("ConfirmDialog — Composant Partagé", () => {
     expect(source).toContain("</DialogFooter>");
   });
 
-  test("focus trap — live: Tab circule entre les boutons du dialog", async ({
-    page,
-  }) => {
+  test("focus trap — live: Tab circule entre les boutons du dialog", async ({ page }) => {
     await page.goto("/settings");
     await page.waitForLoadState("networkidle");
 

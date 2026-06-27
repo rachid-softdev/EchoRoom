@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Mock la session utilisateur (authentifiée ou non)
@@ -12,7 +12,10 @@ async function mockSession(
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ user: null, expires: new Date(Date.now() + 86_400_000).toISOString() }),
+        body: JSON.stringify({
+          user: null,
+          expires: new Date(Date.now() + 86_400_000).toISOString(),
+        }),
       });
     });
     return;
@@ -41,9 +44,7 @@ async function mockScenario(
     await route.fulfill({
       status,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: status === 200 ? data : null } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: status === 200 ? data : null } } }]),
     });
   });
 }
@@ -59,9 +60,7 @@ async function mockFeed(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: { items } } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: { items } } } }]),
     });
   });
 }
@@ -71,7 +70,12 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
 
   test("PRIVATE : le créateur voit le scénario", async ({ page }) => {
     const creatorId = "creator-123";
-    await mockSession(page, { id: creatorId, email: "creator@test.com", role: "USER", username: "creator" });
+    await mockSession(page, {
+      id: creatorId,
+      email: "creator@test.com",
+      role: "USER",
+      username: "creator",
+    });
     await mockScenario(page, {
       id: "scenario-1",
       title: "Mon scénario privé",
@@ -97,7 +101,9 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
     await expect(page.getByText("Visible seulement par moi")).toBeVisible();
   });
 
-  test("PRIVATE : un non-créateur reçoit une page d'erreur 404 (scénario introuvable)", async ({ page }) => {
+  test("PRIVATE : un non-créateur reçoit une page d'erreur 404 (scénario introuvable)", async ({
+    page,
+  }) => {
     // Autre utilisateur (pas le créateur) : le serveur appelle notFound()
     await mockSession(page, { id: "other-user", email: "other@test.com", role: "USER" });
 
@@ -129,7 +135,9 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
     await expect(page.getByText("Scénario introuvable")).toBeVisible();
   });
 
-  test("PRIVATE : utilisateur non connecté voit la page d'erreur (pas de redirection vers login)", async ({ page }) => {
+  test("PRIVATE : utilisateur non connecté voit la page d'erreur (pas de redirection vers login)", async ({
+    page,
+  }) => {
     // Session non authentifiée
     await mockSession(page, null);
 
@@ -157,7 +165,12 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
   // ─── Admin voit TOUS les scénarios ──────────────────────────────
 
   test("Admin voit un scénario PRIVATE sans être le créateur", async ({ page }) => {
-    await mockSession(page, { id: "admin-id", email: "admin@test.com", role: "ADMIN", username: "admin" });
+    await mockSession(page, {
+      id: "admin-id",
+      email: "admin@test.com",
+      role: "ADMIN",
+      username: "admin",
+    });
 
     // L'admin doit pouvoir voir tous les scénarios, même PRIVATE
     await mockScenario(page, {
@@ -185,7 +198,12 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
   });
 
   test("Admin voit un scénario PUBLIC normal", async ({ page }) => {
-    await mockSession(page, { id: "admin-id", email: "admin@test.com", role: "ADMIN", username: "admin" });
+    await mockSession(page, {
+      id: "admin-id",
+      email: "admin@test.com",
+      role: "ADMIN",
+      username: "admin",
+    });
     await mockScenario(page, {
       id: "scenario-public",
       title: "Scénario public",
@@ -211,7 +229,9 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
 
   // ─── Related scenarios max 3, exclut le courant ────────────────
 
-  test("Les scénarios similaires sont limités à 3 et excluent le scénario courant", async ({ page }) => {
+  test("Les scénarios similaires sont limités à 3 et excluent le scénario courant", async ({
+    page,
+  }) => {
     await mockSession(page, { id: "user-1", email: "user@test.com", role: "USER" });
 
     // Mock le scénario courant
@@ -249,7 +269,11 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
     await expect(relatedSection).toBeVisible();
 
     // Exactement 3 cartes de scénarios dans cette section
-    const relatedGrid = page.getByText("Scénarios similaires").locator("..").locator("..").locator(".grid");
+    const relatedGrid = page
+      .getByText("Scénarios similaires")
+      .locator("..")
+      .locator("..")
+      .locator(".grid");
     const cards = relatedGrid.locator("> a, > div");
     const cardCount = await cards.count();
     expect(cardCount).toBeLessThanOrEqual(3);
@@ -301,7 +325,11 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
     await expect(relatedSection).toBeVisible();
 
     // Vérifier que les cartes sont bien au nombre de 3
-    const relatedCards = page.getByText("Scénarios similaires").locator("..").locator("..").locator(".grid > *");
+    const relatedCards = page
+      .getByText("Scénarios similaires")
+      .locator("..")
+      .locator("..")
+      .locator(".grid > *");
     const count = await relatedCards.count();
     expect(count).toBeLessThanOrEqual(3);
 
@@ -402,9 +430,7 @@ test.describe("Scenario Detail — permissions et visibilité", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          { result: { data: { json: null } } },
-        ]),
+        body: JSON.stringify([{ result: { data: { json: null } } }]),
       });
     });
 

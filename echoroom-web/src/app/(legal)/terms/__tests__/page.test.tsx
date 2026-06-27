@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
   cleanup();
@@ -27,9 +27,7 @@ describe("TermsPage (Conditions d'utilisation)", () => {
 
   it("renders the last updated date", () => {
     render(<TermsPage />);
-    expect(
-      screen.getByText(/Dernière mise à jour : janvier 2025/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Dernière mise à jour : janvier 2025/i)).toBeInTheDocument();
   });
 
   it("renders all section headings", () => {
@@ -47,9 +45,7 @@ describe("TermsPage (Conditions d'utilisation)", () => {
     ];
 
     for (const section of sections) {
-      expect(
-        screen.getByRole("heading", { name: section, level: 2 }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: section, level: 2 })).toBeInTheDocument();
     }
   });
 
@@ -62,16 +58,12 @@ describe("TermsPage (Conditions d'utilisation)", () => {
 
   it("renders the credits section", () => {
     render(<TermsPage />);
-    expect(
-      screen.getByText(/Les appels IA consomment des crédits/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Les appels IA consomment des crédits/i)).toBeInTheDocument();
   });
 
   it("renders the moderation section", () => {
     render(<TermsPage />);
-    expect(
-      screen.getByText(/EchoRoom AI se réserve le droit de modérer/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/EchoRoom AI se réserve le droit de modérer/i)).toBeInTheDocument();
   });
 
   it("renders the legal contact link", () => {

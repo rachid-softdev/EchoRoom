@@ -47,7 +47,10 @@ export async function getCachedCharacters<T>(params?: CharacterCacheParams): Pro
   }
 }
 
-export async function setCachedCharacters<T>(data: T, params?: CharacterCacheParams): Promise<void> {
+export async function setCachedCharacters<T>(
+  data: T,
+  params?: CharacterCacheParams,
+): Promise<void> {
   if (!redis) return;
   try {
     const version = await getCacheVersion();

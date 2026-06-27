@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: mock une session authentifiée
@@ -45,15 +45,7 @@ test.describe("History — Filtres et statuts", () => {
 
   test("tous les statuts sont affichés avec les bons libellés", async ({ page }) => {
     // Créer un appel pour chaque statut possible
-    const statuses = [
-      "PENDING",
-      "CALLING",
-      "RINGING",
-      "ACTIVE",
-      "COMPLETED",
-      "FAILED",
-      "BLOCKED",
-    ];
+    const statuses = ["PENDING", "CALLING", "RINGING", "ACTIVE", "COMPLETED", "FAILED", "BLOCKED"];
 
     const calls = statuses.map((status, i) => ({
       id: `call-${status.toLowerCase()}`,
@@ -92,7 +84,7 @@ test.describe("History — Filtres et statuts", () => {
       BLOCKED: "Bloqué",
     };
 
-    for (const [status, label] of Object.entries(statusLabels)) {
+    for (const [_status, label] of Object.entries(statusLabels)) {
       const badge = page.getByText(label);
       await expect(badge).toBeVisible();
     }
@@ -312,10 +304,7 @@ test.describe("History — Filtres et statuts", () => {
 
     // Aucune erreur console ne devrait concerner le rendu des appels orphelins
     const relevantErrors = consoleErrors.filter(
-      (e) =>
-        !e.includes("favicon") &&
-        !e.includes("Failed to load resource") &&
-        !e.includes("404"),
+      (e) => !e.includes("favicon") && !e.includes("Failed to load resource") && !e.includes("404"),
     );
 
     // Si des erreurs persistent, les annoter pour investigation
@@ -388,9 +377,7 @@ test.describe("History — Filtres et statuts", () => {
     // Le statut est "COMPLETED" mais la recherche "Terminé" ne matchera PAS
     // car le filtre cherche dans le status brut (COMPLETED, FAILED, etc.)
     // C'est le bug B12 documenté dans SCENARIOS_MANQUANTS.md
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par scénario, personnage ou statut...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par scénario, personnage ou statut...");
     await searchInput.fill("Terminé");
     await page.waitForTimeout(300);
 
@@ -418,7 +405,8 @@ test.describe("History — Filtres et statuts", () => {
       if (visible) {
         test.info().annotations.push({
           type: "info",
-          description: "La recherche 'Terminé' a matché 'Super appel' (match partiel dans le titre)",
+          description:
+            "La recherche 'Terminé' a matché 'Super appel' (match partiel dans le titre)",
         });
       }
     }
@@ -429,7 +417,10 @@ test.describe("History — Filtres et statuts", () => {
     await expect(page.getByText("Super appel")).toBeVisible();
 
     // "Appel raté" et "Appel en cours" ne doivent pas être visibles après ce filtre
-    const failedVisible = await page.getByText("Appel raté").isVisible().catch(() => false);
+    await page
+      .getByText("Appel raté")
+      .isVisible()
+      .catch(() => false);
     // Selon l'implémentation du filtre, les éléments filtrés peuvent être retirés du DOM ou cachés
     // On ne fait pas d'assertion stricte ici, juste vérifier qu'il n'y a pas de crash
   });
@@ -473,9 +464,7 @@ test.describe("History — Filtres et statuts", () => {
     test.skip(redirected, "La page /history n'a pas pu être chargée — mock insuffisant");
     if (redirected) return;
 
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par scénario, personnage ou statut...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par scénario, personnage ou statut...");
 
     // Rechercher par nom de personnage
     await searchInput.fill("Juliette");

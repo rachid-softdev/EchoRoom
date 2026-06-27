@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/EmptyState.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/EmptyState.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("EmptyState — Composant Partagé", () => {
@@ -30,25 +27,19 @@ test.describe("EmptyState — Composant Partagé", () => {
 
   test("icône — rendue avec les classes w-16 h-16 text-muted-foreground mx-auto mb-4", () => {
     const source = readComponent();
-    expect(source).toContain(
-      "w-16 h-16 text-muted-foreground mx-auto mb-4",
-    );
+    expect(source).toContain("w-16 h-16 text-muted-foreground mx-auto mb-4");
     // L'icône est passée via la prop icon (composant LucideIcon)
     expect(source).toContain("<Icon");
   });
 
   test("titre — rendu en h3 avec text-lg font-semibold mb-2", () => {
     const source = readComponent();
-    expect(source).toContain(
-      '<h3 className="text-lg font-semibold mb-2">{title}</h3>',
-    );
+    expect(source).toContain('<h3 className="text-lg font-semibold mb-2">{title}</h3>');
   });
 
   test("description — rendue en p avec text-muted-foreground mb-6 max-w-sm mx-auto", () => {
     const source = readComponent();
-    expect(source).toContain(
-      '<p className="text-muted-foreground mb-6 max-w-sm mx-auto">',
-    );
+    expect(source).toContain('<p className="text-muted-foreground mb-6 max-w-sm mx-auto">');
     expect(source).toContain("{description}");
   });
 
@@ -66,9 +57,7 @@ test.describe("EmptyState — Composant Partagé", () => {
     expect(source).toContain("action?: React.ReactNode");
   });
 
-  test("action — live: bouton d'action visible sur la page communauté vide", async ({
-    page,
-  }) => {
+  test("action — live: bouton d'action visible sur la page communauté vide", async ({ page }) => {
     await page.goto("/community");
     await page.waitForLoadState("networkidle");
 
@@ -107,7 +96,10 @@ test.describe("EmptyState — Composant Partagé", () => {
 
     const emptyText = page.getByText("Bibliothèque vide");
     const cards = page.locator('a[href^="/scenario/"]');
-    const hasCards = await cards.first().isVisible().catch(() => false);
+    const hasCards = await cards
+      .first()
+      .isVisible()
+      .catch(() => false);
 
     if (hasCards) {
       test.skip(true, "La bibliothèque contient des scénarios");
@@ -136,14 +128,10 @@ test.describe("EmptyState — Composant Partagé", () => {
 
   test("description longue — le layout flex-col items-center center le contenu", () => {
     const source = readComponent();
-    expect(source).toContain(
-      "flex flex-col items-center justify-center py-16 text-center",
-    );
+    expect(source).toContain("flex flex-col items-center justify-center py-16 text-center");
   });
 
-  test("description longue — live: le texte est contenu dans max-w-sm", async ({
-    page,
-  }) => {
+  test("description longue — live: le texte est contenu dans max-w-sm", async ({ page }) => {
     // Va sur la page /explore avec une recherche sans résultat
     await page.goto("/explore");
     await page.waitForLoadState("networkidle");
@@ -159,9 +147,7 @@ test.describe("EmptyState — Composant Partagé", () => {
     const emptyContainer = page
       .locator("div.flex.flex-col.items-center.justify-center.py-16.text-center")
       .first();
-    const containerExists = await emptyContainer
-      .isVisible()
-      .catch(() => false);
+    const containerExists = await emptyContainer.isVisible().catch(() => false);
 
     if (containerExists) {
       // Vérifie que la description a la classe max-w-sm
@@ -191,23 +177,17 @@ test.describe("EmptyState — Composant Partagé", () => {
 
   // ─── Live: EmptyState visible sur plusieurs pages ───────────────────
 
-  test("live — EmptyState sur la page d'accueil (scénario à la une vide)", async ({
-    page,
-  }) => {
+  test("live — EmptyState sur la page d'accueil (scénario à la une vide)", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    const customEmpty = page.getByText(
-      "Aucun scénario à la une aujourd'hui",
-    );
+    const customEmpty = page.getByText("Aucun scénario à la une aujourd'hui");
     const exists = await customEmpty.isVisible().catch(() => false);
 
     if (exists) {
       await expect(customEmpty).toBeVisible();
       // Vérifie la structure : icône (svg), titre (h3), description (p)
-      const container = customEmpty.locator(
-        "xpath=../../..",
-      );
+      const container = customEmpty.locator("xpath=../../..");
       const svgCount = await container.locator("svg").count();
       expect(svgCount).toBeGreaterThanOrEqual(1);
     }
@@ -231,9 +211,7 @@ test.describe("EmptyState — Composant Partagé", () => {
     if (exists) {
       await expect(noResult).toBeVisible();
       // Vérifie que le conteneur a la classe py-16
-      const container = page
-        .locator("div.flex.flex-col.items-center.justify-center.py-16")
-        .first();
+      const container = page.locator("div.flex.flex-col.items-center.justify-center.py-16").first();
       await expect(container).toBeVisible();
     }
   });

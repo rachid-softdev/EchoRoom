@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
+import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Stripe Webhook Route tests
@@ -12,12 +12,7 @@ import { Prisma } from "@prisma/client";
 //
 // Use vi.hoisted for all mock variables referenced in vi.mock factories.
 
-const {
-  mockConstructEvent,
-  mockTxCreate,
-  mockTxUpdate,
-  mockTransaction,
-} = vi.hoisted(() => ({
+const { mockConstructEvent, mockTxCreate, mockTxUpdate, mockTransaction } = vi.hoisted(() => ({
   mockConstructEvent: vi.fn(),
   mockTxCreate: vi.fn(),
   mockTxUpdate: vi.fn(),
@@ -101,7 +96,10 @@ describe("Stripe webhook POST handler", () => {
 
     const { POST } = await import("../route");
 
-    const req = createNextRequest(JSON.stringify({ type: "checkout.session.completed" }), "bad_sig");
+    const req = createNextRequest(
+      JSON.stringify({ type: "checkout.session.completed" }),
+      "bad_sig",
+    );
     const response = await POST(req);
 
     expect(response.status).toBe(400);
@@ -121,11 +119,7 @@ describe("Stripe webhook POST handler", () => {
     const req = createNextRequest(body, "valid_sig");
     await POST(req);
 
-    expect(mockConstructEvent).toHaveBeenCalledWith(
-      body,
-      "valid_sig",
-      "whsec_test_secret",
-    );
+    expect(mockConstructEvent).toHaveBeenCalledWith(body, "valid_sig", "whsec_test_secret");
   });
 
   // -----------------------------------------------------------------------

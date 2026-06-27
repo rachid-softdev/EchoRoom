@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/app/(auth)/register/page.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/app/(auth)/register/page.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("Register page — deep coverage", () => {
@@ -78,9 +75,13 @@ test.describe("Register page — deep coverage", () => {
   test("PasswordStrengthMeter rendered when password is non-empty", () => {
     const source = readComponent();
     expect(source).toContain("PasswordStrengthMeter");
-    const hasConditionalRender = source.includes("password.length > 0") || source.includes("PasswordStrengthMeter");
+    const hasConditionalRender =
+      source.includes("password.length > 0") || source.includes("PasswordStrengthMeter");
     if (!hasConditionalRender) {
-      test.info().annotations.push({ type: "info", description: "PasswordStrengthMeter conditional rendering pattern may differ" });
+      test.info().annotations.push({
+        type: "info",
+        description: "PasswordStrengthMeter conditional rendering pattern may differ",
+      });
     }
   });
 
@@ -138,9 +139,7 @@ test.describe("Register page — deep coverage", () => {
     await page.goto("/register");
     await page.waitForLoadState("networkidle");
 
-    await expect(
-      page.getByRole("link", { name: "Se connecter" }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Se connecter" })).toBeVisible();
   });
 
   test("live: error message area exists with id register-error", async ({ page }) => {

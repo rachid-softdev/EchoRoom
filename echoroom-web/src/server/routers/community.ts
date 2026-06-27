@@ -1,16 +1,16 @@
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
+import { db } from "../db";
+import { withREDMetrics } from "../middleware/metrics";
 import {
-  router,
-  publicProcedure,
   protectedProcedure,
-  withRateLimit,
+  publicProcedure,
+  router,
   withContentModeration,
   withIPRateLimit,
+  withRateLimit,
 } from "../procedures";
-import { withREDMetrics } from "../middleware/metrics";
-import { db } from "../db";
-import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { detectCommentSpam } from "../services/security/spamDetection";
 
@@ -79,8 +79,7 @@ export const communityRouter = router({
       });
 
       const items = comments.slice(0, input.limit);
-      const nextCursor =
-        comments.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = comments.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };
     }),

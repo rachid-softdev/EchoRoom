@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/CreditDisplay.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/CreditDisplay.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("CreditDisplay component", () => {
@@ -36,9 +33,13 @@ test.describe("CreditDisplay component", () => {
 
   test("Tooltip has correct content about credit usage", () => {
     const source = readComponent();
-    const hasCreditInfo = source.includes("chaque appel") || source.includes("1 crédit") || source.includes("crédit");
+    const hasCreditInfo =
+      source.includes("chaque appel") || source.includes("1 crédit") || source.includes("crédit");
     if (!hasCreditInfo) {
-      test.info().annotations.push({ type: "info", description: "Tooltip credit usage content may use different phrasing" });
+      test.info().annotations.push({
+        type: "info",
+        description: "Tooltip credit usage content may use different phrasing",
+      });
     }
     expect(source).toContain("5 gratuits à l&apos;inscription");
   });

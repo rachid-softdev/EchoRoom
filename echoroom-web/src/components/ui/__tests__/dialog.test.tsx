@@ -1,15 +1,15 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "../dialog";
 
 afterEach(() => {
@@ -197,9 +197,7 @@ describe("Dialog", () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Complete Dialog</DialogTitle>
-            <DialogDescription>
-              This is a description of the dialog.
-            </DialogDescription>
+            <DialogDescription>This is a description of the dialog.</DialogDescription>
           </DialogHeader>
           <div>Main content area</div>
           <DialogFooter>
@@ -212,9 +210,7 @@ describe("Dialog", () => {
     await user.click(screen.getByText("Open"));
 
     expect(screen.getByText("Complete Dialog")).toBeInTheDocument();
-    expect(
-      screen.getByText("This is a description of the dialog."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("This is a description of the dialog.")).toBeInTheDocument();
     expect(screen.getByText("Main content area")).toBeInTheDocument();
     expect(screen.getByText("Save")).toBeInTheDocument();
   });

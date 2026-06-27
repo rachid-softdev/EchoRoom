@@ -1,5 +1,5 @@
-import { featuredScenarioRepository } from "@/server/repositories";
 import { getUTCDateString } from "@/server/lib/date";
+import { featuredScenarioRepository } from "@/server/repositories";
 
 interface RotationResult {
   scenarioId: string | null;

@@ -1,7 +1,7 @@
 import { createClient, type DeepgramClient } from "@deepgram/sdk";
 import { env } from "@/lib/env";
-import { createLogger } from "@/server/lib/logger";
 import { createDeepgramCircuitBreaker } from "@/server/lib/circuitBreaker";
+import { createLogger } from "@/server/lib/logger";
 import { getRequestId } from "@/server/lib/requestContext";
 
 const log = createLogger("transcription");
@@ -43,16 +43,13 @@ export async function transcribeAudio(
     log.info("Transcription request", { requestId: getRequestId(), mimetype });
 
     const { result, error } = await deepgramCircuitBreaker.call(() =>
-      deepgram!.listen.prerecorded.transcribeFile(
-        fileBuffer,
-        {
-          model: "nova-2",
-          language: "fr",
-          mimetype,  // Passer le type MIME pour une meilleure précision
-          punctuate: true,
-          paragraphs: true,
-        },
-      ),
+      deepgram!.listen.prerecorded.transcribeFile(fileBuffer, {
+        model: "nova-2",
+        language: "fr",
+        mimetype, // Passer le type MIME pour une meilleure précision
+        punctuate: true,
+        paragraphs: true,
+      }),
     );
 
     if (error || !result) {
@@ -88,7 +85,7 @@ export async function transcribeAudio(
           }),
         ) ?? [],
     };
-    } finally {
+  } finally {
     clearTimeout(timeoutId);
   }
 }

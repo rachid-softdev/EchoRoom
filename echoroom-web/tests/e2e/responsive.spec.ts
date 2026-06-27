@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 // List of public pages to test on mobile
 const PUBLIC_PAGES = [
@@ -65,7 +65,10 @@ test.describe("Responsive 375px viewport", () => {
       // If redirected to login, skip the overflow check
       const redirected = page.url().includes("/login");
       if (redirected) {
-        test.info().annotations.push({ type: "skip", description: `Skipped: ${path} requires authentication` });
+        test.info().annotations.push({
+          type: "skip",
+          description: `Skipped: ${path} requires authentication`,
+        });
         return;
       }
 
@@ -84,7 +87,9 @@ test.describe("Responsive 375px viewport", () => {
     await page.waitForLoadState("networkidle");
 
     // Check that nav exists and CTA buttons are at least partially visible
-    const ctaButtons = page.getByRole("button").filter({ hasText: /Commencer|S'inscrire|Gratuitement/ });
+    const ctaButtons = page
+      .getByRole("button")
+      .filter({ hasText: /Commencer|S'inscrire|Gratuitement/ });
     const ctaCount = await ctaButtons.count();
     if (ctaCount > 0) {
       await expect(ctaButtons.first()).toBeVisible();

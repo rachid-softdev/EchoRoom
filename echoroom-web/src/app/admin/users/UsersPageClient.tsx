@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
+import { ChevronLeft, Search, Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { DataLoader } from "@/components/shared/DataLoader";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui";
 import { api } from "@/lib/trpc";
-import { Users, Search, X, ChevronLeft } from "lucide-react";
 
 const roleBadgeVariant: Record<string, "default" | "secondary" | "outline"> = {
   ADMIN: "default",
@@ -48,25 +45,14 @@ export default function UsersPageClient() {
     return (
       <div>
         <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSelectedUserId(null)}
-          >
+          <Button variant="ghost" size="icon" onClick={() => setSelectedUserId(null)}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">
-              {selectedUser.username}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {selectedUser.email}
-            </p>
+            <h1 className="text-3xl font-bold">{selectedUser.username}</h1>
+            <p className="text-muted-foreground mt-1">{selectedUser.email}</p>
           </div>
-          <Badge
-            variant={roleBadgeVariant[selectedUser.role] ?? "secondary"}
-            className="text-xs"
-          >
+          <Badge variant={roleBadgeVariant[selectedUser.role] ?? "secondary"} className="text-xs">
             {roleLabels[selectedUser.role] ?? selectedUser.role}
           </Badge>
         </div>
@@ -121,21 +107,15 @@ export default function UsersPageClient() {
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Scénarios</span>
-                <span className="font-medium">
-                  {selectedUser._count?.scenarios ?? 0}
-                </span>
+                <span className="font-medium">{selectedUser._count?.scenarios ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Commentaires</span>
-                <span className="font-medium">
-                  {selectedUser._count?.comments ?? 0}
-                </span>
+                <span className="font-medium">{selectedUser._count?.comments ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Réactions</span>
-                <span className="font-medium">
-                  {selectedUser._count?.reactions ?? 0}
-                </span>
+                <span className="font-medium">{selectedUser._count?.reactions ?? 0}</span>
               </div>
             </CardContent>
           </Card>
@@ -218,9 +198,7 @@ export default function UsersPageClient() {
                           user.username
                         )}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {user.email}
-                      </p>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-4">
                       <Badge
@@ -229,9 +207,7 @@ export default function UsersPageClient() {
                       >
                         {roleLabels[user.role] ?? user.role}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {user.credits} crédits
-                      </span>
+                      <span className="text-sm text-muted-foreground">{user.credits} crédits</span>
                       <span className="text-xs text-muted-foreground">
                         {new Date(user.createdAt).toLocaleDateString("fr-FR", {
                           day: "numeric",

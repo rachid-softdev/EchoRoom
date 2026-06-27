@@ -1,11 +1,22 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next/link to avoid loading Next.js internals in jsdom
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: any }) =>
-    <a href={href} {...props}>{children}</a>,
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+    [key: string]: any;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // ---------------------------------------------------------------------------
@@ -44,12 +55,7 @@ vi.mock("@/components/ui", () => ({
     className?: string;
     [key: string]: any;
   }) => (
-    <button
-      data-variant={variant}
-      data-size={size}
-      className={className}
-      {...props}
-    >
+    <button data-variant={variant} data-size={size} className={className} {...props}>
       {children}
     </button>
   ),
@@ -57,9 +63,7 @@ vi.mock("@/components/ui", () => ({
 
 // Mock child components
 vi.mock("@/components/landing/FeaturedScenariosSection", () => ({
-  FeaturedScenariosSection: () => (
-    <section data-testid="featured-scenarios-section" />
-  ),
+  FeaturedScenariosSection: () => <section data-testid="featured-scenarios-section" />,
 }));
 
 vi.mock("@/components/landing/LiveCounter", () => ({
@@ -94,9 +98,7 @@ describe("HomePage (landing page)", () => {
   it("should render hero section with main heading", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByText(/Les appels IA que tout/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Les appels IA que tout/i)).toBeInTheDocument();
     // "TikTok" appears in heading and also in feature description text
     const tikTokElements = screen.getAllByText(/TikTok/i);
     expect(tikTokElements.length).toBeGreaterThanOrEqual(1);
@@ -120,9 +122,7 @@ describe("HomePage (landing page)", () => {
   it("should render the hero description text", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByText(/Crée des conversations absurdes/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Crée des conversations absurdes/i)).toBeInTheDocument();
   });
 
   it("should render '5 crédits offerts' text in hero", () => {
@@ -141,15 +141,9 @@ describe("HomePage (landing page)", () => {
     render(<HomePage />);
 
     // Each trending scenario name should be visible
-    expect(
-      screen.getByText("Fake Recruiter Simulator"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("NPC Customer Support"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("AI Ex Girlfriend Chaos"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Fake Recruiter Simulator")).toBeInTheDocument();
+    expect(screen.getByText("NPC Customer Support")).toBeInTheDocument();
+    expect(screen.getByText("AI Ex Girlfriend Chaos")).toBeInTheDocument();
   });
 
   it("should render 'En tendance' label in community strip", () => {
@@ -173,36 +167,24 @@ describe("HomePage (landing page)", () => {
   it("should render hero feature cards with titles", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByText("Appels IA immersifs"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Réactions en direct"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Appels IA immersifs")).toBeInTheDocument();
+    expect(screen.getByText("Réactions en direct")).toBeInTheDocument();
   });
 
   it("should render supporting feature cards with titles", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByText("Scénarios sur mesure"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Scénarios sur mesure")).toBeInTheDocument();
     expect(screen.getByText("Clips viraux")).toBeInTheDocument();
     expect(screen.getByText("Modération safe")).toBeInTheDocument();
-    expect(
-      screen.getByText("Gratuit pour commencer"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Gratuit pour commencer")).toBeInTheDocument();
   });
 
   it("should render supporting feature descriptions", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByText(/Crée tes propres scénarios absurdes/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Extrais le meilleur moment en un clic/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Crée tes propres scénarios absurdes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Extrais le meilleur moment en un clic/i)).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -212,9 +194,7 @@ describe("HomePage (landing page)", () => {
   it("should render the FeaturedScenariosSection component", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByTestId("featured-scenarios-section"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("featured-scenarios-section")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -247,9 +227,7 @@ describe("HomePage (landing page)", () => {
   it("should render final CTA section description", () => {
     render(<HomePage />);
 
-    expect(
-      screen.getByText(/Rejoins les milliers de créateurs/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Rejoins les milliers de créateurs/i)).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------

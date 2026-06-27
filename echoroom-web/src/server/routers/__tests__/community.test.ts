@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // communityRouter tests
@@ -51,7 +51,10 @@ vi.mock("@/server/middleware/metrics", () => ({
 
 vi.mock("@/server/lib/logger", () => ({
   createLogger: vi.fn(() => ({
-    error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
   })),
 }));
 
@@ -79,24 +82,21 @@ vi.mock("@/server/services/ai/asyncModeration", () => ({
 // Handlers
 // ---------------------------------------------------------------------------
 
-type Ctx = { session: { user: { id: string } } };
-
-function getHandler(routeName: string): Function {
-  // The router mock captures all route handlers directly
-  // This is loaded lazily inside each test to avoid module resolution issues
-  return vi.importActual<Record<string, any>>("../community").then(
-    (mod: any) => mod.communityRouter[routeName].handler
-  );
-}
+// Route handlers are loaded lazily inside each test to avoid module resolution issues
 
 describe("communityRouter.comment", () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("should create a PENDING comment with user relation", async () => {
     mockDetectCommentSpam.mockResolvedValue({ flagged: false });
     mockDb.comment.create.mockResolvedValue({
-      id: "comment-1", userId: "user-1", scenarioId: "scenario-1",
-      content: "Super scénario !", moderationStatus: "PENDING",
+      id: "comment-1",
+      userId: "user-1",
+      scenarioId: "scenario-1",
+      content: "Super scénario !",
+      moderationStatus: "PENDING",
       user: { id: "user-1", username: "alice", image: null },
     });
 
@@ -112,8 +112,10 @@ describe("communityRouter.comment", () => {
     expect(result.user.username).toBe("alice");
     expect(mockDb.comment.create).toHaveBeenCalledWith({
       data: {
-        userId: "user-1", scenarioId: "scenario-1",
-        content: "Super scénario !", moderationStatus: "PENDING",
+        userId: "user-1",
+        scenarioId: "scenario-1",
+        content: "Super scénario !",
+        moderationStatus: "PENDING",
       },
       include: { user: { select: { id: true, username: true, image: true } } },
     });
@@ -141,7 +143,10 @@ describe("communityRouter.comment", () => {
   it("should call spam detection with userId and content", async () => {
     mockDetectCommentSpam.mockResolvedValue({ flagged: false });
     mockDb.comment.create.mockResolvedValue({
-      id: "c1", userId: "u1", scenarioId: "s1", content: "Hello",
+      id: "c1",
+      userId: "u1",
+      scenarioId: "s1",
+      content: "Hello",
       moderationStatus: "PENDING",
       user: { id: "u1", username: "u1", image: null },
     });
@@ -160,8 +165,11 @@ describe("communityRouter.comment", () => {
   it("should call scheduleAsyncModeration after creating comment", async () => {
     mockDetectCommentSpam.mockResolvedValue({ flagged: false });
     mockDb.comment.create.mockResolvedValue({
-      id: "comment-42", userId: "u1", scenarioId: "s1",
-      content: "Moderate me", moderationStatus: "PENDING",
+      id: "comment-42",
+      userId: "u1",
+      scenarioId: "s1",
+      content: "Moderate me",
+      moderationStatus: "PENDING",
       user: { id: "u1", username: "u1", image: null },
     });
 
@@ -199,7 +207,9 @@ describe("communityRouter.comment", () => {
 });
 
 describe("communityRouter.getComments", () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("should query only APPROVED comments", async () => {
     mockDb.comment.findMany.mockResolvedValue([]);
@@ -230,8 +240,11 @@ describe("communityRouter.getComments", () => {
 
   it("should support cursor pagination with skip", async () => {
     const comments = Array.from({ length: 11 }, (_, i) => ({
-      id: `c${i}`, scenarioId: "s1", content: `C${i}`,
-      moderationStatus: "APPROVED", userId: `u${i}`,
+      id: `c${i}`,
+      scenarioId: "s1",
+      content: `C${i}`,
+      moderationStatus: "APPROVED",
+      userId: `u${i}`,
       createdAt: new Date(),
       user: { id: `u${i}`, username: `u${i}`, image: null },
     }));
@@ -251,7 +264,15 @@ describe("communityRouter.getComments", () => {
 
   it("should not have nextCursor when all data fits", async () => {
     mockDb.comment.findMany.mockResolvedValue([
-      { id: "c1", scenarioId: "s1", content: "X", moderationStatus: "APPROVED", userId: "u1", createdAt: new Date(), user: { id: "u1", username: "u1", image: null } },
+      {
+        id: "c1",
+        scenarioId: "s1",
+        content: "X",
+        moderationStatus: "APPROVED",
+        userId: "u1",
+        createdAt: new Date(),
+        user: { id: "u1", username: "u1", image: null },
+      },
     ]);
 
     const { communityRouter } = await import("../community");
@@ -285,7 +306,9 @@ describe("communityRouter.getComments", () => {
 });
 
 describe("communityRouter.reportAbuse", () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("should create report when no pending exists", async () => {
     mockDb.abuseReport.findFirst.mockResolvedValue(null);
@@ -304,13 +327,22 @@ describe("communityRouter.reportAbuse", () => {
       where: { reporterId: "u1", targetType: "scenario", targetId: "s1", status: "PENDING" },
     });
     expect(mockDb.abuseReport.create).toHaveBeenCalledWith({
-      data: { reporterId: "u1", targetType: "scenario", targetId: "s1", reason: "Contenu inapproprié" },
+      data: {
+        reporterId: "u1",
+        targetType: "scenario",
+        targetId: "s1",
+        reason: "Contenu inapproprié",
+      },
     });
   });
 
   it("should throw CONFLICT on duplicate pending report", async () => {
     mockDb.abuseReport.findFirst.mockResolvedValue({
-      id: "existing", reporterId: "u1", targetType: "scenario", targetId: "s1", status: "PENDING",
+      id: "existing",
+      reporterId: "u1",
+      targetType: "scenario",
+      targetId: "s1",
+      status: "PENDING",
     });
 
     const { communityRouter } = await import("../community");
@@ -362,7 +394,11 @@ describe("communityRouter.reportAbuse", () => {
       }),
     );
     expect(mockDb.abuseReport.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ reporterId: "reporter-1", targetType: "user", targetId: "bad-user" }),
+      data: expect.objectContaining({
+        reporterId: "reporter-1",
+        targetType: "user",
+        targetId: "bad-user",
+      }),
     });
   });
 });

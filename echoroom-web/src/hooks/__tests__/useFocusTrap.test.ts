@@ -1,7 +1,8 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-import React, { createRef } from "react";
+import { act, renderHook } from "@testing-library/react";
+import type React from "react";
+import { createRef } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFocusTrap } from "../useFocusTrap";
 
 // ---------------------------------------------------------------------------
@@ -25,12 +26,10 @@ describe("useFocusTrap", () => {
     containerRef = { current: container };
 
     // Mock requestAnimationFrame to execute callback immediately
-    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation(
-      (cb: FrameRequestCallback) => {
-        cb(0);
-        return 0;
-      },
-    );
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    });
 
     // Mock document.activeElement
     Object.defineProperty(document, "activeElement", {
@@ -52,9 +51,7 @@ describe("useFocusTrap", () => {
       <input data-testid="input-1" type="text" />
       <input data-testid="input-2" type="text" />
     `;
-    const firstInput = container.querySelector(
-      '[data-testid="input-1"]',
-    ) as HTMLElement;
+    const firstInput = container.querySelector('[data-testid="input-1"]') as HTMLElement;
     const focusSpy = vi.spyOn(firstInput, "focus");
 
     renderHook(() => useFocusTrap(containerRef, true));
@@ -68,10 +65,6 @@ describe("useFocusTrap", () => {
 
   it("should restore focus to previous element on deactivation", () => {
     container.innerHTML = `<input data-testid="input-1" type="text" />`;
-    const firstInput = container.querySelector(
-      '[data-testid="input-1"]',
-    ) as HTMLElement;
-
     // Set activeElement to a specific element outside the container
     const outsideElement = document.createElement("button");
     outsideElement.setAttribute("data-testid", "outside");
@@ -83,10 +76,9 @@ describe("useFocusTrap", () => {
     });
     const outsideFocusSpy = vi.spyOn(outsideElement, "focus");
 
-    const { unmount } = renderHook(
-      ({ isActive }) => useFocusTrap(containerRef, isActive),
-      { initialProps: { isActive: true } },
-    );
+    const { unmount } = renderHook(({ isActive }) => useFocusTrap(containerRef, isActive), {
+      initialProps: { isActive: true },
+    });
 
     act(() => {
       vi.advanceTimersByTime(0);
@@ -104,9 +96,7 @@ describe("useFocusTrap", () => {
 
   it("should be no-op when isActive=false", () => {
     container.innerHTML = `<input data-testid="input-1" type="text" />`;
-    const firstInput = container.querySelector(
-      '[data-testid="input-1"]',
-    ) as HTMLElement;
+    const firstInput = container.querySelector('[data-testid="input-1"]') as HTMLElement;
     const focusSpy = vi.spyOn(firstInput, "focus");
 
     renderHook(() => useFocusTrap(containerRef, false));
@@ -144,9 +134,7 @@ describe("useFocusTrap", () => {
 
   it("should keep focus on single focusable element", () => {
     container.innerHTML = `<button data-testid="single-btn">Only button</button>`;
-    const singleBtn = container.querySelector(
-      '[data-testid="single-btn"]',
-    ) as HTMLElement;
+    const singleBtn = container.querySelector('[data-testid="single-btn"]') as HTMLElement;
     const focusSpy = vi.spyOn(singleBtn, "focus");
 
     renderHook(() => useFocusTrap(containerRef, true));
@@ -170,18 +158,12 @@ describe("useFocusTrap", () => {
     const { unmount } = renderHook(() => useFocusTrap(containerRef, true));
 
     // Should have added keydown listener
-    expect(addEventListenerSpy).toHaveBeenCalledWith(
-      "keydown",
-      expect.any(Function),
-    );
+    expect(addEventListenerSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
 
     unmount();
 
     // Should have removed keydown listener
-    expect(removeEventListenerSpy).toHaveBeenCalledWith(
-      "keydown",
-      expect.any(Function),
-    );
+    expect(removeEventListenerSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
   });
 
   it("should loop focus on Tab key — forward wrap", () => {
@@ -190,12 +172,7 @@ describe("useFocusTrap", () => {
       <button data-testid="btn-2">Second</button>
       <button data-testid="btn-3">Last</button>
     `;
-    const firstBtn = container.querySelector(
-      '[data-testid="btn-1"]',
-    ) as HTMLElement;
-    const lastBtn = container.querySelector(
-      '[data-testid="btn-3"]',
-    ) as HTMLElement;
+    const lastBtn = container.querySelector('[data-testid="btn-3"]') as HTMLElement;
     const lastFocusSpy = vi.spyOn(lastBtn, "focus");
     const preventDefaultSpy = vi.fn();
     const addEventListenerSpy = vi.spyOn(document, "addEventListener");

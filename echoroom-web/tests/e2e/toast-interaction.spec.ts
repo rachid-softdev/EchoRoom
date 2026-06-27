@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Toast system interactions", () => {
   test.beforeEach(async ({ page }) => {
@@ -12,9 +12,7 @@ test.describe("Toast system interactions", () => {
     // that exposes a global API
     const toastTriggered = await page.evaluate(() => {
       // Check what toast mechanisms are available
-      const hasSonner = typeof (window as any).toast !== 'undefined';
-      const hasCustomEvent = typeof CustomEvent !== 'undefined';
-
+      const hasSonner = typeof (window as any).toast !== "undefined";
       if (hasSonner) {
         (window as any).toast?.("Test toast message");
         return "sonner";
@@ -22,9 +20,11 @@ test.describe("Toast system interactions", () => {
 
       // Try dispatching a custom event that the toaster might listen to
       try {
-        window.dispatchEvent(new CustomEvent('toast', {
-          detail: { title: 'Test toast', variant: 'default' }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("toast", {
+            detail: { title: "Test toast", variant: "default" },
+          }),
+        );
         return "custom-event";
       } catch {
         return "none";
@@ -36,7 +36,7 @@ test.describe("Toast system interactions", () => {
       await page.waitForTimeout(500);
 
       // Look for toast in the DOM — sonner renders [data-sonner-toaster]
-      const sonnerToaster = page.locator('[data-sonner-toaster]');
+      const sonnerToaster = page.locator("[data-sonner-toaster]");
       const hasSonnerToaster = await sonnerToaster.count();
 
       // Also check for generic toast containers
@@ -51,17 +51,17 @@ test.describe("Toast system interactions", () => {
   });
 
   test("toast can render with variant classes", async ({ page }) => {
-    const result = await page.evaluate(() => {
+    await page.evaluate(() => {
       // Check what toast variants are supported by looking at CSS classes
       const styles = Array.from(document.styleSheets)
-        .flatMap(sheet => {
+        .flatMap((sheet) => {
           try {
             return Array.from(sheet.cssRules || []);
           } catch {
             return [];
           }
         })
-        .filter(rule => rule.cssText?.includes("toast") || rule.cssText?.includes("sonner"));
+        .filter((rule) => rule.cssText?.includes("toast") || rule.cssText?.includes("sonner"));
 
       return {
         hasToastStyles: styles.length > 0,
@@ -71,53 +71,56 @@ test.describe("Toast system interactions", () => {
   });
 
   test("toast auto-dismiss behavior (source analysis)", () => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
-      "utf-8"
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
+      "utf-8",
     );
     // Check for auto-dismiss mechanism
-    const hasAutoDismiss = source.includes("duration") ||
-                           source.includes("timeout") ||
-                           source.includes("setTimeout") ||
-                           source.includes("autoDismiss") ||
-                           source.includes("timer");
+    const hasAutoDismiss =
+      source.includes("duration") ||
+      source.includes("timeout") ||
+      source.includes("setTimeout") ||
+      source.includes("autoDismiss") ||
+      source.includes("timer");
     expect(hasAutoDismiss).toBe(true);
   });
 
   test("toast has close button for manual dismiss", () => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
-      "utf-8"
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
+      "utf-8",
     );
     // Check for close button pattern
-    const hasClose = source.includes("X") ||
-                     source.includes("x") ||
-                     source.includes("close") ||
-                     source.includes("Close") ||
-                     source.includes("Dismiss") ||
-                     source.includes("dismiss");
+    const hasClose =
+      source.includes("X") ||
+      source.includes("x") ||
+      source.includes("close") ||
+      source.includes("Close") ||
+      source.includes("Dismiss") ||
+      source.includes("dismiss");
     expect(hasClose).toBe(true);
   });
 
   test("toast supports multiple stacked toasts", () => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
-      "utf-8"
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
+      "utf-8",
     );
     // Check for stacking mechanism
-    const hasStacking = source.includes("stack") ||
-                        source.includes("map") ||
-                        source.includes("forEach") ||
-                        source.includes("list") ||
-                        source.includes("position") ||
-                        source.includes("bottom");
+    const hasStacking =
+      source.includes("stack") ||
+      source.includes("map") ||
+      source.includes("forEach") ||
+      source.includes("list") ||
+      source.includes("position") ||
+      source.includes("bottom");
     expect(hasStacking).toBe(true);
   });
 
   test("toast supports variant types (default, destructive, success)", () => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
-      "utf-8"
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
+      "utf-8",
     );
     expect(source).toContain("default");
     expect(source).toContain("destructive");
@@ -128,7 +131,7 @@ test.describe("Toast system interactions", () => {
     // Check for Toaster in the DOM
     const hasToaster = await page.evaluate(() => {
       // sonner renders a container with specific attributes
-      const sonner = document.querySelector('[data-sonner-toaster]');
+      const sonner = document.querySelector("[data-sonner-toaster]");
       if (sonner) return true;
 
       // shadcn/ui toast renders a Toaster component
@@ -144,17 +147,17 @@ test.describe("Toast system interactions", () => {
   });
 
   test("destructive toast variant has distinct styling", () => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
-      "utf-8"
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
+      "utf-8",
     );
     expect(source).toContain("destructive");
   });
 
   test("toast title and description are rendered", () => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
-      "utf-8"
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/components/ui/toast.tsx"),
+      "utf-8",
     );
     expect(source).toContain("title");
     expect(source).toContain("description");

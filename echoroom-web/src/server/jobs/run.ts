@@ -1,6 +1,6 @@
 import { createLogger } from "@/server/lib/logger";
-import { cleanupOldRecordings } from "./cleanupRecordings";
 import { cleanupOldAuditLogs } from "./cleanupAuditLogs";
+import { cleanupOldRecordings } from "./cleanupRecordings";
 import { purgeAnonymizedUsers } from "./gdprPurge";
 
 const log = createLogger("cleanup-jobs");

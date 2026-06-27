@@ -1,10 +1,10 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { NextRequest } from "next/server";
+import { createLogger } from "@/server/lib/logger";
+import { resolveApiVersion } from "@/server/middleware/apiVersion";
 import { appRouter } from "@/server/rootRouter";
 import { appRouterV2 } from "@/server/rootRouterV2";
 import { createTRPCContext } from "@/server/trpc";
-import { createLogger } from "@/server/lib/logger";
-import { resolveApiVersion } from "@/server/middleware/apiVersion";
 
 const log = createLogger("trpc-handler");
 
@@ -23,11 +23,14 @@ const handler = (req: NextRequest) => {
     endpoint: "/api/trpc",
     req,
     router,
-    createContext: () =>
-      createTRPCContext({ req, apiVersion }),
+    createContext: () => createTRPCContext({ req, apiVersion }),
     onError: ({ path, error }) => {
       if (process.env.NODE_ENV === "development") {
-        log.error("tRPC failed", { path: path ?? "<no-path>", version: apiVersion, message: error.message });
+        log.error("tRPC failed", {
+          path: path ?? "<no-path>",
+          version: apiVersion,
+          message: error.message,
+        });
       }
     },
   });

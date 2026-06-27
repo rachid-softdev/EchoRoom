@@ -1,36 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { DashboardShell } from "@/components/shared/DashboardShell"
-import { LeaderboardTable } from "@/components/social/LeaderboardTable"
-import { api } from "@/lib/trpc"
-import { cn } from "@/components/ui"
+import { useState } from "react";
+import { DashboardShell } from "@/components/shared/DashboardShell";
+import { LeaderboardTable } from "@/components/social/LeaderboardTable";
+import { cn } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
-type Period = "ALL" | "WEEK" | "MONTH"
-type Tab = "SCENARIOS" | "CREATORS"
+type Period = "ALL" | "WEEK" | "MONTH";
+type Tab = "SCENARIOS" | "CREATORS";
 
 const PERIOD_LABELS: Record<Period, string> = {
   ALL: "Tout",
   WEEK: "Cette semaine",
   MONTH: "Ce mois",
-}
+};
 
 export default function LeaderboardPageClient() {
-  const [activeTab, setActiveTab] = useState<Tab>("SCENARIOS")
-  const [period, setPeriod] = useState<Period>("ALL")
+  const [activeTab, setActiveTab] = useState<Tab>("SCENARIOS");
+  const [period, setPeriod] = useState<Period>("ALL");
 
-  const scenariosQuery = api.social.getLeaderboardScenarios.useQuery({
-    period,
-    sort: "LIKES",
-  }, {
-    enabled: activeTab === "SCENARIOS",
-  })
-  const creatorsQuery = api.social.getLeaderboardCreators.useQuery({
-    period,
-    sort: "LIKES",
-  }, {
-    enabled: activeTab === "CREATORS",
-  })
+  const scenariosQuery = api.social.getLeaderboardScenarios.useQuery(
+    {
+      period,
+      sort: "LIKES",
+    },
+    {
+      enabled: activeTab === "SCENARIOS",
+    },
+  );
+  const creatorsQuery = api.social.getLeaderboardCreators.useQuery(
+    {
+      period,
+      sort: "LIKES",
+    },
+    {
+      enabled: activeTab === "CREATORS",
+    },
+  );
 
   const scenarioEntries =
     scenariosQuery.data?.items.map((s, i) => ({
@@ -40,7 +46,7 @@ export default function LeaderboardPageClient() {
       image: s.character?.avatarUrl,
       value: s.likeCount,
       ...(s.creator?.username ? { extra: `par ${s.creator.username}` } : {}),
-    })) ?? []
+    })) ?? [];
 
   const creatorEntries =
     creatorsQuery.data?.items.map((u, i) => ({
@@ -50,7 +56,7 @@ export default function LeaderboardPageClient() {
       image: u.image,
       value: u.totalLikesReceived,
       extra: `${u._count.scenarios} scénario${u._count.scenarios > 1 ? "s" : ""}`,
-    })) ?? []
+    })) ?? [];
 
   return (
     <DashboardShell
@@ -121,5 +127,5 @@ export default function LeaderboardPageClient() {
         />
       )}
     </DashboardShell>
-  )
+  );
 }

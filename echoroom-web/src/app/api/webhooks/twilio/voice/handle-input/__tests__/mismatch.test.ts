@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // M-7: handle-input scenarioId mismatch rejection
@@ -129,10 +129,12 @@ describe("M-7: scenarioId mismatch rejection", () => {
     });
 
     const { getConversationState, getSystemPromptFromState, getCallId } = await import(
-      "@/server/services/telephony/conversationState",
+      "@/server/services/telephony/conversationState"
     );
     (getConversationState as ReturnType<typeof vi.fn>).mockResolvedValue(createBaseState());
-    (getSystemPromptFromState as ReturnType<typeof vi.fn>).mockResolvedValue("You are a test assistant");
+    (getSystemPromptFromState as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "You are a test assistant",
+    );
     (getCallId as ReturnType<typeof vi.fn>).mockReturnValue("call-1");
 
     const { generateResponse } = await import("@/server/services/ai/conversationEngine");
@@ -180,9 +182,7 @@ describe("M-7: scenarioId mismatch rejection", () => {
   });
 
   it("should continue when state.scenarioId is empty", async () => {
-    const { getConversationState } = await import(
-      "@/server/services/telephony/conversationState",
-    );
+    const { getConversationState } = await import("@/server/services/telephony/conversationState");
     (getConversationState as ReturnType<typeof vi.fn>).mockResolvedValue(
       createBaseState({ scenarioId: "" }),
     );

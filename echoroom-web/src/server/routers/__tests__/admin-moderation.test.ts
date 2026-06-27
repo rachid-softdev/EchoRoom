@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin moderation tests
@@ -58,14 +58,6 @@ vi.mock("@/server/procedures", () => {
   };
 });
 
-type MutationOpts = {
-  input: Record<string, unknown>;
-  ctx: { session: { user: { id: string } } };
-};
-type QueryOpts = {
-  input: Record<string, unknown> | undefined;
-  ctx: { session: { user: { id: string } } };
-};
 
 // ─── approveScenario ───────────────────────────────────────────────────────
 
@@ -184,9 +176,7 @@ describe("adminRouter.approveScenario", () => {
     });
 
     expect(mockRedis.del).toHaveBeenCalledWith("admin:moderationQueue:*");
-    expect(mockRedis.del).toHaveBeenCalledWith(
-      "admin:moderationQueueComments:*",
-    );
+    expect(mockRedis.del).toHaveBeenCalledWith("admin:moderationQueueComments:*");
   });
 
   it("should skip cache invalidation when redis is unavailable", async () => {
@@ -329,9 +319,7 @@ describe("adminRouter.moderationQueue", () => {
   });
 
   it("should set nextCursor when there are more results", async () => {
-    const scenarios = Array.from({ length: 21 }, (_, i) =>
-      makeScenario(`s-${i + 1}`),
-    );
+    const scenarios = Array.from({ length: 21 }, (_, i) => makeScenario(`s-${i + 1}`));
     mockDb.scenario.findMany.mockResolvedValue(scenarios);
 
     const { adminRouter } = await import("../admin");
@@ -348,9 +336,7 @@ describe("adminRouter.moderationQueue", () => {
   });
 
   it("should return undefined nextCursor on last page", async () => {
-    const scenarios = Array.from({ length: 5 }, (_, i) =>
-      makeScenario(`s-${i + 1}`),
-    );
+    const scenarios = Array.from({ length: 5 }, (_, i) => makeScenario(`s-${i + 1}`));
     mockDb.scenario.findMany.mockResolvedValue(scenarios);
 
     const { adminRouter } = await import("../admin");
@@ -402,9 +388,7 @@ describe("adminRouter.moderationQueue", () => {
   });
 
   it("should default limit to 20 when input is undefined", async () => {
-    const scenarios = Array.from({ length: 15 }, (_, i) =>
-      makeScenario(`s-${i + 1}`),
-    );
+    const scenarios = Array.from({ length: 15 }, (_, i) => makeScenario(`s-${i + 1}`));
     mockDb.scenario.findMany.mockResolvedValue(scenarios);
 
     const { adminRouter } = await import("../admin");
@@ -416,9 +400,7 @@ describe("adminRouter.moderationQueue", () => {
     });
 
     expect(result.items).toHaveLength(15);
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 21 }),
-    );
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 21 }));
   });
 
   it("should use caching when redis is available", async () => {
@@ -505,9 +487,7 @@ describe("adminRouter.approveComment", () => {
         adminId: "admin-1",
       },
     });
-    expect(mockRedis.del).toHaveBeenCalledWith(
-      "admin:moderationQueueComments:*",
-    );
+    expect(mockRedis.del).toHaveBeenCalledWith("admin:moderationQueueComments:*");
   });
 
   it("should be idempotent when comment is already APPROVED", async () => {
@@ -670,9 +650,7 @@ describe("adminRouter.moderateComment", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    expect(mockRedis.del).toHaveBeenCalledWith(
-      "admin:moderationQueueComments:*",
-    );
+    expect(mockRedis.del).toHaveBeenCalledWith("admin:moderationQueueComments:*");
   });
 });
 
@@ -736,9 +714,7 @@ describe("adminRouter.moderationQueueComments", () => {
   });
 
   it("should map profile.image to user.image for frontend compat", async () => {
-    const comments = [
-      makeComment("c-1", "PENDING", "https://example.com/avatar.png"),
-    ];
+    const comments = [makeComment("c-1", "PENDING", "https://example.com/avatar.png")];
     mockDb.comment.findMany.mockResolvedValue(comments);
 
     const { adminRouter } = await import("../admin");
@@ -749,13 +725,11 @@ describe("adminRouter.moderationQueueComments", () => {
       ctx: { session: { user: { id: "admin-1" } } },
     });
 
-    expect(result.items[0].user.image).toBe(
-      "https://example.com/avatar.png",
-    );
+    expect(result.items[0].user.image).toBe("https://example.com/avatar.png");
   });
 
   it("should set user.image to null when profile.image is null", async () => {
-    const comments = [makeComment("c-1", "PENDING", null)];
+    const comments = [makeComment("c-1", "PENDING", null as any)];
     mockDb.comment.findMany.mockResolvedValue(comments);
 
     const { adminRouter } = await import("../admin");

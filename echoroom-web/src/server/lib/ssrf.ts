@@ -13,5 +13,7 @@ export function isAllowedTwilioOrigin(url: string): boolean {
 export function validateRecordingUrl(url: string): boolean {
   if (!isAllowedTwilioOrigin(url)) return false;
   const parsed = new URL(url);
-  return parsed.pathname.startsWith("/2010-04-01/Accounts/") && parsed.pathname.includes("/Recordings/");
+  return (
+    parsed.pathname.startsWith("/2010-04-01/Accounts/") && parsed.pathname.includes("/Recordings/")
+  );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // withIPRateLimit tests
@@ -56,7 +56,6 @@ function createMockCtx(headers: Record<string, string | null>) {
 function createMockNext() {
   return vi.fn().mockResolvedValue({ ok: true });
 }
-
 
 describe("withIPRateLimit", () => {
   beforeEach(() => {
@@ -259,9 +258,7 @@ describe("withIPRateLimit — Redis failure fallback", () => {
 
     // Should not throw when Redis is null (in-memory fallback)
     // @ts-expect-error — mocked middleware is callable at runtime
-    await expect(
-      middleware({ ctx, next, path: "fallback.test" }),
-    ).resolves.toEqual({ ok: true });
+    await expect(middleware({ ctx, next, path: "fallback.test" })).resolves.toEqual({ ok: true });
 
     expect(next).toHaveBeenCalled();
   });
@@ -288,7 +285,9 @@ describe("withIPRateLimit — Redis failure fallback", () => {
     expect(next2).toHaveBeenCalled();
 
     // @ts-expect-error — mocked middleware is callable at runtime
-    await expect(middleware({ ctx, next: next3, path: "memlimit" })).rejects.toThrow("Trop de requêtes");
+    await expect(middleware({ ctx, next: next3, path: "memlimit" })).rejects.toThrow(
+      "Trop de requêtes",
+    );
     expect(next3).not.toHaveBeenCalled();
   });
 });
@@ -385,14 +384,14 @@ describe("withIPRateLimit — IP spoofing protection", () => {
 
     // First request passes (9 < 10)
     // @ts-expect-error — mocked middleware is callable at runtime
-    await expect(
-      middleware({ ctx, next: createMockNext(), path: "spoof" }),
-    ).resolves.toEqual({ ok: true });
+    await expect(middleware({ ctx, next: createMockNext(), path: "spoof" })).resolves.toEqual({
+      ok: true,
+    });
 
     // Second request hits limit (10 >= 10)
     // @ts-expect-error — mocked middleware is callable at runtime
-    await expect(
-      middleware({ ctx, next: createMockNext(), path: "spoof" }),
-    ).rejects.toThrow("Trop de requêtes");
+    await expect(middleware({ ctx, next: createMockNext(), path: "spoof" })).rejects.toThrow(
+      "Trop de requêtes",
+    );
   });
 });

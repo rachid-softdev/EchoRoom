@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Admin featured curation tests
@@ -82,7 +82,7 @@ describe("adminRouter.featureScenario", () => {
 
     expect(result).toEqual({ success: true });
     expect(mockDb.featuredScenario.upsert).toHaveBeenCalledTimes(1);
-    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0][0];
+    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0]![0];
     expect(upsertCall.where.featuredDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(upsertCall.update.scenarioId).toBe("scenario-1");
     expect(upsertCall.update.featureType).toBe("ADMIN_CURATED");
@@ -108,7 +108,7 @@ describe("adminRouter.featureScenario", () => {
     });
 
     // upsert called with update containing the new scenarioId
-    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0][0];
+    const upsertCall = mockDb.featuredScenario.upsert.mock.calls[0]![0];
     expect(upsertCall.update.scenarioId).toBe("scenario-1");
     expect(upsertCall.create.scenarioId).toBe("scenario-1");
   });
@@ -323,11 +323,9 @@ describe("adminRouter.getFeaturedScenario", () => {
         where: { featuredDate: expect.any(String) },
       }),
     );
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      "admin:featuredScenario",
-      JSON.stringify(featured),
-      { ex: 30 },
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith("admin:featuredScenario", JSON.stringify(featured), {
+      ex: 30,
+    });
   });
 
   it("should invalidate cache after featureScenario", async () => {

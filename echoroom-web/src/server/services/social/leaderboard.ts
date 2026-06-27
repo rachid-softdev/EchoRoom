@@ -33,9 +33,10 @@ export async function getTopCreators(params: GetTopCreatorsParams) {
   // For "ALL" period, use the UserSocial sub-aggregate for efficient sorting
   if (!sinceDate) {
     // Fetch top users from the sub-aggregate repository
-    const topSocials = params.sort === "LIKES"
-      ? await userSocialRepository.getTopByLikes(20)
-      : await userSocialRepository.getTopByCalls(20);
+    const topSocials =
+      params.sort === "LIKES"
+        ? await userSocialRepository.getTopByLikes(20)
+        : await userSocialRepository.getTopByCalls(20);
 
     const userIds = topSocials.map((s) => s.userId);
 
@@ -60,8 +61,10 @@ export async function getTopCreators(params: GetTopCreatorsParams) {
         id: s.userId,
         username: user?.username ?? "utilisateur supprimé",
         image: user?.image ?? null,
-        totalLikesReceived: "totalLikesReceived" in s ? (s as { totalLikesReceived: number }).totalLikesReceived : 0,
-        totalCallsMade: "totalCallsMade" in s ? (s as { totalCallsMade: number }).totalCallsMade : 0,
+        totalLikesReceived:
+          "totalLikesReceived" in s ? (s as { totalLikesReceived: number }).totalLikesReceived : 0,
+        totalCallsMade:
+          "totalCallsMade" in s ? (s as { totalCallsMade: number }).totalCallsMade : 0,
         _count: { scenarios: user?._count?.scenarios ?? 0 },
       };
     });
@@ -99,12 +102,14 @@ export async function getTopCreators(params: GetTopCreatorsParams) {
 
   // Sort by the requested metric using the sub-aggregate when available
   const sorted = users.sort((a, b) => {
-    const aVal = params.sort === "LIKES"
-      ? (a.social?.totalLikesReceived ?? a.totalLikesReceived)
-      : (a.social?.totalCallsMade ?? a.totalCallsMade);
-    const bVal = params.sort === "LIKES"
-      ? (b.social?.totalLikesReceived ?? b.totalLikesReceived)
-      : (b.social?.totalCallsMade ?? b.totalCallsMade);
+    const aVal =
+      params.sort === "LIKES"
+        ? (a.social?.totalLikesReceived ?? a.totalLikesReceived)
+        : (a.social?.totalCallsMade ?? a.totalCallsMade);
+    const bVal =
+      params.sort === "LIKES"
+        ? (b.social?.totalLikesReceived ?? b.totalLikesReceived)
+        : (b.social?.totalCallsMade ?? b.totalCallsMade);
     return bVal - aVal;
   });
 

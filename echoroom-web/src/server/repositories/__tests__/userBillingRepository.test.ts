@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // UserBillingRepository — Contract Tests (future partitioned repository)
@@ -159,9 +159,7 @@ describe("IUserBillingRepository — interface contract", () => {
     it("should refund credits to user", async () => {
       (mockRepo.atomicRefund as any).mockResolvedValue(undefined);
 
-      await expect(
-        mockRepo.atomicRefund({} as any, "user-1", 10),
-      ).resolves.not.toThrow();
+      await expect(mockRepo.atomicRefund({} as any, "user-1", 10)).resolves.not.toThrow();
     });
 
     it("should reject zero or negative refund amounts", async () => {
@@ -169,9 +167,7 @@ describe("IUserBillingRepository — interface contract", () => {
         new Error("Le montant du remboursement doit être positif"),
       );
 
-      await expect(
-        mockRepo.atomicRefund({} as any, "user-1", 0),
-      ).rejects.toThrow("positif");
+      await expect(mockRepo.atomicRefund({} as any, "user-1", 0)).rejects.toThrow("positif");
     });
   });
 
@@ -212,13 +208,11 @@ describe("IUserBillingRepository — interface contract", () => {
     });
 
     it("should enforce unique stripePaymentId", async () => {
-      (mockRepo.addCredits as any).mockRejectedValue(
-        new Error("Unique constraint failed"),
-      );
+      (mockRepo.addCredits as any).mockRejectedValue(new Error("Unique constraint failed"));
 
-      await expect(
-        mockRepo.addCredits("user-1", 50, "pi_duplicate"),
-      ).rejects.toThrow("Unique constraint");
+      await expect(mockRepo.addCredits("user-1", 50, "pi_duplicate")).rejects.toThrow(
+        "Unique constraint",
+      );
     });
   });
 
@@ -226,12 +220,22 @@ describe("IUserBillingRepository — interface contract", () => {
     it("should return all purchases for a user", async () => {
       const purchases: PurchaseData[] = [
         {
-          id: "p1", userId: "user-1", stripePaymentId: "pi_1",
-          creditsPurchased: 50, refundedAt: null, disputedAt: null, createdAt: new Date("2026-01-01"),
+          id: "p1",
+          userId: "user-1",
+          stripePaymentId: "pi_1",
+          creditsPurchased: 50,
+          refundedAt: null,
+          disputedAt: null,
+          createdAt: new Date("2026-01-01"),
         },
         {
-          id: "p2", userId: "user-1", stripePaymentId: "pi_2",
-          creditsPurchased: 100, refundedAt: null, disputedAt: null, createdAt: new Date("2026-02-01"),
+          id: "p2",
+          userId: "user-1",
+          stripePaymentId: "pi_2",
+          creditsPurchased: 100,
+          refundedAt: null,
+          disputedAt: null,
+          createdAt: new Date("2026-02-01"),
         },
       ];
       (mockRepo.getPurchaseHistory as any).mockResolvedValue(purchases);
@@ -254,8 +258,13 @@ describe("IUserBillingRepository — interface contract", () => {
     it("should include refunded purchases", async () => {
       const refunded: PurchaseData[] = [
         {
-          id: "p1", userId: "user-1", stripePaymentId: "pi_refunded",
-          creditsPurchased: 50, refundedAt: new Date("2026-03-01"), disputedAt: null, createdAt: new Date("2026-01-01"),
+          id: "p1",
+          userId: "user-1",
+          stripePaymentId: "pi_refunded",
+          creditsPurchased: 50,
+          refundedAt: new Date("2026-03-01"),
+          disputedAt: null,
+          createdAt: new Date("2026-01-01"),
         },
       ];
       (mockRepo.getPurchaseHistory as any).mockResolvedValue(refunded);
@@ -269,7 +278,10 @@ describe("IUserBillingRepository — interface contract", () => {
   describe("getDailyCallLimit", () => {
     it("should return daily limit record when found", async () => {
       const limit: DailyLimitData = {
-        id: "dl-1", userId: "user-1", date: new Date("2026-06-01"), callCount: 3,
+        id: "dl-1",
+        userId: "user-1",
+        date: new Date("2026-06-01"),
+        callCount: 3,
       };
       (mockRepo.getDailyCallLimit as any).mockResolvedValue(limit);
 
@@ -299,7 +311,11 @@ describe("IUserBillingRepository — interface contract", () => {
     it("should handle first call of the day (upsert from 0)", async () => {
       (mockRepo.incrementDailyCallCount as any).mockResolvedValue(1);
 
-      const result = await mockRepo.incrementDailyCallCount({} as any, "user-1", new Date("2026-06-01"));
+      const result = await mockRepo.incrementDailyCallCount(
+        {} as any,
+        "user-1",
+        new Date("2026-06-01"),
+      );
 
       expect(result).toBe(1);
     });

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClipCreator } from "../ClipCreator";
 
 // ---------------------------------------------------------------------------
@@ -9,7 +9,6 @@ import { ClipCreator } from "../ClipCreator";
 // ---------------------------------------------------------------------------
 
 const mockMutate = vi.hoisted(() => vi.fn());
-const mockIsPending = vi.hoisted(() => false);
 const mockUseMutation = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/trpc", () => ({
@@ -38,10 +37,7 @@ const mockToast = vi.hoisted(() => vi.fn());
 
 vi.mock("@/components/ui", () => ({
   Input: (props: Record<string, unknown>) => <input {...props} />,
-  Button: ({
-    children,
-    ...props
-  }: { children: React.ReactNode; [key: string]: unknown }) => (
+  Button: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
     <button {...props}>{children}</button>
   ),
   toast: mockToast,
@@ -115,7 +111,7 @@ describe("ClipCreator", () => {
   // ── Input default values ──────────────────────────────────────────
 
   it("sets startTime default to 0 and endTime default to durationSeconds", () => {
-    render(<ClipCreator callId="call-1" durationSeconds= {60} />);
+    render(<ClipCreator callId="call-1" durationSeconds={60} />);
 
     const startInput = screen.getByLabelText("Début (secondes)") as HTMLInputElement;
     const endInput = screen.getByLabelText("Fin (secondes)") as HTMLInputElement;

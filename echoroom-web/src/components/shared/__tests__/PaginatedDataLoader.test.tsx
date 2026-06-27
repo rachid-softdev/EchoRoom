@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PaginatedDataLoader } from "../PaginatedDataLoader";
 
 afterEach(() => {
@@ -12,13 +12,15 @@ afterEach(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createMockQuery<T>(overrides: Partial<{
-  items: T[];
-  isLoading: boolean;
-  isError: boolean;
-  error: { message?: string } | null;
-  refetch: () => void;
-}> = {}) {
+function createMockQuery<T>(
+  overrides: Partial<{
+    items: T[];
+    isLoading: boolean;
+    isError: boolean;
+    error: { message?: string } | null;
+    refetch: () => void;
+  }> = {},
+) {
   return {
     items: [] as T[],
     isLoading: false,
@@ -39,11 +41,7 @@ describe("PaginatedDataLoader", () => {
   it("renders default loading spinner when isLoading is true", () => {
     const query = createMockQuery({ isLoading: true });
 
-    render(
-      <PaginatedDataLoader query={query}>
-        {() => <div>items</div>}
-      </PaginatedDataLoader>,
-    );
+    render(<PaginatedDataLoader query={query}>{() => <div>items</div>}</PaginatedDataLoader>);
 
     // Default loading shows a spinner icon
     const spinner = document.querySelector(".animate-spin");
@@ -81,11 +79,7 @@ describe("PaginatedDataLoader", () => {
       refetch,
     });
 
-    render(
-      <PaginatedDataLoader query={query}>
-        {() => <div>items</div>}
-      </PaginatedDataLoader>,
-    );
+    render(<PaginatedDataLoader query={query}>{() => <div>items</div>}</PaginatedDataLoader>);
 
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
     expect(screen.getByText("Failed to load")).toBeInTheDocument();
@@ -104,15 +98,9 @@ describe("PaginatedDataLoader", () => {
       error: null,
     });
 
-    render(
-      <PaginatedDataLoader query={query}>
-        {() => <div>items</div>}
-      </PaginatedDataLoader>,
-    );
+    render(<PaginatedDataLoader query={query}>{() => <div>items</div>}</PaginatedDataLoader>);
 
-    expect(
-      screen.getByText("Impossible de charger les données"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les données")).toBeInTheDocument();
   });
 
   // ── Empty state ──────────────────────────────────────────────────
@@ -121,9 +109,7 @@ describe("PaginatedDataLoader", () => {
     const query = createMockQuery({ items: [] });
 
     const { container } = render(
-      <PaginatedDataLoader query={query}>
-        {() => <div>items</div>}
-      </PaginatedDataLoader>,
+      <PaginatedDataLoader query={query}>{() => <div>items</div>}</PaginatedDataLoader>,
     );
 
     // When items is empty and no empty prop, it renders empty fragment (nothing)
@@ -197,11 +183,7 @@ describe("PaginatedDataLoader", () => {
       error: { message: "Error occurred" },
     });
 
-    render(
-      <PaginatedDataLoader query={query}>
-        {() => <div>items</div>}
-      </PaginatedDataLoader>,
-    );
+    render(<PaginatedDataLoader query={query}>{() => <div>items</div>}</PaginatedDataLoader>);
 
     // Error takes priority
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
@@ -215,11 +197,7 @@ describe("PaginatedDataLoader", () => {
       items: [],
     });
 
-    render(
-      <PaginatedDataLoader query={query}>
-        {() => <div>items</div>}
-      </PaginatedDataLoader>,
-    );
+    render(<PaginatedDataLoader query={query}>{() => <div>items</div>}</PaginatedDataLoader>);
 
     const spinner = document.querySelector(".animate-spin");
     expect(spinner).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // cn() utility tests
@@ -28,7 +28,7 @@ describe("cn — class name utility", () => {
     expect(result).toBe("base extra");
   });
 
-  it('should return empty string when no inputs', async () => {
+  it("should return empty string when no inputs", async () => {
     const { cn } = await import("../utils");
     const result = cn();
     expect(result).toBe("");

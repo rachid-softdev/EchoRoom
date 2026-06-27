@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Client env validation — NEXT_PUBLIC_* vars
@@ -125,9 +125,7 @@ describe("env.client — client env validation", () => {
     expect(env.NEXT_PUBLIC_APP_URL).toBe("http://localhost:3000");
     expect(env.NEXT_PUBLIC_POSTHOG_KEY).toBe("phc_placeholder");
     expect(env.NEXT_PUBLIC_POSTHOG_HOST).toBe("https://us.i.posthog.com");
-    expect(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY).toBe(
-      "pk_test_placeholder",
-    );
+    expect(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY).toBe("pk_test_placeholder");
   });
 
   it("should export getClientEnv function", async () => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Call replay page", () => {
   test("should redirect to /login when unauthenticated accessing /call/:id", async ({ page }) => {
@@ -7,20 +7,18 @@ test.describe("Call replay page", () => {
 
     // The call replay page is protected by middleware
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
-  test("should redirect to /login when unauthenticated accessing /call/non-existent-id", async ({ page }) => {
+  test("should redirect to /login when unauthenticated accessing /call/non-existent-id", async ({
+    page,
+  }) => {
     await page.goto("/call/non-existent-id-00000");
     await page.waitForLoadState("networkidle");
 
     // Protected route — redirects to login
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("should redirect to /login when accessing /call/ with empty id", async ({ page }) => {
@@ -29,9 +27,7 @@ test.describe("Call replay page", () => {
 
     // Protected route — redirects to login
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("should have a valid call replay page route structure", async ({ page }) => {
@@ -44,8 +40,6 @@ test.describe("Call replay page", () => {
 
     // Confirm redirect to login page
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 });

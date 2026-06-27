@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // dashboardRouter.getData tests (Sprint 2 Item 19)
@@ -69,10 +69,7 @@ vi.mock("@/server/trpc", () => {
 
 type GetDataInput = { callsLimit?: number; scenariosLimit?: number };
 type GetDataContext = { session: { user: { id: string } } };
-type GetDataHandler = (opts: {
-  ctx: GetDataContext;
-  input: GetDataInput;
-}) => Promise<{
+type GetDataHandler = (opts: { ctx: GetDataContext; input: GetDataInput }) => Promise<{
   credits: number;
   calls: Array<unknown>;
   todayCount: number;
@@ -85,10 +82,20 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should return credits, calls, todayCount, and scenarios in a single response", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-1", userId: "user-123", credits: 42 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-1",
+      userId: "user-123",
+      credits: 42,
+    });
     mockDb.call.findMany.mockResolvedValue([
-      { id: "call-1", scenario: { id: "s-1", title: "Test", character: { name: "Bot", slug: "bot" } } },
-      { id: "call-2", scenario: { id: "s-2", title: "Test 2", character: { name: "Bot2", slug: "bot2" } } },
+      {
+        id: "call-1",
+        scenario: { id: "s-1", title: "Test", character: { name: "Bot", slug: "bot" } },
+      },
+      {
+        id: "call-2",
+        scenario: { id: "s-2", title: "Test 2", character: { name: "Bot2", slug: "bot2" } },
+      },
     ]);
     mockDb.call.count.mockResolvedValue(3);
     mockDb.scenario.findMany.mockResolvedValue([
@@ -119,7 +126,11 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should query user credits for the authenticated user", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-s", userId: "user-specific", credits: 100 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-s",
+      userId: "user-specific",
+      credits: 100,
+    });
     mockDb.call.findMany.mockResolvedValue([]);
     mockDb.call.count.mockResolvedValue(0);
     mockDb.scenario.findMany.mockResolvedValue([]);
@@ -141,7 +152,11 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should query recent calls for the authenticated user", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-d", userId: "user-xxx", credits: 10 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-d",
+      userId: "user-xxx",
+      credits: 10,
+    });
     mockDb.call.findMany.mockResolvedValue([]);
     mockDb.call.count.mockResolvedValue(0);
     mockDb.scenario.findMany.mockResolvedValue([]);
@@ -173,7 +188,11 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should query today's call count with correct date range", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-d", userId: "user-xxx", credits: 10 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-d",
+      userId: "user-xxx",
+      credits: 10,
+    });
     mockDb.call.findMany.mockResolvedValue([]);
     mockDb.call.count.mockResolvedValue(0);
     mockDb.scenario.findMany.mockResolvedValue([]);
@@ -197,7 +216,11 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should query user's scenarios with character and counts", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-d", userId: "user-xxx", credits: 10 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-d",
+      userId: "user-xxx",
+      credits: 10,
+    });
     mockDb.call.findMany.mockResolvedValue([]);
     mockDb.call.count.mockResolvedValue(0);
     mockDb.scenario.findMany.mockResolvedValue([]);
@@ -245,7 +268,11 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should slice calls to the requested limit", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-d", userId: "user-xxx", credits: 10 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-d",
+      userId: "user-xxx",
+      credits: 10,
+    });
     mockDb.call.count.mockResolvedValue(0);
     mockDb.scenario.findMany.mockResolvedValue([]);
 
@@ -271,14 +298,24 @@ describe("dashboardRouter.getData", () => {
   });
 
   it("should slice scenarios to the requested limit", async () => {
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-d", userId: "user-xxx", credits: 10 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-d",
+      userId: "user-xxx",
+      credits: 10,
+    });
     mockDb.call.findMany.mockResolvedValue([]);
     mockDb.call.count.mockResolvedValue(0);
 
     // Return scenariosLimit + 1 items to test slicing
     const scenarios = Array.from({ length: 4 }, (_, i) => ({
       id: `scenario-${i}`,
-      character: { id: `char-${i}`, name: `Char ${i}`, slug: `char-${i}`, avatarUrl: null, category: "GENERAL" },
+      character: {
+        id: `char-${i}`,
+        name: `Char ${i}`,
+        slug: `char-${i}`,
+        avatarUrl: null,
+        category: "GENERAL",
+      },
       _count: { reactions: 0, comments: 0 },
     }));
     mockDb.scenario.findMany.mockResolvedValue(scenarios);
@@ -299,7 +336,11 @@ describe("dashboardRouter.getData", () => {
 
   it("should run all queries in parallel (Promise.all)", async () => {
     // This test verifies the structural contract: the handler uses Promise.all
-    mockDb.userBilling.findUnique.mockResolvedValue({ id: "bill-d", userId: "user-xxx", credits: 10 });
+    mockDb.userBilling.findUnique.mockResolvedValue({
+      id: "bill-d",
+      userId: "user-xxx",
+      credits: 10,
+    });
     mockDb.call.findMany.mockResolvedValue([]);
     mockDb.call.count.mockResolvedValue(0);
     mockDb.scenario.findMany.mockResolvedValue([]);

@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/admin/AdminSidebar.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/admin/AdminSidebar.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("AdminSidebar component", () => {
@@ -31,7 +28,7 @@ test.describe("AdminSidebar component", () => {
     const source = readComponent();
     expect(source).toContain("EchoRoom Admin");
     expect(source).toMatch(/LayoutDashboard/);
-    expect(source).toContain('/admin/moderation');
+    expect(source).toContain("/admin/moderation");
   });
 
   test("has 6 nav items with correct routes and icons", () => {
@@ -70,7 +67,7 @@ test.describe("AdminSidebar component", () => {
     expect(source).toContain("text-muted-foreground hover:text-foreground hover:bg-muted/50");
   });
 
-  test("active link has aria-current=\"page\"", () => {
+  test('active link has aria-current="page"', () => {
     const source = readComponent();
     expect(source).toContain('aria-current={isActive ? "page" : undefined}');
   });

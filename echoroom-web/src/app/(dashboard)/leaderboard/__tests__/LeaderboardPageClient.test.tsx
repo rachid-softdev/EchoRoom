@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock tRPC
 const mockScenariosQuery = vi.hoisted(() => vi.fn());
@@ -32,7 +32,12 @@ vi.mock("@/components/shared/DashboardShell", () => ({
 // Mock LeaderboardTable
 vi.mock("@/components/social/LeaderboardTable", () => ({
   LeaderboardTable: ({ title, entries, valueLabel, isLoading }: any) => (
-    <div data-testid="leaderboard-table" data-title={title} data-value-label={valueLabel} data-is-loading={isLoading}>
+    <div
+      data-testid="leaderboard-table"
+      data-title={title}
+      data-value-label={valueLabel}
+      data-is-loading={isLoading}
+    >
       {isLoading ? (
         <div data-testid="loading-skeleton">Loading...</div>
       ) : (
@@ -52,21 +57,38 @@ vi.mock("@/components/social/LeaderboardTable", () => ({
 
 // Mock @/components/ui (cn utility)
 vi.mock("@/components/ui", () => ({
-  cn: (...classes: (string | undefined | null | false)[]) =>
-    classes.filter(Boolean).join(" "),
+  cn: (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" "),
 }));
 
 import LeaderboardPageClient from "../LeaderboardPageClient";
 
 const mockScenarioData = {
   items: [
-    { id: "s-1", title: "Top Scenario 1", character: { avatarUrl: "/s1.png" }, creator: { username: "Alice" }, likeCount: 100 },
-    { id: "s-2", title: "Top Scenario 2", character: { avatarUrl: null }, creator: { username: "Bob" }, likeCount: 80 },
+    {
+      id: "s-1",
+      title: "Top Scenario 1",
+      character: { avatarUrl: "/s1.png" },
+      creator: { username: "Alice" },
+      likeCount: 100,
+    },
+    {
+      id: "s-2",
+      title: "Top Scenario 2",
+      character: { avatarUrl: null },
+      creator: { username: "Bob" },
+      likeCount: 80,
+    },
   ],
 };
 const mockCreatorData = {
   items: [
-    { id: "u-1", username: "Alice", image: "/alice.png", totalLikesReceived: 500, _count: { scenarios: 3 } },
+    {
+      id: "u-1",
+      username: "Alice",
+      image: "/alice.png",
+      totalLikesReceived: 500,
+      _count: { scenarios: 3 },
+    },
     { id: "u-2", username: "Bob", image: null, totalLikesReceived: 300, _count: { scenarios: 1 } },
   ],
 };
@@ -95,13 +117,18 @@ describe("LeaderboardPageClient", () => {
     render(<LeaderboardPageClient />);
 
     expect(screen.getByTestId("dashboard-shell")).toHaveAttribute("data-title", "Classement");
-    expect(screen.getByText("Les meilleurs scénarios et créateurs de la communauté")).toBeInTheDocument();
+    expect(
+      screen.getByText("Les meilleurs scénarios et créateurs de la communauté"),
+    ).toBeInTheDocument();
   });
 
   it("shows scenarios tab by default with leaderboard entries", () => {
     render(<LeaderboardPageClient />);
 
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Scénarios les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Scénarios les plus likés",
+    );
     expect(screen.getByTestId("entry-name-s-1")).toHaveTextContent("Top Scenario 1");
     expect(screen.getByTestId("entry-name-s-2")).toHaveTextContent("Top Scenario 2");
     expect(screen.getByTestId("entry-value-s-1")).toHaveTextContent("100");
@@ -113,7 +140,10 @@ describe("LeaderboardPageClient", () => {
 
     fireEvent.click(screen.getByText("Créateurs"));
 
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Créateurs les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Créateurs les plus likés",
+    );
     expect(screen.getByTestId("entry-name-u-1")).toHaveTextContent("Alice");
     expect(screen.getByTestId("entry-name-u-2")).toHaveTextContent("Bob");
     expect(screen.getByTestId("entry-value-u-1")).toHaveTextContent("500");
@@ -145,7 +175,7 @@ describe("LeaderboardPageClient", () => {
     // The component calls the query with the current period
     // After clicking "Cette semaine", the query should be called with period: "WEEK"
     const calls = mockScenariosQuery.mock.calls;
-    const lastCallArgs = calls[calls.length - 1][0];
+    const lastCallArgs = calls[calls.length - 1]![0];
     expect(lastCallArgs).toMatchObject({ period: "WEEK" });
   });
 
@@ -222,9 +252,14 @@ describe("LeaderboardPageClient", () => {
     render(<LeaderboardPageClient />);
 
     // LeaderboardTable mock renders data-title attribute
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Scénarios les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Scénarios les plus likés",
+    );
     // With empty entries, the mock renders an empty <ul>
-    expect(screen.getByTestId("leaderboard-table").querySelector("ul")?.children.length ?? 0).toBe(0);
+    expect(screen.getByTestId("leaderboard-table").querySelector("ul")?.children.length ?? 0).toBe(
+      0,
+    );
   });
 
   it("shows empty state when creators data is empty", () => {
@@ -238,7 +273,10 @@ describe("LeaderboardPageClient", () => {
 
     fireEvent.click(screen.getByText("Créateurs"));
 
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Créateurs les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Créateurs les plus likés",
+    );
   });
 
   // ── Error states ─────────────────────────────────────────────
@@ -254,7 +292,10 @@ describe("LeaderboardPageClient", () => {
     render(<LeaderboardPageClient />);
 
     // Should not crash, should show empty entries (default [])
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Scénarios les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Scénarios les plus likés",
+    );
   });
 
   it("does not crash when creators query errors", () => {
@@ -269,7 +310,10 @@ describe("LeaderboardPageClient", () => {
 
     fireEvent.click(screen.getByText("Créateurs"));
 
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Créateurs les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Créateurs les plus likés",
+    );
   });
 
   // ── Undefined data edge cases ────────────────────────────────
@@ -284,7 +328,10 @@ describe("LeaderboardPageClient", () => {
     render(<LeaderboardPageClient />);
 
     // Should show empty entries (defaults to [])
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Scénarios les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Scénarios les plus likés",
+    );
   });
 
   it("handles creators data with undefined items gracefully", () => {
@@ -298,7 +345,10 @@ describe("LeaderboardPageClient", () => {
 
     fireEvent.click(screen.getByText("Créateurs"));
 
-    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute("data-title", "Créateurs les plus likés");
+    expect(screen.getByTestId("leaderboard-table")).toHaveAttribute(
+      "data-title",
+      "Créateurs les plus likés",
+    );
   });
 
   // ── Period filter applies to both tabs ──────────────────────
@@ -315,14 +365,14 @@ describe("LeaderboardPageClient", () => {
     // The creators query should be called with the current period
     const creatorCalls = mockCreatorsQuery.mock.calls;
     const lastCreatorCall = creatorCalls[creatorCalls.length - 1];
-    expect(lastCreatorCall[0]).toMatchObject({ period: "WEEK" });
+    expect(lastCreatorCall![0]).toMatchObject({ period: "WEEK" });
   });
 
   it("period filter defaults to ALL", () => {
     render(<LeaderboardPageClient />);
 
     // First call to scenarios query should have period: "ALL"
-    const firstCall = mockScenariosQuery.mock.calls[0][0];
+    const firstCall = mockScenariosQuery.mock.calls[0]![0];
     expect(firstCall).toMatchObject({ period: "ALL" });
   });
 });

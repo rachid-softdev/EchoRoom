@@ -1,16 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui"
-import { Button } from "@/components/ui"
-import { DataLoader } from "@/components/shared/DataLoader"
-import { api } from "@/lib/trpc"
-import { ScrollText } from "lucide-react"
+import { ScrollText } from "lucide-react";
+import { useState } from "react";
+import { DataLoader } from "@/components/shared/DataLoader";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 const actionOptions = [
   { label: "Toutes les actions", value: undefined },
@@ -22,7 +16,7 @@ const actionOptions = [
   { label: "Signalement ignoré", value: "DISMISS_ABUSE_REPORT" },
   { label: "Mise en avant", value: "FEATURE_SCENARIO" },
   { label: "Suppression utilisateur", value: "DELETE_USER" },
-]
+];
 
 const entityTypeOptions = [
   { label: "Tous les types", value: undefined },
@@ -31,7 +25,7 @@ const entityTypeOptions = [
   { label: "Utilisateur", value: "User" },
   { label: "Numéro bloqué", value: "BlockedNumber" },
   { label: "Signalement", value: "AbuseReport" },
-]
+];
 
 const actionLabels: Record<string, string> = {
   APPROVE_SCENARIO: "Approbation",
@@ -43,14 +37,14 @@ const actionLabels: Record<string, string> = {
   FEATURE_SCENARIO: "Mise en avant",
   DELETE_USER: "Suppression utilisateur",
   REMOVE_FEATURED: "Retrait mise en avant",
-}
+};
 
 export default function AuditPageClient() {
-  const [actionFilter, setActionFilter] = useState<string | undefined>(undefined)
-  const [entityFilter, setEntityFilter] = useState<string | undefined>(undefined)
-  const [dateFrom, setDateFrom] = useState<string>("")
-  const [dateTo, setDateTo] = useState<string>("")
-  const [cursor, setCursor] = useState<string | undefined>(undefined)
+  const [actionFilter, setActionFilter] = useState<string | undefined>(undefined);
+  const [entityFilter, setEntityFilter] = useState<string | undefined>(undefined);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
 
   const auditQuery = api.admin.getAuditLogs.useQuery({
     action: actionFilter,
@@ -59,17 +53,17 @@ export default function AuditPageClient() {
     endDate: dateTo ? new Date(`${dateTo}T23:59:59.999Z`).toISOString() : undefined,
     cursor,
     limit: 20,
-  })
+  });
 
   function handleResetFilters() {
-    setActionFilter(undefined)
-    setEntityFilter(undefined)
-    setDateFrom("")
-    setDateTo("")
-    setCursor(undefined)
+    setActionFilter(undefined);
+    setEntityFilter(undefined);
+    setDateFrom("");
+    setDateTo("");
+    setCursor(undefined);
   }
 
-  const hasDateFilter = dateFrom || dateTo
+  const hasDateFilter = dateFrom || dateTo;
 
   return (
     <div>
@@ -89,8 +83,8 @@ export default function AuditPageClient() {
           className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground"
           value={actionFilter ?? ""}
           onChange={(e) => {
-            setActionFilter(e.target.value || undefined)
-            setCursor(undefined)
+            setActionFilter(e.target.value || undefined);
+            setCursor(undefined);
           }}
         >
           {actionOptions.map((opt) => (
@@ -104,8 +98,8 @@ export default function AuditPageClient() {
           className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground"
           value={entityFilter ?? ""}
           onChange={(e) => {
-            setEntityFilter(e.target.value || undefined)
-            setCursor(undefined)
+            setEntityFilter(e.target.value || undefined);
+            setCursor(undefined);
           }}
         >
           {entityTypeOptions.map((opt) => (
@@ -115,25 +109,27 @@ export default function AuditPageClient() {
           ))}
         </select>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-muted-foreground shrink-0">Du</label>
+          <label htmlFor="date-from" className="text-xs text-muted-foreground shrink-0">Du</label>
           <input
+            id="date-from"
             type="date"
             value={dateFrom}
             onChange={(e) => {
-              setDateFrom(e.target.value)
-              setCursor(undefined)
+              setDateFrom(e.target.value);
+              setCursor(undefined);
             }}
             className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground [color-scheme:dark]"
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-muted-foreground shrink-0">Au</label>
+          <label htmlFor="date-to" className="text-xs text-muted-foreground shrink-0">Au</label>
           <input
+            id="date-to"
             type="date"
             value={dateTo}
             onChange={(e) => {
-              setDateTo(e.target.value)
-              setCursor(undefined)
+              setDateTo(e.target.value);
+              setCursor(undefined);
             }}
             className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground [color-scheme:dark]"
           />
@@ -184,9 +180,7 @@ export default function AuditPageClient() {
                       <th className="text-left px-4 py-3 text-muted-foreground font-medium">
                         Type
                       </th>
-                      <th className="text-left px-4 py-3 text-muted-foreground font-medium">
-                        ID
-                      </th>
+                      <th className="text-left px-4 py-3 text-muted-foreground font-medium">ID</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -239,5 +233,5 @@ export default function AuditPageClient() {
         </div>
       )}
     </div>
-  )
+  );
 }

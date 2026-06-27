@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Navigation", () => {
   test("should display the main navigation bar on the home page", async ({ page }) => {
@@ -9,25 +9,19 @@ test.describe("Navigation", () => {
 
   test("should show Connexion button for unauthenticated users", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("button", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Connexion" })).toBeVisible();
   });
 
   test("should show S'inscrire button for unauthenticated users", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("button", { name: /S'inscrire/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /S'inscrire/ })).toBeVisible();
   });
 
   test("should navigate to /explore when clicking Explorer link", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Explorer" }).first().click();
     await expect(page).toHaveURL("/explore");
-    await expect(
-      page.getByRole("heading", { name: /Explorer les scénarios/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Explorer les scénarios/ })).toBeVisible();
   });
 
   test("should navigate to /pricing when clicking Tarifs link", async ({ page }) => {
@@ -40,9 +34,7 @@ test.describe("Navigation", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Connexion" }).click();
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("should navigate to /register when clicking S'inscrire", async ({ page }) => {
@@ -72,12 +64,8 @@ test.describe("Navigation", () => {
     await menuButton.click();
 
     // Mobile menu links should now be visible
-    await expect(
-      page.getByRole("link", { name: "Explorer" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Tarifs" }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Explorer" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tarifs" })).toBeVisible();
   });
 
   test("should navigate from mobile menu to explore page", async ({ page }) => {

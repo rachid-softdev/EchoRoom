@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Helper: mock une session authentifiée admin
@@ -148,11 +148,6 @@ test.describe("Admin moderation — workflow", () => {
     if (itemCount === 0) return;
 
     const approveBtn = page.locator("button.text-green-500").first();
-    const scenarioId = await page.evaluate(() => {
-      // Simulate pending mutation by checking if button is disabled when mutation is pending
-      const btn = document.querySelector("button.text-green-500") as HTMLButtonElement | null;
-      return btn ? btn.disabled : false;
-    });
 
     // Note: We can't actually trigger the mutation without a real scenario,
     // but we can verify the button is enabled initially (ready for mutation)
@@ -172,7 +167,9 @@ test.describe("Admin moderation — workflow", () => {
     await expect(rejectBtn).toBeEnabled();
   });
 
-  test("scenario queue items display badge En attente with AlertTriangle icon", async ({ page }) => {
+  test("scenario queue items display badge En attente with AlertTriangle icon", async ({
+    page,
+  }) => {
     if (!skipIfNotAuthed(page)) return;
 
     const itemMetas = page.locator("p.text-sm.text-muted-foreground");
@@ -181,7 +178,6 @@ test.describe("Admin moderation — workflow", () => {
     test.skip(itemCount === 0, "Skipping: no scenario items in the queue");
     if (itemCount === 0) return;
 
-    const badge = page.locator("div.space-y-3 .card button").first();
     // Badge should be visible on each item
     await expect(page.getByText("En attente").first()).toBeVisible();
   });
@@ -209,9 +205,7 @@ test.describe("Admin moderation — workflow", () => {
     test.skip(itemCount > 0, "Skipping: queue has items, cannot verify empty state");
     if (itemCount > 0) return;
 
-    await expect(
-      page.getByRole("heading", { name: "Tout est modéré" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tout est modéré" })).toBeVisible();
   });
 
   test("empty state shows Check icon and descriptive text", async ({ page }) => {
@@ -224,9 +218,7 @@ test.describe("Admin moderation — workflow", () => {
 
     // Check icon SVG in the empty state card
     await expect(page.locator("svg.text-primary")).toBeVisible();
-    await expect(
-      page.getByText("Aucun scénario en attente de validation."),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun scénario en attente de validation.")).toBeVisible();
   });
 
   // ── Comment moderation tab ─────────────────────────────────────────────
@@ -260,7 +252,9 @@ test.describe("Admin moderation — workflow", () => {
     await expect(rejectedBtn).toHaveAttribute("data-active", "");
   });
 
-  test("comment items have Approuver and Rejeter buttons when status is PENDING", async ({ page }) => {
+  test("comment items have Approuver and Rejeter buttons when status is PENDING", async ({
+    page,
+  }) => {
     if (!skipIfNotAuthed(page)) return;
 
     await page.getByRole("button", { name: "Commentaires" }).click();
@@ -338,7 +332,10 @@ test.describe("Admin moderation — workflow", () => {
     ];
 
     for (const msg of emptyMessages) {
-      const isVisible = await page.getByText(msg).isVisible().catch(() => false);
+      const isVisible = await page
+        .getByText(msg)
+        .isVisible()
+        .catch(() => false);
       if (isVisible) break; // At least one empty state message should match
     }
 

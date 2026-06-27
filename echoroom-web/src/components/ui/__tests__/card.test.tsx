@@ -1,14 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
-import {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "../card";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../card";
 
 // ---------------------------------------------------------------------------
 // Setup / teardown
@@ -97,9 +90,7 @@ describe("CardTitle", () => {
   it("has heading role", () => {
     render(<CardTitle>Accessible Title</CardTitle>);
 
-    expect(
-      screen.getByRole("heading", { name: /accessible title/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /accessible title/i })).toBeInTheDocument();
   });
 
   it("renders children", () => {
@@ -137,9 +128,7 @@ describe("CardDescription", () => {
   });
 
   it("accepts and applies additional className", () => {
-    render(
-      <CardDescription className="custom-desc">Styled</CardDescription>,
-    );
+    render(<CardDescription className="custom-desc">Styled</CardDescription>);
 
     const el = screen.getByText("Styled");
     expect(el.className).toContain("custom-desc");

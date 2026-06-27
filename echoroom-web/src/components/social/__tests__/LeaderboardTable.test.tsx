@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { LeaderboardTable } from "../LeaderboardTable";
 
 const mockEntries = [
@@ -29,7 +29,14 @@ describe("LeaderboardTable", () => {
   });
 
   it("renders all entries", () => {
-    render(<LeaderboardTable title="Classement" entries={mockEntries} valueLabel="pts" isLoading={false} />);
+    render(
+      <LeaderboardTable
+        title="Classement"
+        entries={mockEntries}
+        valueLabel="pts"
+        isLoading={false}
+      />,
+    );
 
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
@@ -38,13 +45,27 @@ describe("LeaderboardTable", () => {
   });
 
   it("renders extra field when provided", () => {
-    render(<LeaderboardTable title="Classement" entries={mockEntries} valueLabel="pts" isLoading={false} />);
+    render(
+      <LeaderboardTable
+        title="Classement"
+        entries={mockEntries}
+        valueLabel="pts"
+        isLoading={false}
+      />,
+    );
 
     expect(screen.getByText("Pro")).toBeInTheDocument();
   });
 
   it("shows numeric rank for rank 4+", () => {
-    render(<LeaderboardTable title="Classement" entries={mockEntries} valueLabel="pts" isLoading={false} />);
+    render(
+      <LeaderboardTable
+        title="Classement"
+        entries={mockEntries}
+        valueLabel="pts"
+        isLoading={false}
+      />,
+    );
 
     expect(screen.getByText("4")).toBeInTheDocument();
   });

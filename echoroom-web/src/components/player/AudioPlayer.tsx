@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { useRef, useState, useCallback, useEffect } from 'react'
-import { Button } from '@/components/ui'
-import { Play, Pause, Download, Clock, Loader2, AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Clock, Download, Loader2, Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui";
 
 interface AudioPlayerProps {
   /** The URL of the audio file to play, or null/undefined when unavailable */
-  recordingUrl: string | null | undefined
+  recordingUrl: string | null | undefined;
   /** Optional title displayed above the player controls */
-  title?: string
+  title?: string;
 }
 
 /**
@@ -23,94 +23,91 @@ interface AudioPlayerProps {
  * @returns A player UI or a fallback state message
  */
 export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [hasError, setHasError] = useState(false)
-  const [playbackRate, setPlaybackRate] = useState(1)
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   // Reset states when recordingUrl changes
   useEffect(() => {
     setHasError(false);
     setIsLoaded(false);
-  }, [recordingUrl]);
+  }, []);
 
   useEffect(() => {
     return () => {
       if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current = null
+        audioRef.current.pause();
+        audioRef.current = null;
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const handleTogglePlay = useCallback(() => {
     if (!audioRef.current) {
-      if (!recordingUrl) return
-      const audio = new Audio(recordingUrl)
-      audio.preload = 'auto'
+      if (!recordingUrl) return;
+      const audio = new Audio(recordingUrl);
+      audio.preload = "auto";
 
-      audio.addEventListener('loadedmetadata', () => {
-        setDuration(audio.duration)
-        setIsLoaded(true)
-      })
+      audio.addEventListener("loadedmetadata", () => {
+        setDuration(audio.duration);
+        setIsLoaded(true);
+      });
 
-      audio.addEventListener('timeupdate', () => {
-        setCurrentTime(audio.currentTime)
-      })
+      audio.addEventListener("timeupdate", () => {
+        setCurrentTime(audio.currentTime);
+      });
 
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false)
-        setCurrentTime(0)
-      })
+      audio.addEventListener("ended", () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      });
 
-      audio.addEventListener('error', () => {
-        setIsLoaded(false)
-        setHasError(true)
-      })
+      audio.addEventListener("error", () => {
+        setIsLoaded(false);
+        setHasError(true);
+      });
 
-      audio.playbackRate = playbackRate
-      audioRef.current = audio
+      audio.playbackRate = playbackRate;
+      audioRef.current = audio;
       audio.play().catch(() => {
-        setIsPlaying(false)
-      })
-      setIsPlaying(true)
+        setIsPlaying(false);
+      });
+      setIsPlaying(true);
     } else if (audioRef.current.paused) {
       audioRef.current.play().catch(() => {
-        setIsPlaying(false)
-      })
-      setIsPlaying(true)
+        setIsPlaying(false);
+      });
+      setIsPlaying(true);
     } else {
-      audioRef.current.pause()
-      setIsPlaying(false)
+      audioRef.current.pause();
+      setIsPlaying(false);
     }
-  }, [recordingUrl])
+  }, [recordingUrl, playbackRate]);
 
-  const handleSeek = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const time = Number(e.target.value)
-      setCurrentTime(time)
-      if (audioRef.current) {
-        audioRef.current.currentTime = time
-      }
-    },
-    [],
-  )
+  const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = Number(e.target.value);
+    setCurrentTime(time);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+  }, []);
 
   const handleSpeedChange = useCallback((speed: number) => {
-    setPlaybackRate(speed)
+    setPlaybackRate(speed);
     if (audioRef.current) {
-      audioRef.current.playbackRate = speed
+      audioRef.current.playbackRate = speed;
     }
-  }, [])
+  }, []);
 
   const formatTime = (t: number) => {
-    const m = Math.floor(t / 60)
-    const s = Math.floor(t % 60)
-    return `${m}:${s.toString().padStart(2, '0')}`
-  }
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
   if (!recordingUrl) {
     return (
@@ -118,11 +115,9 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
           <Clock className="w-8 h-8 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground text-sm">
-          Aucun enregistrement disponible
-        </p>
+        <p className="text-muted-foreground text-sm">Aucun enregistrement disponible</p>
       </div>
-    )
+    );
   }
 
   if (!isLoaded && recordingUrl !== null && !hasError) {
@@ -148,9 +143,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
 
   return (
     <div className="flex flex-col items-center py-6">
-      {title && (
-        <p className="text-sm text-muted-foreground mb-4">{title}</p>
-      )}
+      {title && <p className="text-sm text-muted-foreground mb-4">{title}</p>}
 
       <Button
         size="lg"
@@ -158,11 +151,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
         onClick={handleTogglePlay}
         disabled={!isLoaded}
       >
-        {isPlaying ? (
-          <Pause className="w-6 h-6" />
-        ) : (
-          <Play className="w-6 h-6 ml-0.5" />
-        )}
+        {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
       </Button>
 
       {isLoaded && duration > 0 && (
@@ -191,8 +180,8 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
               onClick={() => handleSpeedChange(speed)}
               className={`px-2 py-0.5 text-xs rounded transition-colors ${
                 playbackRate === speed
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {speed}x
@@ -202,13 +191,7 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
       )}
 
       {recordingUrl && (
-        <a
-          href={recordingUrl}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4"
-        >
+        <a href={recordingUrl} download target="_blank" rel="noopener noreferrer" className="mt-4">
           <Button variant="ghost" size="sm" className="gap-2">
             <Download className="w-4 h-4" />
             Télécharger
@@ -216,5 +199,5 @@ export function AudioPlayer({ recordingUrl, title }: AudioPlayerProps) {
         </a>
       )}
     </div>
-  )
+  );
 }

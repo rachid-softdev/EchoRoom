@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // scenariosRouter tests — update (type safety, content change, visibility),
@@ -366,10 +366,10 @@ describe("scenariosRouter.update — content change edge cases", () => {
     });
 
     expect(scheduleAsyncModeration).toHaveBeenCalledTimes(1);
-    expect(scheduleAsyncModeration).toHaveBeenCalledWith(
-      "New Title New desc",
-      { type: "scenario", id: "scenario-1" },
-    );
+    expect(scheduleAsyncModeration).toHaveBeenCalledWith("New Title New desc", {
+      type: "scenario",
+      id: "scenario-1",
+    });
   });
 
   it("should NOT schedule async moderation when only visibility changes", async () => {
@@ -402,8 +402,6 @@ describe("scenariosRouter.update — content change edge cases", () => {
     // we verify that the handler checks for this at the business logic level.
     // The actual refine validation is: at least one field beyond `id` must be set.
     const { scenariosRouter } = await import("../scenarios");
-    const handler = (scenariosRouter.update as any).handler;
-
     // with only { id }, the handler will try findUnique and then proceed,
     // but the Zod refine should have caught it first (in real tRPC).
     // Since we mock tRPC, the refine doesn't run, so the handler hits
@@ -502,7 +500,13 @@ describe("scenariosRouter.myScenarios", () => {
         title: "My Scenario",
         visibility: "PUBLIC",
         createdAt: new Date(),
-        character: { id: "c-1", name: "Char1", slug: "char1", avatarUrl: null, category: "ROMANTIC" },
+        character: {
+          id: "c-1",
+          name: "Char1",
+          slug: "char1",
+          avatarUrl: null,
+          category: "ROMANTIC",
+        },
         _count: { reactions: 5, comments: 2 },
       },
     ];
@@ -529,9 +533,30 @@ describe("scenariosRouter.myScenarios", () => {
   it("should include all visibilities (PUBLIC, PRIVATE, UNLISTED)", async () => {
     const { db } = await import("@/server/db");
     const mockScenarios = [
-      { id: "s-1", title: "Public", visibility: "PUBLIC", createdAt: new Date(), character: null, _count: { reactions: 0, comments: 0 } },
-      { id: "s-2", title: "Private", visibility: "PRIVATE", createdAt: new Date(), character: null, _count: { reactions: 0, comments: 0 } },
-      { id: "s-3", title: "Unlisted", visibility: "UNLISTED", createdAt: new Date(), character: null, _count: { reactions: 0, comments: 0 } },
+      {
+        id: "s-1",
+        title: "Public",
+        visibility: "PUBLIC",
+        createdAt: new Date(),
+        character: null,
+        _count: { reactions: 0, comments: 0 },
+      },
+      {
+        id: "s-2",
+        title: "Private",
+        visibility: "PRIVATE",
+        createdAt: new Date(),
+        character: null,
+        _count: { reactions: 0, comments: 0 },
+      },
+      {
+        id: "s-3",
+        title: "Unlisted",
+        visibility: "UNLISTED",
+        createdAt: new Date(),
+        character: null,
+        _count: { reactions: 0, comments: 0 },
+      },
     ];
     (db.scenario.findMany as any).mockResolvedValue(mockScenarios);
 
@@ -591,9 +616,7 @@ describe("scenariosRouter.myScenarios", () => {
     expect(result.nextCursor).toBeDefined();
 
     // Verify take = limit + 1
-    expect(db.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 11 }),
-    );
+    expect(db.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 11 }));
   });
 
   it("should return character info and counts with each scenario", async () => {
@@ -604,7 +627,13 @@ describe("scenariosRouter.myScenarios", () => {
         title: "Full Info Scenario",
         visibility: "PUBLIC",
         createdAt: new Date(),
-        character: { id: "c-1", name: "Char1", slug: "char1", avatarUrl: "https://example.com/avatar.png", category: "WEIRD" },
+        character: {
+          id: "c-1",
+          name: "Char1",
+          slug: "char1",
+          avatarUrl: "https://example.com/avatar.png",
+          category: "WEIRD",
+        },
         _count: { reactions: 10, comments: 3 },
       },
     ];

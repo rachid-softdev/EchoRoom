@@ -1,13 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Library page", () => {
   test("should redirect to /login when unauthenticated", async ({ page }) => {
     await page.goto("/library");
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("route is handled (response < 400, not 404)", async ({ page }) => {
@@ -24,9 +22,7 @@ test.describe("Library page", () => {
     test.skip(redirected, "Authentication required to access library page");
     if (redirected) return;
 
-    await expect(
-      page.getByRole("heading", { name: "Bibliothèque" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bibliothèque" })).toBeVisible();
   });
 
   test("should display the subtitle text", async ({ page }) => {
@@ -37,9 +33,7 @@ test.describe("Library page", () => {
     test.skip(redirected, "Authentication required to access library page");
     if (redirected) return;
 
-    await expect(
-      page.getByText("Vos scénarios sauvegardés et vos créations"),
-    ).toBeVisible();
+    await expect(page.getByText("Vos scénarios sauvegardés et vos créations")).toBeVisible();
   });
 
   test('should display "Nouveau" button with href="/create"', async ({ page }) => {
@@ -63,9 +57,7 @@ test.describe("Library page", () => {
     test.skip(redirected, "Authentication required to access library page");
     if (redirected) return;
 
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par titre, personnage ou créateur...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par titre, personnage ou créateur...");
     await expect(searchInput).toBeVisible();
     await expect(searchInput).toBeEnabled();
   });
@@ -78,9 +70,7 @@ test.describe("Library page", () => {
     test.skip(redirected, "Authentication required to access library page");
     if (redirected) return;
 
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par titre, personnage ou créateur...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par titre, personnage ou créateur...");
     await searchInput.fill("test scénario");
     await expect(searchInput).toHaveValue("test scénario");
   });
@@ -93,20 +83,14 @@ test.describe("Library page", () => {
     test.skip(redirected, "Authentication required to access library page");
     if (redirected) return;
 
-    const searchInput = page.getByPlaceholder(
-      "Rechercher par titre, personnage ou créateur...",
-    );
+    const searchInput = page.getByPlaceholder("Rechercher par titre, personnage ou créateur...");
 
     // Clear button should not exist initially
-    await expect(
-      page.getByRole("button", { name: "Effacer la recherche" }),
-    ).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Effacer la recherche" })).not.toBeVisible();
 
     // Type text to make the clear button appear
     await searchInput.fill("test");
-    await expect(
-      page.getByRole("button", { name: "Effacer la recherche" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Effacer la recherche" })).toBeVisible();
 
     // Click clear button and verify search is cleared
     await page.getByRole("button", { name: "Effacer la recherche" }).click();

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // scenariosV1Router tests — create, feed, getById
@@ -208,7 +208,9 @@ describe("scenariosV1Router.create", () => {
       validInput.description,
       validInput.openingMessage,
       validInput.aiInstructions,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
     expect(scheduleAsyncModeration).toHaveBeenCalledWith(changedText, {
       type: "scenario",
       id: "scenario-new",
@@ -365,10 +367,8 @@ describe("scenariosV1Router.feed", () => {
     const result = await handler({ input: { sort: "TRENDING", limit: 10 } });
 
     expect(result.items).toHaveLength(2);
-    expect(result.items[0]?.id).toBe("s-2");
-    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 50 }),
-    );
+    expect((result.items[0] as any)?.id).toBe("s-2");
+    expect(mockDb.scenario.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 50 }));
   });
 
   it("should sort by TOP using likeCount desc", async () => {
@@ -426,7 +426,7 @@ describe("scenariosV1Router.getById", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe("s-1");
+    expect((result as any)?.id).toBe("s-1");
   });
 
   it("should allow creator to see their own PRIVATE scenario", async () => {
@@ -452,7 +452,7 @@ describe("scenariosV1Router.getById", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe("s-own");
+    expect((result as any)?.id).toBe("s-own");
   });
 
   it("should NOT allow non-creator to see PRIVATE scenario", async () => {
@@ -490,7 +490,7 @@ describe("scenariosV1Router.getById", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe("s-anything");
+    expect((result as any)?.id).toBe("s-anything");
   });
 
   it("should return null for non-existent scenario", async () => {
@@ -563,6 +563,6 @@ describe("scenariosV1Router.getById", () => {
     expect(result).toHaveProperty("character");
     expect(result).toHaveProperty("reactions");
     expect(result).toHaveProperty("_count");
-    expect(result?._count).toEqual({ comments: 5, reactions: 3 });
+    expect((result as any)?._count).toEqual({ comments: 5, reactions: 3 });
   });
 });

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock next/link
 vi.mock("next/link", () => ({
@@ -19,9 +19,7 @@ vi.mock("@/components/ui", () => ({
     </div>
   ),
   CardContent: ({ children }: any) => <div>{children}</div>,
-  CardDescription: ({ children, className }: any) => (
-    <p className={className}>{children}</p>
-  ),
+  CardDescription: ({ children, className }: any) => <p className={className}>{children}</p>,
   CardHeader: ({ children }: any) => <div>{children}</div>,
   CardTitle: ({ children, className, title, ...props }: any) => (
     <h3 className={className} title={title} {...props}>
@@ -90,7 +88,7 @@ describe("ScenarioCard — rendering", () => {
       ...baseScenario,
       character: { name: "Ghost", category: "UNKNOWN" },
     };
-    render(<ScenarioCard scenario={scenario} />);
+    render(<ScenarioCard scenario={scenario as any} />);
     expect(screen.getByText("Scénario")).toBeInTheDocument();
   });
 
@@ -107,29 +105,25 @@ describe("ScenarioCard — rendering", () => {
 
   it("formats play count in thousands (1.5k)", () => {
     const scenario = { ...baseScenario, playCount: 1500 };
-    render(<ScenarioCard scenario={scenario} />);
+    render(<ScenarioCard scenario={scenario as any} />);
     expect(screen.getByText("1.5k")).toBeInTheDocument();
   });
 
   it("does not render play count when undefined", () => {
     const scenario = { ...baseScenario, playCount: undefined };
-    render(<ScenarioCard scenario={scenario} />);
+    render(<ScenarioCard scenario={scenario as any} />);
     expect(screen.queryByTestId("icon-play")).not.toBeInTheDocument();
   });
 
   it("renders description when provided", () => {
     render(<ScenarioCard scenario={baseScenario} />);
-    expect(
-      screen.getByText("A test scenario description"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("A test scenario description")).toBeInTheDocument();
   });
 
   it("does not render description when null", () => {
     const scenario = { ...baseScenario, description: null };
-    render(<ScenarioCard scenario={scenario} />);
-    expect(
-      screen.queryByText("A test scenario description"),
-    ).not.toBeInTheDocument();
+    render(<ScenarioCard scenario={scenario as any} />);
+    expect(screen.queryByText("A test scenario description")).not.toBeInTheDocument();
   });
 
   it("shows creator username when showCreator is true (default)", () => {
@@ -144,7 +138,7 @@ describe("ScenarioCard — rendering", () => {
 
   it("hides creator section when creator is undefined", () => {
     const scenario = { ...baseScenario, creator: undefined };
-    render(<ScenarioCard scenario={scenario} />);
+    render(<ScenarioCard scenario={scenario as any} />);
     expect(screen.queryByText(/par/)).not.toBeInTheDocument();
   });
 
@@ -195,9 +189,7 @@ describe("ScenarioCard — rendering", () => {
         <ScenarioCard scenario={baseScenario} showShare={true} />
       </div>,
     );
-    const shareButton = screen
-      .getByTestId("icon-share")
-      .closest("button")!;
+    const shareButton = screen.getByTestId("icon-share").closest("button")!;
     // Click should not propagate to parent
     fireEvent.click(shareButton);
     // The share button calls e.preventDefault() and e.stopPropagation()

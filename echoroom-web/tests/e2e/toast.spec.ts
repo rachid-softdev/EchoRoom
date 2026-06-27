@@ -1,14 +1,13 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 const TOAST_SOURCE_PATH = path.resolve(__dirname, "../../src/components/ui/toast.tsx");
 
 function readToastSource(): string {
-  return require("fs").readFileSync(TOAST_SOURCE_PATH, "utf-8");
+  return require("node:fs").readFileSync(TOAST_SOURCE_PATH, "utf-8");
 }
 
 test.describe("Toast system", () => {
-
   // 1. Toaster component exports
   test("Toaster component is exported from toast.tsx", () => {
     const source = readToastSource();
@@ -77,17 +76,22 @@ test.describe("Toast system", () => {
     // Check that the Toaster component is mounted on the page
     const toasterExists = await page.evaluate(() => {
       // The Toaster typically renders a fixed-position container
-      return document.querySelector('[role="region"]') !== null ||
-             document.querySelector('[data-sonner-toaster]') !== null ||
-             document.querySelector('[class*="fixed"][class*="bottom"][class*="right"]') !== null ||
-             document.querySelector('[id*="toast"]') !== null ||
-             document.querySelector('[class*="toast"]') !== null;
+      return (
+        document.querySelector('[role="region"]') !== null ||
+        document.querySelector("[data-sonner-toaster]") !== null ||
+        document.querySelector('[class*="fixed"][class*="bottom"][class*="right"]') !== null ||
+        document.querySelector('[id*="toast"]') !== null ||
+        document.querySelector('[class*="toast"]') !== null
+      );
     });
 
     // This might not find the Toaster depending on the implementation,
     // so we use soft assertion
     if (!toasterExists) {
-      test.info().annotations.push({ type: "info", description: "Toaster container not found on home page (may require auth or app shell)" });
+      test.info().annotations.push({
+        type: "info",
+        description: "Toaster container not found on home page (may require auth or app shell)",
+      });
     }
   });
 

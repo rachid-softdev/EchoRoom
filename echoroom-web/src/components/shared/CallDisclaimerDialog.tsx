@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Loader2, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
+  Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Button,
-  Checkbox,
 } from "@/components/ui";
-import { Phone, Loader2 } from "lucide-react";
 
 const STORAGE_KEY = "echoroom-call-disclaimer-accepted";
 
@@ -68,9 +68,7 @@ export function CallDisclaimerDialog({
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
             <Phone className="w-6 h-6 text-primary" />
           </div>
-          <DialogTitle className="text-center">
-            Avant de commencer l&apos;appel
-          </DialogTitle>
+          <DialogTitle className="text-center">Avant de commencer l&apos;appel</DialogTitle>
           <DialogDescription className="text-center">
             Veuillez prendre connaissance des informations suivantes
           </DialogDescription>
@@ -82,30 +80,28 @@ export function CallDisclaimerDialog({
               <li className="flex items-start gap-3">
                 <span className="text-primary shrink-0 mt-0.5">•</span>
                 <span className="text-muted-foreground">
-                  Les enregistrements audio peuvent être utilisés à des fins de
-                  modération et d&apos;amélioration du service
+                  Les enregistrements audio peuvent être utilisés à des fins de modération et
+                  d&apos;amélioration du service
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary shrink-0 mt-0.5">•</span>
                 <span className="text-muted-foreground">
-                  Ne partagez pas d&apos;informations personnelles sensibles
-                  (numéro de sécurité sociale, coordonnées bancaires, etc.)
+                  Ne partagez pas d&apos;informations personnelles sensibles (numéro de sécurité
+                  sociale, coordonnées bancaires, etc.)
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary shrink-0 mt-0.5">•</span>
                 <span className="text-muted-foreground">
-                  Ce service n&apos;est pas destiné aux situations d&apos;urgence.
-                  En cas d&apos;urgence, contactez les services appropriés (15,
-                  17, 18)
+                  Ce service n&apos;est pas destiné aux situations d&apos;urgence. En cas
+                  d&apos;urgence, contactez les services appropriés (15, 17, 18)
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary shrink-0 mt-0.5">•</span>
                 <span className="text-muted-foreground">
-                  Une modération automatique du contenu est active pour
-                  prévenir les abus
+                  Une modération automatique du contenu est active pour prévenir les abus
                 </span>
               </li>
             </ul>
@@ -120,10 +116,7 @@ export function CallDisclaimerDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
           <Button onClick={handleAccept} disabled={!accepted || isPending}>

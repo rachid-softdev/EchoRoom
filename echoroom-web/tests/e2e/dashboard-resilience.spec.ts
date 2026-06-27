@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 // ── Helpers ──
 
@@ -42,9 +42,7 @@ async function mockDashboardData(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: data } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: data } } }]),
     });
   });
 }
@@ -75,9 +73,7 @@ async function mockDashboardDataWithPartialFailure(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: response } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: response } } }]),
     });
   });
 }
@@ -86,21 +82,16 @@ async function mockDashboardDataWithPartialFailure(
  * Completely fail the dashboard.getData endpoint to test total failure.
  */
 async function failDashboardData(page: import("@playwright/test").Page) {
-  await page.route("**/api/trpc/dashboard.getData*", (route) =>
-    route.abort("connectionrefused"),
-  );
+  await page.route("**/api/trpc/dashboard.getData*", (route) => route.abort("connectionrefused"));
 }
 
 // ── Source analysis ──
 
 test.describe("P4 — Dashboard resilience (individual .catch())", () => {
-  const DASHBOARD_PATH = path.resolve(
-    __dirname,
-    "../../src/server/routers/dashboard.ts",
-  );
+  const DASHBOARD_PATH = path.resolve(__dirname, "../../src/server/routers/dashboard.ts");
 
   function readDashboardSource(): string {
-    return require("fs").readFileSync(DASHBOARD_PATH, "utf-8");
+    return require("node:fs").readFileSync(DASHBOARD_PATH, "utf-8");
   }
 
   test("source: all 4 DB queries have individual .catch() handlers", () => {
@@ -248,20 +239,16 @@ test.describe("P4 — Dashboard resilience (individual .catch())", () => {
   test("mock: dashboard renders with multiple failed queries simultaneously", async ({ page }) => {
     await mockSession(page);
     // Fail 3 out of 4 queries
-    await mockDashboardDataWithPartialFailure(
-      page,
-      ["credits", "calls", "todayCount"],
-      {
-        scenarios: [
-          {
-            id: "scenario-1",
-            title: "Only Surviving Scenario",
-            character: { name: "Bot", slug: "bot", avatarUrl: null, category: "GENERAL" },
-            _count: { reactions: 0, comments: 0 },
-          },
-        ],
-      },
-    );
+    await mockDashboardDataWithPartialFailure(page, ["credits", "calls", "todayCount"], {
+      scenarios: [
+        {
+          id: "scenario-1",
+          title: "Only Surviving Scenario",
+          character: { name: "Bot", slug: "bot", avatarUrl: null, category: "GENERAL" },
+          _count: { reactions: 0, comments: 0 },
+        },
+      ],
+    });
 
     await page.goto("/dashboard");
     await page.waitForLoadState("networkidle");

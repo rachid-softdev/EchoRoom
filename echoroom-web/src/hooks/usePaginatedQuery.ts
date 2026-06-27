@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface PaginatedResult<T> {
   items: T[];
@@ -24,9 +24,7 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
   options?: UsePaginatedQueryOptions<T>,
 ) {
   const getKey =
-    options?.getKey ??
-    ((item: T) =>
-      (item as unknown as Record<string, unknown>)["id"] as string);
+    options?.getKey ?? ((item: T) => (item as unknown as Record<string, unknown>)["id"] as string);
 
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [allItems, setAllItems] = useState<T[]>([]);
@@ -76,12 +74,7 @@ export function usePaginatedQuery<T, TArgs extends Record<string, unknown>>(
   }, [query.data, cursor, getKey]);
 
   const loadMore = useCallback(() => {
-    if (
-      !nextCursorRef.current ||
-      isFetchingMoreRef.current ||
-      isLoadingRef.current
-    )
-      return;
+    if (!nextCursorRef.current || isFetchingMoreRef.current || isLoadingRef.current) return;
     setIsFetchingMore(true);
     setCursor(nextCursorRef.current);
   }, []);

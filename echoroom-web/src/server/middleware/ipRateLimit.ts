@@ -1,7 +1,7 @@
-import { redis } from "@/lib/redis";
 import { TRPCError } from "@trpc/server";
-import { middleware } from "../trpc";
+import { redis } from "@/lib/redis";
 import { createLogger } from "@/server/lib/logger";
+import { middleware } from "../trpc";
 import { inMemoryRateLimitStore } from "./rateLimitStore";
 
 const log = createLogger("ip-rate-limit");

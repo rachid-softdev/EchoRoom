@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import type { Session } from "next-auth";
+import { useCallback, useEffect, useState } from "react";
 
 interface UseServerSessionReturn {
   user: Session["user"] | null;

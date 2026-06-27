@@ -1,17 +1,15 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Register page", () => {
   test("should load the register page with heading", async ({ page }) => {
     await page.goto("/register");
-    await expect(
-      page.getByRole("heading", { name: "Créer un compte" }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("5 crédits offerts pour commencer"),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Créer un compte" })).toBeVisible();
+    await expect(page.getByText("5 crédits offerts pour commencer")).toBeVisible();
   });
 
-  test("should display email, username and password fields with correct attributes", async ({ page }) => {
+  test("should display email, username and password fields with correct attributes", async ({
+    page,
+  }) => {
     await page.goto("/register");
 
     const emailInput = page.getByLabel("Email");
@@ -34,12 +32,8 @@ test.describe("Register page", () => {
 
   test("should display links to terms and privacy pages", async ({ page }) => {
     await page.goto("/register");
-    await expect(
-      page.getByRole("link", { name: "conditions d'utilisation" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "politique de confidentialité" }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "conditions d'utilisation" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "politique de confidentialité" })).toBeVisible();
   });
 
   test("should navigate to terms page when clicking conditions link", async ({ page }) => {
@@ -64,17 +58,13 @@ test.describe("Register page", () => {
 
     // We should still be on the register page (form was not submitted)
     await expect(page).toHaveURL(/\/register/);
-    await expect(
-      page.getByRole("heading", { name: "Créer un compte" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Créer un compte" })).toBeVisible();
   });
 
   test("should navigate to login page via 'Déjà un compte' link", async ({ page }) => {
     await page.goto("/register");
     await page.getByRole("link", { name: "Se connecter" }).click();
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 });

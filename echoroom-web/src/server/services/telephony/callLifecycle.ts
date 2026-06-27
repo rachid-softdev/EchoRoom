@@ -1,14 +1,14 @@
-import { twilioClient, TWILIO_PHONE, twilioCircuitBreaker } from "./twilio";
-import { db } from "@/server/db";
 import { env } from "@/lib/env";
+import { db } from "@/server/db";
+import { getUTCDayRange } from "@/server/lib/date";
+import { encryptPhoneNumber } from "@/server/lib/encryption";
 import { AppError } from "@/server/lib/errors";
+import { createLogger } from "@/server/lib/logger";
+import { createTwilioToken } from "@/server/lib/twilioToken";
+import { callRepository, scenarioRepository } from "@/server/repositories";
 import { atomicDebit } from "@/server/services/billing/creditOps";
 import { atomicIncrementDailyLimit } from "@/server/services/billing/dailyLimitOps";
-import { createLogger } from "@/server/lib/logger";
-import { encryptPhoneNumber } from "@/server/lib/encryption";
-import { createTwilioToken } from "@/server/lib/twilioToken";
-import { getUTCDayRange } from "@/server/lib/date";
-import { scenarioRepository, callRepository } from "@/server/repositories";
+import { TWILIO_PHONE, twilioCircuitBreaker, twilioClient } from "./twilio";
 
 const log = createLogger("call-lifecycle");
 
@@ -26,10 +26,7 @@ export async function withRetry<T>(
       lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < maxAttempts) {
         // Exponential backoff with jitter
-        const delay = Math.min(
-          baseDelayMs * 2 ** (attempt - 1) + Math.random() * 1000,
-          maxDelayMs,
-        );
+        const delay = Math.min(baseDelayMs * 2 ** (attempt - 1) + Math.random() * 1000, maxDelayMs);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -133,10 +130,7 @@ export async function initiateCall(params: StartCallParams) {
   }
 }
 
-export async function failCall(
-  callId: string,
-  durationSeconds: number = 0,
-) {
+export async function failCall(callId: string, durationSeconds: number = 0) {
   // Delegates to CallRepository for consistency
   await callRepository.markAsFailedWithRefund(callId, durationSeconds);
 }

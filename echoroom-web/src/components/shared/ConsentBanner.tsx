@@ -1,10 +1,10 @@
 "use client";
 
-import { api } from "@/lib/trpc";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui";
 import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { api } from "@/lib/trpc";
 
 /**
  * An alert banner shown when the user has withdrawn consent.
@@ -23,7 +23,9 @@ export function ConsentBanner() {
     retry: false,
   });
   const reconsent = api.user.reconsent.useMutation({
-    onSuccess: () => { window.location.reload(); },
+    onSuccess: () => {
+      window.location.reload();
+    },
   });
 
   if (!consentStatus?.isConsentWithdrawn) return null;
@@ -33,12 +35,17 @@ export function ConsentBanner() {
       <ShieldAlert className="w-4 h-4" />
       <AlertTitle>Consentement retiré</AlertTitle>
       <AlertDescription>
-        Vous avez retiré votre consentement. Pour accéder à toutes les fonctionnalités,
-        veuillez ré-accepter les conditions d&apos;utilisation.
-        <Button size="sm" className="ml-2" onClick={() => {
-          setIsReconsenting(true);
-          reconsent.mutate({ consentAccepted: true });
-        }} disabled={isReconsenting}>
+        Vous avez retiré votre consentement. Pour accéder à toutes les fonctionnalités, veuillez
+        ré-accepter les conditions d&apos;utilisation.
+        <Button
+          size="sm"
+          className="ml-2"
+          onClick={() => {
+            setIsReconsenting(true);
+            reconsent.mutate({ consentAccepted: true });
+          }}
+          disabled={isReconsenting}
+        >
           {isReconsenting ? "..." : "Ré-accepter"}
         </Button>
       </AlertDescription>

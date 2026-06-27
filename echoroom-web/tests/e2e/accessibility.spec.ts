@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Cross-cutting accessibility", () => {
   // ── Skip link ──
@@ -8,7 +8,10 @@ test.describe("Cross-cutting accessibility", () => {
     await page.waitForLoadState("networkidle");
 
     // Skip link should be the first focusable element
-    const skipLink = page.locator("a").filter({ hasText: /Aller au contenu|Skip|Passer/ }).first();
+    const skipLink = page
+      .locator("a")
+      .filter({ hasText: /Aller au contenu|Skip|Passer/ })
+      .first();
     const skipExists = await skipLink.isVisible().catch(() => false);
 
     if (skipExists) {
@@ -23,7 +26,10 @@ test.describe("Cross-cutting accessibility", () => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
-    const skipLink = page.locator("a").filter({ hasText: /Aller au contenu|Skip|Passer/ }).first();
+    const skipLink = page
+      .locator("a")
+      .filter({ hasText: /Aller au contenu|Skip|Passer/ })
+      .first();
     const skipExists = await skipLink.isVisible().catch(() => false);
 
     if (skipExists) {
@@ -70,7 +76,10 @@ test.describe("Cross-cutting accessibility", () => {
     await page.waitForLoadState("networkidle");
 
     // Theme toggle is a button with only an icon
-    const themeButton = page.locator("button").filter({ has: page.locator("svg.lucide-sun, svg.lucide-moon") }).first();
+    const themeButton = page
+      .locator("button")
+      .filter({ has: page.locator("svg.lucide-sun, svg.lucide-moon") })
+      .first();
     const themeExists = await themeButton.isVisible().catch(() => false);
 
     if (themeExists) {
@@ -129,10 +138,10 @@ test.describe("Cross-cutting accessibility", () => {
     await expect(error).toBeVisible({ timeout: 10000 });
   });
 
-  test("register inputs have aria-describedby when error exists", async ({ page }) => {
-    const source = require("fs").readFileSync(
-      require("path").resolve(__dirname, "../../src/app/(auth)/register/page.tsx"),
-      "utf-8"
+  test("register inputs have aria-describedby when error exists", async ({ page: _page }) => {
+    const source = require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../src/app/(auth)/register/page.tsx"),
+      "utf-8",
     );
     expect(source).toContain('aria-describedby={error ? "register-error" : undefined}');
   });

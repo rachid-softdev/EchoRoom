@@ -1,11 +1,11 @@
 "use client";
 
+import { MessageCircle } from "lucide-react";
 import { useState } from "react";
-import { Button, toast } from "@/components/ui";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { Button, toast } from "@/components/ui";
 import { api } from "@/lib/trpc";
-import { MessageCircle } from "lucide-react";
 
 export function CommentModerationTab() {
   const [status, setStatus] = useState<"PENDING" | "REJECTED">("PENDING");
@@ -62,9 +62,7 @@ export function CommentModerationTab() {
           <EmptyState
             icon={MessageCircle}
             title={
-              status === "PENDING"
-                ? "Aucun commentaire en attente"
-                : "Aucun commentaire rejeté"
+              status === "PENDING" ? "Aucun commentaire en attente" : "Aucun commentaire rejeté"
             }
             description="Tous les commentaires ont été modérés."
           />
@@ -73,15 +71,10 @@ export function CommentModerationTab() {
         {(data) => (
           <div className="space-y-4">
             {data.items.map((comment) => (
-              <div
-                key={comment.id}
-                className="rounded-lg border border-border p-4"
-              >
+              <div key={comment.id} className="rounded-lg border border-border p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1 min-w-0 mr-4">
-                    <p className="text-sm font-medium">
-                      {comment.user.username}
-                    </p>
+                    <p className="text-sm font-medium">{comment.user.username}</p>
                     <a
                       href={`/scenario/${comment.scenario.id}`}
                       className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -116,9 +109,7 @@ export function CommentModerationTab() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() =>
-                          rejectMutation.mutate({ id: comment.id })
-                        }
+                        onClick={() => rejectMutation.mutate({ id: comment.id })}
                         disabled={rejectMutation.isPending}
                       >
                         Rejeter

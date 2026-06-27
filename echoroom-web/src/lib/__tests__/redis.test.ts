@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Redis URL validation tests
@@ -172,7 +172,7 @@ describe("Redis constructor — token and URL handling", () => {
       Redis: RedisMock,
     }));
 
-    const mod = await import("../redis");
+    await import("../redis");
 
     expect(RedisMock).toHaveBeenCalledWith({
       url: "https://:url-password-token@host.com:6379",
@@ -195,7 +195,7 @@ describe("Redis constructor — token and URL handling", () => {
       Redis: RedisMock,
     }));
 
-    const mod = await import("../redis");
+    await import("../redis");
 
     expect(RedisMock).toHaveBeenCalledWith({
       url: "https://:url-password@host.com:6379",
@@ -238,7 +238,7 @@ describe("Redis constructor — token and URL handling", () => {
       Redis: RedisMock,
     }));
 
-    const mod = await import("../redis");
+    await import("../redis");
 
     // url.password for "https://host-without-password.com:6379" is ""
     // env.REDIS_TOKEN is undefined

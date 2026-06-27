@@ -1,21 +1,15 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const BADGE_DISPLAY_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/BadgeDisplay.tsx",
-);
-const BADGE_GRID_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/BadgeGrid.tsx",
-);
+const BADGE_DISPLAY_PATH = path.resolve(__dirname, "../../src/components/social/BadgeDisplay.tsx");
+const BADGE_GRID_PATH = path.resolve(__dirname, "../../src/components/social/BadgeGrid.tsx");
 
 function readBadgeDisplay(): string {
-  return require("fs").readFileSync(BADGE_DISPLAY_PATH, "utf-8");
+  return require("node:fs").readFileSync(BADGE_DISPLAY_PATH, "utf-8");
 }
 
 function readBadgeGrid(): string {
-  return require("fs").readFileSync(BADGE_GRID_PATH, "utf-8");
+  return require("node:fs").readFileSync(BADGE_GRID_PATH, "utf-8");
 }
 
 test.describe("BadgeGrid component", () => {
@@ -45,13 +39,19 @@ test.describe("BadgeDisplay component", () => {
   test("loading state shows 3 skeleton cards in grid-cols-2 md:grid-cols-3", () => {
     const source = readBadgeDisplay();
     expect(source).toContain("grid grid-cols-2 md:grid-cols-3 gap-4");
-    const hasSkeletonLoading = source.includes("Array.from") && source.includes("length: 3") || source.includes("skeleton") && source.includes("loading");
+    const hasSkeletonLoading =
+      (source.includes("Array.from") && source.includes("length: 3")) ||
+      (source.includes("skeleton") && source.includes("loading"));
     if (!hasSkeletonLoading) {
-      test.info().annotations.push({ type: "info", description: "Skeleton loading pattern may use different approach than Array.from({length: 3})" });
+      test.info().annotations.push({
+        type: "info",
+        description:
+          "Skeleton loading pattern may use different approach than Array.from({length: 3})",
+      });
     }
-    expect(source).toContain("Skeleton className=\"h-8 w-8 rounded-full\"");
-    expect(source).toContain("Skeleton className=\"h-4 w-2/3\"");
-    expect(source).toContain("Skeleton className=\"h-3 w-full\"");
+    expect(source).toContain('Skeleton className="h-8 w-8 rounded-full"');
+    expect(source).toContain('Skeleton className="h-4 w-2/3"');
+    expect(source).toContain('Skeleton className="h-3 w-full"');
   });
 
   test("error state shows AlertCircle and Erreur text in destructive color", () => {
@@ -83,13 +83,13 @@ test.describe("BadgeDisplay component", () => {
 
   test("badge name rendered in CardTitle", () => {
     const source = readBadgeDisplay();
-    expect(source).toContain("<CardTitle className=\"text-sm font-semibold\">");
+    expect(source).toContain('<CardTitle className="text-sm font-semibold">');
     expect(source).toContain("{ub.badge.name}");
   });
 
   test("badge description rendered in CardDescription", () => {
     const source = readBadgeDisplay();
-    expect(source).toContain("<CardDescription className=\"text-xs\">");
+    expect(source).toContain('<CardDescription className="text-xs">');
     expect(source).toContain("{ub.badge.description}");
   });
 
@@ -100,10 +100,10 @@ test.describe("BadgeDisplay component", () => {
 
   test("date format uses fr-FR locale", () => {
     const source = readBadgeDisplay();
-    expect(source).toContain("toLocaleDateString(\"fr-FR\"");
-    expect(source).toContain("day: \"numeric\"");
-    expect(source).toContain("month: \"long\"");
-    expect(source).toContain("year: \"numeric\"");
+    expect(source).toContain('toLocaleDateString("fr-FR"');
+    expect(source).toContain('day: "numeric"');
+    expect(source).toContain('month: "long"');
+    expect(source).toContain('year: "numeric"');
   });
 
   test("imports Medal and AlertCircle from lucide-react", () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // socialRouter tests — toggleLike, getReactions, getLeaderboardScenarios,
@@ -119,8 +119,13 @@ type ToggleLikeHandler = (opts: ToggleLikeInput) => Promise<{
   newBadge: unknown;
 }>;
 
-type GetReactionsInput = { input: { scenarioId: string }; ctx: { session?: { user?: { id: string } } | null } };
-type GetReactionsHandler = (opts: GetReactionsInput) => Promise<{ reactions: Array<{ emoji: string; count: number; userReacted: boolean }> }>;
+type GetReactionsInput = {
+  input: { scenarioId: string };
+  ctx: { session?: { user?: { id: string } } | null };
+};
+type GetReactionsHandler = (
+  opts: GetReactionsInput,
+) => Promise<{ reactions: Array<{ emoji: string; count: number; userReacted: boolean }> }>;
 
 type LeaderboardInput = { input: { period?: string; sort?: string } };
 type LeaderboardHandler = (opts: LeaderboardInput) => Promise<{ items: unknown[] }>;
@@ -341,7 +346,9 @@ describe("socialRouter.toggleLike", () => {
     expect(result).toEqual({ reacted: true, emoji: "👍", newBadge: null });
 
     expect(mockDb.reaction.findUnique).toHaveBeenCalledWith({
-      where: { userId_scenarioId_emoji: { userId: "user-1", scenarioId: "scenario-1", emoji: "👍" } },
+      where: {
+        userId_scenarioId_emoji: { userId: "user-1", scenarioId: "scenario-1", emoji: "👍" },
+      },
     });
 
     expect(mockDb.scenario.findUnique).toHaveBeenCalledWith({
@@ -368,7 +375,12 @@ describe("socialRouter.toggleLike", () => {
   });
 
   it("should toggle off: delete reaction, decrement likeCount, decrement UserSocial", async () => {
-    mockDb.reaction.findUnique.mockResolvedValue({ id: "reaction-1", userId: "user-1", scenarioId: "scenario-1", emoji: "👍" });
+    mockDb.reaction.findUnique.mockResolvedValue({
+      id: "reaction-1",
+      userId: "user-1",
+      scenarioId: "scenario-1",
+      emoji: "👍",
+    });
     mockDb.scenario.findUnique.mockResolvedValue({ id: "scenario-1", creatorId: "creator-1" });
     mockTx.reaction.delete.mockResolvedValue({ id: "reaction-1" });
     mockTx.scenario.update.mockResolvedValue({ id: "scenario-1", likeCount: 0 });
@@ -430,7 +442,9 @@ describe("socialRouter.toggleLike", () => {
     expect(result).toEqual({ reacted: true, emoji: "❤️", newBadge: null });
     // Two separate creates: one for the first emoji, one for the second
     expect(mockDb.reaction.findUnique).toHaveBeenLastCalledWith({
-      where: { userId_scenarioId_emoji: { userId: "user-1", scenarioId: "scenario-1", emoji: "❤️" } },
+      where: {
+        userId_scenarioId_emoji: { userId: "user-1", scenarioId: "scenario-1", emoji: "❤️" },
+      },
     });
   });
 
@@ -456,7 +470,12 @@ describe("socialRouter.toggleLike", () => {
     expect(firstResult.reacted).toBe(true);
 
     // Second call: existing reaction found → delete (toggle off)
-    mockDb.reaction.findUnique.mockResolvedValue({ id: "reaction-1", userId: "user-1", scenarioId: "scenario-1", emoji: "👍" });
+    mockDb.reaction.findUnique.mockResolvedValue({
+      id: "reaction-1",
+      userId: "user-1",
+      scenarioId: "scenario-1",
+      emoji: "👍",
+    });
     mockDb.scenario.findUnique.mockResolvedValue({ id: "scenario-1", creatorId: "creator-1" });
     mockTx.reaction.delete.mockResolvedValue({});
 
@@ -490,7 +509,12 @@ describe("socialRouter.toggleLike", () => {
     mockTx.scenario.update.mockResolvedValue({});
     mockTx.userSocial.upsert.mockResolvedValue({});
 
-    const mockBadge = { id: "badge-1", name: "First Like Received", description: "You received your first like!", iconUrl: null };
+    const mockBadge = {
+      id: "badge-1",
+      name: "First Like Received",
+      description: "You received your first like!",
+      iconUrl: null,
+    };
     const { checkAndAwardBadges } = await import("@/server/services/social/badges");
     (checkAndAwardBadges as any).mockResolvedValue(mockBadge);
 
@@ -565,10 +589,7 @@ describe("socialRouter.getReactions", () => {
       { emoji: "👍", _count: 3 },
       { emoji: "❤️", _count: 1 },
     ]);
-    mockDb.reaction.findMany.mockResolvedValue([
-      { emoji: "👍" },
-      { emoji: "❤️" },
-    ]);
+    mockDb.reaction.findMany.mockResolvedValue([{ emoji: "👍" }, { emoji: "❤️" }]);
 
     const { socialRouter } = await import("../social");
     // @ts-expect-error — query handler is captured at module import time
@@ -590,9 +611,7 @@ describe("socialRouter.getReactions", () => {
       { emoji: "😂", _count: 2 },
     ]);
     // User only reacted with 👍
-    mockDb.reaction.findMany.mockResolvedValue([
-      { emoji: "👍" },
-    ]);
+    mockDb.reaction.findMany.mockResolvedValue([{ emoji: "👍" }]);
 
     const { socialRouter } = await import("../social");
     // @ts-expect-error — query handler is captured at module import time
@@ -608,9 +627,7 @@ describe("socialRouter.getReactions", () => {
   });
 
   it("should set userReacted false for all when user is not authenticated", async () => {
-    mockDb.reaction.groupBy.mockResolvedValue([
-      { emoji: "👍", _count: 3 },
-    ]);
+    mockDb.reaction.groupBy.mockResolvedValue([{ emoji: "👍", _count: 3 }]);
 
     const { socialRouter } = await import("../social");
     // @ts-expect-error — query handler is captured at module import time
@@ -803,7 +820,12 @@ describe("socialRouter.getUserBadges", () => {
         userId: "user-1",
         badgeId: "badge-1",
         awardedAt: new Date("2026-06-01"),
-        badge: { id: "badge-1", name: "First Call", description: "Made your first call", iconUrl: null },
+        badge: {
+          id: "badge-1",
+          name: "First Call",
+          description: "Made your first call",
+          iconUrl: null,
+        },
       },
     ];
     mockDb.userBadge.findMany.mockResolvedValue(mockUserBadges);
@@ -820,7 +842,7 @@ describe("socialRouter.getUserBadges", () => {
     expect(result[0]).toHaveProperty("id", "ub-1");
     expect(result[0]).toHaveProperty("badge");
     expect(result[0]).toHaveProperty("awardedAt");
-    expect(result[0]?.badge.name).toBe("First Call");
+    expect((result[0] as any)?.badge.name).toBe("First Call");
   });
 
   it("should return empty array for user with no badges", async () => {

@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { Medal, AlertCircle } from "lucide-react"
+import { AlertCircle, Medal } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
   Skeleton,
-} from "@/components/ui"
-import { api } from "@/lib/trpc"
-import { EmptyState } from "@/components/shared/EmptyState"
+} from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 interface BadgeDisplayProps {
-  userId: string
+  userId: string;
 }
 
 function formatDate(date: string | Date): string {
@@ -21,27 +21,24 @@ function formatDate(date: string | Date): string {
     day: "numeric",
     month: "long",
     year: "numeric",
-  })
+  });
 }
 
 export function BadgeDisplay({ userId }: BadgeDisplayProps) {
-  const badgesQuery = api.social.getUserBadges.useQuery({ userId })
+  const badgesQuery = api.social.getUserBadges.useQuery({ userId });
 
   if (badgesQuery.isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={`badge-skel-${i}`}
-            className="rounded-xl border border-border p-4 space-y-2"
-          >
+          <div key={`badge-skel-${i}`} className="rounded-xl border border-border p-4 space-y-2">
             <Skeleton className="h-8 w-8 rounded-full" />
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-3 w-full" />
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   if (badgesQuery.isError) {
@@ -50,10 +47,10 @@ export function BadgeDisplay({ userId }: BadgeDisplayProps) {
         <AlertCircle className="w-4 h-4" />
         <span>Erreur lors du chargement des badges</span>
       </div>
-    )
+    );
   }
 
-  const badges = badgesQuery.data ?? []
+  const badges = badgesQuery.data ?? [];
 
   if (badges.length === 0) {
     return (
@@ -62,7 +59,7 @@ export function BadgeDisplay({ userId }: BadgeDisplayProps) {
         title="Aucun badge pour le moment"
         description="Participez à la communauté pour débloquer des badges !"
       />
-    )
+    );
   }
 
   return (
@@ -73,24 +70,16 @@ export function BadgeDisplay({ userId }: BadgeDisplayProps) {
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">
                 {ub.badge.iconUrl ? (
-                  <img
-                    src={ub.badge.iconUrl}
-                    alt=""
-                    className="w-5 h-5"
-                  />
+                  <img src={ub.badge.iconUrl} alt="" className="w-5 h-5" />
                 ) : (
                   <Medal className="w-4 h-4 text-primary" />
                 )}
               </div>
-              <CardTitle className="text-sm font-semibold">
-                {ub.badge.name}
-              </CardTitle>
+              <CardTitle className="text-sm font-semibold">{ub.badge.name}</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-1">
-            <CardDescription className="text-xs">
-              {ub.badge.description}
-            </CardDescription>
+            <CardDescription className="text-xs">{ub.badge.description}</CardDescription>
             <p className="text-[10px] text-muted-foreground mt-2">
               Obtenu le {formatDate(ub.awardedAt)}
             </p>
@@ -98,5 +87,5 @@ export function BadgeDisplay({ userId }: BadgeDisplayProps) {
         </Card>
       ))}
     </div>
-  )
+  );
 }

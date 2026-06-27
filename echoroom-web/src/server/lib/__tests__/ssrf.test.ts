@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // SSRF Protection — Twilio URL validation tests
@@ -109,16 +109,28 @@ describe("validateRecordingUrl", () => {
   it("should reject non-Twilio hosts", async () => {
     const { validateRecordingUrl } = await import("../ssrf");
 
-    expect(validateRecordingUrl("https://evil.com/2010-04-01/Accounts/AC123/Recordings/RE456")).toBe(false);
-    expect(validateRecordingUrl("https://twilio.com.evil.com/2010-04-01/Accounts/AC123/Recordings/RE456")).toBe(false);
+    expect(
+      validateRecordingUrl("https://evil.com/2010-04-01/Accounts/AC123/Recordings/RE456"),
+    ).toBe(false);
+    expect(
+      validateRecordingUrl(
+        "https://twilio.com.evil.com/2010-04-01/Accounts/AC123/Recordings/RE456",
+      ),
+    ).toBe(false);
   });
 
   it("should reject wrong path structure (no /2010-04-01/Accounts/)", async () => {
     const { validateRecordingUrl } = await import("../ssrf");
 
-    expect(validateRecordingUrl("https://api.twilio.com/wrong/Accounts/AC123/Recordings/RE456")).toBe(false);
-    expect(validateRecordingUrl("https://api.twilio.com/2010-04-01/Users/AC123/Recordings/RE456")).toBe(false);
-    expect(validateRecordingUrl("https://api.twilio.com/2010-04-01/Accounts/AC123/Calls/RE456")).toBe(false);
+    expect(
+      validateRecordingUrl("https://api.twilio.com/wrong/Accounts/AC123/Recordings/RE456"),
+    ).toBe(false);
+    expect(
+      validateRecordingUrl("https://api.twilio.com/2010-04-01/Users/AC123/Recordings/RE456"),
+    ).toBe(false);
+    expect(
+      validateRecordingUrl("https://api.twilio.com/2010-04-01/Accounts/AC123/Calls/RE456"),
+    ).toBe(false);
   });
 
   it("should reject missing /Recordings/ in path", async () => {
@@ -136,7 +148,9 @@ describe("validateRecordingUrl", () => {
   it("should reject HTTP (non-HTTPS) even with correct path", async () => {
     const { validateRecordingUrl } = await import("../ssrf");
 
-    expect(validateRecordingUrl("http://api.twilio.com/2010-04-01/Accounts/AC123/Recordings/RE456")).toBe(false);
+    expect(
+      validateRecordingUrl("http://api.twilio.com/2010-04-01/Accounts/AC123/Recordings/RE456"),
+    ).toBe(false);
   });
 
   it("should accept recording URLs with hyphens in Account SID and Recording SID", async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // L-2: admin audit hash — hashPhoneForAudit
@@ -20,7 +20,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 const TEST_AUDIT_SECRET = "audit_hash_test_secret_16ch!";
 
 beforeAll(() => {
-  process.env['AUDIT_HASH_SECRET'] = TEST_AUDIT_SECRET;
+  process.env["AUDIT_HASH_SECRET"] = TEST_AUDIT_SECRET;
 });
 
 // We need to set env before admin.ts is imported.
@@ -147,10 +147,16 @@ describe("L-2: hashPhoneForAudit HMAC behavior", () => {
     const phone = "+33612345678";
 
     // With our test secret
-    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16);
+    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET)
+      .update(phone)
+      .digest("hex")
+      .substring(0, 16);
 
     // With a different secret
-    const hash2 = createHmac("sha256", "different_secret_16_chars!!").update(phone).digest("hex").substring(0, 16);
+    const hash2 = createHmac("sha256", "different_secret_16_chars!!")
+      .update(phone)
+      .digest("hex")
+      .substring(0, 16);
 
     // Different secret → different hash (HMAC property)
     expect(hash1).not.toBe(hash2);
@@ -161,8 +167,14 @@ describe("L-2: hashPhoneForAudit HMAC behavior", () => {
 
     const phone = "+33612345678";
 
-    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16);
-    const hash2 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone).digest("hex").substring(0, 16);
+    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET)
+      .update(phone)
+      .digest("hex")
+      .substring(0, 16);
+    const hash2 = createHmac("sha256", TEST_AUDIT_SECRET)
+      .update(phone)
+      .digest("hex")
+      .substring(0, 16);
 
     expect(hash1).toBe(hash2);
   });
@@ -173,8 +185,14 @@ describe("L-2: hashPhoneForAudit HMAC behavior", () => {
     const phone1 = "+33612345678";
     const phone2 = "+33687654321";
 
-    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone1).digest("hex").substring(0, 16);
-    const hash2 = createHmac("sha256", TEST_AUDIT_SECRET).update(phone2).digest("hex").substring(0, 16);
+    const hash1 = createHmac("sha256", TEST_AUDIT_SECRET)
+      .update(phone1)
+      .digest("hex")
+      .substring(0, 16);
+    const hash2 = createHmac("sha256", TEST_AUDIT_SECRET)
+      .update(phone2)
+      .digest("hex")
+      .substring(0, 16);
 
     expect(hash1).not.toBe(hash2);
   });

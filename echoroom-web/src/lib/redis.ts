@@ -1,6 +1,6 @@
 import { Redis } from "@upstash/redis";
-import { env } from "./env";
 import { createLogger } from "@/server/lib/logger";
+import { env } from "./env";
 
 const log = createLogger("redis");
 

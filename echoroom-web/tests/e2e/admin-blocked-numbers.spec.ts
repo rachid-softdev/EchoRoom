@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Admin blocked numbers — workflow", () => {
   test.beforeEach(async ({ page }) => {
@@ -17,17 +17,13 @@ test.describe("Admin blocked numbers — workflow", () => {
   test("page heading is Numéros bloqués", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByRole("heading", { name: "Numéros bloqués" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Numéros bloqués" })).toBeVisible();
   });
 
   test("subtitle describes the page purpose", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByText("Gérez la liste des numéros de téléphone bloqués"),
-    ).toBeVisible();
+    await expect(page.getByText("Gérez la liste des numéros de téléphone bloqués")).toBeVisible();
   });
 
   // ── Block form ─────────────────────────────────────────────────────────
@@ -35,25 +31,19 @@ test.describe("Admin blocked numbers — workflow", () => {
   test("block form card heading is Bloquer un numéro", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByRole("heading", { name: "Bloquer un numéro" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bloquer un numéro" })).toBeVisible();
   });
 
   test("block form has phone input with correct placeholder", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByPlaceholder("+33612345678"),
-    ).toBeVisible();
+    await expect(page.getByPlaceholder("+33612345678")).toBeVisible();
   });
 
   test("block form has reason input with correct placeholder", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.getByPlaceholder("Motif (optionnel)"),
-    ).toBeVisible();
+    await expect(page.getByPlaceholder("Motif (optionnel)")).toBeVisible();
   });
 
   test("block button with Ban icon is visible", async ({ page }) => {
@@ -128,12 +118,12 @@ test.describe("Admin blocked numbers — workflow", () => {
   test("blocked numbers list section heading is visible", async ({ page }) => {
     if (!skipIfNotAuthed(page)) return;
 
-    await expect(
-      page.locator("h3").filter({ hasText: "Numéros bloqués" }),
-    ).toBeVisible();
+    await expect(page.locator("h3").filter({ hasText: "Numéros bloqués" })).toBeVisible();
   });
 
-  test("blocked numbers list renders entries with phone number, reason, blocker and date", async ({ page }) => {
+  test("blocked numbers list renders entries with phone number, reason, blocker and date", async ({
+    page,
+  }) => {
     if (!skipIfNotAuthed(page)) return;
 
     const unblockBtns = page.getByRole("button", { name: "Débloquer" });
@@ -176,7 +166,9 @@ test.describe("Admin blocked numbers — workflow", () => {
     // If any entry has a reason, verify it's displayed correctly
     if (foundReason) {
       const entryWithReason = entries.filter({ hasText: /Motif/ }).first();
-      await expect(entryWithReason.locator("p.text-xs.text-muted-foreground")).toContainText("Motif :");
+      await expect(entryWithReason.locator("p.text-xs.text-muted-foreground")).toContainText(
+        "Motif :",
+      );
     }
   });
 
@@ -189,7 +181,10 @@ test.describe("Admin blocked numbers — workflow", () => {
     test.skip(!hasItems, "Skipping: no blocked numbers in the list");
     if (!hasItems) return;
 
-    const firstEntryInfo = page.locator("div.space-y-3 > div").first().locator("p.text-xs.text-muted-foreground");
+    const firstEntryInfo = page
+      .locator("div.space-y-3 > div")
+      .first()
+      .locator("p.text-xs.text-muted-foreground");
     await expect(firstEntryInfo).toContainText("Bloqué par");
   });
 
@@ -202,7 +197,10 @@ test.describe("Admin blocked numbers — workflow", () => {
     test.skip(!hasItems, "Skipping: no blocked numbers in the list");
     if (!hasItems) return;
 
-    const firstEntryInfo = page.locator("div.space-y-3 > div").first().locator("p.text-xs.text-muted-foreground");
+    const firstEntryInfo = page
+      .locator("div.space-y-3 > div")
+      .first()
+      .locator("p.text-xs.text-muted-foreground");
     // Date should contain month in French format (e.g. "juin" or "janv.")
     const dateText = await firstEntryInfo.textContent();
     expect(dateText).toBeTruthy();
@@ -242,7 +240,9 @@ test.describe("Admin blocked numbers — workflow", () => {
 
   // ── Empty state ────────────────────────────────────────────────────────
 
-  test("empty state Aucun numéro bloqué pour le moment is visible when list empty", async ({ page }) => {
+  test("empty state Aucun numéro bloqué pour le moment is visible when list empty", async ({
+    page,
+  }) => {
     if (!skipIfNotAuthed(page)) return;
 
     const unblockBtns = page.getByRole("button", { name: "Débloquer" });
@@ -251,9 +251,7 @@ test.describe("Admin blocked numbers — workflow", () => {
     test.skip(hasItems, "Skipping: blocked numbers list has items, cannot verify empty state");
     if (hasItems) return;
 
-    await expect(
-      page.getByText("Aucun numéro bloqué pour le moment."),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun numéro bloqué pour le moment.")).toBeVisible();
   });
 
   test("empty state shows PhoneOff icon", async ({ page }) => {
@@ -278,7 +276,8 @@ test.describe("Admin blocked numbers — workflow", () => {
     const emptyState = page.getByText("Aucun numéro bloqué pour le moment.");
     const entryList = page.locator("div.space-y-3 > div").first();
 
-    const hasContent = (await entryList.count()) > 0 || (await emptyState.isVisible().catch(() => false));
+    const hasContent =
+      (await entryList.count()) > 0 || (await emptyState.isVisible().catch(() => false));
     expect(hasContent).toBeTruthy();
   });
 });

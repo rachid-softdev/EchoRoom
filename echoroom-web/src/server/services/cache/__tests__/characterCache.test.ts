@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Character Cache Tests
@@ -69,9 +69,7 @@ describe("characterCache", () => {
     });
 
     it("should use 'all' category when no category is provided", async () => {
-      mockRedisInstance.get
-        .mockResolvedValueOnce(5)
-        .mockResolvedValueOnce({ items: [] });
+      mockRedisInstance.get.mockResolvedValueOnce(5).mockResolvedValueOnce({ items: [] });
 
       const { getCachedCharacters } = await import("../characterCache");
 
@@ -81,9 +79,7 @@ describe("characterCache", () => {
     });
 
     it("should return null when cached data is null (cache miss)", async () => {
-      mockRedisInstance.get
-        .mockResolvedValueOnce(1)
-        .mockResolvedValueOnce(null);
+      mockRedisInstance.get.mockResolvedValueOnce(1).mockResolvedValueOnce(null);
 
       const { getCachedCharacters } = await import("../characterCache");
 
@@ -112,7 +108,10 @@ describe("characterCache", () => {
       const result = await getCachedCharacters({ category: "romantic" });
       expect(result).toBeNull();
 
-      expect(mockLogInstance.warn).toHaveBeenCalledWith("Character cache read failed", expect.any(Object));
+      expect(mockLogInstance.warn).toHaveBeenCalledWith(
+        "Character cache read failed",
+        expect.any(Object),
+      );
     });
   });
 
@@ -161,7 +160,10 @@ describe("characterCache", () => {
 
       await expect(setCachedCharacters({ x: 1 })).resolves.toBeUndefined();
 
-      expect(mockLogInstance.warn).toHaveBeenCalledWith("Character cache write failed", expect.any(Object));
+      expect(mockLogInstance.warn).toHaveBeenCalledWith(
+        "Character cache write failed",
+        expect.any(Object),
+      );
     });
 
     it("should not throw when getCacheVersion returns undefined (data still stored)", async () => {
@@ -205,7 +207,10 @@ describe("characterCache", () => {
 
       await expect(invalidateCharacterCache()).resolves.toBeUndefined();
 
-      expect(mockLogInstance.warn).toHaveBeenCalledWith("Character cache invalidation failed", expect.any(Object));
+      expect(mockLogInstance.warn).toHaveBeenCalledWith(
+        "Character cache invalidation failed",
+        expect.any(Object),
+      );
     });
 
     it("should handle undefined version gracefully (still increments)", async () => {

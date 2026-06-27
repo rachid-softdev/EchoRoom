@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
 
 // ---------------------------------------------------------------------------
@@ -25,9 +25,7 @@ describe("atomicIncrementDailyLimit", () => {
         updateMany: mockUpdateMany,
         create: mockCreate,
       },
-    } as unknown as Parameters<
-      typeof import("../dailyLimitOps").atomicIncrementDailyLimit
-    >[0];
+    } as unknown as Parameters<typeof import("../dailyLimitOps").atomicIncrementDailyLimit>[0];
   }
 
   beforeEach(() => {
@@ -117,9 +115,7 @@ describe("atomicIncrementDailyLimit", () => {
       expect.unreachable("Should have thrown");
     } catch (e) {
       expect(e).toBeInstanceOf(AppError);
-      expect((e as AppError).message).toBe(
-        "Limite quotidienne de durée d'appels atteinte",
-      );
+      expect((e as AppError).message).toBe("Limite quotidienne de durée d'appels atteinte");
     }
 
     // updateMany called twice (first attempt + retry after P2002)
@@ -187,9 +183,9 @@ describe("atomicIncrementDailyLimit", () => {
 
     const { atomicIncrementDailyLimit } = await import("../dailyLimitOps");
 
-    await expect(
-      atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit }),
-    ).rejects.toThrow("Limite quotidienne de durée d'appels atteinte");
+    await expect(atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit })).rejects.toThrow(
+      "Limite quotidienne de durée d'appels atteinte",
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -205,9 +201,9 @@ describe("atomicIncrementDailyLimit", () => {
 
     const { atomicIncrementDailyLimit } = await import("../dailyLimitOps");
 
-    await expect(
-      atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit }),
-    ).rejects.toThrow("Connection refused");
+    await expect(atomicIncrementDailyLimit(buildTx(), { userId, date, maxLimit })).rejects.toThrow(
+      "Connection refused",
+    );
   });
 
   // -----------------------------------------------------------------------

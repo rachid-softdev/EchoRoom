@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // NextAuth Route Handler tests
@@ -47,7 +48,7 @@ describe("NextAuth Route Handler ([...nextauth]/route.ts)", () => {
     mockHandlers.GET.mockResolvedValue(new Response("ok", { status: 200 }));
 
     const { GET } = await import("../route");
-    const req = new Request("http://localhost:3000/api/auth/session");
+    const req = new Request("http://localhost:3000/api/auth/session") as unknown as NextRequest;
     const response = await GET(req);
 
     expect(mockHandlers.GET).toHaveBeenCalledWith(req);
@@ -58,10 +59,7 @@ describe("NextAuth Route Handler ([...nextauth]/route.ts)", () => {
     mockHandlers.POST.mockResolvedValue(new Response("created", { status: 201 }));
 
     const { POST } = await import("../route");
-    const req = new Request(
-      "http://localhost:3000/api/auth/session",
-      { method: "POST" },
-    );
+    const req = new Request("http://localhost:3000/api/auth/session", { method: "POST" }) as unknown as NextRequest;
     const response = await POST(req);
 
     expect(mockHandlers.POST).toHaveBeenCalledWith(req);
@@ -74,6 +72,6 @@ describe("NextAuth Route Handler ([...nextauth]/route.ts)", () => {
     const { GET } = await import("../route");
     const req = new Request("http://localhost:3000/api/auth/session");
 
-    await expect(GET(req)).rejects.toThrow("Auth error");
+    await expect(GET(req as unknown as NextRequest)).rejects.toThrow("Auth error");
   });
 });

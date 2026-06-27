@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaUserRepository — CRUD operations tests
@@ -115,9 +115,9 @@ describe("PrismaUserRepository — update", () => {
   it("should throw when user does not exist", async () => {
     mockUpdate.mockRejectedValue(new Error("Record to update not found."));
 
-    await expect(
-      repo.update("nonexistent", { displayName: "Ghost" }),
-    ).rejects.toThrow("Record to update not found.");
+    await expect(repo.update("nonexistent", { displayName: "Ghost" })).rejects.toThrow(
+      "Record to update not found.",
+    );
   });
 });
 
@@ -137,10 +137,7 @@ describe("PrismaUserRepository — updateMany", () => {
   it("should return count of updated records", async () => {
     mockUpdateMany.mockResolvedValue({ count: 3 });
 
-    const count = await repo.updateMany(
-      { deletedAt: null },
-      { deletedAt: new Date() },
-    );
+    const count = await repo.updateMany({ deletedAt: null }, { deletedAt: new Date() });
 
     expect(count).toBe(3);
   });

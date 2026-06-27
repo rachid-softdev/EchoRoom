@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Pricing config tests — resolveStripePriceId
@@ -67,8 +67,8 @@ describe("resolveStripePriceId", () => {
     }));
 
     // Set NODE_ENV to development
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    const originalNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "development";
 
     const pricing = await import("@/config/pricing");
     const starter = pricing.PRICING_CONFIG.find((t) => t.id === "starter");
@@ -77,7 +77,7 @@ describe("resolveStripePriceId", () => {
     expect(starter?.stripePriceId).toBe("price_dev_starter");
     expect(pro?.stripePriceId).toBe("price_dev_pro");
 
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   });
 
   it("should throw for unknown tier in production", async () => {
@@ -100,8 +100,8 @@ describe("resolveStripePriceId", () => {
   it("should fallback to price_dev_{tierId} for unknown tier in dev", async () => {
     vi.resetModules();
 
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    const originalNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "development";
 
     // Mock env so STRIPE_PRICE_STARTER and STRIPE_PRICE_PRO are not set
     vi.doMock("@/lib/env", () => ({
@@ -115,7 +115,7 @@ describe("resolveStripePriceId", () => {
     const starter = pricing.PRICING_CONFIG.find((t) => t.id === "starter");
     expect(starter?.stripePriceId).toBe("price_dev_starter");
 
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   });
 });
 

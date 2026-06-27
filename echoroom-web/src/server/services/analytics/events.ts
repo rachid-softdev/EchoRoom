@@ -1,4 +1,4 @@
-import { posthog, flushPosthog } from "@/lib/posthog-server";
+import { flushPosthog, posthog } from "@/lib/posthog-server";
 
 interface TrackEventParams {
   event: string;
@@ -21,7 +21,10 @@ export async function trackEvent({ event, userId, properties }: TrackEventParams
   }
 }
 
-export async function identifyUser(userId: string, traits?: Record<string, string | number | boolean>) {
+export async function identifyUser(
+  userId: string,
+  traits?: Record<string, string | number | boolean>,
+) {
   if (!posthog) return;
 
   try {

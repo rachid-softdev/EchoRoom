@@ -1,11 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { AudioPlayer } from "@/components/player/AudioPlayer";
+import { ReplayHeader } from "@/components/player/ReplayHeader";
+import { TranscriptView } from "@/components/player/TranscriptView";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { DataLoader } from "@/components/shared/DataLoader";
-import { ReplayHeader } from "@/components/player/ReplayHeader";
-import { AudioPlayer } from "@/components/player/AudioPlayer";
-import { TranscriptView } from "@/components/player/TranscriptView";
 import { api } from "@/lib/trpc";
 
 export default function CallReplayPage() {
@@ -24,10 +24,7 @@ export default function CallReplayPage() {
     | undefined;
 
   return (
-    <DashboardShell
-      title="Replay de l'appel"
-      backHref="/history"
-    >
+    <DashboardShell title="Replay de l'appel" backHref="/history">
       {matchingCall ? (
         <div className="flex items-center gap-3 mb-6 text-sm text-muted-foreground">
           {matchingCall.scenario?.title && (
@@ -43,8 +40,12 @@ export default function CallReplayPage() {
       {matchingCall && (
         <ReplayHeader
           {...(matchingCall.scenario?.title ? { scenarioTitle: matchingCall.scenario.title } : {})}
-          {...(matchingCall.scenario?.character?.name ? { characterName: matchingCall.scenario.character.name } : {})}
-          {...(matchingCall.durationSeconds !== undefined ? { durationSeconds: matchingCall.durationSeconds } : {})}
+          {...(matchingCall.scenario?.character?.name
+            ? { characterName: matchingCall.scenario.character.name }
+            : {})}
+          {...(matchingCall.durationSeconds !== undefined
+            ? { durationSeconds: matchingCall.durationSeconds }
+            : {})}
           {...(matchingCall.status ? { status: matchingCall.status } : {})}
         />
       )}
@@ -60,7 +61,9 @@ export default function CallReplayPage() {
             <TranscriptView
               transcript={data.transcript ?? null}
               isLoading={replayQuery.isFetching}
-              {...(matchingCall?.scenario?.title ? { scenarioName: matchingCall.scenario.title } : {})}
+              {...(matchingCall?.scenario?.title
+                ? { scenarioName: matchingCall.scenario.title }
+                : {})}
             />
           </div>
         )}

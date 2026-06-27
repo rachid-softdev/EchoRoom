@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // UserSocialRepository — Contract Tests (future partitioned repository)
@@ -49,7 +49,11 @@ interface IUserSocialRepository {
   incrementLikesReceived(tx: any, userId: string): Promise<void>;
   decrementLikesReceived(tx: any, userId: string): Promise<void>;
   incrementCallsMade(userId: string): Promise<void>;
-  getLeaderboard(sort: "LIKES" | "CALLS", period: "ALL" | "WEEK" | "MONTH", limit?: number): Promise<LeaderboardEntry[]>;
+  getLeaderboard(
+    sort: "LIKES" | "CALLS",
+    period: "ALL" | "WEEK" | "MONTH",
+    limit?: number,
+  ): Promise<LeaderboardEntry[]>;
   getUserBadges(userId: string): Promise<UserBadgeData[]>;
   awardBadge(tx: any, userId: string, badgeId: string): Promise<UserBadgeData>;
 }
@@ -146,17 +150,13 @@ describe("IUserSocialRepository — interface contract", () => {
     it("should increment likes atomically", async () => {
       (mockRepo.incrementLikesReceived as any).mockResolvedValue(undefined);
 
-      await expect(
-        mockRepo.incrementLikesReceived({} as any, "user-1"),
-      ).resolves.not.toThrow();
+      await expect(mockRepo.incrementLikesReceived({} as any, "user-1")).resolves.not.toThrow();
     });
 
     it("should decrement likes atomically", async () => {
       (mockRepo.decrementLikesReceived as any).mockResolvedValue(undefined);
 
-      await expect(
-        mockRepo.decrementLikesReceived({} as any, "user-1"),
-      ).resolves.not.toThrow();
+      await expect(mockRepo.decrementLikesReceived({} as any, "user-1")).resolves.not.toThrow();
     });
 
     it("should require a transaction for atomicity", async () => {
@@ -193,8 +193,22 @@ describe("IUserSocialRepository — interface contract", () => {
   describe("getLeaderboard", () => {
     it("should return entries sorted by likes when sort is LIKES", async () => {
       const entries: LeaderboardEntry[] = [
-        { userId: "u1", username: "alice", image: null, totalLikesReceived: 100, totalCallsMade: 50, scenarioCount: 5 },
-        { userId: "u2", username: "bob", image: null, totalLikesReceived: 50, totalCallsMade: 200, scenarioCount: 3 },
+        {
+          userId: "u1",
+          username: "alice",
+          image: null,
+          totalLikesReceived: 100,
+          totalCallsMade: 50,
+          scenarioCount: 5,
+        },
+        {
+          userId: "u2",
+          username: "bob",
+          image: null,
+          totalLikesReceived: 50,
+          totalCallsMade: 200,
+          scenarioCount: 3,
+        },
       ];
       (mockRepo.getLeaderboard as any).mockResolvedValue(entries);
 
@@ -300,9 +314,9 @@ describe("IUserSocialRepository — interface contract", () => {
         new Error("Unique constraint failed on userId and badgeId"),
       );
 
-      await expect(
-        mockRepo.awardBadge({} as any, "user-1", "badge-1"),
-      ).rejects.toThrow("Unique constraint");
+      await expect(mockRepo.awardBadge({} as any, "user-1", "badge-1")).rejects.toThrow(
+        "Unique constraint",
+      );
     });
   });
 });

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Landing page — comprehensive load tests", () => {
   test("should load without JavaScript console errors", async ({ page }) => {
@@ -15,10 +15,7 @@ test.describe("Landing page — comprehensive load tests", () => {
 
     // Assert no console errors (allow known Next.js hydration warnings)
     const filteredErrors = consoleErrors.filter(
-      (e) =>
-        !e.includes("Hydration") &&
-        !e.includes("Next.js") &&
-        !e.includes("favicon"),
+      (e) => !e.includes("Hydration") && !e.includes("Next.js") && !e.includes("favicon"),
     );
     expect(filteredErrors).toEqual([]);
   });
@@ -32,12 +29,8 @@ test.describe("Landing page — comprehensive load tests", () => {
 
   test("should display CTA buttons in the hero section", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("link", { name: /Commencer gratuitement/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /Voir la bibliothèque/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Commencer gratuitement/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Voir la bibliothèque/ })).toBeVisible();
   });
 
   test("should display the stats section with key metrics", async ({ page }) => {
@@ -77,9 +70,7 @@ test.describe("Landing page — comprehensive load tests", () => {
     await expect(footer).toBeVisible();
 
     // Check for common footer elements (CGU, Privacy, etc.)
-    await expect(
-      page.getByText(/EchoRoom/).last(),
-    ).toBeVisible();
+    await expect(page.getByText(/EchoRoom/).last()).toBeVisible();
   });
 
   test("should have a functioning navigation bar", async ({ page }) => {
@@ -88,9 +79,7 @@ test.describe("Landing page — comprehensive load tests", () => {
     await expect(nav).toBeVisible();
 
     // Explorer link should be visible
-    await expect(
-      page.getByRole("link", { name: "Explorer" }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Explorer" }).first()).toBeVisible();
   });
 
   test("should be responsive and render on mobile viewport", async ({ page }) => {

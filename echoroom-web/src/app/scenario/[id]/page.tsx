@@ -1,15 +1,13 @@
-import { notFound } from "next/navigation"
-import type { Metadata } from "next"
-import { db } from "@/server/db"
-import { ScenarioDetailClient } from "./ScenarioDetailClient"
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { db } from "@/server/db";
+import { ScenarioDetailClient } from "./ScenarioDetailClient";
 
 interface ScenarioPageProps {
-  params: { id: string }
+  params: { id: string };
 }
 
-export async function generateMetadata({
-  params,
-}: ScenarioPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ScenarioPageProps): Promise<Metadata> {
   const scenario = await db.scenario.findUnique({
     where: { id: params.id },
     select: {
@@ -23,14 +21,10 @@ export async function generateMetadata({
         select: { username: true },
       },
     },
-  })
+  });
 
   // For non-public scenarios, return generic metadata
-  if (
-    !scenario ||
-    scenario.visibility === "PRIVATE" ||
-    scenario.visibility === "UNLISTED"
-  ) {
+  if (!scenario || scenario.visibility === "PRIVATE" || scenario.visibility === "UNLISTED") {
     return {
       title: "EchoRoom AI",
       description:
@@ -45,18 +39,17 @@ export async function generateMetadata({
       twitter: {
         card: "summary_large_image",
         title: "EchoRoom AI",
-        description:
-          "Créez des appels IA absurdes, partagez des moments viraux.",
+        description: "Créez des appels IA absurdes, partagez des moments viraux.",
       },
-    }
+    };
   }
 
-  const ogTitle = `${scenario.title} — EchoRoom AI`
+  const ogTitle = `${scenario.title} — EchoRoom AI`;
   const ogDescription =
     scenario.description?.slice(0, 160) ??
-    `Un scénario ${scenario.character?.name ?? "EchoRoom"} créé par ${scenario.creator?.username ?? "un membre"}`
-  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? "http://localhost:3000"
-  const ogUrl = `${appUrl}/api/og?id=${params.id}`
+    `Un scénario ${scenario.character?.name ?? "EchoRoom"} créé par ${scenario.creator?.username ?? "un membre"}`;
+  const appUrl = process.env["NEXT_PUBLIC_APP_URL"] ?? "http://localhost:3000";
+  const ogUrl = `${appUrl}/api/og?id=${params.id}`;
 
   return {
     title: ogTitle,
@@ -74,7 +67,7 @@ export async function generateMetadata({
       description: ogDescription,
       images: [ogUrl],
     },
-  }
+  };
 }
 
 export default async function ScenarioPage({ params }: ScenarioPageProps) {
@@ -82,11 +75,11 @@ export default async function ScenarioPage({ params }: ScenarioPageProps) {
   const scenario = await db.scenario.findUnique({
     where: { id: params.id },
     select: { id: true },
-  })
+  });
 
   if (!scenario) {
-    notFound()
+    notFound();
   }
 
-  return <ScenarioDetailClient scenarioId={params.id} />
+  return <ScenarioDetailClient scenarioId={params.id} />;
 }

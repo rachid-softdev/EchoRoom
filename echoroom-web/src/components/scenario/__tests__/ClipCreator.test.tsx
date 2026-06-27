@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -160,9 +160,7 @@ describe("ClipCreator", () => {
     render(<ClipCreator scenarioId="s-1" />);
 
     expect(
-      screen.getByText(
-        "Aucun appel avec enregistrement trouvé pour ce scénario",
-      ),
+      screen.getByText("Aucun appel avec enregistrement trouvé pour ce scénario"),
     ).toBeInTheDocument();
   });
 
@@ -249,12 +247,10 @@ describe("ClipCreator", () => {
     expect(screen.getByText(/Durée max : 5:00/)).toBeInTheDocument();
   });
 
-  it('shows default hint when no call selected', () => {
+  it("shows default hint when no call selected", () => {
     render(<ClipCreator scenarioId="s-1" />);
 
-    expect(
-      screen.getByText("Sélectionnez un appel pour définir les temps"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Sélectionnez un appel pour définir les temps")).toBeInTheDocument();
   });
 
   // ── Mutation call ─────────────────────────────────────────────────
@@ -335,9 +331,7 @@ describe("ClipCreator", () => {
     render(<ClipCreator scenarioId="s-1" />);
 
     expect(
-      screen.getByText(
-        "Clip créé avec succès — l'extraction est lancée en arrière-plan.",
-      ),
+      screen.getByText("Clip créé avec succès — l'extraction est lancée en arrière-plan."),
     ).toBeInTheDocument();
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // createLogger tests
@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 describe("createLogger", () => {
   const originalStdoutWrite = process.stdout.write;
   const originalStderrWrite = process.stderr.write;
-  const originalEnv = process.env['NODE_ENV'];
+  const originalEnv = process.env["NODE_ENV"];
 
   let stdoutMock: ReturnType<typeof vi.fn>;
   let stderrMock: ReturnType<typeof vi.fn>;
@@ -26,7 +26,7 @@ describe("createLogger", () => {
     process.stdout.write = originalStdoutWrite;
     process.stderr.write = originalStderrWrite;
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = originalEnv;
+    process.env["NODE_ENV"] = originalEnv;
     vi.restoreAllMocks();
   });
 
@@ -89,7 +89,7 @@ describe("createLogger", () => {
 
   it("should write debug-level entries to stdout in development", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = "development";
+    process.env["NODE_ENV"] = "development";
     // Clear mocks after env change — the module caches nothing, it reads env each time
     stdoutMock.mockClear();
 
@@ -107,7 +107,7 @@ describe("createLogger", () => {
 
   it("should suppress debug output when NODE_ENV is not development", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = "production";
+    process.env["NODE_ENV"] = "production";
     stdoutMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -119,7 +119,7 @@ describe("createLogger", () => {
 
   it("should suppress debug output when NODE_ENV is undefined", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    delete process.env['NODE_ENV'];
+    delete process.env["NODE_ENV"];
     stdoutMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -131,7 +131,7 @@ describe("createLogger", () => {
 
   it("should still output info in production", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = "production";
+    process.env["NODE_ENV"] = "production";
     stdoutMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -145,7 +145,7 @@ describe("createLogger", () => {
 
   it("should still output error in production", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = "production";
+    process.env["NODE_ENV"] = "production";
     stderrMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -224,7 +224,7 @@ describe("createLogger", () => {
 
   it("should include stack trace in development mode", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = "development";
+    process.env["NODE_ENV"] = "development";
     stderrMock.mockClear();
 
     const { createLogger } = await import("../logger");
@@ -240,7 +240,7 @@ describe("createLogger", () => {
 
   it("should omit stack trace in production mode", async () => {
     // @ts-expect-error — vitest allows env mutation in test scope
-    process.env['NODE_ENV'] = "production";
+    process.env["NODE_ENV"] = "production";
     stderrMock.mockClear();
 
     const { createLogger } = await import("../logger");

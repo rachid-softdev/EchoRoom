@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // PrismaCallRepository tests
@@ -124,11 +124,7 @@ describe("PrismaCallRepository — updateStatusWithGuard", () => {
   it("should update status with current status guard", async () => {
     mockUpdateMany.mockResolvedValue({ count: 1 });
 
-    const count = await repo.updateStatusWithGuard(
-      "call-1",
-      "RINGING" as any,
-      "ACTIVE" as any,
-    );
+    const count = await repo.updateStatusWithGuard("call-1", "RINGING" as any, "ACTIVE" as any);
 
     expect(count).toBe(1);
     expect(mockUpdateMany).toHaveBeenCalledWith({
@@ -140,11 +136,7 @@ describe("PrismaCallRepository — updateStatusWithGuard", () => {
   it("should return 0 when status guard prevents update", async () => {
     mockUpdateMany.mockResolvedValue({ count: 0 });
 
-    const count = await repo.updateStatusWithGuard(
-      "call-1",
-      "RINGING" as any,
-      "ACTIVE" as any,
-    );
+    const count = await repo.updateStatusWithGuard("call-1", "RINGING" as any, "ACTIVE" as any);
 
     expect(count).toBe(0);
   });
@@ -152,12 +144,10 @@ describe("PrismaCallRepository — updateStatusWithGuard", () => {
   it("should include additional data when provided", async () => {
     mockUpdateMany.mockResolvedValue({ count: 1 });
 
-    await repo.updateStatusWithGuard(
-      "call-1",
-      "ACTIVE" as any,
-      "COMPLETED" as any,
-      { durationSeconds: 120, endedAt: new Date("2026-06-01T00:00:00Z") },
-    );
+    await repo.updateStatusWithGuard("call-1", "ACTIVE" as any, "COMPLETED" as any, {
+      durationSeconds: 120,
+      endedAt: new Date("2026-06-01T00:00:00Z"),
+    });
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
       where: { id: "call-1", status: "ACTIVE" },
@@ -172,11 +162,7 @@ describe("PrismaCallRepository — updateStatusWithGuard", () => {
   it("should handle transition FAILED to FAILED (idempotent)", async () => {
     mockUpdateMany.mockResolvedValue({ count: 1 });
 
-    const count = await repo.updateStatusWithGuard(
-      "call-1",
-      "FAILED" as any,
-      "FAILED" as any,
-    );
+    const count = await repo.updateStatusWithGuard("call-1", "FAILED" as any, "FAILED" as any);
 
     expect(count).toBe(1);
   });

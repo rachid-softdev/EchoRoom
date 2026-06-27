@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // More flexible mocks for testing isPending / error states on CreatePage
@@ -50,7 +50,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock("lucide-react", () => ({
@@ -91,13 +95,15 @@ vi.mock("@/components/ui", () => ({
     />
   ),
   Badge: ({ children, variant, className, ...props }: any) => (
-    <span data-variant={variant} className={className} {...props}>{children}</span>
+    <span data-variant={variant} className={className} {...props}>
+      {children}
+    </span>
   ),
   toast: mockToast,
 }));
 
 vi.mock("@/components/shared/DataLoader", () => ({
-  DataLoader: ({ query, children, isEmpty, skeletonCount, empty }: any) => {
+  DataLoader: ({ query, children, isEmpty, empty }: any) => {
     if (query.isLoading) {
       return <div data-testid="loader-loading">Chargement des personnages...</div>;
     }
@@ -184,7 +190,7 @@ describe("CreatePage — extended states", () => {
   });
 
   it("shows Loader2 icon in AI assistant button when generateScript.isPending", () => {
-    mockUseGenerateScriptMutation.mockImplementation((opts?: any) => ({
+    mockUseGenerateScriptMutation.mockImplementation((_opts?: any) => ({
       mutate: (...args: unknown[]) => {
         mockGenerateScriptMutate(...args);
       },
@@ -220,9 +226,7 @@ describe("CreatePage — extended states", () => {
 
     // DataLoader should show error state since our mock handles isError
     expect(screen.getByTestId("loader-error")).toBeInTheDocument();
-    expect(
-      screen.getByText("Échec de chargement des personnages"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Échec de chargement des personnages")).toBeInTheDocument();
   });
 
   it("shows error with generic message when error has no message", () => {
@@ -237,9 +241,7 @@ describe("CreatePage — extended states", () => {
     render(<CreatePage />);
 
     expect(screen.getByTestId("loader-error")).toBeInTheDocument();
-    expect(
-      screen.getByText("Impossible de charger les données."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Impossible de charger les données.")).toBeInTheDocument();
   });
 
   it("provides a retry button when characters query fails", () => {
@@ -369,7 +371,7 @@ describe("CreatePage — extended states", () => {
   // ── AI assistant disabled with no character selected ──────────
 
   it("disables AI assistant button when generateScript.isPending even with character", () => {
-    mockUseGenerateScriptMutation.mockImplementation((opts?: any) => ({
+    mockUseGenerateScriptMutation.mockImplementation((_opts?: any) => ({
       mutate: (...args: unknown[]) => mockGenerateScriptMutate(...args),
       isPending: true,
     }));

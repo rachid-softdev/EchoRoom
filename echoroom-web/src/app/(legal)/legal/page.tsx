@@ -10,8 +10,8 @@ export default function LegalPage() {
     <article className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-8">Mentions légales</h1>
       <p className="text-sm text-muted-foreground mb-8">
-        Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la
-        confiance dans l&apos;économie numérique.
+        Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans
+        l&apos;économie numérique.
       </p>
 
       <section className="mb-8">
@@ -21,15 +21,10 @@ export default function LegalPage() {
           <p>Société par actions simplifiée (SAS)</p>
           <p>Immatriculée au RCS de Paris sous le numéro 900 123 456</p>
           <p>Numéro de TVA intracommunautaire : FR45900123456</p>
-          <p>
-            Siège social : 128 Rue de Rivoli, 75001 Paris, France
-          </p>
+          <p>Siège social : 128 Rue de Rivoli, 75001 Paris, France</p>
           <p>
             Email :{" "}
-            <a
-              href="mailto:contact@echoroom.app"
-              className="text-primary hover:underline"
-            >
+            <a href="mailto:contact@echoroom.app" className="text-primary hover:underline">
               contact@echoroom.app
             </a>
           </p>
@@ -68,28 +63,19 @@ export default function LegalPage() {
         <div className="text-muted-foreground leading-relaxed space-y-1">
           <p>
             Support utilisateur :{" "}
-            <a
-              href="mailto:support@echoroom.app"
-              className="text-primary hover:underline"
-            >
+            <a href="mailto:support@echoroom.app" className="text-primary hover:underline">
               support@echoroom.app
             </a>
           </p>
           <p>
             Réclamations juridiques :{" "}
-            <a
-              href="mailto:legal@echoroom.app"
-              className="text-primary hover:underline"
-            >
+            <a href="mailto:legal@echoroom.app" className="text-primary hover:underline">
               legal@echoroom.app
             </a>
           </p>
           <p>
             Protection des données :{" "}
-            <a
-              href="mailto:dpo@echoroom.app"
-              className="text-primary hover:underline"
-            >
+            <a href="mailto:dpo@echoroom.app" className="text-primary hover:underline">
               dpo@echoroom.app
             </a>
           </p>

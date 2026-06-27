@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/DashboardShell.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/DashboardShell.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("DashboardShell component", () => {
@@ -48,7 +45,7 @@ test.describe("DashboardShell component", () => {
     expect(source).toContain("/billing");
   });
 
-  test("nav link has aria-current=\"page\" for active state", () => {
+  test('nav link has aria-current="page" for active state', () => {
     const source = readComponent();
     expect(source).toContain('aria-current={isActive ? "page" : undefined}');
   });
@@ -72,7 +69,7 @@ test.describe("DashboardShell component", () => {
 
   test("Settings link with gear icon is present", () => {
     const source = readComponent();
-    expect(source).toContain('/settings');
+    expect(source).toContain("/settings");
     expect(source).toMatch(/Settings.*w-4 h-4/);
   });
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // tRPC API Route tests
@@ -60,9 +60,7 @@ function createMockRequest(headers: Record<string, string>): NextRequest {
 describe("tRPC handler (GET/POST /api/trpc/[trpc])", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchRequestHandler.mockReturnValue(
-      new Response("ok", { status: 200 }),
-    );
+    mockFetchRequestHandler.mockReturnValue(new Response("ok", { status: 200 }));
   });
 
   // -----------------------------------------------------------------------
@@ -146,8 +144,8 @@ describe("tRPC handler (GET/POST /api/trpc/[trpc])", () => {
   // -----------------------------------------------------------------------
 
   it("should log error in development environment", async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    const originalNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "development";
     mockResolveApiVersion.mockReturnValue("latest");
 
     const { GET } = await import("../route");
@@ -169,12 +167,12 @@ describe("tRPC handler (GET/POST /api/trpc/[trpc])", () => {
       message: "Something failed",
     });
 
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   });
 
   it("should NOT log error in production environment", async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    const originalNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "production";
     mockResolveApiVersion.mockReturnValue("latest");
 
     const { GET } = await import("../route");
@@ -191,12 +189,12 @@ describe("tRPC handler (GET/POST /api/trpc/[trpc])", () => {
 
     expect(mockLoggerError).not.toHaveBeenCalled();
 
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   });
 
   it("should handle onError with null path gracefully", async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    const originalNodeEnv = (process.env as any).NODE_ENV;
+    (process.env as any).NODE_ENV = "development";
     mockResolveApiVersion.mockReturnValue("latest");
 
     const { GET } = await import("../route");
@@ -217,7 +215,7 @@ describe("tRPC handler (GET/POST /api/trpc/[trpc])", () => {
       message: "No path error",
     });
 
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   });
 
   // -----------------------------------------------------------------------

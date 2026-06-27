@@ -1,5 +1,5 @@
-import posthogjs from "posthog-js";
 import type { PostHog } from "posthog-js";
+import posthogjs from "posthog-js";
 import { env } from "./env.client";
 
 let posthog: PostHog | null = null;

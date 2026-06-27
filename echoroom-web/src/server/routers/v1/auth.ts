@@ -7,29 +7,38 @@
  * It maintains backward compatibility for clients that depend on the v1 shapes.
  * Changes and improvements should go into v2+ routers.
  */
-import { z } from "zod";
+
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
-import {
-  router,
-  publicProcedure,
-  protectedProcedure,
-  withRateLimit,
-} from "../../procedures";
-import { db } from "../../db";
-import { userBillingRepository } from "../../repositories";
+import { z } from "zod";
 import { createLogger } from "@/server/lib/logger";
+import { db } from "../../db";
+import { protectedProcedure, publicProcedure, router, withRateLimit } from "../../procedures";
+import { userBillingRepository } from "../../repositories";
 
 const log = createLogger("auth");
 
 const DISPOSABLE_DOMAINS = new Set([
-  "mailinator.com", "tempmail.com", "10minutemail.com",
-  "guerrillamail.com", "throwaway.email", "yopmail.com",
-  "temp-mail.org", "sharklasers.com", "trashmail.com",
-  "burnermail.io", "maildrop.cc", "getairmail.com",
-  "emailondeck.com", "fakeinbox.com", "tempinbox.com",
-  "mailexpire.com", "spambox.us", "spamgourmet.com",
-  "dispostable.com", "mailcatch.com",
+  "mailinator.com",
+  "tempmail.com",
+  "10minutemail.com",
+  "guerrillamail.com",
+  "throwaway.email",
+  "yopmail.com",
+  "temp-mail.org",
+  "sharklasers.com",
+  "trashmail.com",
+  "burnermail.io",
+  "maildrop.cc",
+  "getairmail.com",
+  "emailondeck.com",
+  "fakeinbox.com",
+  "tempinbox.com",
+  "mailexpire.com",
+  "spambox.us",
+  "spamgourmet.com",
+  "dispostable.com",
+  "mailcatch.com",
 ]);
 
 export const authV1Router = router({
@@ -39,7 +48,8 @@ export const authV1Router = router({
       z.object({
         email: z.string().email(),
         username: z.string().min(3).max(20),
-        password: z.string()
+        password: z
+          .string()
           .min(8, "Minimum 8 caractères")
           .max(128, "Maximum 128 caractères")
           .regex(/[A-Z]/, "Doit contenir une majuscule")
@@ -113,7 +123,8 @@ export const authV1Router = router({
     .input(
       z.object({
         currentPassword: z.string().min(1),
-        newPassword: z.string()
+        newPassword: z
+          .string()
           .min(8, "Minimum 8 caractères")
           .max(128, "Maximum 128 caractères")
           .regex(/[A-Z]/, "Doit contenir une majuscule")
@@ -158,5 +169,4 @@ export const authV1Router = router({
 
       return { success: true };
     }),
-
 });

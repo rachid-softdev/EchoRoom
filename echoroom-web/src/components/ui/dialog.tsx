@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from "react";
-import { X } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
-import { cn } from "./lib";
+import { X } from "lucide-react";
+import * as React from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-
+import { cn } from "./lib";
 
 interface DialogContextValue {
   open: boolean;
@@ -37,11 +36,7 @@ function Dialog({
   const open = controlledOpen ?? uncontrolledOpen;
   const onOpenChange = controlledOnOpenChange ?? setUncontrolledOpen;
 
-  return (
-    <DialogContext.Provider value={{ open, onOpenChange }}>
-      {children}
-    </DialogContext.Provider>
-  );
+  return <DialogContext.Provider value={{ open, onOpenChange }}>{children}</DialogContext.Provider>;
 }
 
 function DialogTrigger({
@@ -54,20 +49,13 @@ function DialogTrigger({
   const { onOpenChange } = useDialog();
   const Comp = asChild ? Slot : "button";
   return (
-    <Comp
-      type={asChild ? undefined : "button"}
-      onClick={() => onOpenChange(true)}
-    >
+    <Comp type={asChild ? undefined : "button"} onClick={() => onOpenChange(true)}>
       {children}
     </Comp>
   );
 }
 
-function DialogContent({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function DialogContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   const { open, onOpenChange } = useDialog();
   const contentRef = React.useRef<HTMLDivElement>(null);
   const titleId = React.useId();
@@ -79,7 +67,9 @@ function DialogContent({
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   // Keyboard: Escape
@@ -109,7 +99,7 @@ function DialogContent({
         aria-describedby={descId}
         className={cn(
           "relative z-50 w-full max-w-[calc(100vw-2rem)] sm:max-w-lg rounded-2xl border border-border bg-card p-6 shadow-lg animate-zoom-in",
-          className
+          className,
         )}
         {...props}
       >
@@ -135,69 +125,40 @@ function DialogContent({
   );
 }
 
-function DialogHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "flex flex-col space-y-1.5 text-center sm:text-left",
-        className
-      )}
+      className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
       {...props}
     />
   );
 }
 
-function DialogFooter({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-        className
-      )}
+      className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
       {...props}
     />
   );
 }
 
-function DialogTitle({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2
-      className={cn(
-        "text-lg font-semibold leading-none tracking-tight",
-        className
-      )}
-      {...props}
-    />
+    <h2 className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />
   );
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p
-      className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
-  );
+function DialogDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return <p className={cn("text-sm text-muted-foreground", className)} {...props} />;
 }
 
 export {
   Dialog,
-  DialogTrigger,
   DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 };

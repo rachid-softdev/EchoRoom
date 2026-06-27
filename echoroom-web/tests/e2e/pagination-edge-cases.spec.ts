@@ -1,13 +1,13 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 test.describe("Pagination edge cases", () => {
   // ── Admin Audit pagination (known implementation) ──
 
   test("Admin Audit pagination: Charger plus button with nextCursor", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/admin/audit/AuditPageClient.tsx"),
-      "utf-8"
+      "utf-8",
     );
     expect(source).toContain("nextCursor");
     expect(source).toContain("Charger plus");
@@ -15,17 +15,17 @@ test.describe("Pagination edge cases", () => {
   });
 
   test("Admin Audit pagination: load more disabled during fetch", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/admin/audit/AuditPageClient.tsx"),
-      "utf-8"
+      "utf-8",
     );
-    expect(source).toContain('disabled={auditQuery.isFetching}');
+    expect(source).toContain("disabled={auditQuery.isFetching}");
   });
 
   test("Admin Audit pagination: loading text during fetch", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/admin/audit/AuditPageClient.tsx"),
-      "utf-8"
+      "utf-8",
     );
     expect(source).toContain("Chargement...");
     expect(source).toContain("Charger plus");
@@ -34,30 +34,37 @@ test.describe("Pagination edge cases", () => {
   // ── Library pagination ──
 
   test("Library has paginated data loader pattern", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/app/(dashboard)/library/page.tsx"),
-      "utf-8"
+      "utf-8",
     );
     // Check for pagination components or cursor management
-    const hasPagination = source.includes("cursor") || 
-                          source.includes("hasMore") || 
-                          source.includes("Voir plus") || 
-                          source.includes("loadMore") ||
-                          source.includes("Paginated");
+    const hasPagination =
+      source.includes("cursor") ||
+      source.includes("hasMore") ||
+      source.includes("Voir plus") ||
+      source.includes("loadMore") ||
+      source.includes("Paginated");
     expect(hasPagination).toBe(true);
   });
 
   // ── PaginatedDataLoader component ──
 
   test("PaginatedDataLoader supports cursor-based pagination", () => {
-    const source = require("fs").readFileSync(
+    const source = require("node:fs").readFileSync(
       path.resolve(__dirname, "../../src/components/shared/DataLoader.tsx"),
-      "utf-8"
+      "utf-8",
     );
     // Check if PaginatedDataLoader is defined in the same file or separate
-    const hasPaginated = source.includes("PaginatedDataLoader") || source.includes("hasMore") || source.includes("nextCursor");
+    const hasPaginated =
+      source.includes("PaginatedDataLoader") ||
+      source.includes("hasMore") ||
+      source.includes("nextCursor");
     if (!hasPaginated) {
-      test.info().annotations.push({ type: "info", description: "PaginatedDataLoader may be in a separate file" });
+      test.info().annotations.push({
+        type: "info",
+        description: "PaginatedDataLoader may be in a separate file",
+      });
     }
   });
 

@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
+import * as React from "react";
 import { cn } from "./lib";
 
 type ToastVariant = "default" | "destructive" | "success";
@@ -36,18 +36,15 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastItem[]>([]);
   const timeoutRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  const addToast = React.useCallback(
-    (toast: Omit<ToastItem, "id">) => {
-      const id = `toast-${++toastCounter}`;
-      setToasts((prev) => [...prev, { ...toast, id }]);
-      const timeout = setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-        timeoutRefs.current.delete(id);
-      }, toast.duration);
-      timeoutRefs.current.set(id, timeout);
-    },
-    []
-  );
+  const addToast = React.useCallback((toast: Omit<ToastItem, "id">) => {
+    const id = `toast-${++toastCounter}`;
+    setToasts((prev) => [...prev, { ...toast, id }]);
+    const timeout = setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+      timeoutRefs.current.delete(id);
+    }, toast.duration);
+    timeoutRefs.current.set(id, timeout);
+  }, []);
 
   const removeToast = React.useCallback((id: string) => {
     const timeout = timeoutRefs.current.get(id);
@@ -79,8 +76,7 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
     }
 
     window.addEventListener("echoroom-toast", handleToastEvent as EventListener);
-    return () =>
-      window.removeEventListener("echoroom-toast", handleToastEvent as EventListener);
+    return () => window.removeEventListener("echoroom-toast", handleToastEvent as EventListener);
   }, [addToast]);
 
   return (
@@ -96,16 +92,14 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: "border-border bg-card text-card-foreground",
-        destructive:
-          "border-destructive bg-destructive text-destructive-foreground",
-        success:
-          "border-primary/30 bg-primary/10 text-primary",
+        destructive: "border-destructive bg-destructive text-destructive-foreground",
+        success: "border-primary/30 bg-primary/10 text-primary",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 interface ToastOptions {
@@ -122,13 +116,7 @@ interface ToastProps
   onClose?: () => void;
 }
 
-function Toast({
-  className,
-  variant,
-  message,
-  onClose,
-  ...props
-}: ToastProps) {
+function Toast({ className, variant, message, onClose, ...props }: ToastProps) {
   return (
     <div className={cn(toastVariants({ variant }), className)} {...props}>
       <p className="text-sm font-medium">{message}</p>
@@ -191,5 +179,5 @@ function toast(
   window.dispatchEvent(event);
 }
 
-export { Toast, Toaster, ToastProvider, useToast, toast };
-export type { ToastVariant, ToastItem };
+export type { ToastItem, ToastVariant };
+export { Toast, Toaster, ToastProvider, toast, useToast };

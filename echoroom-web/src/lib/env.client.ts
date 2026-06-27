@@ -17,10 +17,10 @@ function getClientEnv(): z.infer<typeof clientEnvSchema> {
   }
 
   const _env = {
-    NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL'],
-    NEXT_PUBLIC_POSTHOG_KEY: process.env['NEXT_PUBLIC_POSTHOG_KEY'],
-    NEXT_PUBLIC_POSTHOG_HOST: process.env['NEXT_PUBLIC_POSTHOG_HOST'],
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'],
+    NEXT_PUBLIC_APP_URL: process.env["NEXT_PUBLIC_APP_URL"],
+    NEXT_PUBLIC_POSTHOG_KEY: process.env["NEXT_PUBLIC_POSTHOG_KEY"],
+    NEXT_PUBLIC_POSTHOG_HOST: process.env["NEXT_PUBLIC_POSTHOG_HOST"],
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env["NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"],
   };
 
   const result = clientEnvSchema.safeParse(_env);
@@ -34,9 +34,7 @@ function getClientEnv(): z.infer<typeof clientEnvSchema> {
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_placeholder",
     };
 
-    const failedFields = new Set(
-      Object.keys(result.error.flatten().fieldErrors),
-    );
+    const failedFields = new Set(Object.keys(result.error.flatten().fieldErrors));
 
     const envWithDefaults = { ..._env };
     for (const [key, value] of Object.entries(defaults)) {

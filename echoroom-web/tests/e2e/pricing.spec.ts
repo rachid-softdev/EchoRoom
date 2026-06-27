@@ -1,12 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Pricing page", () => {
   test("should load the pricing page with Tarifs badge", async ({ page }) => {
     await page.goto("/pricing");
     await expect(page.getByText("Tarifs")).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /crédit.*appel/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /crédit.*appel/ })).toBeVisible();
   });
 
   test("should display all plan cards (Découverte, Starter, Pro)", async ({ page }) => {

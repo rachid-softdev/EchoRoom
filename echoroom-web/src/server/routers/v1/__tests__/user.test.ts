@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // userV1Router tests
@@ -122,9 +122,7 @@ describe("userV1Router.myDeletionStatus", () => {
     const { userV1Router } = await import("../user");
     const handler = (userV1Router as any).myDeletionStatus.handler;
 
-    await expect(
-      handler({ ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ ctx: validCtx })).rejects.toMatchObject({
       code: "NOT_FOUND",
       message: "Utilisateur introuvable",
     });
@@ -328,9 +326,9 @@ describe("userV1Router.withdrawConsent", () => {
     const { userV1Router } = await import("../user");
     const handler = (userV1Router as any).withdrawConsent.handler;
 
-    await expect(
-      handler({ input: { confirmation: "RETIRER" }, ctx: validCtx }),
-    ).rejects.toThrow("Transaction failed");
+    await expect(handler({ input: { confirmation: "RETIRER" }, ctx: validCtx })).rejects.toThrow(
+      "Transaction failed",
+    );
   });
 });
 
@@ -524,9 +522,7 @@ describe("userV1Router.getConsentStatus", () => {
     const { userV1Router } = await import("../user");
     const handler = (userV1Router as any).getConsentStatus.handler;
 
-    await expect(
-      handler({ ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ ctx: validCtx })).rejects.toMatchObject({
       code: "NOT_FOUND",
       message: "Utilisateur introuvable",
     });

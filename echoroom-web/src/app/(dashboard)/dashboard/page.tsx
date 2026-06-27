@@ -1,28 +1,34 @@
 "use client";
 
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
 import {
+  Clock,
+  Flame,
+  Library,
+  Medal,
+  MessageCircle,
   Phone,
   Plus,
-  Library,
-  Clock,
-  Users,
-  Sparkles,
-  Medal,
   Shuffle,
+  Sparkles,
+  Users,
   Zap,
-  MessageCircle,
-  Flame,
 } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
-import { api } from "@/lib/trpc";
-import { FeaturedScenario } from "@/components/social/FeaturedScenario";
-import { BadgeGrid } from "@/components/social/BadgeGrid";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { STATUS_LABELS, formatDate } from "@/lib/constants";
+import { DashboardShell } from "@/components/shared/DashboardShell";
+import { BadgeGrid } from "@/components/social/BadgeGrid";
+import { FeaturedScenario } from "@/components/social/FeaturedScenario";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
+import { formatDate, STATUS_LABELS } from "@/lib/constants";
+import { api } from "@/lib/trpc";
 
 const quickActions = [
   {
@@ -81,10 +87,14 @@ export default function DashboardPage() {
           <div className="relative space-y-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold text-primary tracking-wide uppercase">Crédits</span>
+              <span className="text-xs font-semibold text-primary tracking-wide uppercase">
+                Crédits
+              </span>
             </div>
             <p className="text-4xl font-black tracking-tight">{credits}</p>
-            <p className="text-xs text-muted-foreground">restants — 5 gratuits à l&apos;inscription</p>
+            <p className="text-xs text-muted-foreground">
+              restants — 5 gratuits à l&apos;inscription
+            </p>
           </div>
         </div>
 
@@ -118,7 +128,10 @@ export default function DashboardPage() {
           <CardContent>
             <p className="text-3xl font-bold">{scenarios.length}</p>
             {scenarios.length === 0 && (
-              <Link href="/create" className="text-xs text-primary hover:underline mt-1 inline-block">
+              <Link
+                href="/create"
+                className="text-xs text-primary hover:underline mt-1 inline-block"
+              >
                 Créer mon premier →
               </Link>
             )}
@@ -134,7 +147,9 @@ export default function DashboardPage() {
           <div className="relative space-y-2">
             <div className="flex items-center gap-2">
               <Shuffle className="w-4 h-4 text-primary transition-transform duration-300 group-hover:rotate-180" />
-              <span className="text-xs font-semibold text-primary tracking-wide uppercase">Surprise</span>
+              <span className="text-xs font-semibold text-primary tracking-wide uppercase">
+                Surprise
+              </span>
             </div>
             <p className="text-lg font-bold tracking-tight">Tente ta chance</p>
             <p className="text-xs text-muted-foreground">Un scénario aléatoire tendance</p>
@@ -151,7 +166,9 @@ export default function DashboardPage() {
             <Link key={action.href} href={action.href}>
               <Card className="group cursor-pointer transition-all duration-300 hover:border-primary/30 hover:-translate-y-0.5 h-full">
                 <CardHeader>
-                  <Icon className={`w-8 h-8 mb-2 transition-colors duration-300 ${action.color} group-hover:text-primary`} />
+                  <Icon
+                    className={`w-8 h-8 mb-2 transition-colors duration-300 ${action.color} group-hover:text-primary`}
+                  />
                   <CardTitle className="text-base">{action.label}</CardTitle>
                   <CardDescription>{action.description}</CardDescription>
                 </CardHeader>
@@ -205,7 +222,11 @@ export default function DashboardPage() {
                   </div>
                   {call.status === "COMPLETED" && (
                     <Link href={`/call/${call.id}`}>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
                         Replay
                       </Button>
                     </Link>

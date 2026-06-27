@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // cleanupOldRecordings tests — cursor-based pagination + delete
@@ -46,8 +46,16 @@ describe("cleanupOldRecordings", () => {
     const { deleteAudioFile } = await import("@/server/services/audio/r2");
 
     const oldCalls = [
-      { id: "call-1", recordingUrl: "https://r2.example.com/audio/call-1.wav", createdAt: new Date("2025-01-01") },
-      { id: "call-2", recordingUrl: "https://r2.example.com/audio/call-2.wav", createdAt: new Date("2025-02-01") },
+      {
+        id: "call-1",
+        recordingUrl: "https://r2.example.com/audio/call-1.wav",
+        createdAt: new Date("2025-01-01"),
+      },
+      {
+        id: "call-2",
+        recordingUrl: "https://r2.example.com/audio/call-2.wav",
+        createdAt: new Date("2025-02-01"),
+      },
     ];
 
     (db.call.findMany as any).mockResolvedValue(oldCalls);
@@ -74,8 +82,14 @@ describe("cleanupOldRecordings", () => {
     expect(deleteAudioFile).toHaveBeenCalledWith(oldCalls[1]!.recordingUrl);
 
     expect(db.call.update).toHaveBeenCalledTimes(2);
-    expect(db.call.update).toHaveBeenCalledWith({ where: { id: "call-1" }, data: { recordingUrl: null } });
-    expect(db.call.update).toHaveBeenCalledWith({ where: { id: "call-2" }, data: { recordingUrl: null } });
+    expect(db.call.update).toHaveBeenCalledWith({
+      where: { id: "call-1" },
+      data: { recordingUrl: null },
+    });
+    expect(db.call.update).toHaveBeenCalledWith({
+      where: { id: "call-2" },
+      data: { recordingUrl: null },
+    });
   });
 
   it("should use cursor-based pagination for more than BATCH_SIZE records", async () => {
@@ -83,12 +97,21 @@ describe("cleanupOldRecordings", () => {
     const { deleteAudioFile } = await import("@/server/services/audio/r2");
 
     const firstPage = Array.from({ length: BATCH_SIZE }, (_, i) => ({
-      id: `call-page1-${i}`, recordingUrl: `https://r2.example.com/audio/page1-${i}.wav`,
+      id: `call-page1-${i}`,
+      recordingUrl: `https://r2.example.com/audio/page1-${i}.wav`,
       createdAt: new Date(`2025-01-${String(i + 1).padStart(2, "0")}`),
     }));
     const secondPage = [
-      { id: "call-page2-0", recordingUrl: "https://r2.example.com/audio/page2-0.wav", createdAt: new Date("2025-02-01") },
-      { id: "call-page2-1", recordingUrl: "https://r2.example.com/audio/page2-1.wav", createdAt: new Date("2025-02-02") },
+      {
+        id: "call-page2-0",
+        recordingUrl: "https://r2.example.com/audio/page2-0.wav",
+        createdAt: new Date("2025-02-01"),
+      },
+      {
+        id: "call-page2-1",
+        recordingUrl: "https://r2.example.com/audio/page2-1.wav",
+        createdAt: new Date("2025-02-02"),
+      },
     ];
 
     // Use a closure-based approach to avoid cross-test queue pollution
@@ -118,7 +141,9 @@ describe("cleanupOldRecordings", () => {
     const lastFirstPage = firstPage[firstPage.length - 1]!;
     expect(db.call.findMany).toHaveBeenNthCalledWith(2, {
       where: { endedAt: { lte: expect.any(Date) }, recordingUrl: { not: null } },
-      take: BATCH_SIZE, skip: 1, cursor: { id: lastFirstPage.id },
+      take: BATCH_SIZE,
+      skip: 1,
+      cursor: { id: lastFirstPage.id },
       orderBy: { createdAt: "asc" },
       select: { id: true, recordingUrl: true, createdAt: true },
     });
@@ -131,11 +156,13 @@ describe("cleanupOldRecordings", () => {
     const { deleteAudioFile } = await import("@/server/services/audio/r2");
 
     const firstPage = Array.from({ length: BATCH_SIZE }, (_, i) => ({
-      id: `call-${i}`, recordingUrl: `https://r2.example.com/audio/${i}.wav`,
+      id: `call-${i}`,
+      recordingUrl: `https://r2.example.com/audio/${i}.wav`,
       createdAt: new Date(`2025-01-${String(i + 1).padStart(2, "0")}`),
     }));
     const secondPage = Array.from({ length: BATCH_SIZE }, (_, i) => ({
-      id: `call-${BATCH_SIZE + i}`, recordingUrl: `https://r2.example.com/audio/${BATCH_SIZE + i}.wav`,
+      id: `call-${BATCH_SIZE + i}`,
+      recordingUrl: `https://r2.example.com/audio/${BATCH_SIZE + i}.wav`,
       createdAt: new Date(`2025-02-${String(i + 1).padStart(2, "0")}`),
     }));
 
@@ -158,7 +185,9 @@ describe("cleanupOldRecordings", () => {
     const expectedCursor = firstPage[firstPage.length - 1]!.id;
     expect(db.call.findMany).toHaveBeenNthCalledWith(2, {
       where: { endedAt: { lte: expect.any(Date) }, recordingUrl: { not: null } },
-      take: BATCH_SIZE, skip: 1, cursor: { id: expectedCursor },
+      take: BATCH_SIZE,
+      skip: 1,
+      cursor: { id: expectedCursor },
       orderBy: { createdAt: "asc" },
       select: { id: true, recordingUrl: true, createdAt: true },
     });
@@ -169,7 +198,11 @@ describe("cleanupOldRecordings", () => {
     const { deleteAudioFile } = await import("@/server/services/audio/r2");
 
     (db.call.findMany as any).mockResolvedValue([
-      { id: "call-with-recording", recordingUrl: "https://r2.example.com/audio/recording.wav", createdAt: new Date("2025-01-01") },
+      {
+        id: "call-with-recording",
+        recordingUrl: "https://r2.example.com/audio/recording.wav",
+        createdAt: new Date("2025-01-01"),
+      },
     ]);
     (db.call.update as any).mockResolvedValue({});
     (deleteAudioFile as any).mockResolvedValue(undefined);
@@ -191,8 +224,16 @@ describe("cleanupOldRecordings", () => {
     const { deleteAudioFile } = await import("@/server/services/audio/r2");
 
     const calls = [
-      { id: "call-fail", recordingUrl: "https://r2.example.com/audio/fail.wav", createdAt: new Date("2025-01-01") },
-      { id: "call-ok", recordingUrl: "https://r2.example.com/audio/ok.wav", createdAt: new Date("2025-01-02") },
+      {
+        id: "call-fail",
+        recordingUrl: "https://r2.example.com/audio/fail.wav",
+        createdAt: new Date("2025-01-01"),
+      },
+      {
+        id: "call-ok",
+        recordingUrl: "https://r2.example.com/audio/ok.wav",
+        createdAt: new Date("2025-01-02"),
+      },
     ];
 
     (db.call.findMany as any).mockResolvedValue(calls);
@@ -210,7 +251,10 @@ describe("cleanupOldRecordings", () => {
 
     expect(result).toBe(1);
     expect(db.call.update).toHaveBeenCalledTimes(1);
-    expect(db.call.update).toHaveBeenCalledWith({ where: { id: "call-ok" }, data: { recordingUrl: null } });
+    expect(db.call.update).toHaveBeenCalledWith({
+      where: { id: "call-ok" },
+      data: { recordingUrl: null },
+    });
   });
 
   it("should return 0 when no old recordings exist", async () => {

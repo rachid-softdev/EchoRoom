@@ -1,15 +1,15 @@
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, withRateLimit } from "../procedures";
-import { withREDMetrics } from "../middleware/metrics";
-import { db } from "../db";
-import { initiateCall } from "../services/telephony/callLifecycle";
-import { getPresignedUrl } from "../services/audio/r2";
-import { AppError } from "../lib/errors";
-import { getUTCDayRange } from "../lib/date";
+import { z } from "zod";
 import { redis } from "@/lib/redis";
 import { createLogger } from "@/server/lib/logger";
+import { db } from "../db";
+import { getUTCDayRange } from "../lib/date";
+import { AppError } from "../lib/errors";
+import { withREDMetrics } from "../middleware/metrics";
+import { protectedProcedure, router, withRateLimit } from "../procedures";
+import { getPresignedUrl } from "../services/audio/r2";
 import { detectCallSpam } from "../services/security/spamDetection";
+import { initiateCall } from "../services/telephony/callLifecycle";
 
 const log = createLogger("calls-cache");
 
@@ -19,12 +19,23 @@ export const callsRouter = router({
     .input(
       z.object({
         scenarioId: z.string().min(1, "Scénario requis"),
-        phoneNumber: z.string().transform((val) => val.normalize("NFKC"))
-          .pipe(z.string().regex(
-            /^\+[1-9]\d{6,14}$/,
-            "Le numéro doit être au format international (ex: +33612345678)",
-          )),
-        maxDurationSeconds: z.number().int().min(60, "Minimum 60 secondes").max(3600, "Maximum 3600 secondes").default(300),
+        phoneNumber: z
+          .string()
+          .transform((val) => val.normalize("NFKC"))
+          .pipe(
+            z
+              .string()
+              .regex(
+                /^\+[1-9]\d{6,14}$/,
+                "Le numéro doit être au format international (ex: +33612345678)",
+              ),
+          ),
+        maxDurationSeconds: z
+          .number()
+          .int()
+          .min(60, "Minimum 60 secondes")
+          .max(3600, "Maximum 3600 secondes")
+          .default(300),
       }),
     )
     .use(withRateLimit({ limit: 20, window: 3600 }))
@@ -88,7 +99,10 @@ export const callsRouter = router({
             case "TWILIO_ERROR":
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Échec de l'appel" });
             case "DAILY_LIMIT_EXCEEDED":
-              throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Limite quotidienne d'appels atteinte" });
+              throw new TRPCError({
+                code: "TOO_MANY_REQUESTS",
+                message: "Limite quotidienne d'appels atteinte",
+              });
             default:
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur inattendue" });
           }
@@ -110,7 +124,9 @@ export const callsRouter = router({
 
       if (redis) {
         try {
-          const cached = await redis.get<{ items: unknown[]; nextCursor: string | undefined }>(cacheKey);
+          const cached = await redis.get<{ items: unknown[]; nextCursor: string | undefined }>(
+            cacheKey,
+          );
           if (cached) return cached;
         } catch (error) {
           log.warn("History cache read failed", { error });
@@ -134,8 +150,7 @@ export const callsRouter = router({
       });
 
       const items = calls.slice(0, input.limit);
-      const nextCursor =
-        calls.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = calls.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       const result = { items, nextCursor };
 
@@ -150,17 +165,16 @@ export const callsRouter = router({
       return result;
     }),
 
-  todayCount: protectedProcedure
-    .query(async ({ ctx }) => {
-      const { todayStart, todayEnd } = getUTCDayRange();
-      const count = await db.call.count({
-        where: {
-          userId: ctx.session.user.id,
-          createdAt: { gte: todayStart, lte: todayEnd },
-        },
-      });
-      return { count };
-    }),
+  todayCount: protectedProcedure.query(async ({ ctx }) => {
+    const { todayStart, todayEnd } = getUTCDayRange();
+    const count = await db.call.count({
+      where: {
+        userId: ctx.session.user.id,
+        createdAt: { gte: todayStart, lte: todayEnd },
+      },
+    });
+    return { count };
+  }),
 
   listByScenario: protectedProcedure
     .use(withREDMetrics)
@@ -190,8 +204,7 @@ export const callsRouter = router({
       });
 
       const items = calls.slice(0, input.limit);
-      const nextCursor =
-        calls.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = calls.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };
     }),
@@ -217,15 +230,15 @@ export const callsRouter = router({
         });
       }
 
-      const recordingUrl = call.recordingUrl
-        ? await getPresignedUrl(call.recordingUrl)
-        : null;
+      const recordingUrl = call.recordingUrl ? await getPresignedUrl(call.recordingUrl) : null;
 
       return {
         recordingUrl,
-        transcript: call.transcript as
-          | Array<{ speaker: string; text: string; timestamp: number }>
-          | null,
+        transcript: call.transcript as Array<{
+          speaker: string;
+          text: string;
+          timestamp: number;
+        }> | null,
       };
     }),
 });

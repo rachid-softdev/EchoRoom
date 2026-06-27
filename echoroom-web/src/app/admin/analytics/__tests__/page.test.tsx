@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next/link (server component usage)
 vi.mock("next/link", () => ({
@@ -47,17 +47,13 @@ describe("AnalyticsPage (server component)", () => {
   it("should render the page title", () => {
     render(<AnalyticsPage />);
 
-    expect(
-      screen.getByRole("heading", { name: "Analytiques" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Analytiques" })).toBeInTheDocument();
   });
 
   it("should render the live statistics badge", () => {
     render(<AnalyticsPage />);
 
-    expect(
-      screen.getByText("Statistiques en cours"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Statistiques en cours")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -76,9 +72,7 @@ describe("AnalyticsPage (server component)", () => {
   it("should render placeholder text on each stat card", () => {
     render(<AnalyticsPage />);
 
-    const placeholders = screen.getAllByText(
-      "Données disponibles après le déploiement",
-    );
+    const placeholders = screen.getAllByText("Données disponibles après le déploiement");
     expect(placeholders).toHaveLength(4);
   });
 
@@ -89,9 +83,7 @@ describe("AnalyticsPage (server component)", () => {
   it("should render the roadmap card title", () => {
     render(<AnalyticsPage />);
 
-    expect(
-      screen.getByRole("heading", { name: "Tableau de bord analytique" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tableau de bord analytique" })).toBeInTheDocument();
   });
 
   it("should render the roadmap description", () => {
@@ -107,18 +99,10 @@ describe("AnalyticsPage (server component)", () => {
   it("should render the roadmap feature list items", () => {
     render(<AnalyticsPage />);
 
-    expect(
-      screen.getByText(/Évolution des inscriptions/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Appels générés et minutes cumulées/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Crédits consommés et revenus/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Top scénarios, personnages et créateurs/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Évolution des inscriptions/)).toBeInTheDocument();
+    expect(screen.getByText(/Appels générés et minutes cumulées/)).toBeInTheDocument();
+    expect(screen.getByText(/Crédits consommés et revenus/)).toBeInTheDocument();
+    expect(screen.getByText(/Top scénarios, personnages et créateurs/)).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Not Found (404) Page tests
@@ -50,9 +50,7 @@ describe("Not Found page", () => {
     const NotFound = (await import("../not-found")).default;
     render(<NotFound />);
 
-    expect(
-      screen.getByText(/cette page n'existe pas/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/cette page n'existe pas/i)).toBeInTheDocument();
   });
 
   it("should render a home button linking to '/'", async () => {

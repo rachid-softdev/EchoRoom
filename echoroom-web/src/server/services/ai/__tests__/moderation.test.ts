@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Moderation Tests
@@ -52,9 +52,7 @@ describe("checkContent", () => {
 
     const { checkContent } = await import("../moderation");
 
-    const result = await checkContent(
-      "Bonjour, comment allez-vous aujourd'hui?",
-    );
+    const result = await checkContent("Bonjour, comment allez-vous aujourd'hui?");
 
     expect(result.approved).toBe(true);
   });
@@ -122,9 +120,7 @@ describe("checkContent", () => {
   it("should block phone numbers (French format)", async () => {
     const { checkContent } = await import("../moderation");
 
-    const result = await checkContent(
-      "Call me at 0612345678 for more info",
-    );
+    const result = await checkContent("Call me at 0612345678 for more info");
 
     expect(result.approved).toBe(false);
   });
@@ -132,9 +128,7 @@ describe("checkContent", () => {
   it("should block international phone numbers", async () => {
     const { checkContent } = await import("../moderation");
 
-    const result = await checkContent(
-      "Contact +33123456789 for details",
-    );
+    const result = await checkContent("Contact +33123456789 for details");
 
     expect(result.approved).toBe(false);
   });

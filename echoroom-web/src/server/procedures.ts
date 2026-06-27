@@ -1,5 +1,5 @@
-import { t, withTracing, isAuthenticated, isAdmin } from "./trpc";
 import { withREDMetrics } from "./middleware/metrics";
+import { isAdmin, isAuthenticated, t, withTracing } from "./trpc";
 
 export * from "./trpc";
 
@@ -11,5 +11,12 @@ export * from "./trpc";
  * tRPC v11 beta does not carry narrowed context types through subsequent .use() calls.
  */
 export const publicProcedure = t.procedure.use(withTracing).use(withREDMetrics);
-export const protectedProcedure = t.procedure.use(withTracing).use(withREDMetrics).use(isAuthenticated);
-export const adminProcedure = t.procedure.use(withTracing).use(withREDMetrics).use(isAuthenticated).use(isAdmin);
+export const protectedProcedure = t.procedure
+  .use(withTracing)
+  .use(withREDMetrics)
+  .use(isAuthenticated);
+export const adminProcedure = t.procedure
+  .use(withTracing)
+  .use(withREDMetrics)
+  .use(isAuthenticated)
+  .use(isAdmin);

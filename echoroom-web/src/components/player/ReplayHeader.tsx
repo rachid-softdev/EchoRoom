@@ -1,12 +1,12 @@
-import { Badge } from '@/components/ui'
-import { Phone, Clock, Calendar } from 'lucide-react'
-import { STATUS_LABELS, formatDuration } from '@/lib/constants'
+import { Calendar, Clock, Phone } from "lucide-react";
+import { Badge } from "@/components/ui";
+import { formatDuration, STATUS_LABELS } from "@/lib/constants";
 
 interface ReplayHeaderProps {
-  scenarioTitle?: string
-  characterName?: string
-  durationSeconds?: number
-  status?: string
+  scenarioTitle?: string;
+  characterName?: string;
+  durationSeconds?: number;
+  status?: string;
 }
 
 export function ReplayHeader({
@@ -21,9 +21,7 @@ export function ReplayHeader({
         <Phone className="w-5 h-5 text-primary shrink-0" />
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Scénario</p>
-          <p className="text-sm font-medium truncate">
-            {scenarioTitle ?? '-'}
-          </p>
+          <p className="text-sm font-medium truncate">{scenarioTitle ?? "-"}</p>
         </div>
       </div>
 
@@ -31,9 +29,7 @@ export function ReplayHeader({
         <Phone className="w-5 h-5 text-primary shrink-0" />
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Personnage</p>
-          <p className="text-sm font-medium truncate">
-            {characterName ?? '-'}
-          </p>
+          <p className="text-sm font-medium truncate">{characterName ?? "-"}</p>
         </div>
       </div>
 
@@ -42,9 +38,7 @@ export function ReplayHeader({
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Durée</p>
           <p className="text-sm font-medium">
-            {durationSeconds !== undefined
-              ? formatDuration(durationSeconds)
-              : '-'}
+            {durationSeconds !== undefined ? formatDuration(durationSeconds) : "-"}
           </p>
         </div>
       </div>
@@ -53,16 +47,11 @@ export function ReplayHeader({
         <Calendar className="w-5 h-5 text-primary shrink-0" />
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Statut</p>
-          <Badge
-            variant={
-              status === 'COMPLETED' ? 'secondary' : 'outline'
-            }
-            className="text-[10px]"
-          >
-            {STATUS_LABELS[status ?? ''] ?? status ?? '-'}
+          <Badge variant={status === "COMPLETED" ? "secondary" : "outline"} className="text-[10px]">
+            {STATUS_LABELS[status ?? ""] ?? status ?? "-"}
           </Badge>
         </div>
       </div>
     </div>
-  )
+  );
 }

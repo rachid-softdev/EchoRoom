@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/shared/ConsentBanner.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/shared/ConsentBanner.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ConsentBanner — Composant Partagé", () => {
@@ -38,14 +35,10 @@ test.describe("ConsentBanner — Composant Partagé", () => {
   test("retourne null quand consentStatus est actif (isConsentWithdrawn = false)", () => {
     const source = readComponent();
     // La condition de rendu : si consent n'est pas retiré, on retourne null
-    expect(source).toContain(
-      "if (!consentStatus?.isConsentWithdrawn) return null;",
-    );
+    expect(source).toContain("if (!consentStatus?.isConsentWithdrawn) return null;");
   });
 
-  test("consent actif — live: banner non visible sur la page d'accueil", async ({
-    page,
-  }) => {
+  test("consent actif — live: banner non visible sur la page d'accueil", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
@@ -59,9 +52,7 @@ test.describe("ConsentBanner — Composant Partagé", () => {
     expect(alertCount).toBe(0);
 
     // Vérifie aussi par le texte spécifique
-    await expect(
-      page.getByText("Consentement retiré"),
-    ).toHaveCount(0);
+    await expect(page.getByText("Consentement retiré")).toHaveCount(0);
   });
 
   // ─── Consent retiré → Alert warning visible avec bouton "Ré-accepter" ─
@@ -111,9 +102,7 @@ test.describe("ConsentBanner — Composant Partagé", () => {
 
   // ─── Clic "Ré-accepter" → mutation + rechargement ───────────────────
 
-  test("clic Ré-accepter déclenche la mutation reconsent et recharge", async ({
-    page,
-  }) => {
+  test("clic Ré-accepter déclenche la mutation reconsent et recharge", async ({ page }) => {
     // Intercepte la query pour simuler consentement retiré
     await page.route("**/api/trpc/user.getConsentStatus*", async (route) => {
       await route.fulfill({
@@ -184,9 +173,7 @@ test.describe("ConsentBanner — Composant Partagé", () => {
     // Donc consentStatus?.isConsentWithdrawn est undefined (falsy) → return null
   });
 
-  test("erreur API — live: page ne crash pas quand getConsentStatus échoue", async ({
-    page,
-  }) => {
+  test("erreur API — live: page ne crash pas quand getConsentStatus échoue", async ({ page }) => {
     // Fait échouer la requête tRPC
     await page.route("**/api/trpc/user.getConsentStatus*", (route) =>
       route.abort("connectionrefused"),
@@ -200,14 +187,10 @@ test.describe("ConsentBanner — Composant Partagé", () => {
     await expect(page.locator("body")).toBeVisible();
     // Vérifie qu'il n'y a pas d'erreurs non gérées
     // Vérifie que la bannière n'est pas visible
-    await expect(
-      page.getByText("Consentement retiré"),
-    ).toHaveCount(0);
+    await expect(page.getByText("Consentement retiré")).toHaveCount(0);
   });
 
-  test("erreur mutation reconsent → pas de crash, page reste stable", async ({
-    page,
-  }) => {
+  test("erreur mutation reconsent → pas de crash, page reste stable", async ({ page }) => {
     // Intercepte la query pour simuler consentement retiré
     await page.route("**/api/trpc/user.getConsentStatus*", async (route) => {
       await route.fulfill({
@@ -226,9 +209,7 @@ test.describe("ConsentBanner — Composant Partagé", () => {
     });
 
     // Intercepte la mutation reconsent pour simuler une erreur
-    await page.route("**/api/trpc/user.reconsent*", (route) =>
-      route.abort("connectionrefused"),
-    );
+    await page.route("**/api/trpc/user.reconsent*", (route) => route.abort("connectionrefused"));
 
     await page.goto("/");
     await page.waitForLoadState("networkidle");

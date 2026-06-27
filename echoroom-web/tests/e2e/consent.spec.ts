@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Consent withdrawal — Settings page GDPR flow", () => {
   test("should navigate to settings page and require authentication", async ({ page }) => {
@@ -10,16 +10,16 @@ test.describe("Consent withdrawal — Settings page GDPR flow", () => {
     await expect(page).toHaveURL(/\/login/);
 
     // Should show the login form
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
-  test("should display the danger zone section on settings page when logged in", async ({ page }) => {
+  test("should display the danger zone section on settings page when logged in", async ({
+    page,
+  }) => {
     // For this test, we need to be logged in. Since we can't authenticate
     // in a standard E2E test without credentials, we test the UI elements
     // assuming the page is accessible.
-    // 
+    //
     // We navigate and check that the settings page structure is correct
     // for the login redirect case (unauthenticated).
     await page.goto("/settings");
@@ -30,7 +30,9 @@ test.describe("Consent withdrawal — Settings page GDPR flow", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("should display the consent withdrawal section in the danger zone (UI structure)", async ({ page }) => {
+  test("should display the consent withdrawal section in the danger zone (UI structure)", async ({
+    page,
+  }) => {
     // This test verifies the SettingsPageClient renders the consent withdrawal
     // section properly by loading the settings page (will redirect to login
     // without auth) — we verify the page title for settings indicates the route exists.
@@ -43,11 +45,13 @@ test.describe("Consent withdrawal — Settings page GDPR flow", () => {
     await expect(page.getByText("Connectez-vous")).toBeVisible();
   });
 
-  test("should show the ConfirmDialog when Retirer is clicked (requires auth)", async ({ page }) => {
+  test("should show the ConfirmDialog when Retirer is clicked (requires auth)", async ({
+    page,
+  }) => {
     // This test can only execute fully when authenticated.
     // For unauthenticated: verify redirect behavior.
     // For authenticated: verify the dialog flow.
-    
+
     await page.goto("/settings");
     await page.waitForLoadState("networkidle");
 
@@ -64,12 +68,8 @@ test.describe("Consent withdrawal — Settings page GDPR flow", () => {
       // ConfirmDialog should open
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
-      await expect(
-        page.getByText("Retirer le consentement"),
-      ).toBeVisible();
-      await expect(
-        page.getByText(/Tapez RETIRER pour confirmer/),
-      ).toBeVisible();
+      await expect(page.getByText("Retirer le consentement")).toBeVisible();
+      await expect(page.getByText(/Tapez RETIRER pour confirmer/)).toBeVisible();
 
       // The confirm button should be disabled initially
       const confirmButton = page.getByRole("button", { name: "Retirer définitivement" });

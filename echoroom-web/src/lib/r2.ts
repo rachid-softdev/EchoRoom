@@ -33,10 +33,10 @@ export function getR2Key(storedUrl: string | null | undefined): string | null {
   if (trimmed.length === 0) return null;
 
   // Looks like a full URL → parse and extract pathname as bare key
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     try {
       const url = new URL(trimmed);
-      const key = url.pathname.replace(/^\//, '');
+      const key = url.pathname.replace(/^\//, "");
       return key.length > 0 ? key : null;
     } catch {
       // URL malformée — impossible d'extraire une clé R2

@@ -39,4 +39,4 @@ async function shutdownPosthog(): Promise<void> {
   }
 }
 
-export { posthog, flushPosthog, shutdownPosthog };
+export { flushPosthog, posthog, shutdownPosthog };

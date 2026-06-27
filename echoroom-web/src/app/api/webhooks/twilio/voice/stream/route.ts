@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import twilio from "twilio";
-import { validateTwilioRequest, extractParams } from "../../validate";
 import { checkWebhookRateLimit } from "../../../rateLimit";
+import { extractParams, validateTwilioRequest } from "../../validate";
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
@@ -43,9 +43,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Signature invalide" }, { status: 403 });
   }
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? req.headers.get("x-real-ip")
-    ?? "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
 
   if (!(await checkWebhookRateLimit("twilio:voice:stream", ip))) {
     return NextResponse.json(

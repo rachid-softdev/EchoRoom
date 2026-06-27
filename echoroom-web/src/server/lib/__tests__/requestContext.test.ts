@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // RequestContext — AsyncLocalStorage context tests
@@ -41,10 +41,7 @@ describe("getRequestId", () => {
   it("should return stored requestId inside context", async () => {
     const { runWithContext, getRequestId } = await import("../requestContext");
 
-    const result = await runWithContext(
-      { requestId: "abc-456" },
-      async () => getRequestId(),
-    );
+    const result = await runWithContext({ requestId: "abc-456" }, async () => getRequestId());
 
     expect(result).toBe("abc-456");
   });
@@ -59,10 +56,7 @@ describe("getRequestId", () => {
   it("should return 'no-request-id' when context exists but has no requestId", async () => {
     const { runWithContext, getRequestId } = await import("../requestContext");
 
-    const result = await runWithContext(
-      {} as any,
-      async () => getRequestId(),
-    );
+    const result = await runWithContext({} as any, async () => getRequestId());
 
     expect(result).toBe("no-request-id");
   });
@@ -94,25 +88,19 @@ describe("context isolation", () => {
   it("should restore outer context after inner context completes", async () => {
     const { runWithContext, getRequestContext } = await import("../requestContext");
 
-    const result = await runWithContext(
-      { requestId: "outer" },
-      async () => {
-        const outerCtx = getRequestContext();
+    const result = await runWithContext({ requestId: "outer" }, async () => {
+      const outerCtx = getRequestContext();
 
-        // Create inner context
-        const innerResult = await runWithContext(
-          { requestId: "inner" },
-          async () => {
-            return getRequestContext()?.requestId;
-          },
-        );
+      // Create inner context
+      const innerResult = await runWithContext({ requestId: "inner" }, async () => {
+        return getRequestContext()?.requestId;
+      });
 
-        // After inner completes, verify outer is restored
-        const afterInner = getRequestContext()?.requestId;
+      // After inner completes, verify outer is restored
+      const afterInner = getRequestContext()?.requestId;
 
-        return { outerCtx: outerCtx?.requestId, innerResult, afterInner };
-      },
-    );
+      return { outerCtx: outerCtx?.requestId, innerResult, afterInner };
+    });
 
     expect(result.outerCtx).toBe("outer");
     expect(result.innerResult).toBe("inner");
@@ -122,18 +110,12 @@ describe("context isolation", () => {
   it("should allow nested context to access outer fields via closure", async () => {
     const { runWithContext, getRequestContext } = await import("../requestContext");
 
-    const result = await runWithContext(
-      { requestId: "parent", userId: "user-1" },
-      async () => {
-        return runWithContext(
-          { requestId: "child" },
-          async () => {
-            // Inner context overrides requestId but userId is lost (not inherited)
-            return getRequestContext();
-          },
-        );
-      },
-    );
+    const result = await runWithContext({ requestId: "parent", userId: "user-1" }, async () => {
+      return runWithContext({ requestId: "child" }, async () => {
+        // Inner context overrides requestId but userId is lost (not inherited)
+        return getRequestContext();
+      });
+    });
 
     // The inner context is a new object — it does not inherit outer properties
     expect(result?.requestId).toBe("child");
@@ -145,16 +127,10 @@ describe("runWithContext type safety", () => {
   it("should return the promise result type T", async () => {
     const { runWithContext } = await import("../requestContext");
 
-    const strResult = await runWithContext(
-      { requestId: "test" },
-      async () => "hello" as const,
-    );
+    const strResult = await runWithContext({ requestId: "test" }, async () => "hello" as const);
     expect(strResult).toBe("hello");
 
-    const numResult = await runWithContext(
-      { requestId: "test" },
-      async () => 42,
-    );
+    const numResult = await runWithContext({ requestId: "test" }, async () => 42);
     expect(numResult).toBe(42);
   });
 });

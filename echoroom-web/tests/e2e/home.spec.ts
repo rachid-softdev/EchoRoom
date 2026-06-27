@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Home page", () => {
   test("should load the home page successfully", async ({ page }) => {
@@ -18,9 +18,7 @@ test.describe("Home page", () => {
     await page.goto("/");
     await page.getByRole("link", { name: "Explorer" }).first().click();
     await expect(page).toHaveURL(/\/explore/);
-    await expect(
-      page.getByRole("heading", { name: /Explorer les scénarios/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Explorer les scénarios/ })).toBeVisible();
   });
 
   test("should display the hero section", async ({ page }) => {
@@ -39,11 +37,7 @@ test.describe("Home page", () => {
 
   test("should display CTA buttons in the hero section", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("link", { name: /Commencer gratuitement/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /Voir la bibliothèque/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Commencer gratuitement/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Voir la bibliothèque/ })).toBeVisible();
   });
 });

@@ -1,19 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
 import { MessageCircle, Send, Users } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { api } from "@/lib/trpc";
 import { ReactionBar } from "@/components/social/ReactionBar";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  toast,
+} from "@/components/ui";
 import { CATEGORY_LABELS } from "@/lib/constants";
-import { toast } from "@/components/ui";
+import { api } from "@/lib/trpc";
 
 export default function CommunityPageClient() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -50,10 +55,7 @@ export default function CommunityPageClient() {
   }
 
   return (
-    <DashboardShell
-      title="Communauté"
-      subtitle="Les meilleurs moments partagés par la communauté"
-    >
+    <DashboardShell title="Communauté" subtitle="Les meilleurs moments partagés par la communauté">
       <DataLoader
         query={feedQuery}
         isEmpty={(data) => data.items.length === 0}
@@ -68,77 +70,80 @@ export default function CommunityPageClient() {
         {(data) => (
           <div className="space-y-4">
             {data.items.map((scenario) => (
-              <Card key={scenario.id} className="border-border/50 hover:border-primary/30 transition-colors">
-                  <CardHeader>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                        {scenario.creator?.username?.charAt(0).toUpperCase() ?? "?"}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {scenario.creator?.username ?? "Anonyme"}
-                        </p>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {CATEGORY_LABELS[scenario.character?.slug?.toUpperCase() ?? ""] ??
-                            "Scénario"}
-                        </Badge>
-                      </div>
+              <Card
+                key={scenario.id}
+                className="border-border/50 hover:border-primary/30 transition-colors"
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                      {scenario.creator?.username?.charAt(0).toUpperCase() ?? "?"}
                     </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {scenario.creator?.username ?? "Anonyme"}
+                      </p>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {CATEGORY_LABELS[scenario.character?.slug?.toUpperCase() ?? ""] ??
+                          "Scénario"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/scenario/${scenario.id}`}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+                  >
+                    <CardTitle className="text-base hover:text-primary transition-colors">
+                      {scenario.title}
+                    </CardTitle>
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <ReactionBar scenarioId={scenario.id} />
                     <Link
-                      href={`/scenario/${scenario.id}`}
-                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+                      href={`/scenario/${scenario.id}#comments`}
+                      className="flex items-center gap-1 hover:text-primary transition-colors"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <CardTitle className="text-base hover:text-primary transition-colors">
-                        {scenario.title}
-                      </CardTitle>
+                      <MessageCircle className="w-4 h-4" />
+                      {scenario._count?.comments ?? 0}
                     </Link>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <ReactionBar scenarioId={scenario.id} />
-                      <Link
-                        href={`/scenario/${scenario.id}#comments`}
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        {scenario._count?.comments ?? 0}
-                      </Link>
-                    </div>
+                  </div>
 
-                    {/* Comment input */}
-                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-                      <Input
-                        placeholder="Ajouter un commentaire..."
-                        value={commentInputs[scenario.id] ?? ""}
-                        onChange={(e) =>
-                          setCommentInputs((prev) => ({
-                            ...prev,
-                            [scenario.id]: e.target.value,
-                          }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.stopPropagation();
-                            handleComment(scenario.id);
-                          }
-                        }}
-                        className="text-sm"
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={(e) => {
+                  {/* Comment input */}
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+                    <Input
+                      placeholder="Ajouter un commentaire..."
+                      value={commentInputs[scenario.id] ?? ""}
+                      onChange={(e) =>
+                        setCommentInputs((prev) => ({
+                          ...prev,
+                          [scenario.id]: e.target.value,
+                        }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
                           e.stopPropagation();
                           handleComment(scenario.id);
-                        }}
-                        disabled={!commentInputs[scenario.id]?.trim()}
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                        }
+                      }}
+                      className="text-sm"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleComment(scenario.id);
+                      }}
+                      disabled={!commentInputs[scenario.id]?.trim()}
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}

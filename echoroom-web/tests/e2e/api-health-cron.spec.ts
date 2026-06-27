@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("API — Health, Cron, OpenGraph, User Export", () => {
   // ─────────────────────────────────────────────────────────────────────
@@ -79,17 +79,15 @@ test.describe("API — Health, Cron, OpenGraph, User Export", () => {
 
     test("uptime increases between two sequential calls", async ({ page }) => {
       const response1 = await page.request.get("/api/health");
-      const body1 = response1.status() === 200 || response1.status() === 503
-        ? await response1.json()
-        : null;
+      const body1 =
+        response1.status() === 200 || response1.status() === 503 ? await response1.json() : null;
 
       // Small delay
       await page.waitForTimeout(500);
 
       const response2 = await page.request.get("/api/health");
-      const body2 = response2.status() === 200 || response2.status() === 503
-        ? await response2.json()
-        : null;
+      const body2 =
+        response2.status() === 200 || response2.status() === 503 ? await response2.json() : null;
 
       if (body1 && body2) {
         // Uptime should have increased (or stayed same if resolution is seconds)
@@ -118,7 +116,9 @@ test.describe("API — Health, Cron, OpenGraph, User Export", () => {
     ];
 
     for (const endpoint of cronEndpoints) {
-      test(`${endpoint} returns 401 when CRON_SECRET is missing (no auth header)`, async ({ page }) => {
+      test(`${endpoint} returns 401 when CRON_SECRET is missing (no auth header)`, async ({
+        page,
+      }) => {
         const response = await page.request.get(endpoint);
 
         // In dev mode the route may return 404 if Next.js doesn't register it.
@@ -142,7 +142,9 @@ test.describe("API — Health, Cron, OpenGraph, User Export", () => {
         }
       });
 
-      test(`${endpoint} returns 401 when authorization header has no Bearer prefix`, async ({ page }) => {
+      test(`${endpoint} returns 401 when authorization header has no Bearer prefix`, async ({
+        page,
+      }) => {
         const response = await page.request.get(endpoint, {
           headers: {
             authorization: "just_a_token_without_bearer",

@@ -1,21 +1,15 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const REACTION_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/ReactionBar.tsx",
-);
-const EMOJI_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/EmojiPicker.tsx",
-);
+const REACTION_PATH = path.resolve(__dirname, "../../src/components/social/ReactionBar.tsx");
+const EMOJI_PATH = path.resolve(__dirname, "../../src/components/social/EmojiPicker.tsx");
 
 function readReaction(): string {
-  return require("fs").readFileSync(REACTION_PATH, "utf-8");
+  return require("node:fs").readFileSync(REACTION_PATH, "utf-8");
 }
 
 function readEmoji(): string {
-  return require("fs").readFileSync(EMOJI_PATH, "utf-8");
+  return require("node:fs").readFileSync(EMOJI_PATH, "utf-8");
 }
 
 test.describe("ReactionBar component", () => {
@@ -78,7 +72,7 @@ test.describe("EmojiPicker component", () => {
 
   test("renders 8 emojis in a grid grid-cols-4 layout", () => {
     const source = readEmoji();
-    expect(source).toContain('grid grid-cols-4 gap-1');
+    expect(source).toContain("grid grid-cols-4 gap-1");
     // Check all 8 emojis are defined
     expect(source).toContain("❤️");
     expect(source).toContain("😂");
@@ -102,7 +96,8 @@ test.describe("EmojiPicker component", () => {
 
   test("each button has aria-label Réagir avec {emoji}", () => {
     const source = readEmoji();
-    expect(source).toContain('aria-label={`Réagir avec ${emoji}`}');
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: intentionally checking source for template literal
+    expect(source).toContain("aria-label={`Réagir avec ${emoji}`}");
   });
 
   test("disabled state has opacity-30 and no hover effects", () => {

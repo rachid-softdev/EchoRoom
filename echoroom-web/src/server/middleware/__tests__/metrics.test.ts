@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // RED Metrics Middleware Tests
@@ -268,13 +268,33 @@ describe("withREDMetrics", () => {
     const nextErr = vi.fn().mockRejectedValue(new Error("fail"));
 
     // Endpoint A: 2 successes
-    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "a", type: "query" });
-    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "a", type: "query" });
+    await (withREDMetrics as any)({
+      ctx: { session: null },
+      next: nextOk,
+      path: "a",
+      type: "query",
+    });
+    await (withREDMetrics as any)({
+      ctx: { session: null },
+      next: nextOk,
+      path: "a",
+      type: "query",
+    });
 
     // Endpoint B: 1 success, 1 error
-    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "b", type: "mutation" });
+    await (withREDMetrics as any)({
+      ctx: { session: null },
+      next: nextOk,
+      path: "b",
+      type: "mutation",
+    });
     await expect(
-      (withREDMetrics as any)({ ctx: { session: null }, next: nextErr, path: "b", type: "mutation" }),
+      (withREDMetrics as any)({
+        ctx: { session: null },
+        next: nextErr,
+        path: "b",
+        type: "mutation",
+      }),
     ).rejects.toThrow("fail");
 
     const metrics = getREDMetrics();
@@ -288,7 +308,12 @@ describe("withREDMetrics", () => {
     const { withREDMetrics, getREDMetrics } = await import("../metrics");
 
     const nextOk = vi.fn().mockResolvedValue({ ok: true });
-    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "snapshot.test", type: "query" });
+    await (withREDMetrics as any)({
+      ctx: { session: null },
+      next: nextOk,
+      path: "snapshot.test",
+      type: "query",
+    });
 
     const snapshot = getREDMetrics();
     // Modify the snapshot
@@ -304,7 +329,12 @@ describe("withREDMetrics", () => {
     const { withREDMetrics, getREDMetrics } = await import("../metrics");
 
     const nextOk = vi.fn().mockResolvedValue({ ok: true });
-    await (withREDMetrics as any)({ ctx: { session: null }, next: nextOk, path: "counter.test", type: "query" });
+    await (withREDMetrics as any)({
+      ctx: { session: null },
+      next: nextOk,
+      path: "counter.test",
+      type: "query",
+    });
 
     const metrics = getREDMetrics();
     expect(metrics["query:counter.test"]!.calls).toBe(1);
@@ -357,7 +387,7 @@ describe("withREDMetrics", () => {
     // The latest entries (endpoint-1000 to endpoint-1004) should exist
     expect(metrics["query:endpoint-1004"]).toBeDefined();
     // But some early ones may be gone
-    const hasOldEntry = metrics["query:endpoint-0"] !== undefined;
+    // const hasOldEntry = metrics["query:endpoint-0"] !== undefined;
     // Either the old entry was evicted (which is expected) or the map hasn't
     // reached 1000 unique keys yet due to timing. Verify the invariant holds.
     expect(entryCount).toBeLessThanOrEqual(1000);

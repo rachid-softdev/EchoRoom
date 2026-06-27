@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // tRPC API Versioning Tests (Sprint 4 Item 19)
@@ -124,13 +124,22 @@ describe("API Versioning — version header negotiation", () => {
     }
 
     // Default (no header) -> latest
-    expect(resolveVersion({}, "auth.login")).toEqual({ version: "latest", procedure: "auth.login" });
+    expect(resolveVersion({}, "auth.login")).toEqual({
+      version: "latest",
+      procedure: "auth.login",
+    });
 
     // Explicit v1
-    expect(resolveVersion({ "x-api-version": "v1" }, "auth.login")).toEqual({ version: "v1", procedure: "auth.login" });
+    expect(resolveVersion({ "x-api-version": "v1" }, "auth.login")).toEqual({
+      version: "v1",
+      procedure: "auth.login",
+    });
 
     // Explicit v2
-    expect(resolveVersion({ "x-api-version": "v2" }, "scenarios.list")).toEqual({ version: "v2", procedure: "scenarios.list" });
+    expect(resolveVersion({ "x-api-version": "v2" }, "scenarios.list")).toEqual({
+      version: "v2",
+      procedure: "scenarios.list",
+    });
   });
 
   it("should fall back to latest when requested version doesn't exist", async () => {
@@ -226,7 +235,11 @@ describe("API Versioning — middleware integration", () => {
     // Auth middleware should still apply to versioned routes
     const mockAuthMiddleware = vi.fn().mockReturnValue(true);
 
-    async function versionedProcedure(_version: string, procedure: string, authenticated: boolean): Promise<boolean> {
+    async function versionedProcedure(
+      _version: string,
+      procedure: string,
+      authenticated: boolean,
+    ): Promise<boolean> {
       if (authenticated && procedure.startsWith("protected.")) {
         return mockAuthMiddleware();
       }

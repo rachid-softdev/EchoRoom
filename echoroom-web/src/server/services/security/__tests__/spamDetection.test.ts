@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Spam Detection Tests
@@ -108,7 +108,8 @@ describe("detectCallSpam", () => {
   });
 
   it("should use separate keys for different phone numbers", async () => {
-    const incr = vi.fn()
+    const incr = vi
+      .fn()
       .mockResolvedValueOnce(1) // first number, user-1
       .mockResolvedValueOnce(1); // second number, user-1
     mockRedisInstance.incr = incr;
@@ -199,9 +200,7 @@ describe("detectScenarioSpam", () => {
   });
 
   it("should use separate keys for different users", async () => {
-    mockRedisInstance.incr
-      .mockResolvedValueOnce(1)
-      .mockResolvedValueOnce(1);
+    mockRedisInstance.incr.mockResolvedValueOnce(1).mockResolvedValueOnce(1);
 
     const { detectScenarioSpam } = await import("../spamDetection");
     await detectScenarioSpam("user-a");
@@ -250,7 +249,8 @@ describe("detectCommentSpam", () => {
 
   it("should use different counters for different content", async () => {
     // Each unique content gets its own incr key
-    const incr = vi.fn()
+    const incr = vi
+      .fn()
       .mockResolvedValueOnce(1) // content A
       .mockResolvedValueOnce(1); // content B
     mockRedisInstance.incr = incr;
@@ -261,8 +261,8 @@ describe("detectCommentSpam", () => {
 
     // Two different keys were used (different hashes)
     expect(incr).toHaveBeenCalledTimes(2);
-    const key1 = incr.mock.calls[0][0] as string;
-    const key2 = incr.mock.calls[1][0] as string;
+    const key1 = incr.mock.calls[0]![0] as string;
+    const key2 = incr.mock.calls[1]![0] as string;
     expect(key1).not.toEqual(key2);
   });
 
@@ -273,7 +273,7 @@ describe("detectCommentSpam", () => {
     await detectCommentSpam("user-1", "First comment");
 
     expect(mockRedisInstance.expire).toHaveBeenCalled();
-    const expireKey = mockRedisInstance.expire.mock.calls[0][0] as string;
+    const expireKey = mockRedisInstance.expire.mock.calls[0]![0] as string;
     expect(expireKey).toContain("spam:comment:user-1:");
     expect(mockRedisInstance.expire).toHaveBeenCalledWith(expect.any(String), 3600);
   });

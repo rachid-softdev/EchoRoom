@@ -35,9 +35,7 @@ export interface MockSession {
  * @example
  *   useSession.mockReturnValue(createAuthenticatedSession({ credits: 50 }));
  */
-export function createAuthenticatedSession(
-  overrides?: Partial<MockUser>,
-): MockSession {
+export function createAuthenticatedSession(overrides?: Partial<MockUser>): MockSession {
   return {
     data: {
       user: {

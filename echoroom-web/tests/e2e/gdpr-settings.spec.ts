@@ -1,11 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("GDPR Settings — route and page structure", () => {
   test("route /settings is handled (response < 400, not 404)", async ({ page }) => {
     const response = await page.request.get("/settings");
     expect(response.status()).not.toBe(404);
     expect(response.status()).toBeLessThan(400);
-
   });
 
   test("settings page displays Profil heading", async ({ page }) => {
@@ -16,9 +15,7 @@ test.describe("GDPR Settings — route and page structure", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
 
     if (isLoggedIn) {
-      await expect(
-        page.getByRole("heading", { name: "Profil" }),
-      ).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Profil" })).toBeVisible();
     }
   });
 
@@ -56,9 +53,7 @@ test.describe("GDPR Settings — route and page structure", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
 
     if (isLoggedIn) {
-      await expect(
-        page.getByRole("button", { name: "Enregistrer" }),
-      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Enregistrer" })).toBeVisible();
     }
   });
 
@@ -70,9 +65,7 @@ test.describe("GDPR Settings — route and page structure", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
 
     if (isLoggedIn) {
-      await expect(
-        page.getByRole("heading", { name: "Apparence" }),
-      ).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Apparence" })).toBeVisible();
     }
   });
 
@@ -84,9 +77,7 @@ test.describe("GDPR Settings — route and page structure", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
 
     if (isLoggedIn) {
-      await expect(
-        page.getByRole("heading", { name: "Zone de danger" }),
-      ).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Zone de danger" })).toBeVisible();
     }
   });
 
@@ -98,9 +89,7 @@ test.describe("GDPR Settings — route and page structure", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
 
     if (isLoggedIn) {
-      await expect(
-        page.getByText("Exporter mes données"),
-      ).toBeVisible();
+      await expect(page.getByText("Exporter mes données")).toBeVisible();
     }
   });
 
@@ -112,9 +101,7 @@ test.describe("GDPR Settings — route and page structure", () => {
     test.skip(!isLoggedIn, "Skipping: requires authenticated session");
 
     if (isLoggedIn) {
-      await expect(
-        page.getByText("Supprimer mon compte"),
-      ).toBeVisible();
+      await expect(page.getByText("Supprimer mon compte")).toBeVisible();
     }
   });
 });
@@ -133,15 +120,9 @@ test.describe("GDPR Settings — delete account dialog", () => {
 
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
-      await expect(
-        page.getByText("Supprimer votre compte"),
-      ).toBeVisible();
-      await expect(
-        page.getByText(/Tapez SUPPRIMER pour confirmer/),
-      ).toBeVisible();
-      await expect(
-        page.getByPlaceholder("SUPPRIMER"),
-      ).toBeVisible();
+      await expect(page.getByText("Supprimer votre compte")).toBeVisible();
+      await expect(page.getByText(/Tapez SUPPRIMER pour confirmer/)).toBeVisible();
+      await expect(page.getByPlaceholder("SUPPRIMER")).toBeVisible();
     }
   });
 

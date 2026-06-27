@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // usePaginatedQuery tests
@@ -34,9 +34,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(2);
@@ -62,9 +60,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 25, category: "chat" }),
-    );
+    renderHook(() => usePaginatedQuery(fetcher, { limit: 25, category: "chat" }));
 
     await waitFor(() => {
       expect(fetcher).toHaveBeenCalled();
@@ -80,10 +76,10 @@ describe("usePaginatedQuery", () => {
   it("should accumulate items when loadMore is called", async () => {
     const { usePaginatedQuery } = await import("../usePaginatedQuery");
 
-    let callCount = 0;
+    let _callCount = 0;
 
     const pages: Record<string, { items: MockItem[]; nextCursor?: string }> = {
-      "undefined": {
+      undefined: {
         items: [{ id: "1", name: "Item 1" }],
         nextCursor: "cursor-2",
       },
@@ -93,7 +89,7 @@ describe("usePaginatedQuery", () => {
     };
 
     const fetcher = vi.fn().mockImplementation((args: Record<string, unknown>) => {
-      callCount++;
+      _callCount++;
       // Determine which page to return based on cursor
       const cursorKey = String(args["cursor"] ?? "undefined");
       const pageData = pages[cursorKey] ?? pages["undefined"];
@@ -107,9 +103,7 @@ describe("usePaginatedQuery", () => {
       };
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     // First page loads
     await waitFor(() => {
@@ -139,7 +133,7 @@ describe("usePaginatedQuery", () => {
     const { usePaginatedQuery } = await import("../usePaginatedQuery");
 
     const pages: Record<string, { items: MockItem[]; nextCursor?: string }> = {
-      "undefined": {
+      undefined: {
         items: [
           { id: "1", name: "Item 1" },
           { id: "2", name: "Item 2" },
@@ -165,9 +159,7 @@ describe("usePaginatedQuery", () => {
       };
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(2);
@@ -200,9 +192,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toEqual([]);
@@ -226,9 +216,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.hasMore).toBe(false);
@@ -253,9 +241,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.items).toEqual([]);
@@ -275,9 +261,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -298,9 +282,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     expect(result.current.isError).toBe(true);
     expect(result.current.error?.message).toBe("Something went wrong");
@@ -322,9 +304,7 @@ describe("usePaginatedQuery", () => {
       refetch: refetchMock,
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
@@ -343,7 +323,7 @@ describe("usePaginatedQuery", () => {
     const { usePaginatedQuery } = await import("../usePaginatedQuery");
 
     const pages: Record<string, { items: Record<string, unknown>[]; nextCursor?: string }> = {
-      "undefined": {
+      undefined: {
         items: [{ name: "A", value: 1 }],
         nextCursor: "cursor-2",
       },
@@ -367,9 +347,7 @@ describe("usePaginatedQuery", () => {
       };
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
@@ -413,9 +391,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toEqual([]);
@@ -427,13 +403,8 @@ describe("usePaginatedQuery", () => {
   it("should not load more while isFetchingMore is true", async () => {
     const { usePaginatedQuery } = await import("../usePaginatedQuery");
 
-    let resolvePage: (() => void) | undefined;
-    const pagePromise = new Promise<void>((resolve) => {
-      resolvePage = resolve;
-    });
-
     const pages: Record<string, { items: { id: string }[]; nextCursor?: string }> = {
-      "undefined": {
+      undefined: {
         items: [{ id: "1" }],
         nextCursor: "cursor-2",
       },
@@ -450,9 +421,7 @@ describe("usePaginatedQuery", () => {
       };
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
@@ -464,8 +433,6 @@ describe("usePaginatedQuery", () => {
     });
 
     // Now isFetchingMore should be true — calling loadMore again should be a no-op
-    const initialItemsLength = result.current.items.length;
-
     await act(async () => {
       result.current.loadMore(); // Should be no-op
     });
@@ -488,9 +455,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
@@ -511,7 +476,7 @@ describe("usePaginatedQuery", () => {
 
     const refetchMock = vi.fn();
     const pages: Record<string, { items: { id: string }[]; nextCursor?: string }> = {
-      "undefined": {
+      undefined: {
         items: [{ id: "1" }],
         nextCursor: "cursor-2",
       },
@@ -528,9 +493,7 @@ describe("usePaginatedQuery", () => {
       };
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
@@ -551,7 +514,7 @@ describe("usePaginatedQuery", () => {
     const { usePaginatedQuery } = await import("../usePaginatedQuery");
 
     const pages: Record<string, { items: { id: string }[]; nextCursor?: string }> = {
-      "undefined": {
+      undefined: {
         items: [{ id: "1" }],
         nextCursor: "cursor-2",
       },
@@ -581,9 +544,7 @@ describe("usePaginatedQuery", () => {
       };
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toHaveLength(1);
@@ -601,7 +562,7 @@ describe("usePaginatedQuery", () => {
 
     // Previous items should still be present even when error occurs
     expect(result.current.items).toHaveLength(1);
-    expect(result.current.items[0]?.id).toBe("1");
+    expect((result.current.items[0] as any)?.id).toBe("1");
   });
 
   it("should consider hasMore=true when items are empty but nextCursor is defined", async () => {
@@ -618,9 +579,7 @@ describe("usePaginatedQuery", () => {
       refetch: vi.fn(),
     });
 
-    const { result } = renderHook(() =>
-      usePaginatedQuery(fetcher, { limit: 10 }),
-    );
+    const { result } = renderHook(() => usePaginatedQuery(fetcher, { limit: 10 }));
 
     await waitFor(() => {
       expect(result.current.items).toEqual([]);

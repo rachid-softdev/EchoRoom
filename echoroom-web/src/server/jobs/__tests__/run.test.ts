@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // run.ts — Main job orchestrator tests
@@ -66,9 +66,7 @@ describe("main job orchestrator (run.ts)", () => {
     });
 
     // Verify info logs on success
-    expect(mockLogInstance.info).toHaveBeenCalledWith(
-      "Starting cleanup jobs...",
-    );
+    expect(mockLogInstance.info).toHaveBeenCalledWith("Starting cleanup jobs...");
     expect(mockLogInstance.info).toHaveBeenCalledWith(
       "Cleanup jobs completed",
       expect.objectContaining({
@@ -96,10 +94,7 @@ describe("main job orchestrator (run.ts)", () => {
 
     // Error should be logged
     await vi.waitFor(() => {
-      expect(mockLogInstance.error).toHaveBeenCalledWith(
-        "Cleanup jobs failed",
-        expect.any(Object),
-      );
+      expect(mockLogInstance.error).toHaveBeenCalledWith("Cleanup jobs failed", expect.any(Object));
     });
   });
 
@@ -118,10 +113,7 @@ describe("main job orchestrator (run.ts)", () => {
     expect(mockPurgeAnonymizedUsers).not.toHaveBeenCalled();
 
     await vi.waitFor(() => {
-      expect(mockLogInstance.error).toHaveBeenCalledWith(
-        "Cleanup jobs failed",
-        expect.any(Object),
-      );
+      expect(mockLogInstance.error).toHaveBeenCalledWith("Cleanup jobs failed", expect.any(Object));
     });
   });
 });

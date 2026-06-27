@@ -1,20 +1,17 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Profile page", () => {
   test("should redirect /profile/testuser to /login when unauthenticated", async ({ page }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("route /profile/testuser is handled (response < 400, not 404)", async ({ page }) => {
     const response = await page.request.get("/profile/testuser");
     expect(response.status()).not.toBe(404);
     expect(response.status()).toBeLessThan(400);
-
   });
 
   test("non-existent username returns not 404", async ({ page }) => {
@@ -33,7 +30,5 @@ test.describe("Profile page", () => {
     // Either way the route pattern itself is valid
     expect(status).not.toBe(404);
     expect(status).toBeLessThan(400);
-
-
   });
 });

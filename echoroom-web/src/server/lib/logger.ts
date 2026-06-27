@@ -32,7 +32,7 @@ function serializeValue(value: unknown): unknown {
       name: value.name,
       message: value.message,
     };
-    if (process.env['NODE_ENV'] === "development") {
+    if (process.env["NODE_ENV"] === "development") {
       serialized["stack"] = value.stack;
     }
     // Capture custom properties (e.g., AppError.code)
@@ -58,14 +58,18 @@ function serializeMeta(meta?: Record<string, unknown>): Record<string, unknown> 
   return result;
 }
 
-function writeEntry(level: LogLevel, module: string, message: string, meta?: Record<string, unknown>): void {
+function writeEntry(
+  level: LogLevel,
+  module: string,
+  message: string,
+  meta?: Record<string, unknown>,
+): void {
   if (!shouldLog(level)) return;
 
   const serializedMeta = serializeMeta(meta);
   const requestId = getRequestId();
-  const enhancedMeta = requestId !== "no-request-id"
-    ? { ...serializedMeta, requestId }
-    : serializedMeta;
+  const enhancedMeta =
+    requestId !== "no-request-id" ? { ...serializedMeta, requestId } : serializedMeta;
 
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
@@ -80,11 +84,11 @@ function writeEntry(level: LogLevel, module: string, message: string, meta?: Rec
   try {
     if (level === "error") {
       if (typeof process?.stderr?.write === "function") {
-        process.stderr.write(line + "\n");
+        process.stderr.write(`${line}\n`);
       }
     } else {
       if (typeof process?.stdout?.write === "function") {
-        process.stdout.write(line + "\n");
+        process.stdout.write(`${line}\n`);
       }
     }
   } catch {

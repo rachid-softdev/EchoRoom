@@ -1,11 +1,8 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
 function readSource(relativePath: string): string {
-  return require("fs").readFileSync(
-    path.resolve(__dirname, relativePath),
-    "utf-8"
-  );
+  return require("node:fs").readFileSync(path.resolve(__dirname, relativePath), "utf-8");
 }
 
 test.describe("CRUD operations patterns", () => {
@@ -34,7 +31,8 @@ test.describe("CRUD operations patterns", () => {
 
   test("Create scenario has visibility toggle (PUBLIC/PRIVÉ)", () => {
     const source = readSource("../../src/app/(dashboard)/create/page.tsx");
-    const hasVisibility = source.includes("PUBLIC") || source.includes("PRIVÉ") || source.includes("visibility");
+    const hasVisibility =
+      source.includes("PUBLIC") || source.includes("PRIVÉ") || source.includes("visibility");
     expect(hasVisibility).toBe(true);
   });
 
@@ -54,17 +52,20 @@ test.describe("CRUD operations patterns", () => {
     for (const p of paths) {
       try {
         const source = readSource(p);
-        const hasEdit = source.includes("edit") || source.includes("modifier") || source.includes("update");
-        const hasDelete = source.includes("delete") || source.includes("supprimer") || source.includes("remove");
+        const hasEdit =
+          source.includes("edit") || source.includes("modifier") || source.includes("update");
+        const hasDelete =
+          source.includes("delete") || source.includes("supprimer") || source.includes("remove");
         if (hasEdit || hasDelete) {
           expect(hasEdit || hasDelete).toBe(true);
           return;
         }
-      } catch {
-        continue;
-      }
+      } catch {}
     }
-    test.info().annotations.push({ type: "info", description: "Library CRUD operations not found in expected paths" });
+    test.info().annotations.push({
+      type: "info",
+      description: "Library CRUD operations not found in expected paths",
+    });
   });
 
   test("Library has FAB or New button linking to /create", () => {
@@ -134,7 +135,9 @@ test.describe("CRUD operations patterns", () => {
 
   // ── Live browser test for Library ──
 
-  test("live: Library page renders scenario list or empty state when authenticated", async ({ page }) => {
+  test("live: Library page renders scenario list or empty state when authenticated", async ({
+    page,
+  }) => {
     await page.goto("/library");
     await page.waitForLoadState("networkidle");
 
@@ -143,7 +146,11 @@ test.describe("CRUD operations patterns", () => {
     if (redirected) return;
 
     // Either shows scenarios or empty state
-    const hasContent = await page.getByRole("heading").first().isVisible().catch(() => false);
+    const hasContent = await page
+      .getByRole("heading")
+      .first()
+      .isVisible()
+      .catch(() => false);
     expect(hasContent).toBe(true);
   });
 });

@@ -62,13 +62,15 @@ export async function verifyBucketPrivacy(): Promise<R2PrivacyCheckResult> {
       // 200 OK means the bucket allows public reads
       result.isPrivate = false;
       result.details.bucketAccessible = true;
-      log.error([
-        "R2 BUCKET APPEARS TO BE PUBLICLY READABLE!",
-        `URL: ${env.R2_PUBLIC_URL}`,
-        "Presigned URLs provide NO protection on a public bucket.",
-        "Set the bucket to private in Cloudflare Dashboard.",
-        "This check is NOT a definitive security guarantee.",
-      ].join("\n"));
+      log.error(
+        [
+          "R2 BUCKET APPEARS TO BE PUBLICLY READABLE!",
+          `URL: ${env.R2_PUBLIC_URL}`,
+          "Presigned URLs provide NO protection on a public bucket.",
+          "Set the bucket to private in Cloudflare Dashboard.",
+          "This check is NOT a definitive security guarantee.",
+        ].join("\n"),
+      );
     } else {
       // 403 or other error means the bucket blocks public access
       result.isPrivate = true;

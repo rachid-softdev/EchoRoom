@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Concurrency & TOCTOU Tests
@@ -31,10 +31,7 @@ function createMockDb() {
 
     // The updateMany function — simulates atomic UPDATE ... WHERE id=? AND deletedAt IS NULL
     updateMany: vi.fn(
-      (args: {
-        where: { id: string; deletedAt: null };
-        data: { deletedAt: Date };
-      }) => {
+      (args: { where: { id: string; deletedAt: null }; data: { deletedAt: Date } }) => {
         const record = records.get(args.where.id);
         // Only update if record exists AND deletedAt is null
         if (record && record.deletedAt === null) {
@@ -247,8 +244,9 @@ describe("Credit race conditions — atomic debit", () => {
   it("should handle two concurrent debits without going negative", async () => {
     // Simulate a user with 5 credits, two concurrent debits of 3 each
     // First succeeds, second should fail (only 2 credits remaining)
-    const mockUpdateMany = vi.fn()
-      .mockResolvedValueOnce({ count: 1 })  // First debit: 5 >= 3
+    const mockUpdateMany = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 1 }) // First debit: 5 >= 3
       .mockResolvedValueOnce({ count: 0 }); // Second debit: 2 < 3
 
     const mockFindUnique = vi.fn().mockResolvedValue({ id: "user-1" });
@@ -271,17 +269,18 @@ describe("Credit race conditions — atomic debit", () => {
     ]);
 
     // Exactly one should succeed
-    const succeeded = [result1, result2].filter(r => r.debited).length;
+    const succeeded = [result1, result2].filter((r) => r.debited).length;
     expect(succeeded).toBe(1);
 
     // The failed one should indicate insufficient credits
-    const failed = [result1, result2].find(r => !r.debited);
+    const failed = [result1, result2].find((r) => !r.debited);
     expect(failed?.reason).toBe("INSUFFICIENT_CREDITS");
   });
 
   it("should allow independent debits on different users", async () => {
-    const mockUpdateMany = vi.fn()
-      .mockResolvedValueOnce({ count: 1 })  // user-1 debit succeeds
+    const mockUpdateMany = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 1 }) // user-1 debit succeeds
       .mockResolvedValueOnce({ count: 1 }); // user-2 debit succeeds
 
     async function atomicDebit(userId: string, cost: number) {
@@ -310,8 +309,9 @@ describe("Call status race conditions", () => {
   it("should prevent double-completion via status guard", async () => {
     // Two concurrent status transitions: both try to complete the call
     // Only the first should succeed (status guard prevents second)
-    const mockUpdateMany = vi.fn()
-      .mockResolvedValueOnce({ count: 1 })  // First: RINGING -> ACTIVE
+    const mockUpdateMany = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 1 }) // First: RINGING -> ACTIVE
       .mockResolvedValueOnce({ count: 0 }); // Second: status already changed
 
     async function transitionCall(callId: string, fromStatus: string, toStatus: string) {
@@ -328,7 +328,7 @@ describe("Call status race conditions", () => {
     ]);
 
     // Exactly one should succeed
-    const succeeded = [result1, result2].filter(r => r.success).length;
+    const succeeded = [result1, result2].filter((r) => r.success).length;
     expect(succeeded).toBe(1);
 
     // The second caller should see failure
@@ -338,8 +338,9 @@ describe("Call status race conditions", () => {
   it("should prevent refund for already-failed calls", async () => {
     // markAsFailedWithRefund should be idempotent
     // Second call should detect status already FAILED (via notIn guard)
-    const mockUpdateMany = vi.fn()
-      .mockResolvedValueOnce({ count: 1 })  // First: marks as FAILED
+    const mockUpdateMany = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 1 }) // First: marks as FAILED
       .mockResolvedValueOnce({ count: 0 }); // Second: already FAILED
 
     async function markAsFailed(callId: string) {
@@ -350,13 +351,10 @@ describe("Call status race conditions", () => {
       return { didUpdate: result.count === 1 };
     }
 
-    const [result1, result2] = await Promise.all([
-      markAsFailed("call-1"),
-      markAsFailed("call-1"),
-    ]);
+    const [result1, result2] = await Promise.all([markAsFailed("call-1"), markAsFailed("call-1")]);
 
     // Only one should have actually changed the status
-    const updates = [result1, result2].filter(r => r.didUpdate).length;
+    const updates = [result1, result2].filter((r) => r.didUpdate).length;
     expect(updates).toBe(1);
   });
 });
@@ -370,8 +368,9 @@ describe("Concurrent delete scenarios", () => {
     // Both deleteMyAccount and admin deleteUser could run concurrently.
     // The updateMany with deletedAt: null guard ensures only one succeeds.
 
-    const mockUpdateMany = vi.fn()
-      .mockResolvedValueOnce({ count: 1 })  // First delete succeeds
+    const mockUpdateMany = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 1 }) // First delete succeeds
       .mockResolvedValueOnce({ count: 0 }); // Second: already deleted
 
     async function deleteUser(userId: string) {
@@ -386,20 +385,18 @@ describe("Concurrent delete scenarios", () => {
     }
 
     // Simulate concurrent user + admin delete
-    const results = await Promise.allSettled([
-      deleteUser("user-1"),
-      deleteUser("user-1"),
-    ]);
+    const results = await Promise.allSettled([deleteUser("user-1"), deleteUser("user-1")]);
 
-    const fulfilled = results.filter(r => r.status === "fulfilled").length;
-    const rejected = results.filter(r => r.status === "rejected").length;
+    const fulfilled = results.filter((r) => r.status === "fulfilled").length;
+    const rejected = results.filter((r) => r.status === "rejected").length;
 
     expect(fulfilled).toBe(1);
     expect(rejected).toBe(1);
   });
 
   it("should handle three concurrent deletions gracefully", async () => {
-    const mockUpdateMany = vi.fn()
+    const mockUpdateMany = vi
+      .fn()
       .mockResolvedValueOnce({ count: 1 })
       .mockResolvedValueOnce({ count: 0 })
       .mockResolvedValueOnce({ count: 0 });
@@ -418,7 +415,7 @@ describe("Concurrent delete scenarios", () => {
       deleteUser("user-1"),
     ]);
 
-    const deletedCount = results.filter(r => r.deleted).length;
+    const deletedCount = results.filter((r) => r.deleted).length;
     expect(deletedCount).toBe(1);
   });
 });

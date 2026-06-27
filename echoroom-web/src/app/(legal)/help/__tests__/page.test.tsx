@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next/link
 vi.mock("next/link", () => ({
@@ -26,16 +26,12 @@ describe("HelpPage (FAQ)", () => {
 
   it("renders the main heading", () => {
     render(<HelpPage />);
-    expect(
-      screen.getByRole("heading", { name: /aide & faq/i, level: 1 }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /aide & faq/i, level: 1 })).toBeInTheDocument();
   });
 
   it("renders the description paragraph", () => {
     render(<HelpPage />);
-    expect(
-      screen.getByText(/tout ce qu'il faut savoir pour plonger/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/tout ce qu'il faut savoir pour plonger/i)).toBeInTheDocument();
   });
 
   it("renders all FAQ questions", () => {
@@ -61,9 +57,7 @@ describe("HelpPage (FAQ)", () => {
   it("renders the support section with Discord and explore links", () => {
     render(<HelpPage />);
 
-    expect(
-      screen.getByText(/besoin d'aide supplémentaire/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/besoin d'aide supplémentaire/i)).toBeInTheDocument();
 
     const discordLink = screen.getByRole("link", { name: /communauté discord/i });
     expect(discordLink).toHaveAttribute("href", "/community");

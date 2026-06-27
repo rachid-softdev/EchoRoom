@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // FeaturedScenariosSection tests — renders "Scénarios populaires" title
@@ -8,7 +8,9 @@ import { render, screen, cleanup } from "@testing-library/react";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: any) => (
-    <a href={href} {...props}>{children}</a>
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -45,18 +47,12 @@ vi.mock("@/components/shared/DataLoader", () => ({
 
 // Mock ScenarioCard to render a simplified card for testing
 vi.mock("@/components/shared/ScenarioCard", () => ({
-  ScenarioCard: ({ scenario }: any) => (
-    <div data-testid="scenario-card">{scenario.title}</div>
-  ),
+  ScenarioCard: ({ scenario }: any) => <div data-testid="scenario-card">{scenario.title}</div>,
 }));
 
 vi.mock("@/components/ui", () => ({
-  Badge: ({ children, ...props }: any) => (
-    <span {...props}>{children}</span>
-  ),
-  Button: ({ children, ...props }: any) => (
-    <button {...props}>{children}</button>
-  ),
+  Badge: ({ children, ...props }: any) => <span {...props}>{children}</span>,
+  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
 }));
 
 vi.mock("lucide-react", () => ({

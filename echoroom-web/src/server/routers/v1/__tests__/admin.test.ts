@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { TRPCError } from "@trpc/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // adminV1Router tests
@@ -90,16 +89,12 @@ vi.mock("@/server/procedures", () => {
         handler: async (opts: any) => {
           const session = opts.ctx?.session;
           if (!session?.user?.id) {
-            const err: any = new Error(
-              "Vous devez être connecté pour accéder à cette ressource",
-            );
+            const err: any = new Error("Vous devez être connecté pour accéder à cette ressource");
             err.code = "UNAUTHORIZED";
             throw err;
           }
           if (requiredRole && session.user.role !== requiredRole) {
-            const err: any = new Error(
-              "Accès réservé aux administrateurs",
-            );
+            const err: any = new Error("Accès réservé aux administrateurs");
             err.code = "FORBIDDEN";
             throw err;
           }
@@ -111,16 +106,12 @@ vi.mock("@/server/procedures", () => {
         handler: async (opts: any) => {
           const session = opts.ctx?.session;
           if (!session?.user?.id) {
-            const err: any = new Error(
-              "Vous devez être connecté pour accéder à cette ressource",
-            );
+            const err: any = new Error("Vous devez être connecté pour accéder à cette ressource");
             err.code = "UNAUTHORIZED";
             throw err;
           }
           if (requiredRole && session.user.role !== requiredRole) {
-            const err: any = new Error(
-              "Accès réservé aux administrateurs",
-            );
+            const err: any = new Error("Accès réservé aux administrateurs");
             err.code = "FORBIDDEN";
             throw err;
           }
@@ -292,9 +283,9 @@ describe("adminV1Router.featureScenario", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).featureScenario.handler;
 
-    await expect(
-      handler({ input: { scenarioId: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Scénario introuvable");
+    await expect(handler({ input: { scenarioId: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Scénario introuvable",
+    );
 
     expect(mockDb.featuredScenario.upsert).not.toHaveBeenCalled();
     expect(mockDb.auditLog.create).not.toHaveBeenCalled();
@@ -343,7 +334,10 @@ describe("adminV1Router.removeFeatured", () => {
 
     expect(result).toEqual({ success: true });
     expect(mockDb.featuredScenario.deleteMany).toHaveBeenCalledWith({
-      where: { scenarioId: "scenario-abc", featuredDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) },
+      where: {
+        scenarioId: "scenario-abc",
+        featuredDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      },
     });
     expect(mockDb.auditLog.create).toHaveBeenCalledWith({
       data: {
@@ -424,7 +418,14 @@ describe("adminV1Router.moderationQueue", () => {
 
   it("should return pending scenarios with cursor pagination", async () => {
     const mockScenarios = [
-      { id: "s-1", title: "Pending 1", moderationStatus: "PENDING", createdAt: new Date(), creator: { id: "u-1", username: "user1" }, character: { name: "Char1" } },
+      {
+        id: "s-1",
+        title: "Pending 1",
+        moderationStatus: "PENDING",
+        createdAt: new Date(),
+        creator: { id: "u-1", username: "user1" },
+        character: { name: "Char1" },
+      },
     ];
     mockDb.scenario.findMany.mockResolvedValue(mockScenarios);
 
@@ -484,9 +485,9 @@ describe("adminV1Router.approveScenario", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).approveScenario.handler;
 
-    await expect(
-      handler({ input: { scenarioId: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Scénario introuvable");
+    await expect(handler({ input: { scenarioId: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Scénario introuvable",
+    );
   });
 });
 
@@ -547,9 +548,9 @@ describe("adminV1Router.moderateComment", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).moderateComment.handler;
 
-    await expect(
-      handler({ input: { commentId: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Commentaire introuvable");
+    await expect(handler({ input: { commentId: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Commentaire introuvable",
+    );
   });
 });
 
@@ -587,7 +588,14 @@ describe("adminV1Router.moderationQueueComments", () => {
 
   it("should return pending comments with user and scenario info", async () => {
     mockDb.comment.findMany.mockResolvedValue([
-      { id: "cmt-1", content: "Test", moderationStatus: "PENDING", createdAt: new Date(), user: { id: "u-1", username: "user1", image: null }, scenario: { id: "s-1", title: "Scenario" } },
+      {
+        id: "cmt-1",
+        content: "Test",
+        moderationStatus: "PENDING",
+        createdAt: new Date(),
+        user: { id: "u-1", username: "user1", image: null },
+        scenario: { id: "s-1", title: "Scenario" },
+      },
     ]);
 
     const { adminV1Router } = await import("../admin");
@@ -641,7 +649,13 @@ describe("adminV1Router.getAbuseReports", () => {
 
   it("should return abuse reports with filtering by status", async () => {
     mockDb.abuseReport.findMany.mockResolvedValue([
-      { id: "ar-1", status: "PENDING", createdAt: new Date(), reporter: { id: "u-1", username: "reporter" }, reviewedBy: null },
+      {
+        id: "ar-1",
+        status: "PENDING",
+        createdAt: new Date(),
+        reporter: { id: "u-1", username: "reporter" },
+        reviewedBy: null,
+      },
     ]);
 
     const { adminV1Router } = await import("../admin");
@@ -690,9 +704,9 @@ describe("adminV1Router.dismissAbuseReport", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).dismissAbuseReport.handler;
 
-    await expect(
-      handler({ input: { reportId: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Signalement introuvable");
+    await expect(handler({ input: { reportId: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Signalement introuvable",
+    );
   });
 });
 
@@ -706,7 +720,13 @@ describe("adminV1Router.getBlockedNumbers", () => {
 
   it("should return blocked numbers with blocker info", async () => {
     mockDb.blockedNumber.findMany.mockResolvedValue([
-      { id: "bn-1", phoneNumber: "+33612345678", reason: "Spam", createdAt: new Date(), blockedBy: { id: "admin-1", username: "admin" } },
+      {
+        id: "bn-1",
+        phoneNumber: "+33612345678",
+        reason: "Spam",
+        createdAt: new Date(),
+        blockedBy: { id: "admin-1", username: "admin" },
+      },
     ]);
 
     const { adminV1Router } = await import("../admin");
@@ -788,9 +808,9 @@ describe("adminV1Router.unblockNumber", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).unblockNumber.handler;
 
-    await expect(
-      handler({ input: { id: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Entrée introuvable");
+    await expect(handler({ input: { id: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Entrée introuvable",
+    );
   });
 });
 
@@ -840,9 +860,9 @@ describe("adminV1Router.deleteUser", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).deleteUser.handler;
 
-    await expect(
-      handler({ input: { userId: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Utilisateur introuvable ou déjà supprimé");
+    await expect(handler({ input: { userId: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Utilisateur introuvable ou déjà supprimé",
+    );
   });
 });
 
@@ -889,9 +909,9 @@ describe("adminV1Router.getUserDetail", () => {
     const { adminV1Router } = await import("../admin");
     const handler: QueryHandler = (adminV1Router as any).getUserDetail.handler;
 
-    await expect(
-      handler({ input: { userId: "nonexistent" }, ctx: adminCtx }),
-    ).rejects.toThrow("Utilisateur introuvable");
+    await expect(handler({ input: { userId: "nonexistent" }, ctx: adminCtx })).rejects.toThrow(
+      "Utilisateur introuvable",
+    );
   });
 });
 
@@ -963,7 +983,7 @@ describe("adminV1Router.purgeGDPR", () => {
     const { adminV1Router } = await import("../admin");
     const handler: MutationHandler = (adminV1Router as any).purgeGDPR.handler;
 
-    const result = await handler({ input: { retentionDays: 30 }, ctx: adminCtx });
+    await handler({ input: { retentionDays: 30 }, ctx: adminCtx });
 
     expect(purgeAnonymizedUsers).toHaveBeenCalledWith(30);
   });

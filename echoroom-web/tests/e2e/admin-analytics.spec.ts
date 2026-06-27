@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/app/admin/analytics/page.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/app/admin/analytics/page.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("Admin Analytics page", () => {
@@ -68,9 +65,9 @@ test.describe("Admin Analytics page", () => {
 
   test("link cards to other admin tools exist", () => {
     const source = readComponent();
-    expect(source).toContain('/admin/users');
-    expect(source).toContain('/admin/moderation');
-    expect(source).toContain('/admin/reports');
+    expect(source).toContain("/admin/users");
+    expect(source).toContain("/admin/moderation");
+    expect(source).toContain("/admin/reports");
     expect(source).toContain("Gestion des utilisateurs");
     expect(source).toContain("Modération");
     expect(source).toContain("Signalements");

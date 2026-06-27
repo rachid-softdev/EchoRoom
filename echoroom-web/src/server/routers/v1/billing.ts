@@ -8,10 +8,10 @@
  * Changes and improvements should go into v2+ routers.
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "../../procedures";
-import { createCheckoutSession } from "../../services/billing/stripe";
 import { env } from "@/lib/env";
+import { protectedProcedure, router } from "../../procedures";
 import { userBillingRepository } from "../../repositories";
+import { createCheckoutSession } from "../../services/billing/stripe";
 
 export const billingV1Router = router({
   getCredits: protectedProcedure.query(async ({ ctx }) => {

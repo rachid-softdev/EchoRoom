@@ -1,8 +1,8 @@
-import { clipRepository } from "@/server/repositories";
-import { createLogger } from "@/server/lib/logger";
-import { getPresignedUrl } from "@/server/services/audio/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
+import { R2_BUCKET, R2_PUBLIC_URL, r2Client } from "@/lib/r2";
+import { createLogger } from "@/server/lib/logger";
+import { clipRepository } from "@/server/repositories";
+import { getPresignedUrl } from "@/server/services/audio/r2";
 
 const log = createLogger("clip-extractor");
 

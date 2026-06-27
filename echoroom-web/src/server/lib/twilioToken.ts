@@ -23,11 +23,7 @@ interface TwilioTokenPayload {
  *
  * @returns A signed token string (format: "base64payload.base64signature")
  */
-export function createTwilioToken(
-  callId: string,
-  scenarioId: string,
-  characterId: string,
-): string {
+export function createTwilioToken(callId: string, scenarioId: string, characterId: string): string {
   const payload: TwilioTokenPayload = { callId, scenarioId, characterId, iat: Date.now() };
   const payloadStr = JSON.stringify(payload);
   const payloadB64 = Buffer.from(payloadStr).toString("base64url");

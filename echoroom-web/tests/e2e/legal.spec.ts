@@ -1,71 +1,47 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Legal pages", () => {
   test("/legal — Mentions légales page loads with correct heading", async ({ page }) => {
     await page.goto("/legal");
-    await expect(
-      page.getByRole("heading", { name: "Mentions légales" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mentions légales" })).toBeVisible();
   });
 
   test("/legal — displays company info sections", async ({ page }) => {
     await page.goto("/legal");
-    await expect(
-      page.getByRole("heading", { name: "Éditeur" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Hébergement" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Contact" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Éditeur" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Hébergement" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Contact" })).toBeVisible();
   });
 
-  test("/privacy — Politique de confidentialité page loads with correct heading", async ({ page }) => {
+  test("/privacy — Politique de confidentialité page loads with correct heading", async ({
+    page,
+  }) => {
     await page.goto("/privacy");
-    await expect(
-      page.getByRole("heading", { name: "Politique de confidentialité" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Politique de confidentialité" })).toBeVisible();
   });
 
   test("/privacy — displays data collection and rights sections", async ({ page }) => {
     await page.goto("/privacy");
-    await expect(
-      page.getByRole("heading", { name: /Données collectées/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /Vos droits/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /Cookies/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Données collectées/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Vos droits/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Cookies/ })).toBeVisible();
   });
 
   test("/terms — Conditions d'utilisation page loads with correct heading", async ({ page }) => {
     await page.goto("/terms");
-    await expect(
-      page.getByRole("heading", { name: "Conditions d'utilisation" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Conditions d'utilisation" })).toBeVisible();
   });
 
   test("/terms — displays service description and key sections", async ({ page }) => {
     await page.goto("/terms");
-    await expect(
-      page.getByRole("heading", { name: /Description du service/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /Crédits et paiements/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: /Propriété intellectuelle/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Description du service/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Crédits et paiements/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Propriété intellectuelle/ })).toBeVisible();
   });
 
   test("/help — Aide & FAQ page loads with correct heading", async ({ page }) => {
     await page.goto("/help");
-    await expect(
-      page.getByRole("heading", { name: "Aide & FAQ" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Aide & FAQ" })).toBeVisible();
   });
 
   test("/help — displays FAQ details/summary elements", async ({ page }) => {
@@ -127,9 +103,7 @@ test.describe("Footer legal links from landing page", () => {
 
     await page.locator("footer").getByRole("link", { name: "Aide" }).click();
     await expect(page).toHaveURL("/help");
-    await expect(
-      page.getByRole("heading", { name: "Aide & FAQ" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Aide & FAQ" })).toBeVisible();
   });
 
   test("footer Conditions link navigates to /terms", async ({ page }) => {
@@ -138,9 +112,7 @@ test.describe("Footer legal links from landing page", () => {
 
     await page.locator("footer").getByRole("link", { name: "Conditions" }).click();
     await expect(page).toHaveURL("/terms");
-    await expect(
-      page.getByRole("heading", { name: "Conditions d'utilisation" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Conditions d'utilisation" })).toBeVisible();
   });
 
   test("footer Confidentialité link navigates to /privacy", async ({ page }) => {
@@ -149,24 +121,18 @@ test.describe("Footer legal links from landing page", () => {
 
     await page.locator("footer").getByRole("link", { name: "Confidentialité" }).click();
     await expect(page).toHaveURL("/privacy");
-    await expect(
-      page.getByRole("heading", { name: "Politique de confidentialité" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Politique de confidentialité" })).toBeVisible();
   });
 });
 
 test.describe("Legal layout — common elements", () => {
   test("legal pages show retour à l'accueil link", async ({ page }) => {
     await page.goto("/legal");
-    await expect(
-      page.getByRole("link", { name: /Retour à l'accueil/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Retour à l'accueil/ })).toBeVisible();
   });
 
   test("legal pages show EchoRoom branding in nav", async ({ page }) => {
     await page.goto("/privacy");
-    await expect(
-      page.getByRole("link", { name: "EchoRoom" }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "EchoRoom" })).toBeVisible();
   });
 });

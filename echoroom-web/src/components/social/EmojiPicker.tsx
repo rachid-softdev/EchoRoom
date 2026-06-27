@@ -1,24 +1,20 @@
-"use client"
+"use client";
 
-import { cn } from "@/components/ui"
+import { cn } from "@/components/ui";
 
-const EMOJIS = ["❤️", "😂", "😮", "🔥", "😭", "🤯", "💀", "👀"]
+const EMOJIS = ["❤️", "😂", "😮", "🔥", "😭", "🤯", "💀", "👀"];
 
 interface EmojiPickerProps {
-  selectedEmoji?: string
-  onSelect: (emoji: string) => void
-  disabled?: boolean
+  selectedEmoji?: string;
+  onSelect: (emoji: string) => void;
+  disabled?: boolean;
 }
 
-export function EmojiPicker({
-  selectedEmoji,
-  onSelect,
-  disabled = false,
-}: EmojiPickerProps) {
+export function EmojiPicker({ selectedEmoji, onSelect, disabled = false }: EmojiPickerProps) {
   return (
     <div className="grid grid-cols-4 gap-1">
       {EMOJIS.map((emoji) => {
-        const isSelected = selectedEmoji === emoji
+        const isSelected = selectedEmoji === emoji;
         return (
           <button
             key={emoji}
@@ -36,8 +32,8 @@ export function EmojiPicker({
           >
             {emoji}
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

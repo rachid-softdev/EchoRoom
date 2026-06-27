@@ -1,14 +1,14 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
 const mockReconsentMutate = vi.fn();
-let mockConsentStatus: { isConsentWithdrawn: boolean } | undefined = undefined;
+let mockConsentStatus: { isConsentWithdrawn: boolean } | undefined;
 let mockIsLoading = false;
 
 vi.mock("@/lib/trpc", () => ({
@@ -47,13 +47,9 @@ vi.mock("@/components/ui/alert", () => ({
       {children}
     </div>
   ),
-  AlertTitle: ({
-    children,
-    ...props
-  }: {
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => <h5 {...props}>{children}</h5>,
+  AlertTitle: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+    <h5 {...props}>{children}</h5>
+  ),
   AlertDescription: ({
     children,
     ...props
@@ -149,9 +145,7 @@ describe("ConsentBanner", () => {
 
     render(<ConsentBanner />);
 
-    expect(
-      screen.getByText(/Vous avez retiré votre consentement/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Vous avez retiré votre consentement/)).toBeInTheDocument();
   });
 
   it("has warning variant on the alert", () => {

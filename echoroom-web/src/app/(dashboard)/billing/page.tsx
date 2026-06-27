@@ -1,20 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
 import { CreditCard, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  toast,
+} from "@/components/ui";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
-import { toast } from "@/components/ui";
 
 interface CreditPack {
-  credits: number
-  price: string
-  priceId: string
-  popular: boolean
+  credits: number;
+  price: string;
+  priceId: string;
+  popular: boolean;
 }
 
 const creditPacks: CreditPack[] = [
@@ -61,7 +67,10 @@ export default function BillingPage() {
       });
       window.history.replaceState({}, "", window.location.pathname);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    purchasesQuery.refetch, // Rafraîchir les données
+    creditsQuery.refetch,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
   const checkout = useApiToast(api.billing.createCheckout.useMutation(), {
     success: "Redirection vers le paiement...",
     onSuccess: (data) => {
@@ -91,9 +100,7 @@ export default function BillingPage() {
         {creditPacks.map((pack) => (
           <Card
             key={pack.credits}
-            className={`relative ${
-              pack.popular ? "border-primary/50 ring-1 ring-primary/20" : ""
-            }`}
+            className={`relative ${pack.popular ? "border-primary/50 ring-1 ring-primary/20" : ""}`}
           >
             {pack.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -113,11 +120,7 @@ export default function BillingPage() {
                 onClick={() => handleBuy(pack)}
                 disabled={checkout.isPending}
               >
-                {checkout.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Acheter"
-                )}
+                {checkout.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Acheter"}
               </Button>
             </CardContent>
           </Card>
@@ -155,17 +158,10 @@ export default function BillingPage() {
         <Card>
           <div className="divide-y">
             {purchasesQuery.data.map((purchase) => (
-              <div
-                key={purchase.id}
-                className="flex items-center justify-between px-6 py-4"
-              >
+              <div key={purchase.id} className="flex items-center justify-between px-6 py-4">
                 <div>
-                  <p className="font-medium">
-                    {purchase.creditsPurchased} crédits
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDate(purchase.createdAt)}
-                  </p>
+                  <p className="font-medium">{purchase.creditsPurchased} crédits</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(purchase.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {purchase.refundedAt && (
@@ -188,10 +184,14 @@ export default function BillingPage() {
           <CardContent className="py-12 text-center">
             <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">Aucun achat pour le moment</p>
-            <Button variant="outline" size="sm" onClick={() => {
-              const el = document.getElementById("credit-packs");
-              if (el) el.scrollIntoView({ behavior: "smooth" });
-            }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const el = document.getElementById("credit-packs");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
               Acheter des crédits
             </Button>
           </CardContent>

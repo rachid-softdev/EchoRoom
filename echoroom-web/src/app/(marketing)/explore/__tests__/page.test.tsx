@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock next-auth (MarketingNav uses useSession)
 vi.mock("next-auth/react", () => ({
@@ -57,12 +57,24 @@ vi.mock("lucide-react", () => ({
 vi.mock("@/components/ui", () => ({
   Input: (props: any) => <input {...props} />,
   Button: ({ children, onClick, variant, className, size, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} data-size={size} className={className} {...props}>{children}</button>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
   ),
   SegmentedControl: ({ options, value, onChange }: any) => (
     <div data-testid="segmented-control">
       {options.map((opt: any) => (
-        <button key={opt.value} data-selected={value === opt.value} onClick={() => onChange?.(opt.value)}>
+        <button
+          key={opt.value}
+          data-selected={value === opt.value}
+          onClick={() => onChange?.(opt.value)}
+        >
           {opt.label}
         </button>
       ))}
@@ -77,9 +89,33 @@ const mockFeedQuery = api.scenarios.feed.useQuery as ReturnType<typeof vi.fn>;
 
 const mockScenarios = {
   items: [
-    { id: "s-1", title: "AI Adventure", description: "An adventure", character: { category: "NPC" }, category: "NPC", playCount: 100, likeCount: 50 },
-    { id: "s-2", title: "Chaos Fun", description: "Chaos fun", character: { category: "CHAOTIC" }, category: "CHAOTIC", playCount: 200, likeCount: 80 },
-    { id: "s-3", title: "Romantic Date", description: "Romantic date", character: { category: "ROMANTIC" }, category: "ROMANTIC", playCount: 50, likeCount: 30 },
+    {
+      id: "s-1",
+      title: "AI Adventure",
+      description: "An adventure",
+      character: { category: "NPC" },
+      category: "NPC",
+      playCount: 100,
+      likeCount: 50,
+    },
+    {
+      id: "s-2",
+      title: "Chaos Fun",
+      description: "Chaos fun",
+      character: { category: "CHAOTIC" },
+      category: "CHAOTIC",
+      playCount: 200,
+      likeCount: 80,
+    },
+    {
+      id: "s-3",
+      title: "Romantic Date",
+      description: "Romantic date",
+      character: { category: "ROMANTIC" },
+      category: "ROMANTIC",
+      playCount: 50,
+      likeCount: 30,
+    },
   ],
   nextCursor: undefined,
 };
@@ -181,9 +217,7 @@ describe("ExplorePage", () => {
   it("renders the page heading", () => {
     render(<ExplorePage />);
 
-    expect(
-      screen.getByRole("heading", { name: /Explorer les scénarios/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Explorer les scénarios/i })).toBeInTheDocument();
   });
 
   it("renders scenario cards with correct count", () => {

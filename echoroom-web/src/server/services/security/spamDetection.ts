@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { redis } from "@/lib/redis";
 import { createLogger } from "@/server/lib/logger";
 
@@ -13,10 +13,7 @@ export interface SpamResult {
  * Detect call spam: 5+ calls to the same number in 1 hour.
  * Returns flagged=true when the threshold is exceeded.
  */
-export async function detectCallSpam(
-  userId: string,
-  phoneNumber: string,
-): Promise<SpamResult> {
+export async function detectCallSpam(userId: string, phoneNumber: string): Promise<SpamResult> {
   if (!redis) return { flagged: false };
 
   try {
@@ -42,9 +39,7 @@ export async function detectCallSpam(
 /**
  * Detect scenario creation spam: 10+ scenarios in 5 minutes.
  */
-export async function detectScenarioSpam(
-  userId: string,
-): Promise<SpamResult> {
+export async function detectScenarioSpam(userId: string): Promise<SpamResult> {
   if (!redis) return { flagged: false };
 
   try {
@@ -71,10 +66,7 @@ export async function detectScenarioSpam(
  * Detect comment spam: same text posted 5+ times in 1 hour.
  * Uses a hash of the content as part of the Redis key.
  */
-export async function detectCommentSpam(
-  userId: string,
-  content: string,
-): Promise<SpamResult> {
+export async function detectCommentSpam(userId: string, content: string): Promise<SpamResult> {
   if (!redis) return { flagged: false };
 
   try {

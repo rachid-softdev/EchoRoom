@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Mock les endpoints tRPC pour un profil spécifique
@@ -59,7 +59,6 @@ test.describe("Profile — Stats cards et zéros", () => {
     }
 
     // Les compteurs doivent afficher 0
-    const zeroCounts = page.locator("text=0").first();
     // L'utilisateur avec 0 activité montre 0 dans les deux cartes
     const pageText = await page.locator("body").textContent();
     expect(pageText).toContain("0");
@@ -100,7 +99,9 @@ test.describe("Profile — Activity feed mixé et trié par date", () => {
     }
   });
 
-  test("Activity feed : les items sont triés par date (les plus récents d'abord)", async ({ page }) => {
+  test("Activity feed : les items sont triés par date (les plus récents d'abord)", async ({
+    page,
+  }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
 
@@ -172,7 +173,9 @@ test.describe("Profile — Activity items liens", () => {
     }
   });
 
-  test("Activity feed : les items scénario montrent le nombre de lectures et likes", async ({ page }) => {
+  test("Activity feed : les items scénario montrent le nombre de lectures et likes", async ({
+    page,
+  }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
 
@@ -209,7 +212,9 @@ test.describe("Profile — Empty activity state", () => {
     const emptyMessage = page.getByText("Pas encore d'activité");
     if (await emptyMessage.isVisible().catch(() => false)) {
       await expect(emptyMessage).toBeVisible();
-      await expect(page.getByText("n'a pas encore créé de scénario ou passé d'appel")).toBeVisible();
+      await expect(
+        page.getByText("n'a pas encore créé de scénario ou passé d'appel"),
+      ).toBeVisible();
     }
   });
 
@@ -229,7 +234,9 @@ test.describe("Profile — Empty activity state", () => {
 });
 
 test.describe("Profile — Avatar initials fallback", () => {
-  test("L'avatar affiche les initiales (2 premières lettres du username en majuscules)", async ({ page }) => {
+  test("L'avatar affiche les initiales (2 premières lettres du username en majuscules)", async ({
+    page,
+  }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
 
@@ -274,7 +281,9 @@ test.describe("Profile — Avatar initials fallback", () => {
 });
 
 test.describe("Profile — formatRelativeDate edge cases", () => {
-  test("Les dates relatives 'À l'instant' apparaissent pour des activités récentes", async ({ page }) => {
+  test("Les dates relatives 'À l'instant' apparaissent pour des activités récentes", async ({
+    page,
+  }) => {
     // Pour tester le edge case, on vérifie simplement le format
     // Une activité créée il y a < 1 min affiche "À l'instant"
     await page.goto("/profile/testuser");
@@ -300,7 +309,9 @@ test.describe("Profile — formatRelativeDate edge cases", () => {
     }
   });
 
-  test("Profile header : le nom d'utilisateur et 'Membre depuis' sont visibles", async ({ page }) => {
+  test("Profile header : le nom d'utilisateur et 'Membre depuis' sont visibles", async ({
+    page,
+  }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
 
@@ -348,13 +359,18 @@ test.describe("Profile — Page non trouvée (404)", () => {
 
     // Soit la page retourne un 404 avec un message approprié
     // Soit elle affiche une page d'erreur Next.js
-    const is404 = page.getByText("404").or(page.getByText("introuvable")).or(page.getByText("not found", { ignoreCase: true }));
+    const is404 = page
+      .getByText("404")
+      .or(page.getByText("introuvable"))
+      .or(page.getByText(/not found/i));
     await expect(is404.first()).toBeVisible();
   });
 });
 
 test.describe("Profile — Carte des infos", () => {
-  test("La carte du profil affiche l'avatar avec initiales, username, et date d'inscription", async ({ page }) => {
+  test("La carte du profil affiche l'avatar avec initiales, username, et date d'inscription", async ({
+    page,
+  }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
 
@@ -378,7 +394,9 @@ test.describe("Profile — Carte des infos", () => {
 });
 
 test.describe("Profile — Limite d'activité", () => {
-  test("Si l'activité dépasse ACTIVITY_LIMIT=10, le message '(10 les plus récents)' s'affiche", async ({ page }) => {
+  test("Si l'activité dépasse ACTIVITY_LIMIT=10, le message '(10 les plus récents)' s'affiche", async ({
+    page,
+  }) => {
     await page.goto("/profile/testuser");
     await page.waitForLoadState("networkidle");
 

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock tRPC
 vi.mock("@/lib/trpc", () => ({
@@ -33,8 +33,8 @@ vi.mock("lucide-react", () => ({
   RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
 }));
 
-import { api } from "@/lib/trpc";
 import { toast } from "@/components/ui";
+import { api } from "@/lib/trpc";
 import ReportsPageClient from "../ReportsPageClient";
 
 afterEach(() => {
@@ -42,11 +42,8 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-const mockReportsQuery = api.admin.getAbuseReports.useQuery as ReturnType<
-  typeof vi.fn
->;
-const mockDismissMutation = api.admin.dismissAbuseReport
-  .useMutation as ReturnType<typeof vi.fn>;
+const mockReportsQuery = api.admin.getAbuseReports.useQuery as ReturnType<typeof vi.fn>;
+const mockDismissMutation = api.admin.dismissAbuseReport.useMutation as ReturnType<typeof vi.fn>;
 
 const samplePendingReport = {
   id: "r-1",
@@ -147,9 +144,7 @@ describe("ReportsPageClient", () => {
     render(<ReportsPageClient />);
 
     expect(screen.getByText("Une erreur est survenue")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Réessayer/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Réessayer/i })).toBeInTheDocument();
   });
 
   it("should call refetch when retry button is clicked", () => {
@@ -178,9 +173,7 @@ describe("ReportsPageClient", () => {
     render(<ReportsPageClient />);
 
     expect(screen.getByText("Aucun signalement")).toBeInTheDocument();
-    expect(
-      screen.getByText("Aucun signalement à afficher pour ce filtre."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucun signalement à afficher pour ce filtre.")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -192,12 +185,8 @@ describe("ReportsPageClient", () => {
 
     render(<ReportsPageClient />);
 
-    expect(
-      screen.getByRole("heading", { name: "Signalements" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Gérez les signalements de contenu abusif"),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Signalements" })).toBeInTheDocument();
+    expect(screen.getByText("Gérez les signalements de contenu abusif")).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -209,18 +198,10 @@ describe("ReportsPageClient", () => {
 
     render(<ReportsPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: "Tous" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "En attente" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Traité" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Ignoré" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tous" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "En attente" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Traité" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ignoré" })).toBeInTheDocument();
   });
 
   it("should highlight the active status filter", () => {
@@ -244,9 +225,7 @@ describe("ReportsPageClient", () => {
     render(<ReportsPageClient />);
 
     fireEvent.click(screen.getByRole("button", { name: "En attente" }));
-    expect(screen.getByRole("button", { name: "En attente" })).toHaveClass(
-      "bg-primary",
-    );
+    expect(screen.getByRole("button", { name: "En attente" })).toHaveClass("bg-primary");
   });
 
   // -----------------------------------------------------------------------
@@ -266,9 +245,7 @@ describe("ReportsPageClient", () => {
       ...samplePendingReport,
       targetType: "UNKNOWN",
     };
-    mockReportsQuery.mockReturnValue(
-      buildQueryMock([unknownTargetReport]),
-    );
+    mockReportsQuery.mockReturnValue(buildQueryMock([unknownTargetReport]));
 
     render(<ReportsPageClient />);
 
@@ -317,9 +294,7 @@ describe("ReportsPageClient", () => {
   });
 
   it("should truncate long reasons", () => {
-    mockReportsQuery.mockReturnValue(
-      buildQueryMock([sampleLongReasonReport]),
-    );
+    mockReportsQuery.mockReturnValue(buildQueryMock([sampleLongReasonReport]));
 
     render(<ReportsPageClient />);
 
@@ -331,9 +306,7 @@ describe("ReportsPageClient", () => {
   // -----------------------------------------------------------------------
 
   it("should show reviewed by when available", () => {
-    mockReportsQuery.mockReturnValue(
-      buildQueryMock([sampleReviewedReport]),
-    );
+    mockReportsQuery.mockReturnValue(buildQueryMock([sampleReviewedReport]));
 
     render(<ReportsPageClient />);
 
@@ -341,15 +314,11 @@ describe("ReportsPageClient", () => {
   });
 
   it("should not show reviewed by when absent", () => {
-    mockReportsQuery.mockReturnValue(
-      buildQueryMock([samplePendingReport]),
-    );
+    mockReportsQuery.mockReturnValue(buildQueryMock([samplePendingReport]));
 
     render(<ReportsPageClient />);
 
-    expect(
-      screen.queryByText(/Reviewé par/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Reviewé par/)).not.toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -361,21 +330,15 @@ describe("ReportsPageClient", () => {
 
     render(<ReportsPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: /Ignorer/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ignorer/i })).toBeInTheDocument();
   });
 
   it("should not show dismiss button for non-PENDING reports", () => {
-    mockReportsQuery.mockReturnValue(
-      buildQueryMock([sampleReviewedReport, sampleDismissedReport]),
-    );
+    mockReportsQuery.mockReturnValue(buildQueryMock([sampleReviewedReport, sampleDismissedReport]));
 
     render(<ReportsPageClient />);
 
-    expect(
-      screen.queryByRole("button", { name: /Ignorer/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ignorer/i })).not.toBeInTheDocument();
   });
 
   it("should call dismissMutation.mutate on dismiss click", () => {
@@ -388,9 +351,7 @@ describe("ReportsPageClient", () => {
 
     render(<ReportsPageClient />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Ignorer/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Ignorer/i }));
 
     expect(mutate).toHaveBeenCalledWith({ reportId: "r-1" });
   });
@@ -400,15 +361,11 @@ describe("ReportsPageClient", () => {
       mutate: vi.fn(),
       isPending: true,
     }));
-    mockReportsQuery.mockReturnValue(
-      buildQueryMock([samplePendingReport]),
-    );
+    mockReportsQuery.mockReturnValue(buildQueryMock([samplePendingReport]));
 
     render(<ReportsPageClient />);
 
-    expect(
-      screen.getByRole("button", { name: /Ignorer/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Ignorer/i })).toBeDisabled();
   });
 
   it("should show success toast on successful dismiss", () => {

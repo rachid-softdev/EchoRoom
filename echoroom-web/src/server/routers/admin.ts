@@ -5,12 +5,12 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
+import { type DLQEntry, retryDLQ } from "@/server/middleware/webhookDLQ";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
-import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { db } from "../db";
+import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { getUTCDateString } from "../lib/date";
 import { adminProcedure, router } from "../procedures";
-import { type DLQEntry, retryDLQ } from "@/server/middleware/webhookDLQ";
 
 function hashPhoneForAudit(phone: string): string {
   // HMAC avec AUDIT_HASH_SECRET comme sel pour empêcher les rainbow tables
@@ -736,8 +736,7 @@ export const adminRouter = router({
         user: { ...c.user, image: c.user.profile?.image ?? null },
       }));
 
-      const nextCursor =
-        comments.length > input.limit ? items[items.length - 1]?.id : undefined;
+      const nextCursor = comments.length > input.limit ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor };
     }),
@@ -778,9 +777,11 @@ export const adminRouter = router({
     }),
 
   purgeGDPR: adminProcedure
-    .input(z.object({
-      retentionDays: z.number().min(7).max(90).default(30),
-    }))
+    .input(
+      z.object({
+        retentionDays: z.number().min(7).max(90).default(30),
+      }),
+    )
     .mutation(async ({ input }) => {
       const result = await purgeAnonymizedUsers(input.retentionDays);
       return result;
@@ -789,9 +790,11 @@ export const adminRouter = router({
   // ─── Dead Letter Queue ─────────────────────────────────────────────────────
 
   getDLQ: adminProcedure
-    .input(z.object({
-      provider: z.enum(["stripe", "twilio"]),
-    }))
+    .input(
+      z.object({
+        provider: z.enum(["stripe", "twilio"]),
+      }),
+    )
     .query(async ({ input }) => {
       if (!redis) {
         return { items: [], total: 0 };
@@ -808,9 +811,11 @@ export const adminRouter = router({
     }),
 
   retryDLQ: adminProcedure
-    .input(z.object({
-      provider: z.enum(["stripe", "twilio"]),
-    }))
+    .input(
+      z.object({
+        provider: z.enum(["stripe", "twilio"]),
+      }),
+    )
     .mutation(async ({ input }) => {
       const result = await retryDLQ(input.provider);
       return result;

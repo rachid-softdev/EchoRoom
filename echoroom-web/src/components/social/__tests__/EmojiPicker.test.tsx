@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmojiPicker } from "../EmojiPicker";
 
 // ---------------------------------------------------------------------------
@@ -38,9 +38,7 @@ describe("EmojiPicker", () => {
     render(<EmojiPicker onSelect={vi.fn()} />);
 
     for (const emoji of defaultEmojis) {
-      expect(
-        screen.getByRole("button", { name: `Réagir avec ${emoji}` }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: `Réagir avec ${emoji}` })).toBeInTheDocument();
     }
   });
 
@@ -118,9 +116,7 @@ describe("EmojiPicker", () => {
   });
 
   it("updates selected emoji when selectedEmoji prop changes", () => {
-    const { rerender } = render(
-      <EmojiPicker onSelect={vi.fn()} selectedEmoji="❤️" />,
-    );
+    const { rerender } = render(<EmojiPicker onSelect={vi.fn()} selectedEmoji="❤️" />);
 
     const initialSelected = screen.getByRole("button", { name: "Réagir avec ❤️" });
     // Check for unique selected classes (hover:scale-110 is on ALL buttons)

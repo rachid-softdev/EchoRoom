@@ -1,8 +1,8 @@
 import { db } from "@/server/db";
 import { AppError } from "@/server/lib/errors";
+import { createLogger } from "@/server/lib/logger";
 import { clipRepository } from "@/server/repositories";
 import { getPresignedUrl } from "@/server/services/audio/r2";
-import { createLogger } from "@/server/lib/logger";
 import { extractAndUploadClip } from "./clipExtractor";
 
 const log = createLogger("clips");

@@ -1,22 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Create scenario page", () => {
   test("should redirect to /login when unauthenticated", async ({ page }) => {
     await page.goto("/create");
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("should redirect to /login when unauthenticated for /create", async ({ page }) => {
     await page.goto("/create");
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByText("Connectez-vous pour accéder à votre dashboard"),
-    ).toBeVisible();
+    await expect(page.getByText("Connectez-vous pour accéder à votre dashboard")).toBeVisible();
   });
 
   test("character selection grid renders", async ({ page }) => {
@@ -31,7 +27,10 @@ test.describe("Create scenario page", () => {
     await expect(page.getByText("Personnage IA")).toBeVisible();
 
     // The character grid container exists (either with cards or loading state)
-    const characterCard = page.locator("button").filter({ has: page.locator(".rounded-full") }).first();
+    const characterCard = page
+      .locator("button")
+      .filter({ has: page.locator(".rounded-full") })
+      .first();
     const skeleton = page.locator("[class*='skeleton']").first();
     const hasCard = await characterCard.isVisible().catch(() => false);
     const hasSkeleton = await skeleton.isVisible().catch(() => false);
@@ -63,7 +62,10 @@ test.describe("Create scenario page", () => {
     const descriptionInput = page.getByLabel("Description");
     await expect(descriptionInput).toBeVisible();
     await expect(descriptionInput).toHaveAttribute("maxLength", "300");
-    await expect(descriptionInput).toHaveAttribute("placeholder", "Décrivez le contexte du scénario...");
+    await expect(descriptionInput).toHaveAttribute(
+      "placeholder",
+      "Décrivez le contexte du scénario...",
+    );
 
     // Opening message textarea
     const openingInput = page.getByLabel("Message d'ouverture");

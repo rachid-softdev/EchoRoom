@@ -1,8 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Shared event bus — uses a module-level object (NOT globalThis) so that
@@ -99,11 +100,9 @@ vi.mock("../AudioPlayer", () => {
       eventBus["ended"].push(onEnded);
 
       return () => {
-        eventBus["error"] = eventBus["error"]?.filter((h) => h !== onError);
-        eventBus["timeupdate"] = eventBus["timeupdate"]?.filter(
-          (h) => h !== onTimeupdate,
-        );
-        eventBus["ended"] = eventBus["ended"]?.filter((h) => h !== onEnded);
+        eventBus["error"] = eventBus["error"]?.filter((h) => h !== onError) ?? [];
+        eventBus["timeupdate"] = eventBus["timeupdate"]?.filter((h) => h !== onTimeupdate) ?? [];
+        eventBus["ended"] = eventBus["ended"]?.filter((h) => h !== onEnded) ?? [];
       };
     }, []);
 
@@ -126,14 +125,11 @@ vi.mock("../AudioPlayer", () => {
       }
     }, [isPlaying]);
 
-    const handleSeek = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const time = Number(e.target.value);
-        setCurrentTime(time);
-        if (mockAudio) mockAudio.currentTime = time;
-      },
-      [],
-    );
+    const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const time = Number(e.target.value);
+      setCurrentTime(time);
+      if (mockAudio) mockAudio.currentTime = time;
+    }, []);
 
     const handleSpeedChange = useCallback((speed: number) => {
       setPlaybackRate(speed);
@@ -153,9 +149,7 @@ vi.mock("../AudioPlayer", () => {
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <svg data-testid="icon-clock" />
           </div>
-          <p className="text-muted-foreground text-sm">
-            Aucun enregistrement disponible
-          </p>
+          <p className="text-muted-foreground text-sm">Aucun enregistrement disponible</p>
         </div>
       );
     }
@@ -166,9 +160,7 @@ vi.mock("../AudioPlayer", () => {
         <div className="flex flex-col items-center py-6 text-center">
           <svg data-testid="icon-alert" className="w-12 h-12 mb-4" />
           <p className="text-sm font-medium mb-1">Chargement impossible</p>
-          <p className="text-xs text-muted-foreground">
-            L'audio n'est pas accessible. Réessayez.
-          </p>
+          <p className="text-xs text-muted-foreground">L'audio n'est pas accessible. Réessayez.</p>
         </div>
       );
     }
@@ -176,19 +168,10 @@ vi.mock("../AudioPlayer", () => {
     // ── Loaded UI ────────────────────────────────────────────────
     return (
       <div className="flex flex-col items-center py-6">
-        {title && (
-          <p className="text-sm text-muted-foreground mb-4">{title}</p>
-        )}
+        {title && <p className="text-sm text-muted-foreground mb-4">{title}</p>}
 
-        <button
-          className="rounded-full w-16 h-16 mb-4"
-          onClick={handleTogglePlay}
-        >
-          {isPlaying ? (
-            <svg data-testid="icon-pause" />
-          ) : (
-            <svg data-testid="icon-play" />
-          )}
+        <button className="rounded-full w-16 h-16 mb-4" onClick={handleTogglePlay}>
+          {isPlaying ? <svg data-testid="icon-pause" /> : <svg data-testid="icon-play" />}
         </button>
 
         {duration > 0 && (
@@ -235,7 +218,7 @@ vi.mock("../AudioPlayer", () => {
             rel="noopener noreferrer"
             className="mt-4"
           >
-            <button className="gap-2" variant="ghost">
+            <button className="gap-2">
               <svg data-testid="icon-download" />
               Télécharger
             </button>
@@ -295,7 +278,10 @@ describe("AudioPlayer — loaded state", () => {
     vi.unstubAllGlobals();
 
     mockAudio = createMockAudio();
-    vi.stubGlobal("Audio", vi.fn(() => mockAudio));
+    vi.stubGlobal(
+      "Audio",
+      vi.fn(() => mockAudio),
+    );
 
     const mod = await import("../AudioPlayer");
     AudioPlayer = mod.AudioPlayer;
@@ -320,9 +306,7 @@ describe("AudioPlayer — loaded state", () => {
     });
 
     expect(screen.getByText("Chargement impossible")).toBeInTheDocument();
-    expect(
-      screen.getByText("L'audio n'est pas accessible. Réessayez."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("L'audio n'est pas accessible. Réessayez.")).toBeInTheDocument();
     expect(screen.getByTestId("icon-alert")).toBeInTheDocument();
   });
 
@@ -375,9 +359,7 @@ describe("AudioPlayer — loaded state", () => {
   it("range slider updates currentTime", () => {
     render(<AudioPlayer recordingUrl="https://example.com/audio.mp3" />);
 
-    const slider = document.querySelector(
-      'input[type="range"]',
-    ) as HTMLInputElement;
+    const slider = document.querySelector('input[type="range"]') as HTMLInputElement;
     expect(slider).toBeInTheDocument();
 
     fireEvent.change(slider, { target: { value: "30" } });
@@ -434,9 +416,7 @@ describe("AudioPlayer — loaded state", () => {
   // ── Download link ─────────────────────────────────────────────────
 
   it("renders download link when recordingUrl exists", () => {
-    render(
-      <AudioPlayer recordingUrl="https://example.com/audio.mp3" />,
-    );
+    render(<AudioPlayer recordingUrl="https://example.com/audio.mp3" />);
 
     const downloadLink = screen.getByText("Télécharger");
     expect(downloadLink).toBeInTheDocument();
@@ -448,12 +428,7 @@ describe("AudioPlayer — loaded state", () => {
   // ── Title ─────────────────────────────────────────────────────────
 
   it("renders title when provided", () => {
-    render(
-      <AudioPlayer
-        recordingUrl="https://example.com/audio.mp3"
-        title="Episode 1"
-      />,
-    );
+    render(<AudioPlayer recordingUrl="https://example.com/audio.mp3" title="Episode 1" />);
 
     expect(screen.getByText("Episode 1")).toBeInTheDocument();
   });
@@ -461,9 +436,7 @@ describe("AudioPlayer — loaded state", () => {
   // ── Unmount behaviour ─────────────────────────────────────────────
 
   it("pauses audio on unmount", () => {
-    const { unmount } = render(
-      <AudioPlayer recordingUrl="https://example.com/audio.mp3" />,
-    );
+    const { unmount } = render(<AudioPlayer recordingUrl="https://example.com/audio.mp3" />);
 
     fireEvent.click(screen.getByTestId("icon-play").closest("button")!);
 

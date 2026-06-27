@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 // ── Helpers ──
 
@@ -28,17 +28,12 @@ async function mockSession(page: import("@playwright/test").Page) {
 /**
  * Mock the tRPC billing.getCredits endpoint.
  */
-async function mockGetCredits(
-  page: import("@playwright/test").Page,
-  credits: number,
-) {
+async function mockGetCredits(page: import("@playwright/test").Page, credits: number) {
   await page.route("**/api/trpc/billing.getCredits*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: { credits } } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: { credits } } } }]),
     });
   });
 }
@@ -60,9 +55,7 @@ async function mockGetPurchases(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        { result: { data: { json: purchases } } },
-      ]),
+      body: JSON.stringify([{ result: { data: { json: purchases } } }]),
     });
   });
 }
@@ -131,14 +124,12 @@ test.describe("P2 — Billing purchase history (dynamic)", () => {
     if (redirected) return;
 
     // The error state shows an error message and a retry button
-    await expect(
-      page.getByText("Erreur lors du chargement de l'historique"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Erreur lors du chargement de l'historique")).toBeVisible({
+      timeout: 10000,
+    });
 
     // Réessayer button should be visible to retry loading
-    await expect(
-      page.getByRole("button", { name: "Réessayer" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Réessayer" })).toBeVisible();
   });
 
   // ── Empty state ──
@@ -155,17 +146,13 @@ test.describe("P2 — Billing purchase history (dynamic)", () => {
     if (redirected) return;
 
     // The empty state should show "Aucun achat pour le moment"
-    await expect(
-      page.getByText("Aucun achat pour le moment"),
-    ).toBeVisible();
+    await expect(page.getByText("Aucun achat pour le moment")).toBeVisible();
 
     // CreditCard icon should be present
     await expect(page.locator("svg.lucide-credit-card")).toBeVisible();
 
     // A button to navigate to credit packs should be present
-    await expect(
-      page.getByRole("button", { name: "Acheter des crédits" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Acheter des crédits" })).toBeVisible();
   });
 
   // ── With data ──
@@ -346,7 +333,9 @@ test.describe("P2 — Billing purchase history (dynamic)", () => {
 
     // Vérifier qu'un toast de succès est affiché (le toast system utilise un rôle ou une classe spécifique)
     // Le toast doit contenir le message de confirmation
-    const toastContainer = page.locator("[data-sonner-toaster], .fixed.bottom-4.right-4, [role='status']").first();
+    const toastContainer = page
+      .locator("[data-sonner-toaster], .fixed.bottom-4.right-4, [role='status']")
+      .first();
     const hasToastSystem = await toastContainer.isVisible().catch(() => false);
 
     if (hasToastSystem) {

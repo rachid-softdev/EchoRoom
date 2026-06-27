@@ -1,7 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Call replay page - additional scenarios", () => {
-  test("should handle a route with a random UUID call ID (response under 400)", async ({ page }) => {
+  test("should handle a route with a random UUID call ID (response under 400)", async ({
+    page,
+  }) => {
     // Use a properly formatted UUID that the middleware should handle gracefully
     const randomUuid = "550e8400-e29b-41d4-a716-446655440000";
     const response = await page.goto(`/call/${randomUuid}`);
@@ -12,9 +14,7 @@ test.describe("Call replay page - additional scenarios", () => {
 
     // Unauthenticated users are redirected to the login page
     await expect(page).toHaveURL(/\/login/);
-    await expect(
-      page.getByRole("heading", { name: "Connexion" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
   });
 
   test("should display a page heading when navigating to a call replay route", async ({ page }) => {

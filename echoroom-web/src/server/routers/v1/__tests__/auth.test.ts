@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ describe("authV1Router — Password Validation (L-5)", () => {
   });
 
   it("should accept a password at the maximum length (128 chars)", () => {
-    const longPassword = "A" + "a".repeat(121) + "1".repeat(6);
+    const longPassword = `A${"a".repeat(121)}${"1".repeat(6)}`;
     expect(longPassword.length).toBe(128);
     expect(isValidPassword(longPassword)).toBe(true);
   });
@@ -77,7 +77,7 @@ describe("authV1Router — Password Validation (L-5)", () => {
   });
 
   it("should reject a password that is too long (more than 128 chars)", () => {
-    const tooLong = "A1" + "a".repeat(128);
+    const tooLong = `A1${"a".repeat(128)}`;
     expect(isValidPassword(tooLong)).toBe(false);
     const error = getValidationError(tooLong);
     expect(error).toContain("128");
@@ -204,9 +204,7 @@ describe("authV1Router.register — email enumeration protection", () => {
   };
 
   it("should call findUnique twice (email + username) via Promise.all", async () => {
-    mockDb.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    mockDb.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     mockDb.user.create.mockResolvedValue({ id: "user-new" });
 
     const result = await handler({ input: validInput, ctx: {} });
@@ -228,9 +226,9 @@ describe("authV1Router.register — email enumeration protection", () => {
       .mockResolvedValueOnce({ id: "existing-email-id" })
       .mockResolvedValueOnce(null);
 
-    await expect(
-      handler({ input: validInput, ctx: {} }),
-    ).rejects.toThrow("Cet email ou ce nom d'utilisateur est déjà utilisé");
+    await expect(handler({ input: validInput, ctx: {} })).rejects.toThrow(
+      "Cet email ou ce nom d'utilisateur est déjà utilisé",
+    );
   });
 
   it("should throw CONFLICT with generic message when username already exists", async () => {
@@ -238,9 +236,9 @@ describe("authV1Router.register — email enumeration protection", () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ id: "existing-username-id" });
 
-    await expect(
-      handler({ input: validInput, ctx: {} }),
-    ).rejects.toThrow("Cet email ou ce nom d'utilisateur est déjà utilisé");
+    await expect(handler({ input: validInput, ctx: {} })).rejects.toThrow(
+      "Cet email ou ce nom d'utilisateur est déjà utilisé",
+    );
   });
 
   it("should throw BAD_REQUEST when consentAccepted is false", async () => {
@@ -289,9 +287,7 @@ describe("authV1Router.register — email enumeration protection", () => {
   });
 
   it("should not block non-disposable emails with subdomains", async () => {
-    mockDb.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    mockDb.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     mockDb.user.create.mockResolvedValue({ id: "user-created" });
 
     const result = await handler({
@@ -303,37 +299,25 @@ describe("authV1Router.register — email enumeration protection", () => {
   });
 
   it("should throw CONFLICT when race condition causes double insert", async () => {
-    mockDb.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    mockDb.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     mockDb.user.create.mockRejectedValue(
       new Error("Unique constraint failed on the fields: (`email`)"),
     );
 
-    await expect(
-      handler({ input: validInput, ctx: {} }),
-    ).rejects.toThrow("Unique constraint");
+    await expect(handler({ input: validInput, ctx: {} })).rejects.toThrow("Unique constraint");
   });
 
   it("should throw when bcrypt.hash fails", async () => {
-    mockDb.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    mockDb.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
 
     const bcryptjs = await import("bcryptjs");
-    (bcryptjs.default.hash as any).mockRejectedValueOnce(
-      new Error("bcrypt error"),
-    );
+    (bcryptjs.default.hash as any).mockRejectedValueOnce(new Error("bcrypt error"));
 
-    await expect(
-      handler({ input: validInput, ctx: {} }),
-    ).rejects.toThrow("bcrypt error");
+    await expect(handler({ input: validInput, ctx: {} })).rejects.toThrow("bcrypt error");
   });
 
   it("should succeed when neither email nor username exist", async () => {
-    mockDb.user.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    mockDb.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     mockDb.user.create.mockResolvedValue({ id: "user-created" });
 
     const result = await handler({ input: validInput, ctx: {} });
@@ -378,9 +362,7 @@ describe("authV1Router.changePassword — password change", () => {
 
     const bcryptjs = await import("bcryptjs");
     (bcryptjs.default.compare as any).mockResolvedValue(true);
-    (bcryptjs.default.hash as any).mockResolvedValue(
-      "$2b$12$new_hashed_password",
-    );
+    (bcryptjs.default.hash as any).mockResolvedValue("$2b$12$new_hashed_password");
 
     const result = await handler({ input: validInput, ctx: validCtx });
 
@@ -402,9 +384,7 @@ describe("authV1Router.changePassword — password change", () => {
     const bcryptjs = await import("bcryptjs");
     (bcryptjs.default.compare as any).mockResolvedValue(false);
 
-    await expect(
-      handler({ input: validInput, ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ input: validInput, ctx: validCtx })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: "Mot de passe actuel incorrect",
     });
@@ -413,9 +393,7 @@ describe("authV1Router.changePassword — password change", () => {
   it("should throw NOT_FOUND when user does not exist", async () => {
     mockDb.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      handler({ input: validInput, ctx: validCtx }),
-    ).rejects.toMatchObject({
+    await expect(handler({ input: validInput, ctx: validCtx })).rejects.toMatchObject({
       code: "NOT_FOUND",
       message: "Utilisateur introuvable",
     });
@@ -424,7 +402,8 @@ describe("authV1Router.changePassword — password change", () => {
   it("should reject empty currentPassword (Zod)", () => {
     const schema = z.object({
       currentPassword: z.string().min(1),
-      newPassword: z.string()
+      newPassword: z
+        .string()
         .min(8, "Minimum 8 caractères")
         .max(128, "Maximum 128 caractères")
         .regex(/[A-Z]/, "Doit contenir une majuscule")
@@ -432,15 +411,14 @@ describe("authV1Router.changePassword — password change", () => {
         .regex(/[0-9]/, "Doit contenir un chiffre"),
     });
 
-    expect(
-      schema.safeParse({ currentPassword: "", newPassword: "ValidNew1" }).success,
-    ).toBe(false);
+    expect(schema.safeParse({ currentPassword: "", newPassword: "ValidNew1" }).success).toBe(false);
   });
 
   it("should reject newPassword that is too short (Zod)", () => {
     const schema = z.object({
       currentPassword: z.string().min(1),
-      newPassword: z.string()
+      newPassword: z
+        .string()
         .min(8, "Minimum 8 caractères")
         .max(128, "Maximum 128 caractères")
         .regex(/[A-Z]/, "Doit contenir une majuscule")
@@ -448,8 +426,8 @@ describe("authV1Router.changePassword — password change", () => {
         .regex(/[0-9]/, "Doit contenir un chiffre"),
     });
 
-    expect(
-      schema.safeParse({ currentPassword: "OldPass1", newPassword: "Short1A" }).success,
-    ).toBe(false);
+    expect(schema.safeParse({ currentPassword: "OldPass1", newPassword: "Short1A" }).success).toBe(
+      false,
+    );
   });
 });

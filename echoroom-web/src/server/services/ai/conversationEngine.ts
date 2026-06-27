@@ -1,6 +1,6 @@
 import { getOpenAIClient } from "@/lib/openai";
-import { createLogger } from "@/server/lib/logger";
 import { createOpenAICircuitBreaker } from "@/server/lib/circuitBreaker";
+import { createLogger } from "@/server/lib/logger";
 import { moderateOutput } from "./moderation";
 
 const log = createLogger("conversation-engine");

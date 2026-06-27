@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
-  encryptPhoneNumber,
   decryptPhoneNumber,
-  maskPhoneNumber,
+  encryptPhoneNumber,
   isEncrypted,
+  maskPhoneNumber,
 } from "../encryption";
 
 // ---------------------------------------------------------------------------
@@ -20,15 +20,15 @@ const V1_FORMAT_REGEX = /^v1:[0-9a-f]{24}:[0-9a-f]{32}:[0-9a-f]*$/i;
 let originalKey: string | undefined;
 
 beforeAll(() => {
-  originalKey = process.env['PHONE_ENCRYPTION_KEY'];
-  process.env['PHONE_ENCRYPTION_KEY'] = TEST_KEY;
+  originalKey = process.env["PHONE_ENCRYPTION_KEY"];
+  process.env["PHONE_ENCRYPTION_KEY"] = TEST_KEY;
 });
 
 afterAll(() => {
   if (originalKey === undefined) {
-    delete process.env['PHONE_ENCRYPTION_KEY'];
+    delete process.env["PHONE_ENCRYPTION_KEY"];
   } else {
-    process.env['PHONE_ENCRYPTION_KEY'] = originalKey;
+    process.env["PHONE_ENCRYPTION_KEY"] = originalKey;
   }
 });
 
@@ -97,12 +97,7 @@ describe("decryptPhoneNumber", () => {
   });
 
   it("handles international phone numbers", () => {
-    const numbers = [
-      "+33612345678",
-      "+14155552671",
-      "+447911123456",
-      "+81312345678",
-    ];
+    const numbers = ["+33612345678", "+14155552671", "+447911123456", "+81312345678"];
     for (const phone of numbers) {
       const encrypted = encryptPhoneNumber(phone);
       const decrypted = decryptPhoneNumber(encrypted);
@@ -145,9 +140,7 @@ describe("decryptPhoneNumber", () => {
   });
 
   it("throws Error on invalid ciphertext format (too few parts)", () => {
-    expect(() => decryptPhoneNumber("too:few")).toThrow(
-      "Invalid encrypted phone number format"
-    );
+    expect(() => decryptPhoneNumber("too:few")).toThrow("Invalid encrypted phone number format");
   });
 
   it("throws Error on malformed hex in IV segment", () => {
@@ -175,7 +168,7 @@ describe("decryptPhoneNumber", () => {
 
     // Corrupt the ciphertext segment
     const parts = encrypted.split(":");
-    parts[3] = parts[3] + "00"; // append bogus hex
+    parts[3] = `${parts[3]}00`; // append bogus hex
     const tampered = parts.join(":");
 
     expect(() => decryptPhoneNumber(tampered)).toThrow();
@@ -258,7 +251,9 @@ describe("isEncrypted", () => {
 
   it("returns true for backward-compatible format (32 hex chars at start)", () => {
     // Format without "v1:" prefix: 32 hex chars for IV, then colon, then auth tag, then ciphertext
-    expect(isEncrypted("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:cccccc")).toBe(true);
+    expect(
+      isEncrypted("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:cccccc"),
+    ).toBe(true);
   });
 
   it("returns false for plaintext phone numbers", () => {

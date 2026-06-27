@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ShareButtons } from "../ShareButtons";
 
 // ---------------------------------------------------------------------------
@@ -162,7 +162,10 @@ describe("ShareButtons", () => {
     fireEvent.click(screen.getByRole("button", { name: /partager/i }));
 
     await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith({ scenarioId: "scenario-123", platform: "WEB_SHARE" });
+      expect(mockMutate).toHaveBeenCalledWith({
+        scenarioId: "scenario-123",
+        platform: "WEB_SHARE",
+      });
     });
   });
 
@@ -181,7 +184,10 @@ describe("ShareButtons", () => {
     fireEvent.click(screen.getByRole("button", { name: /partager/i }));
 
     await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith({ scenarioId: "scenario-123", platform: "WEB_SHARE" });
+      expect(mockMutate).toHaveBeenCalledWith({
+        scenarioId: "scenario-123",
+        platform: "WEB_SHARE",
+      });
     });
   });
 

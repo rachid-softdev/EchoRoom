@@ -1,13 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import path from "node:path";
+import { expect, test } from "@playwright/test";
 
-const COMPONENT_PATH = path.resolve(
-  __dirname,
-  "../../src/components/social/ClipCreator.tsx",
-);
+const COMPONENT_PATH = path.resolve(__dirname, "../../src/components/social/ClipCreator.tsx");
 
 function readComponent(): string {
-  return require("fs").readFileSync(COMPONENT_PATH, "utf-8");
+  return require("node:fs").readFileSync(COMPONENT_PATH, "utf-8");
 }
 
 test.describe("ClipCreator component", () => {
@@ -67,7 +64,9 @@ test.describe("ClipCreator component", () => {
 
   test("endTime uses Math.min(durationSeconds, Math.max(0, ...)) for clamping", () => {
     const source = readComponent();
-    expect(source).toContain("Math.min(durationSeconds, Math.max(0, Math.round(Number(e.target.value))))");
+    expect(source).toContain(
+      "Math.min(durationSeconds, Math.max(0, Math.round(Number(e.target.value))))",
+    );
   });
 
   test("error message shown when invalid and fields have values", () => {

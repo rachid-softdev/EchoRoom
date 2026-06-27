@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
   cleanup();
@@ -44,9 +44,7 @@ describe("PrivacyPage (Politique de confidentialité)", () => {
     ];
 
     for (const section of sections) {
-      expect(
-        screen.getByRole("heading", { name: section, level: 2 }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: section, level: 2 })).toBeInTheDocument();
     }
   });
 

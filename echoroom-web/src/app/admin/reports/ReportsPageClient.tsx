@@ -1,69 +1,65 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Badge } from "@/components/ui"
-import { Button } from "@/components/ui"
-import { Card, CardContent } from "@/components/ui"
-import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader"
-import { api } from "@/lib/trpc"
-import { toast } from "@/components/ui"
-import { Flag, Check } from "lucide-react"
-import { usePaginatedQuery } from "@/hooks/usePaginatedQuery"
+import { Check, Flag } from "lucide-react";
+import { useState } from "react";
+import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
+import { Badge, Button, Card, CardContent, toast } from "@/components/ui";
+import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
+import { api } from "@/lib/trpc";
 
 const statusFilters = [
   { label: "Tous", value: undefined },
   { label: "En attente", value: "PENDING" },
   { label: "Traité", value: "REVIEWED" },
   { label: "Ignoré", value: "DISMISSED" },
-]
+];
 
 const statusBadgeVariant: Record<string, "outline" | "secondary" | "default"> = {
   PENDING: "outline",
   REVIEWED: "default",
   DISMISSED: "secondary",
-}
+};
 
 const statusLabels: Record<string, string> = {
   PENDING: "En attente",
   REVIEWED: "Traité",
   DISMISSED: "Ignoré",
-}
+};
 
 const targetTypeLabels: Record<string, string> = {
   SCENARIO: "Scénario",
   COMMENT: "Commentaire",
   USER: "Utilisateur",
-}
+};
 
 export default function ReportsPageClient() {
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
   const paginated = usePaginatedQuery(
+    // biome-ignore lint/correctness/useHookAtTopLevel: usePaginatedQuery lazily invokes the tRPC hook inside its body — this is a valid pattern
     (args) => api.admin.getAbuseReports.useQuery({ ...args, status: statusFilter }),
     { limit: 20 },
-  )
+  );
 
   const dismissMutation = api.admin.dismissAbuseReport.useMutation({
     onSuccess: () => {
-      toast({ title: "Signalement ignoré", variant: "success" })
-      paginated.refetch()
+      toast({ title: "Signalement ignoré", variant: "success" });
+      paginated.refetch();
     },
     onError: (err) => {
       toast({
         title: err.message ?? "Erreur",
         variant: "destructive",
-      })
+      });
     },
-  })
+  });
 
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Signalements</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les signalements de contenu abusif
-          </p>
+          <p className="text-muted-foreground mt-1">Gérez les signalements de contenu abusif</p>
         </div>
       </div>
 
@@ -88,9 +84,7 @@ export default function ReportsPageClient() {
             <CardContent className="py-16 text-center">
               <Flag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Aucun signalement</h3>
-              <p className="text-muted-foreground">
-                Aucun signalement à afficher pour ce filtre.
-              </p>
+              <p className="text-muted-foreground">Aucun signalement à afficher pour ce filtre.</p>
             </CardContent>
           </Card>
         }
@@ -167,5 +161,5 @@ export default function ReportsPageClient() {
         )}
       </PaginatedDataLoader>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // wrapTwilioWebhook tests
@@ -242,10 +242,7 @@ describe("wrapTwilioWebhook", () => {
     });
     await wrapped(req as any);
 
-    expect(mockCheckWebhookRateLimit).toHaveBeenCalledWith(
-      "twilio:voice:init",
-      "203.0.113.42",
-    );
+    expect(mockCheckWebhookRateLimit).toHaveBeenCalledWith("twilio:voice:init", "203.0.113.42");
   });
 
   it("should fall back to x-real-ip when x-forwarded-for is absent", async () => {
@@ -264,10 +261,7 @@ describe("wrapTwilioWebhook", () => {
     });
     await wrapped(req as any);
 
-    expect(mockCheckWebhookRateLimit).toHaveBeenCalledWith(
-      "twilio:voice:init",
-      "198.51.100.7",
-    );
+    expect(mockCheckWebhookRateLimit).toHaveBeenCalledWith("twilio:voice:init", "198.51.100.7");
   });
 
   it("should use 'unknown' when neither IP header is present", async () => {
@@ -285,10 +279,7 @@ describe("wrapTwilioWebhook", () => {
     });
     await wrapped(req as any);
 
-    expect(mockCheckWebhookRateLimit).toHaveBeenCalledWith(
-      "twilio:voice:init",
-      "unknown",
-    );
+    expect(mockCheckWebhookRateLimit).toHaveBeenCalledWith("twilio:voice:init", "unknown");
   });
 
   // -----------------------------------------------------------------------

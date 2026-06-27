@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
 // socialV1Router tests
@@ -143,7 +143,12 @@ describe("socialV1Router.toggleLike", () => {
       };
       await cb(mockTx);
     });
-    mockCheckAndAwardBadges.mockResolvedValue({ id: "badge-1", name: "First Like", description: "Received your first like", iconUrl: null });
+    mockCheckAndAwardBadges.mockResolvedValue({
+      id: "badge-1",
+      name: "First Like",
+      description: "Received your first like",
+      iconUrl: null,
+    });
 
     const { socialV1Router } = await import("../social");
     const handler = (socialV1Router as any).toggleLike.handler;
@@ -153,12 +158,21 @@ describe("socialV1Router.toggleLike", () => {
       ctx: validCtx,
     });
 
-    expect(result).toEqual({ reacted: true, emoji: "👍", newBadge: expect.objectContaining({ id: "badge-1" }) });
+    expect(result).toEqual({
+      reacted: true,
+      emoji: "👍",
+      newBadge: expect.objectContaining({ id: "badge-1" }),
+    });
     expect(mockCheckAndAwardBadges).toHaveBeenCalledWith("creator-1", "LIKE_RECEIVED");
   });
 
   it("should remove reaction (toggle off) when one exists", async () => {
-    mockDb.reaction.findUnique.mockResolvedValue({ id: "reaction-1", userId: "user-123", scenarioId: "scenario-1", emoji: "👍" });
+    mockDb.reaction.findUnique.mockResolvedValue({
+      id: "reaction-1",
+      userId: "user-123",
+      scenarioId: "scenario-1",
+      emoji: "👍",
+    });
     mockDb.scenario.findUnique.mockResolvedValue({ creatorId: "creator-1" });
     mockDb.$transaction.mockImplementation(async (cb: Function) => {
       const mockTx = {
@@ -243,7 +257,12 @@ describe("socialV1Router.toggleLike", () => {
   });
 
   it("should decrement likeCount in transaction on toggle off", async () => {
-    mockDb.reaction.findUnique.mockResolvedValue({ id: "r-1", userId: "user-123", scenarioId: "s-1", emoji: "👍" });
+    mockDb.reaction.findUnique.mockResolvedValue({
+      id: "r-1",
+      userId: "user-123",
+      scenarioId: "s-1",
+      emoji: "👍",
+    });
     mockDb.scenario.findUnique.mockResolvedValue({ creatorId: "creator-1" });
     let capturedUpdate: any;
     mockDb.$transaction.mockImplementation(async (cb: Function) => {
@@ -306,7 +325,12 @@ describe("socialV1Router.toggleLike", () => {
   });
 
   it("should upsert userSocial sub-aggregate correctly on toggle off", async () => {
-    mockDb.reaction.findUnique.mockResolvedValue({ id: "r-1", userId: "user-123", scenarioId: "s-1", emoji: "👍" });
+    mockDb.reaction.findUnique.mockResolvedValue({
+      id: "r-1",
+      userId: "user-123",
+      scenarioId: "s-1",
+      emoji: "👍",
+    });
     mockDb.scenario.findUnique.mockResolvedValue({ creatorId: "creator-1" });
 
     mockDb.$transaction.mockImplementation(async (cb: Function) => {
@@ -408,9 +432,7 @@ describe("socialV1Router.getReactions", () => {
       { emoji: "👍", _count: 5 },
       { emoji: "❤️", _count: 3 },
     ]);
-    mockDb.reaction.findMany.mockResolvedValue([
-      { emoji: "👍" },
-    ]);
+    mockDb.reaction.findMany.mockResolvedValue([{ emoji: "👍" }]);
 
     const { socialV1Router } = await import("../social");
     const handler = (socialV1Router as any).getReactions.handler;
@@ -427,9 +449,7 @@ describe("socialV1Router.getReactions", () => {
   });
 
   it("should return grouped reactions for anonymous user (no userEmojis)", async () => {
-    mockDb.reaction.groupBy.mockResolvedValue([
-      { emoji: "👍", _count: 5 },
-    ]);
+    mockDb.reaction.groupBy.mockResolvedValue([{ emoji: "👍", _count: 5 }]);
 
     const { socialV1Router } = await import("../social");
     const handler = (socialV1Router as any).getReactions.handler;
@@ -439,9 +459,7 @@ describe("socialV1Router.getReactions", () => {
       ctx: anonCtx,
     });
 
-    expect(result.reactions).toEqual([
-      { emoji: "👍", count: 5, userReacted: false },
-    ]);
+    expect(result.reactions).toEqual([{ emoji: "👍", count: 5, userReacted: false }]);
     expect(mockDb.reaction.findMany).not.toHaveBeenCalled();
   });
 
@@ -587,9 +605,9 @@ describe("socialV1Router.getClips", () => {
     const { socialV1Router } = await import("../social");
     const handler = (socialV1Router as any).getClips.handler;
 
-    await expect(
-      handler({ input: { callId: "call-1" }, ctx: validCtx }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(handler({ input: { callId: "call-1" }, ctx: validCtx })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -733,7 +751,12 @@ describe("socialV1Router.getBadges", () => {
   it("should return all badges ordered by name", async () => {
     const mockBadges = [
       { id: "b-1", name: "Bronze", description: "First call", iconUrl: null },
-      { id: "b-2", name: "Silver", description: "Ten calls", iconUrl: "https://example.com/silver.png" },
+      {
+        id: "b-2",
+        name: "Silver",
+        description: "Ten calls",
+        iconUrl: "https://example.com/silver.png",
+      },
     ];
     mockDb.badge.findMany.mockResolvedValue(mockBadges);
 
@@ -773,7 +796,12 @@ describe("socialV1Router.getUserBadges", () => {
       {
         id: "ub-1",
         awardedAt: new Date("2026-06-01"),
-        badge: { id: "b-1", name: "First Call", description: "Made your first call", iconUrl: null },
+        badge: {
+          id: "b-1",
+          name: "First Call",
+          description: "Made your first call",
+          iconUrl: null,
+        },
       },
     ];
     mockDb.userBadge.findMany.mockResolvedValue(mockUserBadges);

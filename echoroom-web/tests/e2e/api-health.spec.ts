@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("API endpoints health checks", () => {
   test("GET /api/health responds (not 404)", async ({ page }) => {
@@ -24,7 +24,9 @@ test.describe("API endpoints health checks", () => {
     }
   });
 
-  test("GET /api/auth/session returns valid JSON (null when not authenticated)", async ({ page }) => {
+  test("GET /api/auth/session returns valid JSON (null when not authenticated)", async ({
+    page,
+  }) => {
     const response = await page.request.get("/api/auth/session");
     expect(response.status()).toBe(200);
 
@@ -41,7 +43,9 @@ test.describe("API endpoints health checks", () => {
     expect(body.error).toBe("Non authentifi\u00e9");
   });
 
-  test("POST /api/webhooks/twilio with missing body returns expected status code (403/404/200 in dev)", async ({ page }) => {
+  test("POST /api/webhooks/twilio with missing body returns expected status code (403/404/200 in dev)", async ({
+    page,
+  }) => {
     // Send a POST with no form body and no signature header.
     // The middleware parses formData (returns empty FormData for empty body),
     // then rejects at the missing x-twilio-signature check.
