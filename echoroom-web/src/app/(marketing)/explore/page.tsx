@@ -98,6 +98,7 @@ export default function ExplorePage() {
   }, [isSearching, hasInteracted]);
 
   // Bump transition key when filters change to re-trigger stagger animation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional re-trigger on filter change
   useEffect(() => {
     setTransitionKey((k) => k + 1);
   }, [activeCategory, debouncedQuery]);
@@ -113,7 +114,7 @@ export default function ExplorePage() {
         scenario.description.toLowerCase().includes(debouncedQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }) ?? [],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // biome-ignore lint/correctness/useExhaustiveDependencies: chaosKey triggers re-shuffle
     [feedQuery.data, activeCategory, debouncedQuery, chaosKey]
   );
 

@@ -59,17 +59,13 @@ export default function DashboardPage() {
                 Réessayer
               </Button>
             </div>
+          ) : isNewUser ? (
+            <OnboardingSequence
+              callsCount={calls.length}
+              scenariosCount={scenarios.length}
+            />
           ) : (
-            <>
-              {isNewUser ? (
-                <OnboardingSequence
-                  callsCount={calls.length}
-                  scenariosCount={scenarios.length}
-                />
-              ) : (
-                <FeaturedScenario />
-              )}
-            </>
+            <FeaturedScenario />
           )}
 
           {/* Energy Bar */}
