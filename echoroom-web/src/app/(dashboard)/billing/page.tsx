@@ -17,13 +17,6 @@ import {
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
 
-interface CreditPack {
-  credits: number;
-  price: string;
-  priceId: string;
-  popular: boolean;
-}
-
 // Paid tiers are rendered dynamically from PRICING_CONFIG so the UI always
 // matches the source of truth (previously the page hardcoded price_10/50/200/500
 // ids that no longer exist, breaking checkout).
