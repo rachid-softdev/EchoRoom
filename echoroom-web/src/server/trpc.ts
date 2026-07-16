@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { auth } from "@/lib/auth";
-import { db } from "./db";
+import { db, ensureFeatureFlagOverridesLoaded } from "./db";
 import { createLogger } from "./lib/logger";
 import { runWithContext } from "./lib/requestContext";
 import { CSRFFailure, validateCSRF } from "./middleware/csrf";
@@ -23,6 +23,11 @@ interface CreateContextOptions {
 }
 
 export async function createTRPCContext(opts?: CreateContextOptions) {
+  // Guarantee persisted feature-flag overrides are loaded before any flag-gated
+  // procedure runs. The promise resolves once (cached) so this adds no latency
+  // after the first call.
+  await ensureFeatureFlagOverridesLoaded();
+
   const session = await auth();
 
   // CSRF check for POST mutations
