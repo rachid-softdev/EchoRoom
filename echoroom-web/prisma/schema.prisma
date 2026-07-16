@@ -115,6 +115,7 @@ model User {
   auditLogs       AuditLog[]
   blockedNumbers  BlockedNumber[]
   dailyCallLimits DailyCallLimit[]
+  apiKeys         ApiKey[]
 
   @@index([totalLikesReceived(sort: Desc)])
   @@index([totalCallsMade(sort: Desc)])
@@ -463,4 +464,20 @@ model DailyCallLimit {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+}
+
+model ApiKey {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  // Only a SHA-256 hash of the key is stored; the plaintext is shown once at creation.
+  keyHash    String   @unique
+  prefix     String   // human-readable prefix shown in the UI (e.g. "ek_live_")
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }

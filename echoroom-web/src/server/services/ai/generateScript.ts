@@ -30,10 +30,11 @@ Génère 3 à 4 réponses courtes et naturelles que l'utilisateur pourrait dire 
     return { suggestedOpening: openingResponse, suggestedResponses };
   } catch (error) {
     log.error("Failed to generate script", { error });
-    return {
-      suggestedOpening: generateDefaultOpening(params.characterName),
-      suggestedResponses: generateDefaultResponses(),
-    };
+    // Fail CLOSED: surface the error instead of returning a generic placeholder
+    // script that would mislead the user into thinking the AI generated it for
+    // their scenario. The caller (scenarios.generateScript) converts this to a
+    // friendly TRPCError.
+    throw new Error("La génération du script a échoué");
   }
 }
 
@@ -57,10 +58,6 @@ function parseResponses(raw: string): string[] {
 
   // Ensure we always return at least 2 responses
   return responses.length >= 2 ? responses : generateDefaultResponses();
-}
-
-function generateDefaultOpening(characterName: string): string {
-  return `Bonjour, ici ${characterName}. Je vous appelle suite à votre demande.`;
 }
 
 function generateDefaultResponses(): string[] {

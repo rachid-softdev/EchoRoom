@@ -93,70 +93,41 @@ describe("generateScenarioScript", () => {
   // AI failure → fallback
   // -----------------------------------------------------------------------
 
-  it("should return default opening and responses when AI throws", async () => {
+  it("should throw (fail closed) when AI throws", async () => {
     mockGenerateScript.mockRejectedValue(new Error("OpenAI API error"));
 
     const { generateScenarioScript } = await import("../generateScript");
-    const result = await generateScenarioScript(defaultParams);
-
-    expect(result.suggestedOpening).toBe(
-      "Bonjour, ici Sophie. Je vous appelle suite à votre demande.",
-    );
-    expect(result.suggestedResponses).toEqual([
-      "Hmm, intéressant... Dis-m'en plus.",
-      "Ah, je vois. Et donc tu penses que... ?",
-      "(Rire) Attends, attends, répète ça ?",
-    ]);
+    await expect(generateScenarioScript(defaultParams)).rejects.toThrow();
   });
 
-  it("should log error when AI generation fails", async () => {
+  it("should log error and reject when AI generation fails", async () => {
     mockGenerateScript.mockRejectedValue(new Error("OpenAI API error"));
 
     const { generateScenarioScript } = await import("../generateScript");
-    await generateScenarioScript(defaultParams);
-
+    await expect(generateScenarioScript(defaultParams)).rejects.toThrow();
     expect(mockLogInstance.error).toHaveBeenCalledWith(
       "Failed to generate script",
       expect.objectContaining({ error: expect.any(Error) }),
     );
   });
 
-  it("should use fallback responses when second call (responses) fails", async () => {
+  it("should throw (fail closed) when second call (responses) fails", async () => {
     mockGenerateScript
       .mockResolvedValueOnce("Ouverture réussie")
       .mockRejectedValueOnce(new Error("Responses generation failed"));
 
     const { generateScenarioScript } = await import("../generateScript");
-    const result = await generateScenarioScript(defaultParams);
-
-    // Whole try block fails because second call rejects — both opening and responses fall back to defaults
-    expect(result.suggestedOpening).toBe(
-      "Bonjour, ici Sophie. Je vous appelle suite à votre demande.",
-    );
-    expect(result.suggestedResponses).toEqual([
-      "Hmm, intéressant... Dis-m'en plus.",
-      "Ah, je vois. Et donc tu penses que... ?",
-      "(Rire) Attends, attends, répète ça ?",
-    ]);
+    // Whole try block fails because second call rejects — must surface the error
+    await expect(generateScenarioScript(defaultParams)).rejects.toThrow();
   });
 
-  it("should return fallback when opening call throws even if responses would succeed", async () => {
+  it("should throw (fail closed) when opening call throws even if responses would succeed", async () => {
     mockGenerateScript
       .mockRejectedValueOnce(new Error("Opening failed"))
       .mockResolvedValueOnce("- Réponse A\n- Réponse B\n- Réponse C");
 
     const { generateScenarioScript } = await import("../generateScript");
-    const result = await generateScenarioScript(defaultParams);
-
-    // Because opening threw, the whole try block jumps to catch
-    expect(result.suggestedOpening).toBe(
-      "Bonjour, ici Sophie. Je vous appelle suite à votre demande.",
-    );
-    expect(result.suggestedResponses).toEqual([
-      "Hmm, intéressant... Dis-m'en plus.",
-      "Ah, je vois. Et donc tu penses que... ?",
-      "(Rire) Attends, attends, répète ça ?",
-    ]);
+    await expect(generateScenarioScript(defaultParams)).rejects.toThrow();
   });
 });
 

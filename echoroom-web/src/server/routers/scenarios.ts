@@ -142,13 +142,24 @@ export const scenariosRouter = router({
         });
       }
 
-      const result = await generateScenarioScript({
-        characterName: character.name,
-        characterPrompt: character.promptSystem,
-        title: input.title,
-        description: input.description,
-        openingMessage: input.openingMessage,
-      });
+      let result: { suggestedOpening: string; suggestedResponses: string[] };
+      try {
+        result = await generateScenarioScript({
+          characterName: character.name,
+          characterPrompt: character.promptSystem,
+          title: input.title,
+          description: input.description,
+          openingMessage: input.openingMessage,
+        });
+      } catch {
+        // The service fails closed (throws on AI error) — convert to a friendly
+        // error so the client shows "generation failed, retry" instead of a
+        // misleading placeholder script.
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "La génération du script a échoué. Veuillez réessayer.",
+        });
+      }
 
       return result;
     }),

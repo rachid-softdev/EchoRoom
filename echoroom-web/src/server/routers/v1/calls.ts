@@ -113,6 +113,8 @@ export const callsV1Router = router({
           switch (error.code) {
             case "SCENARIO_NOT_FOUND":
               throw new TRPCError({ code: "NOT_FOUND", message: "Scénario introuvable" });
+            case "SCENARIO_FORBIDDEN":
+              throw new TRPCError({ code: "FORBIDDEN", message: "Vous n'avez pas accès à ce scénario" });
             case "USER_NOT_FOUND":
               throw new TRPCError({ code: "UNAUTHORIZED", message: "Utilisateur introuvable" });
             case "INSUFFICIENT_CREDITS":

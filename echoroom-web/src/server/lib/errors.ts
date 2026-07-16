@@ -4,6 +4,7 @@
 export type AppErrorCode =
   | "BAD_REQUEST"
   | "SCENARIO_NOT_FOUND"
+  | "SCENARIO_FORBIDDEN"
   | "USER_NOT_FOUND"
   | "INSUFFICIENT_CREDITS"
   | "TWILIO_ERROR"

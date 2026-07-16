@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { env } from "@/lib/env";
-import { PRICING_CONFIG, type PlanTier as AppPlanTier } from "@/config/pricing";
+import { PRICING_CONFIG, prismaPlanToTier, type PlanTier as AppPlanTier } from "@/config/pricing";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/server/db";
 import { createLogger } from "@/server/lib/logger";
@@ -132,6 +132,78 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    case "invoice.paid": {
+      const invoice = event.data.object as Stripe.Invoice;
+      // invoice.subscription is the Stripe subscription id (string) for
+      // subscription invoices; one-shot invoices have it null/undefined.
+      const stripeSubscriptionId =
+        typeof invoice.subscription === "string" ? invoice.subscription : null;
+      if (!stripeSubscriptionId) {
+        log.info("invoice.paid without a subscription reference, skipping", {
+          invoiceId: invoice.id,
+        });
+        break;
+      }
+
+      // Look up the existing Subscription row by stripeSubscriptionId to get
+      // its userId and plan (Prisma PlanTier enum).
+      const sub = await db.subscription.findUnique({
+        where: { stripeSubscriptionId },
+        select: { userId: true, plan: true, status: true },
+      });
+
+      if (!sub) {
+        log.warn("invoice.paid: no matching subscription row found", {
+          stripeSubscriptionId,
+          invoiceId: invoice.id,
+        });
+        break;
+      }
+
+      // Only reseed when the subscription is in a paying state.
+      if (sub.status !== "ACTIVE" && sub.status !== "PAST_DUE") {
+        log.info("invoice.paid: subscription not in paying state, skipping reseed", {
+          stripeSubscriptionId,
+          status: sub.status,
+          invoiceId: invoice.id,
+        });
+        break;
+      }
+
+      // Guard against an unmapped plan so we never reset credits to 0.
+      const tierForSub = prismaPlanToTier(sub.plan);
+      if (!PRICING_CONFIG.find((t) => t.id === tierForSub)) {
+        log.warn("invoice.paid: unmapped plan, skipping reseed", {
+          stripeSubscriptionId,
+          plan: sub.plan,
+          invoiceId: invoice.id,
+        });
+        break;
+      }
+
+      try {
+        await db.$transaction(async (tx) => {
+          await reseedMonthlyCredits(tx, sub.userId, sub.plan);
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          log.info("invoice.paid: concurrent reseed, skipped", {
+            stripeSubscriptionId,
+            invoiceId: invoice.id,
+          });
+          break;
+        }
+        throw error;
+      }
+
+      log.info("Monthly credits reseeded from invoice.paid", {
+        userId: sub.userId,
+        stripeSubscriptionId,
+        invoiceId: invoice.id,
+      });
+      break;
+    }
+
     case "customer.subscription.created":
     case "customer.subscription.updated": {
       const subscription = event.data.object as Stripe.Subscription;
@@ -161,6 +233,25 @@ export async function POST(req: NextRequest) {
       // is the UPPERCASE Prisma SubscriptionStatus enum.
       const status = subscription.status;
       const prismaStatus = stripeStatusToPrisma(status);
+      const prismaPlan = tierToPrismaPlan(tier);
+
+      // Read the existing Subscription row BEFORE the upsert so we can detect a
+      // transition INTO a paying state and plan changes. This lets us avoid
+      // wiping unused credits on the many non-billing `updated` events.
+      const existing = await db.subscription.findUnique({
+        where: { stripeSubscriptionId: subscription.id },
+        select: { status: true, plan: true },
+      });
+
+      const wasPaying = existing?.status === "ACTIVE" || existing?.status === "PAST_DUE";
+      const isPaying = status === "active" || status === "past_due";
+      const isCreated = event.type === "customer.subscription.created";
+      const planChanged = existing?.plan !== prismaPlan;
+
+      // Reseed (reset) credits only on the first grant (created), when the
+      // subscription transitions INTO a paying state, or when the plan actually
+      // changed. Otherwise preserve any remaining mid-month credits.
+      const shouldReseedCredits = isPaying && (isCreated || !wasPaying || planChanged);
 
       // Record the subscription state. The upsert is keyed on the Stripe
       // subscription id, so reprocessing the same event is a no-op (idempotent).
@@ -172,7 +263,7 @@ export async function POST(req: NextRequest) {
               userId,
               stripeSubscriptionId: subscription.id,
               stripePriceId: priceId!,
-              plan: tierToPrismaPlan(tier),
+              plan: prismaPlan,
               status: prismaStatus,
               currentPeriodStart: new Date(
                 (subscription.current_period_start ?? Math.floor(Date.now() / 1000)) * 1000,
@@ -183,21 +274,20 @@ export async function POST(req: NextRequest) {
             },
             update: {
               stripePriceId: priceId!,
-              plan: tierToPrismaPlan(tier),
+              plan: prismaPlan,
               status: prismaStatus,
             },
           });
 
-          // Active or past_due subscriptions grant the tier's entitlements.
-          // Tenant-scoped: only the resolved user's plan is updated, and the
-          // monthly credit allowance is (re)seeded for the recurring-credit model.
-          if (status === "active" || status === "past_due") {
+          // Active/past_due subscriptions grant the tier's entitlements.
+          // Tenant-scoped: credits are reseeded (reset model) ONLY when the
+          // triggers above demand it, preserving unused mid-month credits.
+          // The (possibly new) plan is also reflected for feature gating.
+          if (isPaying && shouldReseedCredits) {
+            await reseedMonthlyCredits(tx, userId, prismaPlan);
             await tx.userBilling.update({
               where: { userId },
-              data: {
-                plan: tierToPrismaPlan(tier),
-                credits: PRICING_CONFIG.find((t) => t.id === tier)?.credits ?? 0,
-              },
+              data: { plan: prismaPlan },
             });
           }
         });
@@ -441,6 +531,26 @@ function resolveUserIdFromSubscription(subscription: Stripe.Subscription): strin
  */
 function tierToPrismaPlan(tier: AppPlanTier): PlanTier {
   return tier.toUpperCase() as PlanTier;
+}
+
+/**
+ * Reseeds a user's monthly credit allowance to the given plan's tier value
+ * (reset model: any remaining credits are overwritten). Used on the actual
+ * monthly renewal (`invoice.paid`) and on the activation-transition branch of
+ * `subscription.updated`. Idempotency is provided by the webhook idempotency
+ * marker wrapping the whole event, so the same event is never double-processed.
+ */
+async function reseedMonthlyCredits(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  prismaPlan: PlanTier,
+): Promise<void> {
+  await tx.userBilling.update({
+    where: { userId },
+    data: {
+      credits: PRICING_CONFIG.find((t) => t.id === prismaPlanToTier(prismaPlan))?.credits ?? 0,
+    },
+  });
 }
 
 /**

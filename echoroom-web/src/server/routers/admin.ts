@@ -11,6 +11,7 @@ import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { db } from "../db";
 import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { getUTCDateString } from "../lib/date";
+import { invalidateFeedCache } from "../services/cache/scenarioCache";
 import { adminProcedure, router } from "../procedures";
 
 function hashPhoneForAudit(phone: string): string {
@@ -219,6 +220,10 @@ export const adminRouter = router({
         await redis.del("admin:moderationQueue:*");
         await redis.del("admin:moderationQueueComments:*");
       }
+
+      // Approved scenarios become eligible for the public feed/trending — drop
+      // the cached feed so they appear without waiting for TTL expiry.
+      await invalidateFeedCache();
 
       return { success: true };
     }),

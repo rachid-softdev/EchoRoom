@@ -50,6 +50,16 @@ export async function initiateCall(params: StartCallParams) {
     throw new AppError("SCENARIO_NOT_FOUND", "Scénario introuvable");
   }
 
+  // Access control (prevents IDOR / broken access control): a caller may only
+  // start a call on a scenario they own, or one that is publicly accessible
+  // to other users (PUBLIC or UNLISTED). PRIVATE scenarios are owner-only.
+  const isOwner = scenario.creatorId === params.userId;
+  const isAccessible =
+    scenario.visibility === "PUBLIC" || scenario.visibility === "UNLISTED";
+  if (!isOwner && !isAccessible) {
+    throw new AppError("SCENARIO_FORBIDDEN", "Vous n'avez pas accès à ce scénario");
+  }
+
   const { todayStart } = getUTCDayRange();
 
   // Resolve the caller's plan tier from UserBilling (source of truth).
