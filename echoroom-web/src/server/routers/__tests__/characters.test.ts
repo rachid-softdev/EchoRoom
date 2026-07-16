@@ -109,7 +109,9 @@ describe("charactersRouter.list", () => {
     expect(result).toEqual(MOCK_CHARACTERS);
     expect(mockCharacterCache.getCachedCharacters).toHaveBeenCalledWith({});
     expect(mockDb.character.findMany).toHaveBeenCalledWith({
-      where: {},
+      // ICON category is hidden when the newCharacterCategory flag is disabled
+      // (public list has no tier context, so the flag evaluates as disabled).
+      where: { NOT: { category: "ICON" } },
       orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
       select: expect.objectContaining({
         id: true,

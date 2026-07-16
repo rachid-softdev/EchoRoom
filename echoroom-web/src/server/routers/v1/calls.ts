@@ -20,6 +20,8 @@ import { protectedProcedure, router, withRateLimit } from "../../procedures";
 import { getPresignedUrl } from "../../services/audio/r2";
 import { detectCallSpam } from "../../services/security/spamDetection";
 import { initiateCall } from "../../services/telephony/callLifecycle";
+import { isFeatureEnabled } from "@/config/featureFlags";
+import { resolveUserTier } from "@/server/services/billing/tierResolution";
 
 const log = createLogger("calls-cache");
 
@@ -70,12 +72,21 @@ export const callsV1Router = router({
         });
       }
 
+      // Enforce server-side call-duration cap (never trust the client value).
+      // Ultra with experimentalLongCalls may run up to 600s; others are capped at 300s.
+      const tier = await resolveUserTier(ctx.session.user.id);
+      const durationCap = isFeatureEnabled("experimentalLongCalls", { tier }) ? 600 : 300;
+      const maxDurationSeconds = Math.min(
+        Math.max(input.maxDurationSeconds, 60),
+        durationCap,
+      );
+
       try {
         const result = await initiateCall({
           scenarioId: input.scenarioId,
           userId: ctx.session.user.id,
           phoneNumber: input.phoneNumber,
-          maxDurationSeconds: input.maxDurationSeconds,
+          maxDurationSeconds,
         });
 
         // Increment scenario play count after successful initiation

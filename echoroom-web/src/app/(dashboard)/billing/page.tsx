@@ -1,5 +1,6 @@
 "use client";
 
+import { PRICING_CONFIG, type PlanTier } from "@/config/pricing";
 import { CreditCard, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
@@ -23,12 +24,17 @@ interface CreditPack {
   popular: boolean;
 }
 
-const creditPacks: CreditPack[] = [
-  { credits: 10, price: "2,99 €", priceId: "price_10", popular: false },
-  { credits: 50, price: "9,99 €", priceId: "price_50", popular: true },
-  { credits: 200, price: "24,99 €", priceId: "price_200", popular: false },
-  { credits: 500, price: "49,99 €", priceId: "price_500", popular: false },
-];
+// Paid tiers are rendered dynamically from PRICING_CONFIG so the UI always
+// matches the source of truth (previously the page hardcoded price_10/50/200/500
+// ids that no longer exist, breaking checkout).
+const paidTiers = PRICING_CONFIG.filter((t) => t.id !== "free");
+
+function formatPrice(priceCents: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(priceCents / 100);
+}
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("fr-FR", {
@@ -82,8 +88,8 @@ export default function BillingPage() {
 
   const credits = creditsQuery.data?.credits ?? 0;
 
-  function handleBuy(pack: CreditPack) {
-    checkout.mutate({ priceId: pack.priceId, credits: pack.credits });
+  function handleSubscribe(tierId: PlanTier) {
+    checkout.mutate({ tier: tierId });
   }
 
   return (
@@ -95,32 +101,41 @@ export default function BillingPage() {
         </Badge>
       </p>
 
-      <h2 className="text-xl font-semibold mb-4">Acheter des crédits</h2>
-      <div id="credit-packs" className="grid md:grid-cols-4 gap-4 mb-10">
-        {creditPacks.map((pack) => (
+      <h2 className="text-xl font-semibold mb-4">Choisissez votre formule</h2>
+      <div id="credit-packs" className="grid md:grid-cols-3 gap-4 mb-10">
+        {paidTiers.map((tier) => (
           <Card
-            key={pack.credits}
-            className={`relative ${pack.popular ? "border-primary/50 ring-1 ring-primary/20" : ""}`}
+            key={tier.id}
+            className={`relative ${
+              tier.highlighted ? "border-primary/50 ring-1 ring-primary/20" : ""
+            }`}
           >
-            {pack.popular && (
+            {tier.highlighted && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <Badge>Populaire</Badge>
               </div>
             )}
             <CardHeader>
-              <CardTitle className="text-2xl font-bold">{pack.credits}</CardTitle>
-              <CardDescription>crédits</CardDescription>
+              <CardTitle className="text-2xl font-bold">{tier.label}</CardTitle>
+              <CardDescription>{tier.credits} crédits / mois</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-semibold mb-4">{pack.price}</p>
+              <p className="text-lg font-semibold mb-4">
+                {formatPrice(tier.priceCents)}
+                <span className="text-sm font-normal text-muted-foreground"> / mois</span>
+              </p>
               <Button
                 className="w-full"
-                variant={pack.popular ? "default" : "outline"}
+                variant={tier.highlighted ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleBuy(pack)}
+                onClick={() => handleSubscribe(tier.id)}
                 disabled={checkout.isPending}
               >
-                {checkout.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Acheter"}
+                {checkout.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  tier.cta
+                )}
               </Button>
             </CardContent>
           </Card>

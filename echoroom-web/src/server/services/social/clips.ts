@@ -13,6 +13,10 @@ interface CreateClipParams {
   title?: string;
   startTime: number;
   endTime: number;
+  /** Pipeline version selector, controlled by the clipGenerationV2 flag ("v2" when enabled). */
+  version?: "v1" | "v2";
+  /** Traceability flag: true when the clip was produced by the v2 pipeline. */
+  usedV2?: boolean;
 }
 
 /**
@@ -41,6 +45,17 @@ export async function createClip(params: CreateClipParams) {
     throw new AppError("FORBIDDEN", "Cet appel ne vous appartient pas");
   }
 
+  log.debug("clip creation requested", {
+    version: params.version ?? "v1",
+    usedV2: params.usedV2 ?? false,
+  });
+
+  // TODO(clipGenerationV2): when `params.version === "v2"`, route to the v2
+  // extraction pipeline here. For now the existing pipeline is used and the
+  // selected version is recorded on the Clip via `usedV2` for traceability.
+  // NOTE: persisting `usedV2` on Clip is deferred until the `Clip.usedV2`
+  // column lands in the schema; the version selector is plumbed through but
+  // not yet written to the row.
   const clip = await clipRepository.create({
     callId: params.callId,
     userId: params.userId,

@@ -26,6 +26,10 @@ vi.mock("@/server/db", () => ({
   db: {
     $transaction: vi.fn(),
     scenario: { findUnique: vi.fn() },
+    userBilling: {
+      // tier resolution in initiateCall reads UserBilling.plan (defaults to "free")
+      findUnique: vi.fn().mockResolvedValue({ plan: undefined }),
+    },
     call: {
       updateMany: vi.fn(),
       update: vi.fn(),
@@ -697,7 +701,8 @@ describe("initiateCall", () => {
       statusCallback: expect.stringContaining("/api/webhooks/twilio"),
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       statusCallbackMethod: "POST",
-      timeout: 600,
+      // free tier caps duration at 300s (input 600 is clamped server-side)
+      timeout: 300,
     });
   });
 
@@ -733,7 +738,8 @@ describe("initiateCall", () => {
         callCount: { lt: 10 },
         totalDurationSeconds: { lt: 36000 },
       },
-      data: { callCount: { increment: 1 }, totalDurationSeconds: { increment: 600 } },
+      // free tier caps duration at 300s (input 600 is clamped server-side)
+      data: { callCount: { increment: 1 }, totalDurationSeconds: { increment: 300 } },
     });
   });
 

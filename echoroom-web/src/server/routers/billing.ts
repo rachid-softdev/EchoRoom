@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { env } from "@/lib/env";
 import { protectedProcedure, router } from "../procedures";
 import { userBillingRepository } from "../repositories";
@@ -24,17 +25,23 @@ export const billingRouter = router({
   createCheckout: protectedProcedure
     .input(
       z.object({
-        priceId: z.string(),
-        credits: z.number().min(1).max(10000),
+        tier: z.enum(["free", "starter", "pro", "ultra"]),
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // "free" is not a purchasable tier — there is nothing to check out.
+      if (input.tier === "free") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Le palier gratuit ne nécessite aucun paiement.",
+        });
+      }
+
       const origin = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
       const session = await createCheckoutSession({
         userId: ctx.session.user.id,
-        credits: input.credits,
-        priceId: input.priceId,
+        tier: input.tier,
         successUrl: `${origin}/billing?success=true`,
         cancelUrl: `${origin}/billing?cancelled=true`,
       });

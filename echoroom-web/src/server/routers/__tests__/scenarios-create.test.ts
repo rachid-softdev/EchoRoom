@@ -25,6 +25,9 @@ const mockDb = vi.hoisted(() => ({
   character: {
     findUnique: vi.fn(),
   },
+  userBilling: {
+    findUnique: vi.fn(),
+  },
   $transaction: vi.fn(),
 }));
 
@@ -63,6 +66,10 @@ vi.mock("@/server/services/ai/moderation", () => ({
 
 vi.mock("@/server/services/ai/generateScript", () => ({
   generateScenarioScript: vi.fn(),
+}));
+
+vi.mock("@/server/services/social/badges", () => ({
+  checkAndAwardBadges: vi.fn(),
 }));
 
 // Mock tRPC
@@ -151,6 +158,9 @@ describe("scenariosRouter.create", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRedisValue.current = null; // disable redis by default
+    // The create handler now gates on tier: FREE cannot create scenarios.
+    // Exercise the happy path with a paid (PRO) plan.
+    mockDb.userBilling.findUnique.mockResolvedValue({ plan: "PRO" });
   });
 
   const validInput = {

@@ -18,6 +18,10 @@ const mockDb = vi.hoisted(() => ({
   scenario: {
     update: vi.fn(),
   },
+  userBilling: {
+    // tier resolution in calls.start reads UserBilling.plan (defaults to "free")
+    findUnique: vi.fn().mockResolvedValue({ plan: undefined }),
+  },
 }));
 
 const mockRedis = vi.hoisted(() => ({

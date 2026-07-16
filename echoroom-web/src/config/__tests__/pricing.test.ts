@@ -26,6 +26,7 @@ vi.mock("@/lib/env", () => ({
   env: {
     STRIPE_PRICE_STARTER: "price_starter_prod",
     STRIPE_PRICE_PRO: "price_pro_prod",
+    STRIPE_PRICE_ULTRA: "price_ultra_prod",
   },
 }));
 
@@ -44,6 +45,7 @@ describe("resolveStripePriceId", () => {
       env: {
         STRIPE_PRICE_STARTER: "price_starter_prod",
         STRIPE_PRICE_PRO: "price_pro_prod",
+        STRIPE_PRICE_ULTRA: "price_ultra_prod",
       },
     }));
 
@@ -63,6 +65,7 @@ describe("resolveStripePriceId", () => {
       env: {
         STRIPE_PRICE_STARTER: undefined,
         STRIPE_PRICE_PRO: undefined,
+        STRIPE_PRICE_ULTRA: undefined,
       },
     }));
 
@@ -108,6 +111,7 @@ describe("resolveStripePriceId", () => {
       env: {
         STRIPE_PRICE_STARTER: undefined,
         STRIPE_PRICE_PRO: undefined,
+        STRIPE_PRICE_ULTRA: undefined,
       },
     }));
 
@@ -120,12 +124,13 @@ describe("resolveStripePriceId", () => {
 });
 
 describe("PRICING_CONFIG structure", () => {
-  it("should contain exactly 3 tiers: free, starter, pro", async () => {
+  it("should contain exactly 4 tiers: free, starter, pro, ultra", async () => {
     const pricing = await import("@/config/pricing");
-    expect(pricing.PRICING_CONFIG).toHaveLength(3);
+    expect(pricing.PRICING_CONFIG).toHaveLength(4);
     expect(pricing.PRICING_CONFIG[0]?.id).toBe("free");
     expect(pricing.PRICING_CONFIG[1]?.id).toBe("starter");
     expect(pricing.PRICING_CONFIG[2]?.id).toBe("pro");
+    expect(pricing.PRICING_CONFIG[3]?.id).toBe("ultra");
   });
 
   it("should have correct credit amounts for each tier", async () => {
@@ -133,10 +138,12 @@ describe("PRICING_CONFIG structure", () => {
     const free = pricing.PRICING_CONFIG.find((t) => t.id === "free");
     const starter = pricing.PRICING_CONFIG.find((t) => t.id === "starter");
     const pro = pricing.PRICING_CONFIG.find((t) => t.id === "pro");
+    const ultra = pricing.PRICING_CONFIG.find((t) => t.id === "ultra");
 
     expect(free?.credits).toBe(5);
     expect(starter?.credits).toBe(50);
     expect(pro?.credits).toBe(200);
+    expect(ultra?.credits).toBe(1000);
   });
 
   it("should have correct price in cents", async () => {
@@ -144,10 +151,12 @@ describe("PRICING_CONFIG structure", () => {
     const free = pricing.PRICING_CONFIG.find((t) => t.id === "free");
     const starter = pricing.PRICING_CONFIG.find((t) => t.id === "starter");
     const pro = pricing.PRICING_CONFIG.find((t) => t.id === "pro");
+    const ultra = pricing.PRICING_CONFIG.find((t) => t.id === "ultra");
 
     expect(free?.priceCents).toBe(0);
     expect(starter?.priceCents).toBe(999);
     expect(pro?.priceCents).toBe(2499);
+    expect(ultra?.priceCents).toBe(4999);
   });
 
   it("should have the starter tier highlighted", async () => {

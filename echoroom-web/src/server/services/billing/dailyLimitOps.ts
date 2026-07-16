@@ -24,25 +24,32 @@ export async function atomicIncrementDailyLimit(
     maxLimit: number;
     maxDurationSeconds?: number;
     currentCallDurationSeconds?: number;
+    /** When true (e.g. ultra tier), no daily cap is enforced at all. */
+    bypassLimit?: boolean;
   },
 ): Promise<void> {
   const effectiveMaxDuration = params.maxDurationSeconds ?? 36000;
   const duration = params.currentCallDurationSeconds ?? 0;
+  const bypass = params.bypassLimit ?? false;
 
-  // Build WHERE condition: if currentCallDurationSeconds provided, enforce duration limit
+  // Build WHERE condition: if currentCallDurationSeconds provided, enforce duration limit.
+  // When bypassLimit is set, neither the call-count nor the duration cap is applied
+  // (used by tiers such as ultra that have no daily limit).
   const whereExtra =
-    params.currentCallDurationSeconds !== undefined
+    !bypass && params.currentCallDurationSeconds !== undefined
       ? { totalDurationSeconds: { lt: effectiveMaxDuration } }
       : {};
 
+  const countWhere = {
+    userId: params.userId,
+    date: params.date,
+    ...(bypass ? {} : { callCount: { lt: params.maxLimit } }),
+    ...whereExtra,
+  };
+
   // Try to atomically increment if under limit
   const result = await tx.dailyCallLimit.updateMany({
-    where: {
-      userId: params.userId,
-      date: params.date,
-      callCount: { lt: params.maxLimit },
-      ...whereExtra,
-    },
+    where: countWhere,
     data: {
       callCount: { increment: 1 },
       totalDurationSeconds: { increment: duration },
@@ -64,7 +71,7 @@ export async function atomicIncrementDailyLimit(
       // P2002 = unique constraint violation means another tx created the row first
       if (e && typeof e === "object" && "code" in e && (e as { code: string }).code === "P2002") {
         const retryWhereExtra =
-          params.currentCallDurationSeconds !== undefined
+          !bypass && params.currentCallDurationSeconds !== undefined
             ? { totalDurationSeconds: { lt: effectiveMaxDuration } }
             : {};
 
@@ -72,7 +79,7 @@ export async function atomicIncrementDailyLimit(
           where: {
             userId: params.userId,
             date: params.date,
-            callCount: { lt: params.maxLimit },
+            ...(bypass ? {} : { callCount: { lt: params.maxLimit } }),
             ...retryWhereExtra,
           },
           data: {

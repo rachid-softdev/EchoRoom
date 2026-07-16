@@ -13,6 +13,7 @@ import {
 } from "../procedures";
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { detectCommentSpam } from "../services/security/spamDetection";
+import { sanitizeUserContent } from "@/server/lib/sanitize";
 
 export const communityRouter = router({
   comment: protectedProcedure
@@ -26,8 +27,12 @@ export const communityRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Spam detection
-      const spamCheck = await detectCommentSpam(ctx.session.user.id, input.content);
+      // Sanitize user-generated content before any storage/processing to
+      // prevent stored XSS from raw <script>/event-handler payloads.
+      const safeContent = sanitizeUserContent(input.content);
+
+      // Spam detection (runs on the sanitized content)
+      const spamCheck = await detectCommentSpam(ctx.session.user.id, safeContent);
       if (spamCheck.flagged) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
@@ -39,7 +44,7 @@ export const communityRouter = router({
         data: {
           userId: ctx.session.user.id,
           scenarioId: input.scenarioId,
-          content: input.content,
+          content: safeContent,
           moderationStatus: "PENDING",
         },
         include: {
@@ -50,7 +55,7 @@ export const communityRouter = router({
       });
 
       // Schedule async AI moderation (fire-and-forget)
-      void scheduleAsyncModeration(input.content, { type: "comment", id: comment.id });
+      void scheduleAsyncModeration(safeContent, { type: "comment", id: comment.id });
 
       return comment;
     }),
@@ -95,6 +100,9 @@ export const communityRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // Sanitize the user-supplied report reason before storage (prevents XSS).
+      const safeReason = sanitizeUserContent(input.reason);
+
       const existing = await db.abuseReport.findFirst({
         where: {
           reporterId: ctx.session.user.id,
@@ -116,7 +124,7 @@ export const communityRouter = router({
           reporterId: ctx.session.user.id,
           targetType: input.targetType,
           targetId: input.targetId,
-          reason: input.reason,
+          reason: safeReason,
         },
       });
 

@@ -9,6 +9,8 @@ import { callRepository, scenarioRepository } from "@/server/repositories";
 import { atomicDebit } from "@/server/services/billing/creditOps";
 import { atomicIncrementDailyLimit } from "@/server/services/billing/dailyLimitOps";
 import { TWILIO_PHONE, twilioCircuitBreaker, twilioClient } from "./twilio";
+import { prismaPlanToTier } from "@/config/pricing";
+import { isFeatureEnabled } from "@/config/featureFlags";
 
 const log = createLogger("call-lifecycle");
 
@@ -50,14 +52,32 @@ export async function initiateCall(params: StartCallParams) {
 
   const { todayStart } = getUTCDayRange();
 
+  // Resolve the caller's plan tier from UserBilling (source of truth).
+  const billingPlan = await db.userBilling.findUnique({
+    where: { userId: params.userId },
+    select: { plan: true },
+  });
+  const tier = prismaPlanToTier(billingPlan?.plan ?? "FREE");
+  const isUltra = tier === "ultra";
+
+  // Enforce server-side call-duration cap (never trust the client value).
+  // Ultra with experimentalLongCalls may run up to 600s; everyone else is capped at 300s.
+  const durationCap = isFeatureEnabled("experimentalLongCalls", { tier }) ? 600 : 300;
+  const effectiveDuration = Math.min(
+    Math.max(params.maxDurationSeconds, 60),
+    durationCap,
+  );
+
   // Step 1: Single transaction — atomic daily limit + atomic debit + create call
   const { call } = await db.$transaction(async (tx) => {
-    // Atomically increment daily limit (throws DAILY_LIMIT_EXCEEDED if at max)
+    // Atomically increment daily limit (throws DAILY_LIMIT_EXCEEDED if at max).
+    // Ultra has no daily limit, so we bypass the count/duration cap.
     await atomicIncrementDailyLimit(tx, {
       userId: params.userId,
       date: todayStart,
       maxLimit: 10,
-      currentCallDurationSeconds: params.maxDurationSeconds,
+      bypassLimit: isUltra,
+      currentCallDurationSeconds: effectiveDuration,
     });
 
     // Atomically debit the user
@@ -105,7 +125,7 @@ export async function initiateCall(params: StartCallParams) {
             statusCallback: `${appUrl}/api/webhooks/twilio`,
             statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
             statusCallbackMethod: "POST",
-            timeout: params.maxDurationSeconds,
+            timeout: effectiveDuration,
           }),
         2,
         1000,

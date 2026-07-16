@@ -47,7 +47,6 @@ export const userRouter = router({
     )
     .mutation(async ({ ctx }) => {
       const userId = ctx.session.user.id;
-      const anonId = crypto.randomUUID();
 
       // Atomic: active call check + already-withdrawn check + anonymization
       // live inside a single $transaction to eliminate TOCTOU window
@@ -81,15 +80,15 @@ export const userRouter = router({
           });
         }
 
+        // Reversible withdrawal: preserve the original email/username so the
+        // user can still authenticate and later re-consent. We only flag the
+        // withdrawal (consentWithdrawnAt + consentWithdrawn) instead of
+        // anonymizing the identity, which previously made re-consent impossible.
         await tx.user.update({
           where: { id: userId },
           data: {
             consentWithdrawnAt: new Date(),
-            email: `withdrawn-${anonId}@anonymized.echoroom.app`,
-            username: `utilisateur-${anonId.substring(0, 8)}`,
-            image: null,
-            displayName: null,
-            bio: null,
+            consentWithdrawn: true,
             tokenVersion: { increment: 1 },
           },
         });
@@ -127,7 +126,11 @@ export const userRouter = router({
       await db.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
-          data: { consentWithdrawnAt: null, tokenVersion: { increment: 1 } },
+          data: {
+            consentWithdrawnAt: null,
+            consentWithdrawn: false,
+            tokenVersion: { increment: 1 },
+          },
         });
         await tx.auditLog.create({
           data: {
@@ -142,18 +145,24 @@ export const userRouter = router({
       return { success: true };
     }),
 
-  getConsentStatus: protectedProcedure.query(async ({ ctx }) => {
-    const user = await db.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: { consentWithdrawnAt: true, consentAcceptedAt: true },
-    });
-    if (!user) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
-    }
-    return {
-      consentWithdrawnAt: user.consentWithdrawnAt,
-      consentAcceptedAt: user.consentAcceptedAt,
-      isConsentWithdrawn: user.consentWithdrawnAt !== null,
-    };
-  }),
+  getConsentStatus: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = await db.user.findUnique({
+        where: { id: ctx.session.user.id },
+        select: {
+          consentWithdrawnAt: true,
+          consentWithdrawn: true,
+          consentAcceptedAt: true,
+        },
+      });
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
+      }
+      return {
+        consentWithdrawnAt: user.consentWithdrawnAt,
+        consentWithdrawn: user.consentWithdrawn,
+        consentAcceptedAt: user.consentAcceptedAt,
+        isConsentWithdrawn: user.consentWithdrawnAt !== null,
+      };
+    }),
 });
