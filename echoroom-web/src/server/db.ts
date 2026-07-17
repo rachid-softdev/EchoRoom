@@ -32,4 +32,7 @@ export function ensureFeatureFlagOverridesLoaded(): Promise<void> {
   return flagOverridesLoaded;
 }
 
-void ensureFeatureFlagOverridesLoaded();
+// Skip DB-backed flag loading in the Edge runtime (Prisma unavailable there).
+if (process.env.NEXT_RUNTIME !== "edge") {
+  void ensureFeatureFlagOverridesLoaded();
+}

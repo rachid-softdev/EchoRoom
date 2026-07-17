@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 const envSchema = z.object({
@@ -114,7 +113,10 @@ function loadEnv(): EnvType {
   for (const key of schemaKeys) {
     const envValue = process.env[key];
     if (key === "NEXTAUTH_SECRET" && !envValue) {
-      const generated = randomBytes(32).toString("hex");
+      // Use the Web Crypto global (available in both Edge and Node runtimes)
+      // instead of node:crypto, which cannot be imported in the Edge runtime
+      // used by Next.js middleware.
+      const generated = globalThis.crypto.randomUUID().replace(/-/g, "");
       console.warn("⚠️  NEXTAUTH_SECRET not set — generating random key for this session");
       process.env[key] = generated; // Also set on process.env so NextAuth can find it
       merged[key] = generated;
