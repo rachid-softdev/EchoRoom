@@ -1,6 +1,6 @@
 ﻿# QA end-to-end avec Playwright (EchoRoom)
 
-Runbook de test E2E manuel/automatisÃ© pour $WebDir (Next.js 14.2.35, monorepo pnpm/Turborepo),
+Runbook de test E2E manuel/automatisÃ© pour $WebDir (Next.js, monorepo pnpm/Turborepo),
 inspirÃ© de la dÃ©marche mise en place sur Motivygo. Ce document est volontairement **lÃ©ger** :
 il consigne le smoke test reproductible + la mÃ©thode pour lancer une campagne E2E complÃ¨te
 avec playwright-cli, sans supposer l'existence d'un bypass d'auth.
@@ -36,7 +36,7 @@ Valide que le serveur dÃ©marre et que la racine rÃ©pond. Utilise Invoke-WebR
 
 `powershell
 # 1) DÃ©marrer le serveur web (background)
-Start-Process -FilePath cmd -ArgumentList "/c","pnpm dev (depuis echoroom-web/)" 
+Start-Process -FilePath cmd -ArgumentList "/c","pnpm dev (depuis echoroom-web)" 
   -RedirectStandardOutput "$env:TEMP\qa\EchoRoom.dev.txt" 
   -RedirectStandardError "$env:TEMP\qa\EchoRoom.err.txt" -WindowStyle Hidden
 
@@ -50,8 +50,8 @@ $r = Invoke-WebRequest -Uri "http://localhost:$port/" -UseBasicParsing
 
 ### RÃ©sultat du smoke (2026-07-17)
 - Serveur : dÃ©marre et atteint Ready (voir log).
-- GET / â†’ **HTTP 500 (InternalServerError)**.
-GET / renvoie HTTP 500 (InternalServerError). Le serveur demarre (Ready in 8.2s) et compile /src/middleware puis /_error. Cause probable : middleware ou page racine dependante d un env/DB non configure en local (.env present mais secrets/DB manquants). A investiguer : verifier les variables d env requises et la connexion DB.
+- GET / â†’ **HTTP 200**.
+GET / renvoie HTTP 200 (titre 'EchoRoom AI'). CORRIGE: node:crypto etait importe au chargement du module env.ts (Edge runtime) -> 500. Remplace par le global Web Crypto. Les feature-flags ne chargent plus Prisma en Edge.
 
 > âš ï¸ Sur une autre machine, le port peut diffÃ©rer (3000 occupÃ© â†’ 3001/3002â€¦). Toujours
 > lire le port rÃ©el dans le log du serveur.
@@ -60,7 +60,7 @@ GET / renvoie HTTP 500 (InternalServerError). Le serveur demarre (Ready in 8.2s)
 
 ## 3. Authentification (Ã  documenter par repo)
 
-Aucun bypass d auth dev trouve dans echoroom-web (Grep sur *.ts/tsx sans resultat). Comme / renvoie 500, meme les pages publiques ne sont pas servies tant que le probleme de middleware/env n est pas resolu. Ajouter un bypass dev et/ou configurer les variables d env requises pour tester.
+Aucun bypass d auth dev trouve. Pages publiques testables ; pages protegees redirigent vers /login.
 
 ---
 
@@ -119,4 +119,4 @@ echoroom-web/scripts/qa\        # (Ã  crÃ©er si campagne complÃ¨te)
 â”œâ”€â”€ driver2.ps1        # campagne N pages (meta/console/a11y/screenshot)
 â””â”€â”€ urls.txt           # URLs publiques dÃ©couvertes
 `
- FINDING: le serveur boot mais la racine 500 (a ne pas confondre avec un bug de build). Voir section 2.
+ 
