@@ -1,4 +1,5 @@
-import { Prisma, PlanTier, SubscriptionStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type { PlanTier, SubscriptionStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
