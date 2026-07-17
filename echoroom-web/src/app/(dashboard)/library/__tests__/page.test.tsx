@@ -122,7 +122,7 @@ vi.mock("@/components/shared/PaginatedGrid", () => ({
     <div data-testid="paginated-grid" data-has-more={hasMore}>
       {children}
       {hasMore && (
-        <button onClick={onLoadMore} disabled={isLoadingMore} data-testid="load-more-button">
+        <button type="button" onClick={onLoadMore} disabled={isLoadingMore} data-testid="load-more-button">
           {isLoadingMore ? "Chargement..." : "Voir plus"}
         </button>
       )}

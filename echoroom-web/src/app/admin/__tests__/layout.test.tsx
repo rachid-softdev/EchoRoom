@@ -32,7 +32,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 vi.mock("@/components/ui/ThemeToggle", () => ({
-  ThemeToggle: () => <button data-testid="theme-toggle">Theme</button>,
+  ThemeToggle: () => <button type="button" data-testid="theme-toggle">Theme</button>,
 }));
 
 vi.mock("@/components/ui", () => ({

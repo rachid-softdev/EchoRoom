@@ -185,7 +185,17 @@ describe("ScenarioCard — rendering", () => {
   it("stops propagation on share button click", () => {
     const parentClick = vi.fn();
     render(
-      <div onClick={parentClick}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={parentClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            parentClick();
+          }
+        }}
+      >
         <ScenarioCard scenario={baseScenario} showShare={true} />
       </div>,
     );

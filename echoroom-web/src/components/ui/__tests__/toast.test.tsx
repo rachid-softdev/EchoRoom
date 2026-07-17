@@ -25,10 +25,10 @@ function ToastAdder({
   const { addToast, removeToast, toasts } = useToast();
   return (
     <div>
-      <button data-testid="add-toast" onClick={() => addToast({ message, variant, duration })}>
+      <button type="button" data-testid="add-toast" onClick={() => addToast({ message, variant, duration })}>
         Add Toast
       </button>
-      <button
+      <button type="button"
         data-testid="remove-first"
         onClick={() => {
           if (toasts.length > 0) removeToast(toasts[0]!.id);

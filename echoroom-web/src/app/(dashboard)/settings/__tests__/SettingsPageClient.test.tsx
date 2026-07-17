@@ -92,14 +92,14 @@ vi.mock("@/components/shared/ConfirmDialog", () => ({
       <div data-testid="confirm-dialog" data-variant={variant}>
         <h2>{title}</h2>
         <div>{description}</div>
-        <button
+        <button type="button"
           data-testid="confirm-button"
           onClick={onConfirm}
           disabled={confirmDisabled || loading}
         >
           {loading ? "Loading..." : confirmLabel}
         </button>
-        <button data-testid="cancel-button" onClick={() => onOpenChange(false)}>
+        <button type="button" data-testid="cancel-button" onClick={() => onOpenChange(false)}>
           Annuler
         </button>
       </div>
