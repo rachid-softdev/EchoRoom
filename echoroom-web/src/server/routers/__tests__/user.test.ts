@@ -724,7 +724,16 @@ describe("withdrawConsent — GDPR consent withdrawal", () => {
     await txCallback(mockTx);
 
     const updateCall = mockTx.user.update.mock.calls[0]![0];
-    expect(updateCall.data.email).toMatch(/^withdrawn-[0-9a-f-]+@anonymized\.echoroom\.app$/);
+    // Reversible withdrawal (GDPR): email/username are intentionally preserved so
+    // the user can still authenticate and later re-consent. Only the withdrawal
+    // flags + tokenVersion are set on the consent update; remaining personal data
+    // is anonymized separately via anonymizePersonalData (its own update call).
+    expect(updateCall.data).toEqual({
+      consentWithdrawnAt: expect.any(Date),
+      consentWithdrawn: true,
+      tokenVersion: { increment: 1 },
+    });
+    expect(updateCall.data).not.toHaveProperty("email");
   });
 
   it("should NOT modify passwordHash during consent withdrawal", async () => {
@@ -1060,7 +1069,7 @@ describe("reconsent — GDPR consent restoration", () => {
 
     expect(mockTx.user.update).toHaveBeenCalledWith({
       where: { id: "user-123" },
-      data: { consentWithdrawnAt: null, tokenVersion: { increment: 1 } },
+      data: { consentWithdrawnAt: null, consentWithdrawn: false, tokenVersion: { increment: 1 } },
     });
   });
 
