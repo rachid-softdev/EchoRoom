@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { FEATURE_FLAGS, type FeatureFlagId, setFlagOverrideCache } from "@/config/featureFlags";
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
 import { type DLQEntry, retryDLQ } from "@/server/middleware/webhookDLQ";
@@ -10,12 +11,27 @@ import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { db } from "../db";
 import { purgeAnonymizedUsers } from "../jobs/gdprPurge";
 import { getUTCDateString } from "../lib/date";
+import { invalidateFeedCache } from "../services/cache/scenarioCache";
 import { adminProcedure, router } from "../procedures";
 
 function hashPhoneForAudit(phone: string): string {
   // HMAC avec AUDIT_HASH_SECRET comme sel pour empêcher les rainbow tables
   const hash = createHmac("sha256", env.AUDIT_HASH_SECRET).update(phone).digest("hex");
   return `blocked-${hash.substring(0, 16)}`;
+}
+
+/**
+ * Read the quick `FF_<NAME>` env kill-switch for a feature flag.
+ * Mirrors `toScreamingSnake` precedence in config/featureFlags (highest priority).
+ * Returns `null` when the env var is unset or unparseable.
+ */
+function readEnvFlagOverride(flag: FeatureFlagId): boolean | null {
+  const envVar = process.env[`FF_${flag.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toUpperCase()}`];
+  if (envVar === undefined) return null;
+  const normalized = envVar.trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(normalized)) return true;
+  if (["false", "0", "no", "off"].includes(normalized)) return false;
+  return null;
 }
 
 export const adminRouter = router({
@@ -204,6 +220,10 @@ export const adminRouter = router({
         await redis.del("admin:moderationQueue:*");
         await redis.del("admin:moderationQueueComments:*");
       }
+
+      // Approved scenarios become eligible for the public feed/trending — drop
+      // the cached feed so they appear without waiting for TTL expiry.
+      await invalidateFeedCache();
 
       return { success: true };
     }),
@@ -819,5 +839,116 @@ export const adminRouter = router({
     .mutation(async ({ input }) => {
       const result = await retryDLQ(input.provider);
       return result;
+    }),
+
+  // ─── Role & feature-flag administration ───────────────────────────────────
+
+  /**
+   * Change a user's role. Already guarded by adminProcedure (ADMIN required).
+   * Minimal safety guard: an admin cannot demote themselves below ADMIN if they
+   * are the last remaining administrator (guarantees ≥1 admin always exists).
+   */
+  setRole: adminProcedure
+    .input(z.object({
+      userId: z.string(),
+      role: z.enum(["USER", "ADMIN", "MODERATOR"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const target = await db.user.findUnique({ where: { id: input.userId } });
+      if (!target) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Utilisateur introuvable",
+        });
+      }
+
+      // Prevent the acting admin from removing the last administrator.
+      if (input.userId === ctx.session.user.id && input.role !== "ADMIN") {
+        const adminCount = await db.user.count({
+          where: { role: "ADMIN", deletedAt: null },
+        });
+        if (adminCount <= 1) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Impossible de rétrograder le dernier administrateur.",
+          });
+        }
+      }
+
+      const updated = await db.user.update({
+        where: { id: input.userId },
+        data: { role: input.role },
+      });
+
+      await db.auditLog.create({
+        data: {
+          action: "ROLE_CHANGE",
+          entityType: "User",
+          entityId: updated.id,
+          adminId: ctx.session.user.id,
+          metadata: { role: input.role },
+        },
+      });
+
+      return { success: true, id: updated.id, role: updated.role };
+    }),
+
+  /**
+   * Return the effective feature-flag configuration. For each flag we surface
+   * its config plus the resolved effective state, accounting for the DB/cache
+   * override (loaded into the runtime cache by P1) and the `FF_*` env kill-switch.
+   * Precedence mirrors isFeatureEnabled: env > override > config default.
+   */
+  getFeatureFlags: adminProcedure.query(async () => {
+    const overrides = await db.featureFlagOverride.findMany();
+    const overrideMap = new Map(overrides.map((o) => [o.flag, o.enabled]));
+
+    const flags = (Object.keys(FEATURE_FLAGS) as FeatureFlagId[]).map((id) => {
+      const config = FEATURE_FLAGS[id];
+      const envEnabled = readEnvFlagOverride(id);
+      const overrideEnabled = overrideMap.get(id) ?? null;
+      const effectiveEnabled =
+        envEnabled !== null
+          ? envEnabled
+          : overrideEnabled !== null
+            ? overrideEnabled
+            : config.defaultEnabled;
+      return {
+        id,
+        description: config.description,
+        defaultEnabled: config.defaultEnabled,
+        enabledTiers: config.enabledTiers,
+        rollout: config.rollout,
+        owner: config.owner,
+        overrideEnabled,
+        envEnabled,
+        effectiveEnabled,
+      };
+    });
+
+    return { flags };
+  }),
+
+  /**
+   * Persist a feature-flag override (upsert) and apply it immediately at runtime
+   * via the module-level cache that isFeatureEnabled consults (wired by P1).
+   * This lets a flag be toggled on/off without a redeploy.
+   */
+  setFeatureFlagOverride: adminProcedure
+    .input(z.object({
+      flag: z.enum(Object.keys(FEATURE_FLAGS) as [FeatureFlagId, ...FeatureFlagId[]]),
+      enabled: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.featureFlagOverride.upsert({
+        where: { flag: input.flag },
+        update: { enabled: input.enabled },
+        create: { flag: input.flag, enabled: input.enabled },
+      });
+
+      // Immediate runtime effect — isFeatureEnabled reads this cache first.
+      setFlagOverrideCache(input.flag, input.enabled);
+
+      return { success: true, flag: input.flag, enabled: input.enabled };
     }),
 });

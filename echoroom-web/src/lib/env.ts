@@ -31,6 +31,7 @@ const envSchema = z.object({
   AUDIT_HASH_SECRET: z.string().min(16),
   STRIPE_PRICE_STARTER: z.string().optional().default("price_dev_starter"),
   STRIPE_PRICE_PRO: z.string().optional().default("price_dev_pro"),
+  STRIPE_PRICE_ULTRA: z.string().optional().default("price_dev_ultra"),
   CRON_SECRET: z.string().min(16),
   MODERATION_FAIL_OPEN: z
     .string()

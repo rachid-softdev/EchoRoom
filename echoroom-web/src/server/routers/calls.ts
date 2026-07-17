@@ -10,6 +10,9 @@ import { protectedProcedure, router, withRateLimit } from "../procedures";
 import { getPresignedUrl } from "../services/audio/r2";
 import { detectCallSpam } from "../services/security/spamDetection";
 import { initiateCall } from "../services/telephony/callLifecycle";
+import { isFeatureEnabled } from "@/config/featureFlags";
+import { requireFeature } from "@/lib/featureFlags";
+import { resolveUserTier } from "@/server/services/billing/tierResolution";
 
 const log = createLogger("calls-cache");
 
@@ -60,12 +63,21 @@ export const callsRouter = router({
         });
       }
 
+      // Enforce server-side call-duration cap (never trust the client value).
+      // Ultra with experimentalLongCalls may run up to 600s; others are capped at 300s.
+      const tier = await resolveUserTier(ctx.session.user.id);
+      const durationCap = isFeatureEnabled("experimentalLongCalls", { tier }) ? 600 : 300;
+      const maxDurationSeconds = Math.min(
+        Math.max(input.maxDurationSeconds, 60),
+        durationCap,
+      );
+
       try {
         const result = await initiateCall({
           scenarioId: input.scenarioId,
           userId: ctx.session.user.id,
           phoneNumber: input.phoneNumber,
-          maxDurationSeconds: input.maxDurationSeconds,
+          maxDurationSeconds,
         });
 
         // Increment scenario play count after successful initiation
@@ -92,6 +104,8 @@ export const callsRouter = router({
           switch (error.code) {
             case "SCENARIO_NOT_FOUND":
               throw new TRPCError({ code: "NOT_FOUND", message: "Scénario introuvable" });
+            case "SCENARIO_FORBIDDEN":
+              throw new TRPCError({ code: "FORBIDDEN", message: "Vous n'avez pas accès à ce scénario" });
             case "USER_NOT_FOUND":
               throw new TRPCError({ code: "UNAUTHORIZED", message: "Utilisateur introuvable" });
             case "INSUFFICIENT_CREDITS":
@@ -239,6 +253,25 @@ export const callsRouter = router({
           text: string;
           timestamp: number;
         }> | null,
+      };
+    }),
+
+  // Beta multiplayer rooms / live listen. Ultra-only — gated by requireFeature,
+  // which throws FORBIDDEN for tiers below ultra. Functional stub; the room
+  // creation/participant logic is intentionally deferred (à étendre plus tard).
+  createRoom: protectedProcedure
+    .use(requireFeature("betaMultiplayerRooms", resolveUserTier))
+    .input(
+      z.object({
+        name: z.string().min(1, "Nom de room requis").max(80, "Maximum 80 caractères"),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      // TODO: implement multiplayer room creation + participant orchestration.
+      return {
+        roomId: null,
+        name: input.name,
+        status: "NOT_IMPLEMENTED" as const,
       };
     }),
 });

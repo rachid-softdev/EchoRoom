@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { prismaPlanToTier } from "@/config/pricing";
 import { decryptPhoneNumber, maskPhoneNumber } from "@/server/lib/encryption";
 import { anonymizePersonalData } from "@/server/services/user/anonymization";
 import { db } from "../db";
@@ -18,7 +19,7 @@ export const profileRouter = router({
         image: true,
         credits: true, // Legacy field
         billing: {
-          select: { credits: true },
+          select: { credits: true, plan: true },
         },
       },
     });
@@ -32,7 +33,9 @@ export const profileRouter = router({
 
     // Use UserBilling credits if available, fall back to legacy
     const credits = user.billing?.credits ?? user.credits;
-    return { ...user, credits };
+    // Resolve the persisted plan to the canonical TS tier.
+    const tier = prismaPlanToTier(user.billing?.plan ?? "FREE");
+    return { ...user, credits, tier };
   }),
 
   updateProfile: protectedProcedure

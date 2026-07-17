@@ -129,6 +129,30 @@ async function main() {
     }
   }
 
+  // Seed badge definitions for scenario/call achievements.
+  // These power the badges service (checkAndAwardBadges). They are idempotent
+  // (keyed by the unique `name`) so the seed is safe to re-run.
+  const badges = [
+    { name: "first-scenario", description: "Vous avez créé votre premier scénario", criteria: { type: "FIRST_SCENARIO", threshold: 1 } },
+    { name: "ten-scenarios", description: "Vous avez créé 10 scénarios", criteria: { type: "TEN_SCENARIOS", threshold: 10 } },
+    { name: "first-call", description: "Vous avez passé votre premier appel", criteria: { type: "FIRST_CALL", threshold: 1 } },
+    { name: "ten-calls", description: "Vous avez passé 10 appels", criteria: { type: "TEN_CALLS", threshold: 10 } },
+    { name: "hundred-calls", description: "Vous avez passé 100 appels", criteria: { type: "HUNDRED_CALLS", threshold: 100 } },
+  ];
+
+  for (const badge of badges) {
+    await db.badge.upsert({
+      where: { name: badge.name },
+      update: {},
+      create: {
+        name: badge.name,
+        description: badge.description,
+        criteria: badge.criteria,
+      },
+    });
+  }
+  console.log("Badge definitions seeded!");
+
   console.log("Seed complete!");
 }
 

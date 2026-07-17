@@ -11,6 +11,8 @@ import {
   withRateLimit,
 } from "../procedures";
 import { createClip, deleteClip, getClips } from "../services/social/clips";
+import { prismaPlanToTier } from "@/config/pricing";
+import { isFeatureEnabled } from "@/config/featureFlags";
 
 export const clipsRouter = router({
   /**
@@ -90,12 +92,25 @@ export const clipsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       try {
+        // clipGenerationV2 flag gates the clip-generation pipeline
+        // (Pro/Ultra only, 50% rollout). Resolve the caller's tier from billing.
+        const billing = await db.userBilling?.findUnique({
+          where: { userId: ctx.session.user.id },
+        });
+        const plan = (billing as { plan?: string } | null)?.plan ?? null;
+        const tier = prismaPlanToTier(plan);
+        const useV2 = isFeatureEnabled("clipGenerationV2", { tier });
+
+        // When the flag is enabled, route to the v2 pipeline and record it on the
+        // Clip (usedV2) for traceability. For non-enabled tiers the call signature
+        // is unchanged (no extra fields), preserving the existing v1 path.
         return await createClip({
           callId: input.callId,
           userId: ctx.session.user.id,
           startTime: input.startTime,
           endTime: input.endTime,
           ...(input.title !== undefined ? { title: input.title } : {}),
+          ...(useV2 ? { version: "v2", usedV2: true } : {}),
         });
       } catch (error) {
         if (error instanceof AppError) {

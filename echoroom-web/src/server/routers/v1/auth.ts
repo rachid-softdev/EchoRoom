@@ -66,10 +66,16 @@ export const authV1Router = router({
         });
       }
 
+      // Normalize identity fields before any lookup or persistence so that
+      // registration is case-insensitive and whitespace-tolerant. This prevents
+      // case-sensitive duplicate accounts and later login mismatches.
+      const email = input.email.toLowerCase().trim();
+      const username = input.username.trim();
+
       // Block disposable email domains (with recursive subdomain check).
       // "user@mail.mailinator.com" would not match "mailinator.com" with a
       // simple set lookup, so we check all parent domains recursively.
-      const emailDomain = input.email.split("@")[1]?.toLowerCase();
+      const emailDomain = email.split("@")[1]?.toLowerCase();
       if (emailDomain) {
         const parts = emailDomain.split(".");
         let isDisposable = false;
@@ -77,7 +83,7 @@ export const authV1Router = router({
           const parentDomain = parts.slice(i).join(".");
           if (DISPOSABLE_DOMAINS.has(parentDomain)) {
             isDisposable = true;
-            log.warn("Disposable email blocked", { email: input.email, domain: parentDomain });
+            log.warn("Disposable email blocked", { email, domain: parentDomain });
             break;
           }
         }
@@ -90,8 +96,8 @@ export const authV1Router = router({
       }
 
       const [existingEmail, existingUsername] = await Promise.all([
-        db.user.findUnique({ where: { email: input.email }, select: { id: true } }),
-        db.user.findUnique({ where: { username: input.username }, select: { id: true } }),
+        db.user.findUnique({ where: { email }, select: { id: true } }),
+        db.user.findUnique({ where: { username }, select: { id: true } }),
       ]);
 
       if (existingEmail || existingUsername) {
@@ -105,8 +111,8 @@ export const authV1Router = router({
 
       const user = await db.user.create({
         data: {
-          email: input.email,
-          username: input.username,
+          email,
+          username,
           passwordHash,
           consentAcceptedAt: new Date(),
         },

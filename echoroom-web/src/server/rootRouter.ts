@@ -10,6 +10,8 @@ import { profileRouter } from "./routers/profile";
 import { scenariosRouter } from "./routers/scenarios";
 import { socialRouter } from "./routers/social";
 import { userRouter } from "./routers/user";
+import { apiKeysRouter } from "./routers/apiKeys";
+import { voicesRouter } from "./routers/voices";
 import {
   adminV1Router,
   authV1Router,
@@ -52,6 +54,8 @@ export const appRouter = router({
   profile: profileRouter,
   user: userRouter,
   dashboard: dashboardRouter,
+  apiKeys: apiKeysRouter,
+  voices: voicesRouter,
 
   // Versioned API namespace
   v1: router({

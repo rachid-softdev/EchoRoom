@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui";
-import { PRICING_CONFIG } from "@/config/pricing";
+import { PRICING_CONFIG, type PlanTier } from "@/config/pricing";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
 
@@ -23,6 +23,7 @@ interface Plan {
   price: string;
   credits: number;
   priceId: string;
+  tier: PlanTier;
   features: string[];
   cta: string;
   highlighted: boolean;
@@ -34,6 +35,7 @@ const plans: Plan[] = PRICING_CONFIG.map((tier) => ({
     tier.priceCents === 0 ? "Gratuit" : `${(tier.priceCents / 100).toFixed(2).replace(".", ",")} €`,
   credits: tier.credits,
   priceId: tier.stripePriceId,
+  tier: tier.id,
   features: tier.features,
   cta: tier.cta,
   highlighted: tier.highlighted,
@@ -56,8 +58,9 @@ export default function PricingPage() {
       router.push("/login");
       return;
     }
-    if (!plan.priceId) return;
-    checkout.mutate({ priceId: plan.priceId, credits: plan.credits });
+    // "free" is not a purchasable tier — there is nothing to check out.
+    if (plan.tier === "free") return;
+    checkout.mutate({ tier: plan.tier });
   }
 
   return (

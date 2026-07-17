@@ -227,6 +227,9 @@ describe("Twilio webhook POST handler", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
       },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
     };
 
     // The $transaction receives a callback function
@@ -314,6 +317,9 @@ describe("Twilio webhook POST handler", () => {
       user: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
+      },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
 
@@ -404,6 +410,9 @@ describe("Twilio webhook POST handler", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
       },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
     };
 
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
@@ -420,9 +429,9 @@ describe("Twilio webhook POST handler", () => {
 
     await POST(req);
 
-    // Should debit 1 credit (2 - 1 = 1)
-    expect(mockTx.user.updateMany).toHaveBeenCalledWith({
-      where: { id: "user-1", credits: { gte: 1 } },
+    // Should debit 1 credit (2 - 1 = 1) from UserBilling
+    expect(mockTx.userBilling.updateMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", credits: { gte: 1 } },
       data: { credits: { decrement: 1 } },
     });
   });
@@ -462,6 +471,9 @@ describe("Twilio webhook POST handler", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
       },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
     };
 
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
@@ -478,9 +490,9 @@ describe("Twilio webhook POST handler", () => {
 
     await POST(req);
 
-    // C-1: Refund now uses updateMany for consistency
-    expect(mockTx.user.updateMany).toHaveBeenCalledWith({
-      where: { id: "user-1" },
+    // C-1: Refund now uses updateMany on UserBilling for consistency
+    expect(mockTx.userBilling.updateMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
       data: { credits: { increment: 4 } },
     });
   });
@@ -515,10 +527,9 @@ describe("Twilio webhook POST handler", () => {
         }),
         update: vi.fn().mockResolvedValue({}),
       },
-      user: {
-        // Debit fails — insufficient balance
+      userBilling: {
+        // Debit fails — insufficient balance on UserBilling
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-        update: vi.fn().mockResolvedValue({}),
       },
     };
 
@@ -770,6 +781,9 @@ describe("Twilio webhook POST handler", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
       },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
     };
 
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
@@ -829,6 +843,9 @@ describe("Twilio webhook POST handler", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
       },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
     };
 
     (db.$transaction as any).mockImplementation(async (cb: any) => cb(mockTx));
@@ -883,6 +900,9 @@ describe("Twilio webhook POST handler", () => {
       user: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
+      },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
 
@@ -941,6 +961,9 @@ describe("Twilio webhook POST handler", () => {
       user: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({}),
+      },
+      userBilling: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
 

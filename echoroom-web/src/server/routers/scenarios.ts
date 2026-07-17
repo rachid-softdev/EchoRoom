@@ -15,6 +15,7 @@ import {
 import { scheduleAsyncModeration } from "../services/ai/asyncModeration";
 import { generateScenarioScript } from "../services/ai/generateScript";
 import { checkContentBlocklist } from "../services/ai/moderation";
+import { checkAndAwardBadges } from "@/server/services/social/badges";
 import {
   getCachedFeed,
   getCachedTrendingFeed,
@@ -23,19 +24,24 @@ import {
   setCachedTrendingFeed,
 } from "../services/cache/scenarioCache";
 import { detectScenarioSpam } from "../services/security/spamDetection";
+import { prismaPlanToTier, tierMeetsMinimum } from "@/config/pricing";
+import { sanitizeUserText } from "@/lib/sanitize";
 
-/** Shape of a feed item returned by the scenarios.feed procedure */
+/** Shape of a feed item returned by the scenarios.feed / trending procedures */
 type FeedItem = Prisma.ScenarioGetPayload<{
   include: {
-    creator: { select: { id: true; username: true; image: true } };
+    creator: { select: { id: true; username: true; image: true; billing: true } };
     character: { select: { id: true; name: true; slug: true; avatarUrl: true; category: true } };
     _count: { select: { reactions: true; comments: true } };
   };
 }>;
 
+/** A feed item augmented with the early-access boost flag (Pro/Ultra creators). */
+type FeedItemWithEarlyAccess = FeedItem & { isEarlyAccess: boolean };
+
 /** Feed response shape */
 interface FeedResponse {
-  items: FeedItem[];
+  items: FeedItemWithEarlyAccess[];
   nextCursor: string | undefined;
 }
 
@@ -64,27 +70,45 @@ export const scenariosRouter = router({
         });
       }
 
+      // Tier gate: scenario creation requires at least the Starter plan.
+      // FREE users are blocked (Starter/Pro/Ultra allowed).
+      const billing = await db.userBilling?.findUnique({
+        where: { userId: ctx.session.user.id },
+      });
+      const plan = (billing as { plan?: string } | null)?.plan ?? null;
+      const tier = prismaPlanToTier(plan);
+      if (tier === "free") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "La création de scénarios nécessite un palier Starter ou plus",
+        });
+      }
+
+      // XSS hardening: strip any HTML/markup from user-supplied text before persistence.
+      const safeTitle = sanitizeUserText(input.title);
+      const safeDescription = sanitizeUserText(input.description);
+      const safeOpeningMessage = sanitizeUserText(input.openingMessage);
+      const safeAiInstructions = sanitizeUserText(input.aiInstructions);
+
       const scenario = await db.scenario.create({
         data: {
           characterId: input.characterId,
-          title: input.title,
-          description: input.description,
-          openingMessage: input.openingMessage,
-          aiInstructions: input.aiInstructions,
+          title: safeTitle,
+          description: safeDescription,
+          openingMessage: safeOpeningMessage,
+          aiInstructions: safeAiInstructions,
           visibility: input.visibility,
           creatorId: ctx.session.user.id,
         },
       });
 
+      // Award first-scenario badge (fire-and-forget; failures must not break creation).
+      void checkAndAwardBadges(ctx.session.user.id, "FIRST_SCENARIO");
+
       void invalidateFeedCache();
 
-      // Schedule async AI moderation (fire-and-forget)
-      const changedText = [
-        input.title,
-        input.description,
-        input.openingMessage,
-        input.aiInstructions,
-      ]
+      // Schedule async AI moderation (fire-and-forget) on the sanitized text.
+      const changedText = [safeTitle, safeDescription, safeOpeningMessage, safeAiInstructions]
         .filter(Boolean)
         .join(" ");
       void scheduleAsyncModeration(changedText, { type: "scenario", id: scenario.id });
@@ -118,13 +142,24 @@ export const scenariosRouter = router({
         });
       }
 
-      const result = await generateScenarioScript({
-        characterName: character.name,
-        characterPrompt: character.promptSystem,
-        title: input.title,
-        description: input.description,
-        openingMessage: input.openingMessage,
-      });
+      let result: { suggestedOpening: string; suggestedResponses: string[] };
+      try {
+        result = await generateScenarioScript({
+          characterName: character.name,
+          characterPrompt: character.promptSystem,
+          title: input.title,
+          description: input.description,
+          openingMessage: input.openingMessage,
+        });
+      } catch {
+        // The service fails closed (throws on AI error) — convert to a friendly
+        // error so the client shows "generation failed, retry" instead of a
+        // misleading placeholder script.
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "La génération du script a échoué. Veuillez réessayer.",
+        });
+      }
 
       return result;
     }),
@@ -165,7 +200,7 @@ export const scenariosRouter = router({
         orderBy,
         include: {
           creator: {
-            select: { id: true, username: true, image: true },
+            select: { id: true, username: true, image: true, billing: true },
           },
           character: {
             select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
@@ -176,12 +211,26 @@ export const scenariosRouter = router({
         },
       });
 
-      let items = scenarios.slice(0, input.limit);
+      // Early-access boost: creators on a Pro/Ultra plan get their published
+      // scenarios surfaced. Resolve each creator's tier from their billing plan.
+      const earlyAccessById = new Map<string, boolean>();
+      for (const s of scenarios) {
+        const creatorPlan = (s.creator.billing as { plan?: string } | null)?.plan ?? null;
+        const isProOrUltra = tierMeetsMinimum(prismaPlanToTier(creatorPlan), "pro");
+        earlyAccessById.set(s.creator.id, isProOrUltra);
+      }
+      const markEarlyAccess = (s: FeedItem): FeedItemWithEarlyAccess => ({
+        ...s,
+        isEarlyAccess: earlyAccessById.get(s.creator.id) ?? false,
+      });
 
-      // For TRENDING, sort in-memory using a trending score
+      let items = scenarios.slice(0, input.limit).map(markEarlyAccess);
+
+      // For TRENDING, sort in-memory using a trending score (early-access first).
       if (input.sort === "TRENDING") {
         const now = Date.now();
         items = [...items].sort((a, b) => {
+          if (a.isEarlyAccess !== b.isEarlyAccess) return a.isEarlyAccess ? -1 : 1;
           const scoreA =
             a.likeCount * 2 +
             a.playCount * 1 +
@@ -193,6 +242,14 @@ export const scenariosRouter = router({
             b._count.comments * 3 -
             ((now - new Date(b.createdAt).getTime()) / (1000 * 60 * 60)) * 0.5;
           return scoreB - scoreA;
+        });
+      } else {
+        // CHRONOLOGICAL / TOP: keep the DB primary order, but float
+        // early-access scenarios to the top (secondary sort by isEarlyAccess desc).
+        items = [...items].sort((a, b) => {
+          if (a.isEarlyAccess !== b.isEarlyAccess) return a.isEarlyAccess ? -1 : 1;
+          if (input.sort === "TOP") return b.likeCount - a.likeCount;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
 
@@ -273,7 +330,7 @@ export const scenariosRouter = router({
         orderBy: { createdAt: "desc" },
         include: {
           creator: {
-            select: { id: true, username: true, image: true },
+            select: { id: true, username: true, image: true, billing: true },
           },
           character: {
             select: { id: true, name: true, slug: true, avatarUrl: true, category: true },
@@ -289,13 +346,22 @@ export const scenariosRouter = router({
         const likes48h = reactionMap.get(s.id) ?? 0;
         const plays48h = callMap.get(s.id) ?? 0;
         const comments48h = commentMap.get(s.id) ?? 0;
-        const hoursSinceCreation = (now - s.createdAt.getTime()) / (1000 * 60 * 60);
-        const score = likes48h * 3 + plays48h * 1 + comments48h * 2 - hoursSinceCreation * 0.5;
-        return { ...s, score };
+        const hoursSinceCreation =
+          (now - s.createdAt.getTime()) / (1000 * 60 * 60);
+        const score =
+          likes48h * 3 + plays48h * 1 + comments48h * 2 - hoursSinceCreation * 0.5;
+        // Early-access flag: Pro/Ultra creators get surfaced.
+        const creatorPlan = (s.creator.billing as { plan?: string } | null)?.plan ?? null;
+        const isEarlyAccess = tierMeetsMinimum(prismaPlanToTier(creatorPlan), "pro");
+        return { ...s, score, isEarlyAccess };
       });
-      withScore.sort((a, b) => b.score - a.score);
+      // Early-access scenarios float to the top, then by trending score.
+      withScore.sort((a, b) => {
+        if (a.isEarlyAccess !== b.isEarlyAccess) return a.isEarlyAccess ? -1 : 1;
+        return b.score - a.score;
+      });
 
-      const items: FeedItem[] = withScore
+      const items: FeedItemWithEarlyAccess[] = withScore
         .slice(0, input.limit)
         .map(({ score: _score, ...rest }) => rest);
 
@@ -412,16 +478,17 @@ export const scenariosRouter = router({
       );
 
       const updateData: Prisma.ScenarioUpdateInput = {};
-      if (input.title !== undefined) updateData.title = input.title;
-      if (input.description !== undefined) updateData.description = input.description;
-      if (input.openingMessage !== undefined) updateData.openingMessage = input.openingMessage;
-      if (input.aiInstructions !== undefined) updateData.aiInstructions = input.aiInstructions;
+      if (input.title !== undefined) updateData.title = sanitizeUserText(input.title);
+      if (input.description !== undefined) updateData.description = sanitizeUserText(input.description);
+      if (input.openingMessage !== undefined) updateData.openingMessage = sanitizeUserText(input.openingMessage);
+      if (input.aiInstructions !== undefined) updateData.aiInstructions = sanitizeUserText(input.aiInstructions);
       if (input.visibility !== undefined) updateData.visibility = input.visibility;
 
       if (contentChanged) {
+        // XSS hardening: sanitize the changed text before blocklist + async moderation.
         const changedText = contentFields
           .filter((f) => input[f] !== undefined)
-          .map((f) => input[f] as string)
+          .map((f) => sanitizeUserText(input[f] as string))
           .join(" ");
         const moderation = checkContentBlocklist(changedText);
         if (!moderation.approved)

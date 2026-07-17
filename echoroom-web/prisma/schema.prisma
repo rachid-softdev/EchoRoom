@@ -38,6 +38,21 @@ enum CharacterCategory {
   CRINGE
   GAMER
   WEIRD
+  ICON
+}
+
+enum PlanTier {
+  FREE
+  STARTER
+  PRO
+  ULTRA
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
 }
 
 enum ModerationStatus {
@@ -72,6 +87,7 @@ model User {
 
   consentAcceptedAt DateTime?
   consentWithdrawnAt DateTime?
+  consentWithdrawn Boolean @default(false)
   gdprDataExportedAt DateTime?
   deletedAt         DateTime?
   anonymizedAt      DateTime?
@@ -83,6 +99,7 @@ model User {
   profile UserProfile?
   social  UserSocial?
   billing UserBilling?
+  subscriptions Subscription[]
 
   shareEvents     ShareEvent[]
   calls           Call[]
@@ -98,6 +115,7 @@ model User {
   auditLogs       AuditLog[]
   blockedNumbers  BlockedNumber[]
   dailyCallLimits DailyCallLimit[]
+  apiKeys         ApiKey[]
 
   @@index([totalLikesReceived(sort: Desc)])
   @@index([totalCallsMade(sort: Desc)])
@@ -131,8 +149,35 @@ model UserBilling {
   userId  String @unique
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   credits Int    @default(5)
+  plan    PlanTier @default(FREE)
 
   @@index([userId])
+  @@index([plan])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  plan                 PlanTier
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart   DateTime           @default(now())
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model FeatureFlagOverride {
+  id        String   @id @default(cuid())
+  flag      String   @unique
+  enabled   Boolean
+  updatedAt DateTime @updatedAt
 }
 
 model Character {
@@ -419,4 +464,20 @@ model DailyCallLimit {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+}
+
+model ApiKey {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  // Only a SHA-256 hash of the key is stored; the plaintext is shown once at creation.
+  keyHash    String   @unique
+  prefix     String   // human-readable prefix shown in the UI (e.g. "ek_live_")
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }

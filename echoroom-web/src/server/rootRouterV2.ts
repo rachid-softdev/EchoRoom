@@ -22,6 +22,8 @@ import { scenariosRouter } from "./routers/scenarios";
 import { socialRouter } from "./routers/social";
 import { userRouter } from "./routers/user";
 import { router } from "./trpc";
+import { apiKeysRouter } from "./routers/apiKeys";
+import { voicesRouter } from "./routers/voices";
 
 export const appRouterV2 = router({
   auth: authRouter,
@@ -36,6 +38,8 @@ export const appRouterV2 = router({
   profile: profileRouter,
   user: userRouter,
   dashboard: dashboardRouter,
+  apiKeys: apiKeysRouter,
+  voices: voicesRouter,
 });
 
 export type AppRouterV2 = typeof appRouterV2;

@@ -15,6 +15,7 @@ import {
   getConversationState,
   setConversationStatus,
 } from "@/server/services/telephony/conversationState";
+import { checkAndAwardBadges } from "@/server/services/social/badges";
 
 const log = createLogger("twilio-webhook");
 
@@ -211,11 +212,12 @@ async function handleCompletedCall(
     const costCredits = Math.max(1, Math.ceil(duration / 60));
     const creditDiff = costCredits - (currentCall?.costCredits ?? callRecord.costCredits);
 
-    // Check credits BEFORE marking completed
+    // Reconcile against UserBilling.credits (the source of truth for billing),
+    // NOT the legacy User.credits field, to avoid under-billing.
     if (creditDiff > 0) {
-      const result = await tx.user.updateMany({
+      const result = await tx.userBilling.updateMany({
         where: {
-          id: callRecord.userId,
+          userId: callRecord.userId,
           credits: { gte: creditDiff },
         },
         data: { credits: { decrement: creditDiff } },
@@ -229,16 +231,16 @@ async function handleCompletedCall(
             endedAt: new Date(),
           },
         });
-        log.error("Insufficient credits to reconcile — call marked as FAILED", {
+        log.error("Insufficient UserBilling credits to reconcile — call marked as FAILED", {
           userId: callRecord.userId,
           creditDiff,
         });
         return;
       }
     } else if (creditDiff < 0) {
-      // Refund excess credits (use updateMany for consistency)
-      await tx.user.updateMany({
-        where: { id: callRecord.userId },
+      // Refund excess credits back to UserBilling (use updateMany for consistency)
+      await tx.userBilling.updateMany({
+        where: { userId: callRecord.userId },
         data: { credits: { increment: Math.abs(creditDiff) } },
       });
     }
@@ -256,6 +258,9 @@ async function handleCompletedCall(
       },
     });
   });
+
+  // Award first-call badge (fire-and-forget; failures must not break the webhook).
+  void checkAndAwardBadges(callRecord.userId, "FIRST_CALL");
 
   // Clean up conversation state from Redis
   await setConversationStatus(callSid, "completed").catch(() => {});

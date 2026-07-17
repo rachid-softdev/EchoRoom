@@ -1,30 +1,31 @@
-import { PRICING_CONFIG } from "@/config/pricing";
 import { stripe } from "@/lib/stripe";
+import { PRICING_CONFIG, type PlanTier } from "@/config/pricing";
 
 export async function createCheckoutSession(params: {
   userId: string;
-  credits: number;
-  priceId: string;
+  tier: PlanTier;
   successUrl: string;
   cancelUrl: string;
 }) {
-  const tier = PRICING_CONFIG.find((t) => t.stripePriceId === params.priceId);
-  if (!tier) {
-    throw new Error(`Identifiant de tarif inconnu : ${params.priceId}`);
+  const tierConfig = PRICING_CONFIG.find((t) => t.id === params.tier);
+  if (!tierConfig) {
+    throw new Error(`Palier de facturation inconnu : ${params.tier}`);
   }
-  if (tier.credits !== params.credits) {
-    throw new Error(
-      `Le montant de crédits ${params.credits} ne correspond pas au palier ${params.priceId} (attendu ${tier.credits})`,
-    );
+  // "free" has no purchasable price — callers must not request checkout for it.
+  if (!tierConfig.stripePriceId) {
+    throw new Error(`Aucun prix Stripe configuré pour le palier ${params.tier}`);
   }
 
+  // Starter/Pro/Ultra are recurring monthly subscriptions. The tier's
+  // included credits are granted via the subscription webhook, not at checkout.
   return stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [{ price: params.priceId, quantity: 1 }],
-    metadata: {
-      userId: params.userId,
-      credits: String(params.credits),
-    },
+    mode: "subscription",
+    line_items: [{ price: tierConfig.stripePriceId, quantity: 1 }],
+    client_reference_id: params.userId,
+    // Propagate userId into the subscription object so subscription webhooks
+    // can resolve the owning user (client_reference_id is not present on
+    // subscription events, only on the Checkout Session).
+    subscription_data: { metadata: { userId: params.userId } },
     success_url: params.successUrl,
     cancel_url: params.cancelUrl,
   });
