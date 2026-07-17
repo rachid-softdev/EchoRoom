@@ -445,7 +445,14 @@ describe("scenariosRouter.feed", () => {
 
     expect(setCachedFeed).toHaveBeenCalledWith(
       { sort: "CHRONOLOGICAL", limit: 10 },
-      expect.objectContaining({ items: mockFeedItems }),
+      expect.objectContaining({
+        // The handler re-sorts the feed (e.g. CHRONOLOGICAL → createdAt desc) and
+        // tags each item with isEarlyAccess, so assert content order-independently.
+        items: expect.arrayContaining([
+          expect.objectContaining({ id: "s-1", isEarlyAccess: false }),
+          expect.objectContaining({ id: "s-2", isEarlyAccess: false }),
+        ]),
+      }),
     );
   });
 
