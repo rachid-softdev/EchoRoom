@@ -126,7 +126,7 @@ describe("me — current user profile query", () => {
     expect(mockDb.user.findUnique).toHaveBeenCalledWith({
       where: { id: "user-123" },
       select: expect.objectContaining({
-        billing: { select: { credits: true } },
+        billing: { select: { credits: true, plan: true } },
       }),
     });
   });

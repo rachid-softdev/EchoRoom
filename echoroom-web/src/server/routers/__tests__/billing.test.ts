@@ -130,7 +130,7 @@ describe("billingRouter.createCheckout", () => {
 
   it("should create checkout with correct parameters", async () => {
     const result = await handler({
-      input: { priceId: "price_starter", credits: 50 },
+      input: { tier: "starter" },
       ctx: validCtx,
     });
 
@@ -138,8 +138,7 @@ describe("billingRouter.createCheckout", () => {
 
     expect(mockCreateCheckoutSession).toHaveBeenCalledWith({
       userId: "user-123",
-      credits: 50,
-      priceId: "price_starter",
+      tier: "starter",
       successUrl: "http://localhost:3000/billing?success=true",
       cancelUrl: "http://localhost:3000/billing?cancelled=true",
     });
