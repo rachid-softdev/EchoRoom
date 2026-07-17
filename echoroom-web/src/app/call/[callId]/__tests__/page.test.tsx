@@ -74,7 +74,7 @@ vi.mock("@/components/shared/DataLoader", () => ({
         <div data-testid="dataloader-error">
           <p>Une erreur est survenue</p>
           <p>{query.error?.message ?? "Impossible de charger les données. Réessayez."}</p>
-          <button onClick={() => query.refetch()}>Réessayer</button>
+          <button type="button" onClick={() => query.refetch()}>Réessayer</button>
         </div>
       );
     }
@@ -143,7 +143,7 @@ vi.mock("@/components/shared/CreditDisplay", () => ({
 
 // Mock ThemeToggle (used in DashboardShell)
 vi.mock("@/components/ui/ThemeToggle", () => ({
-  ThemeToggle: () => <button data-testid="theme-toggle">Theme</button>,
+  ThemeToggle: () => <button type="button" data-testid="theme-toggle">Theme</button>,
 }));
 
 // Mock Breadcrumbs (used in DashboardShell)

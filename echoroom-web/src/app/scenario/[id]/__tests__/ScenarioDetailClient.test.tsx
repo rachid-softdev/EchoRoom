@@ -87,7 +87,7 @@ vi.mock("@/components/ui", () => ({
       {children}
     </div>
   ),
-  AvatarImage: (props: any) => <img {...props} />,
+  AvatarImage: (props: any) => <img {...props} alt={props.alt ?? ""} />,
   AvatarFallback: ({ children, className, ...props }: any) => (
     <span className={className} {...props}>
       {children}

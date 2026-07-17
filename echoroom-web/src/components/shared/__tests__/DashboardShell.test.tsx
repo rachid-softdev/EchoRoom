@@ -271,7 +271,7 @@ describe("DashboardShell", () => {
 
   it("renders actions when provided", () => {
     render(
-      <DashboardShell title="Dashboard" actions={<button data-testid="action-btn">Action</button>}>
+      <DashboardShell title="Dashboard" actions={<button type="button" data-testid="action-btn">Action</button>}>
         <div>Content</div>
       </DashboardShell>,
     );

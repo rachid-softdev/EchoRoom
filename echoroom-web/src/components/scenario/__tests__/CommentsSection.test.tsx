@@ -101,7 +101,7 @@ vi.mock("@/components/ui", async (importOriginal) => {
       className?: string;
       [key: string]: unknown;
     }) => <div className={className}>{children}</div>,
-    AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
+    AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt ?? ""} />,
     AvatarFallback: ({
       children,
       className,

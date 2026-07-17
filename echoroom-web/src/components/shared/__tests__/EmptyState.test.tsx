@@ -24,7 +24,7 @@ describe("EmptyState", () => {
         icon={Search}
         title="No results"
         description="Try again"
-        action={<button>Create</button>}
+        action={<button type="button">Create</button>}
       />,
     );
 

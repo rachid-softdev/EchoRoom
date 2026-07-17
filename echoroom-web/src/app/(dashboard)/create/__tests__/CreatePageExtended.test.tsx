@@ -112,7 +112,7 @@ vi.mock("@/components/shared/DataLoader", () => ({
         <div data-testid="loader-error">
           <p>Une erreur est survenue</p>
           <p>{query.error?.message ?? "Impossible de charger les données."}</p>
-          <button onClick={query.refetch}>Réessayer</button>
+          <button type="button" onClick={query.refetch}>Réessayer</button>
         </div>
       );
     }

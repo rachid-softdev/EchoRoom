@@ -103,8 +103,10 @@ export default function ExplorePage() {
     setTransitionKey((k) => k + 1);
   }, [activeCategory, debouncedQuery]);
 
-  const filteredItems = useMemo(() =>
-    feedQuery.data?.items.filter((scenario) => {
+  const filteredItems = useMemo(() => {
+    // chaosKey is intentionally kept as a dependency to force a recompute (re-shuffle) when toggled
+    void chaosKey;
+    return feedQuery.data?.items.filter((scenario) => {
       const matchesCategory =
         activeCategory === "Tous" ||
         scenario.character?.category === CATEGORY_TO_ENUM[activeCategory];
@@ -113,10 +115,8 @@ export default function ExplorePage() {
         scenario.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
         scenario.description.toLowerCase().includes(debouncedQuery.toLowerCase());
       return matchesCategory && matchesSearch;
-    }) ?? [],
-    // biome-ignore lint/correctness/useExhaustiveDependencies: chaosKey triggers re-shuffle
-    [feedQuery.data, activeCategory, debouncedQuery, chaosKey]
-  );
+    }) ?? [];
+  }, [feedQuery.data, activeCategory, debouncedQuery, chaosKey]);
 
   const shuffledItems = useMemo(() => shuffleArray(filteredItems), [filteredItems]);
 

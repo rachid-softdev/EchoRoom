@@ -12,7 +12,7 @@ describe("Tooltip", () => {
   it("renders children but hides tooltip initially", () => {
     render(
       <Tooltip content="Help text">
-        <button>Hover me</button>
+        <button type="button">Hover me</button>
       </Tooltip>,
     );
 
@@ -24,7 +24,7 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     render(
       <Tooltip content="Help text">
-        <button>Hover me</button>
+        <button type="button">Hover me</button>
       </Tooltip>,
     );
 
@@ -37,7 +37,7 @@ describe("Tooltip", () => {
     const user = userEvent.setup();
     render(
       <Tooltip content="Help text">
-        <button>Hover me</button>
+        <button type="button">Hover me</button>
       </Tooltip>,
     );
 
@@ -51,7 +51,7 @@ describe("Tooltip", () => {
   it("renders with empty content without crashing", () => {
     render(
       <Tooltip content="">
-        <button>Hover me</button>
+        <button type="button">Hover me</button>
       </Tooltip>,
     );
 

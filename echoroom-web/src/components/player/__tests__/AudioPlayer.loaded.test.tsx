@@ -170,7 +170,7 @@ vi.mock("../AudioPlayer", () => {
       <div className="flex flex-col items-center py-6">
         {title && <p className="text-sm text-muted-foreground mb-4">{title}</p>}
 
-        <button className="rounded-full w-16 h-16 mb-4" onClick={handleTogglePlay}>
+        <button type="button" className="rounded-full w-16 h-16 mb-4" onClick={handleTogglePlay}>
           {isPlaying ? <svg data-testid="icon-pause" /> : <svg data-testid="icon-play" />}
         </button>
 
@@ -218,7 +218,7 @@ vi.mock("../AudioPlayer", () => {
             rel="noopener noreferrer"
             className="mt-4"
           >
-            <button className="gap-2">
+            <button type="button" className="gap-2">
               <svg data-testid="icon-download" />
               Télécharger
             </button>
