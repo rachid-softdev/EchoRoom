@@ -18,12 +18,25 @@ vi.mock("@/server/db", () => ({
     call: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(),
       updateMany: vi.fn(),
       update: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     user: {
       updateMany: vi.fn(),
       update: vi.fn(),
+    },
+    badge: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    userBadge: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({}),
+    },
+    scenario: {
+      count: vi.fn().mockResolvedValue(0),
+      aggregate: vi.fn().mockResolvedValue({ _sum: { likeCount: 0 } }),
     },
     $transaction: vi.fn(),
   },
