@@ -147,7 +147,7 @@ describe("PricingPage", () => {
 
     // Session loading should still render plan prices
     expect(screen.getByText("Gratuit")).toBeInTheDocument();
-    expect(screen.getByText(/9,99/)).toBeInTheDocument();
-    expect(screen.getByText(/24,99/)).toBeInTheDocument();
+    expect(screen.getByText("9,99 €")).toBeInTheDocument();
+    expect(screen.getByText("24,99 €")).toBeInTheDocument();
   });
 });

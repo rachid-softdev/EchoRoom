@@ -140,7 +140,7 @@ describe("BillingPage", () => {
   it("displays current credits balance", () => {
     render(<BillingPage />);
 
-    // The text "42 crédits" is rendered inside Badge
+    // The balance badge renders "{credits} crédits"
     expect(screen.getByText(/42 crédits/)).toBeInTheDocument();
   });
 
@@ -154,63 +154,55 @@ describe("BillingPage", () => {
     render(<BillingPage />);
 
     // When data is undefined, credits defaults to 0
-    expect(screen.getByText(/0 crédit/)).toBeInTheDocument();
+    expect(screen.getByText("0 crédits")).toBeInTheDocument();
   });
 
-  it("renders credit packs with correct prices", () => {
+  it("renders subscription tiers from PRICING_CONFIG", () => {
     render(<BillingPage />);
 
-    // Credit pack card titles show the number of credits
-    expect(screen.getByText("10")).toBeInTheDocument();
-    expect(screen.getByText("50")).toBeInTheDocument();
-    expect(screen.getByText("200")).toBeInTheDocument();
-    expect(screen.getByText("500")).toBeInTheDocument();
+    // Tier labels (free is filtered out — only paid tiers render)
+    expect(screen.getByText("Starter")).toBeInTheDocument();
+    expect(screen.getByText("Pro")).toBeInTheDocument();
+    expect(screen.getByText("Ultra")).toBeInTheDocument();
 
-    // Prices should be rendered
-    expect(screen.getByText("2,99 €")).toBeInTheDocument();
+    // Monthly credit allowances
+    expect(screen.getByText("50 crédits / mois")).toBeInTheDocument();
+    expect(screen.getByText("200 crédits / mois")).toBeInTheDocument();
+    expect(screen.getByText("1000 crédits / mois")).toBeInTheDocument();
+
+    // Prices (formatted fr-FR)
     expect(screen.getByText("9,99 €")).toBeInTheDocument();
     expect(screen.getByText("24,99 €")).toBeInTheDocument();
     expect(screen.getByText("49,99 €")).toBeInTheDocument();
+
+    // CTAs
+    expect(screen.getByText("Choisir Starter")).toBeInTheDocument();
+    expect(screen.getByText("Choisir Pro")).toBeInTheDocument();
+    expect(screen.getByText("Choisir Ultra")).toBeInTheDocument();
   });
 
-  // ── Popular badge ────────────────────────────────────────────
-
-  it("shows popular badge on the 50 credits pack", () => {
+  it("shows popular badge on the highlighted (Starter) tier", () => {
     render(<BillingPage />);
 
     const popularBadges = screen.getAllByText("Populaire");
     expect(popularBadges.length).toBeGreaterThanOrEqual(1);
   });
 
-  // ── Purchase flow ────────────────────────────────────────────
-
-  it("calls checkout mutation with correct priceId when buy button is clicked", () => {
+  it("calls checkout mutation with correct tier when Starter CTA is clicked", () => {
     render(<BillingPage />);
 
-    // Click "Acheter" on the first pack (10 credits)
-    const buyButtons = screen.getAllByText("Acheter");
-    fireEvent.click(buyButtons[0]!);
+    fireEvent.click(screen.getByText("Choisir Starter"));
 
-    expect(mockCheckoutMutate).toHaveBeenCalledWith({
-      priceId: "price_10",
-      credits: 10,
-    });
+    expect(mockCheckoutMutate).toHaveBeenCalledWith({ tier: "starter" });
   });
 
-  it("calls checkout mutation with correct priceId for popular pack", () => {
+  it("calls checkout mutation with correct tier for the popular pack", () => {
     render(<BillingPage />);
 
-    const buyButtons = screen.getAllByText("Acheter");
-    // Second button is for 50 credits (popular)
-    fireEvent.click(buyButtons[1]!);
+    fireEvent.click(screen.getByText("Choisir Pro"));
 
-    expect(mockCheckoutMutate).toHaveBeenCalledWith({
-      priceId: "price_50",
-      credits: 50,
-    });
+    expect(mockCheckoutMutate).toHaveBeenCalledWith({ tier: "pro" });
   });
-
-  // ── Empty purchase history ────────────────────────────────────
 
   it("shows empty purchase history section", () => {
     render(<BillingPage />);
@@ -219,14 +211,12 @@ describe("BillingPage", () => {
     expect(screen.getByText("Aucun achat pour le moment")).toBeInTheDocument();
   });
 
-  it("shows scroll to credit packs button in purchase history", () => {
+  it("shows scroll to tiers button in purchase history", () => {
     render(<BillingPage />);
 
     const scrollButton = screen.getByRole("button", { name: "Acheter des crédits" });
     expect(scrollButton).toBeInTheDocument();
   });
-
-  // ── Error state for credits query ────────────────────────────
 
   it("shows 0 credits when query has error", () => {
     mockCreditsQuery.mockReturnValue({
@@ -239,6 +229,6 @@ describe("BillingPage", () => {
     render(<BillingPage />);
 
     // Falls back to 0
-    expect(screen.getByText(/0 crédit/)).toBeInTheDocument();
+    expect(screen.getByText("0 crédits")).toBeInTheDocument();
   });
 });

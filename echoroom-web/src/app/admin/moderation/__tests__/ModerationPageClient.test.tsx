@@ -45,6 +45,8 @@ vi.mock("lucide-react", () => ({
   X: () => <svg data-testid="icon-x" />,
   AlertTriangle: () => <svg data-testid="icon-alert-triangle" />,
   RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
+  Loader2: () => <svg data-testid="icon-loader" />,
+  RefreshCw: () => <svg data-testid="icon-refresh-cw" />,
 }));
 
 // Mock CommentModerationTab

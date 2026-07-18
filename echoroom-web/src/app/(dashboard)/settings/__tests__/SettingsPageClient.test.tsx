@@ -32,6 +32,15 @@ vi.mock("next-auth/react", () => ({
 // Mock tRPC
 vi.mock("@/lib/trpc", () => ({
   api: {
+    auth: {
+      changePassword: {
+        useMutation: vi.fn(() => ({
+          mutate: vi.fn(),
+          mutateAsync: vi.fn(),
+          isPending: false,
+        })),
+      },
+    },
     profile: {
       updateProfile: {
         useMutation: vi.fn((opts?: any) => ({
@@ -154,6 +163,7 @@ vi.mock("lucide-react", () => ({
   Trash2: () => <svg data-testid="icon-trash" />,
   Loader2: () => <svg data-testid="icon-loader" />,
   ShieldX: () => <svg data-testid="icon-shield-x" />,
+  Lock: () => <svg data-testid="icon-lock" />,
 }));
 
 // Mock fetch for export
