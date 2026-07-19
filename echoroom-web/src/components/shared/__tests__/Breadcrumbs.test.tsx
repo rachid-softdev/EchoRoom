@@ -140,7 +140,7 @@ describe("Breadcrumbs", () => {
     mockUsePathname.mockReturnValue("/dashboard/create");
     render(<Breadcrumbs />);
 
-    const nav = screen.getByRole("navigation", { name: "Fil d'Ariane" });
+    const nav = screen.getByRole("navigation", { name: "Fil d'ariane" });
     expect(nav).toBeInTheDocument();
   });
 });

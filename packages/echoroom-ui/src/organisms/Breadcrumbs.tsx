@@ -8,6 +8,8 @@ export interface BreadcrumbItem {
   label: React.ReactNode;
   /** Optional href — when omitted the item is rendered as plain text. */
   href?: string;
+  /** Optional accessible label for the link (overrides the visible label). */
+  ariaLabel?: string;
 }
 
 export interface BreadcrumbsProps extends React.HTMLAttributes<HTMLElement> {
@@ -15,10 +17,30 @@ export interface BreadcrumbsProps extends React.HTMLAttributes<HTMLElement> {
   items: BreadcrumbItem[];
   /** Separator between items. Defaults to "/". */
   separator?: React.ReactNode;
+  /** Component used to render links (e.g. next/link). Defaults to a plain <a>. */
+  linkComponent?: React.ElementType;
+}
+
+function DefaultLink({
+  href,
+  className,
+  children,
+  ...rest
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+  "aria-label"?: string;
+}) {
+  return (
+    <a href={href} className={className} {...rest}>
+      {children}
+    </a>
+  );
 }
 
 const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
-  ({ className, items, separator = "/", ...props }, ref) => (
+  ({ className, items, separator = "/", linkComponent: LinkComponent = DefaultLink, ...props }, ref) => (
     <nav
       ref={ref}
       aria-label="Fil d'ariane"
@@ -30,9 +52,13 @@ const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
         return (
           <React.Fragment key={i}>
             {item.href && !isLast ? (
-              <a href={item.href} className="transition-colors hover:text-foreground">
+              <LinkComponent
+                href={item.href}
+                aria-label={item.ariaLabel}
+                className="transition-colors hover:text-foreground"
+              >
                 {item.label}
-              </a>
+              </LinkComponent>
             ) : (
               <span
                 className={cn(isLast && "font-medium text-foreground")}

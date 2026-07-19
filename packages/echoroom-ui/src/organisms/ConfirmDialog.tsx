@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "../atoms/button";
 import {
   Dialog,
@@ -25,12 +26,18 @@ export interface ConfirmDialogProps {
   confirmLabel?: React.ReactNode;
   /** Label for the cancel button. */
   cancelLabel?: React.ReactNode;
-  /** Called when the user confirms. The dialog then closes. */
+  /** Called when the user confirms. */
   onConfirm?: () => void;
   /** Destructive renders the confirm button in the destructive variant. */
   variant?: "default" | "destructive";
   /** Trigger element (e.g. a Button) for uncontrolled usage. */
   trigger?: React.ReactNode;
+  /** Shows a spinner on the confirm button and disables both buttons. */
+  loading?: boolean;
+  /** Disables the confirm button (cancel stays enabled unless loading). */
+  confirmDisabled?: boolean;
+  /** Close the dialog after confirming. Defaults to true. */
+  closeOnConfirm?: boolean;
 }
 
 const ConfirmDialog = ({
@@ -43,12 +50,15 @@ const ConfirmDialog = ({
   onConfirm,
   variant = "default",
   trigger,
+  loading = false,
+  confirmDisabled = false,
+  closeOnConfirm = true,
 }: ConfirmDialogProps) => {
   const isDestructive = variant === "destructive";
 
   const handleConfirm = () => {
     onConfirm?.();
-    onOpenChange?.(false);
+    if (closeOnConfirm) onOpenChange?.(false);
   };
 
   return (
@@ -59,12 +69,16 @@ const ConfirmDialog = ({
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange?.(false)}>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange?.(false)} disabled={loading}>
             {cancelLabel}
           </Button>
-          <Button variant={isDestructive ? "destructive" : "default"} onClick={handleConfirm}>
-            {confirmLabel}
+          <Button
+            variant={isDestructive ? "destructive" : "default"}
+            onClick={handleConfirm}
+            disabled={loading || confirmDisabled}
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

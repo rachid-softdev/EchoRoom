@@ -116,7 +116,7 @@ export async function loadFlagOverridesFromDb(): Promise<void> {
   // Skip DB-backed overrides there; isFeatureEnabled falls back to config
   // defaults (and the FF_*/FEATURE_FLAGS env overrides), which is correct
   // for middleware evaluation.
-  if (process.env.NEXT_RUNTIME === "edge") return;
+  if (process.env["NEXT_RUNTIME"] === "edge") return;
   // Dynamic import avoids a static dependency cycle with the DB module.
   const { db } = await import("@/server/db");
   const rows = await db.featureFlagOverride.findMany();

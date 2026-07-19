@@ -33,10 +33,11 @@ export async function POST() {
     },
   });
 
-  const fd = new FormData();
-  fd.set("email", DEV_EMAIL);
-  fd.set("password", DEV_PASSWORD);
-  const result = await signIn("credentials", fd, { redirect: false });
+  const result = await signIn("credentials", {
+    email: DEV_EMAIL,
+    password: DEV_PASSWORD,
+    redirect: false,
+  });
 
   if (result?.error) {
     return NextResponse.json(
