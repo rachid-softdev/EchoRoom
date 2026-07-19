@@ -3,6 +3,7 @@
 import { ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Breadcrumbs as BreadcrumbsUI, type BreadcrumbItem } from "@echoroom/ui";
 
 const LABEL_MAP: Record<string, string> = {
   dashboard: "Dashboard",
@@ -16,54 +17,42 @@ const LABEL_MAP: Record<string, string> = {
   profile: "Profil",
 };
 
+/**
+ * Auto-generated breadcrumbs for the authenticated areas of the app.
+ *
+ * The trail is derived from the current pathname; rendering is delegated to the
+ * shared @echoroom/ui Breadcrumbs organism (via `linkComponent={Link}` so we keep
+ * client-side navigation and a Home icon as the leading crumb).
+ */
 export function Breadcrumbs() {
   const pathname = usePathname();
 
-  // Only show breadcrumbs inside dashboard routes
+  // Only show breadcrumbs inside dashboard / admin routes
   if (!pathname?.startsWith("/dashboard") && !pathname?.startsWith("/admin")) {
     return null;
   }
 
   const segments = pathname.split("/").filter(Boolean);
-
-  const crumbs = segments.map((segment, index) => {
-    const href = `/${segments.slice(0, index + 1).join("/")}`;
-    const label = LABEL_MAP[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1);
-    const isLast = index === segments.length - 1;
-
-    return { href, label, isLast };
-  });
+  const crumbs = segments.map((segment, index) => ({
+    href: `/${segments.slice(0, index + 1).join("/")}`,
+    label: LABEL_MAP[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1),
+  }));
 
   // If we're exactly at /dashboard or /admin, only show the home link
   if (crumbs.length <= 1) return null;
 
+  const items: BreadcrumbItem[] = [
+    { href: "/dashboard", label: <Home className="h-4 w-4" aria-hidden="true" />, ariaLabel: "Accueil" },
+    ...crumbs.map((crumb) => ({ href: crumb.href, label: crumb.label })),
+  ];
+
   return (
-    <nav aria-label="Fil d'Ariane" className="mb-6">
-      <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <li>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-            aria-label="Accueil"
-          >
-            <Home className="w-4 h-4" />
-          </Link>
-        </li>
-        {crumbs.map((crumb) => (
-          <li key={crumb.href} className="flex items-center gap-1.5">
-            <ChevronRight className="w-4 h-4" aria-hidden="true" />
-            {crumb.isLast ? (
-              <span className="font-medium text-foreground" aria-current="page">
-                {crumb.label}
-              </span>
-            ) : (
-              <Link href={crumb.href} className="hover:text-foreground transition-colors">
-                {crumb.label}
-              </Link>
-            )}
-          </li>
-        ))}
-      </ol>
-    </nav>
+    <div className="mb-6">
+      <BreadcrumbsUI
+        items={items}
+        separator={<ChevronRight className="h-4 w-4" aria-hidden />}
+        linkComponent={Link}
+      />
+    </div>
   );
 }

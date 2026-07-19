@@ -1,15 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@echoroom/ui";
+import { ConfirmDialog as ConfirmDialogUI } from "@echoroom/ui";
 
 interface ConfirmDialogProps {
   /** Whether the dialog is visible */
@@ -35,15 +26,11 @@ interface ConfirmDialogProps {
 }
 
 /**
- * A confirmation dialog built on shadcn/ui Dialog.
+ * Confirmation dialog built on the shared @echoroom/ui ConfirmDialog organism.
  *
- * @description Renders a modal overlay with title, description, and two action
- * buttons (cancel / confirm). Supports a destructive variant for dangerous
- * actions and a loading state that disables both buttons and shows a spinner
- * on the confirm button.
- * @example
- * <ConfirmDialog open={isOpen} onOpenChange={setIsOpen} title="Supprimer ?" description="Cette action est irréversible." variant="destructive" onConfirm={handleDelete} />
- * @returns A Dialog component with header, description, and footer buttons
+ * Unlike the generic organism, this web variant does NOT auto-close on confirm
+ * (`closeOnConfirm={false}`) — the consumer controls visibility via `onOpenChange`,
+ * which is required for the loading/`confirmDisabled` flows.
  */
 export function ConfirmDialog({
   open,
@@ -58,25 +45,18 @@ export function ConfirmDialog({
   confirmDisabled = false,
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            {cancelLabel}
-          </Button>
-          <Button
-            variant={variant === "destructive" ? "destructive" : "default"}
-            onClick={onConfirm}
-            disabled={loading || confirmDisabled}
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialogUI
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      cancelLabel={cancelLabel}
+      variant={variant}
+      onConfirm={onConfirm}
+      loading={loading}
+      confirmDisabled={confirmDisabled}
+      closeOnConfirm={false}
+    />
   );
 }

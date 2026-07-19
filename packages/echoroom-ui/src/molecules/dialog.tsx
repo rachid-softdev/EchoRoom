@@ -23,8 +23,8 @@ function useDialog() {
 
 interface DialogProps {
   children: React.ReactNode;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  open?: boolean | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 function Dialog({
