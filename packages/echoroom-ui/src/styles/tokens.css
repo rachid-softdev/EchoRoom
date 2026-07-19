@@ -1,9 +1,10 @@
 /**
  * @echoroom/ui — Design Tokens (CSS variables)
  *
- * Mirror of the runtime CSS variables consumed by all components.
- * The web app still sources these from its own globals.css; this file
- * exists for package-level parity and to document the token contract.
+ * Single source of truth for the token contract. The web app sources
+ * these from here (imported at the top of globals.css). Values mirror
+ * packages/echoroom-ui/src/tokens/tokens.ts so the TS + CSS layers stay
+ * in sync.
  */
 
 :root {
@@ -12,12 +13,18 @@
   --card: #ffffff;
   --card-foreground: #09090b;
   --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #06b6d4;
   --primary: #06b6d4;
   --primary-foreground: #ffffff;
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
   --muted: #f4f4f5;
   --muted-foreground: #71717a;
+  --accent: #06b6d4;
+  --accent-foreground: #ffffff;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 }
@@ -28,12 +35,18 @@
   --card: #141416;
   --card-foreground: #fafafa;
   --border: #27272a;
+  --input: #27272a;
+  --ring: #06b6d4;
   --primary: #06b6d4;
   --primary-foreground: #0a0a0b;
   --secondary: #27272a;
   --secondary-foreground: #fafafa;
   --muted: #18181b;
   --muted-foreground: #a1a1aa;
+  --accent: #06b6d4;
+  --accent-foreground: #ffffff;
+  --popover: #141416;
+  --popover-foreground: #fafafa;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
 }

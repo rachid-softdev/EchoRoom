@@ -55,4 +55,13 @@ export { Toast, Toaster, ToastProvider, toast, useToast } from "./molecules/toas
 export type { ToastProps } from "./molecules/toast";
 
 /* ── Organisms ────────────────────────────────────────────────── */
-/* Reserved for composite, app-level UI blocks. */
+export { EmptyState } from "./organisms/EmptyState";
+export type { EmptyStateProps } from "./organisms/EmptyState";
+export { ConfirmDialog } from "./organisms/ConfirmDialog";
+export type { ConfirmDialogProps } from "./organisms/ConfirmDialog";
+export { Breadcrumbs } from "./organisms/Breadcrumbs";
+export type { BreadcrumbsProps, BreadcrumbItem } from "./organisms/Breadcrumbs";
+export { FormField } from "./organisms/FormField";
+export type { FormFieldProps } from "./organisms/FormField";
+export { PageHeader } from "./organisms/PageHeader";
+export type { PageHeaderProps } from "./organisms/PageHeader";
