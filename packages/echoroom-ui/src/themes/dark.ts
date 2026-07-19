@@ -22,4 +22,6 @@ export const darkTheme: Record<string, string> = {
   border: "#27272a",
   input: "#27272a",
   ring: "#06b6d4",
+  accent: "#06b6d4",
+  "accent-foreground": "#ffffff",
 };

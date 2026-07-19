@@ -22,4 +22,6 @@ export const lightTheme: Record<string, string> = {
   border: "#e4e4e7",
   input: "#e4e4e7",
   ring: "#06b6d4",
+  accent: "#06b6d4",
+  "accent-foreground": "#ffffff",
 };

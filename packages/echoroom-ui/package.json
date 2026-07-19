@@ -14,7 +14,8 @@
     "./lib": "./src/utils/cn.ts",
     "./alert": "./src/atoms/alert.tsx",
     "./tooltip": "./src/atoms/tooltip.tsx",
-    "./ThemeToggle": "./src/molecules/ThemeToggle.tsx"
+    "./ThemeToggle": "./src/molecules/ThemeToggle.tsx",
+    "./organisms": "./src/organisms/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
