@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui";
+} from "@echoroom/ui";
 
 interface ConfirmDialogProps {
   /** Whether the dialog is visible */

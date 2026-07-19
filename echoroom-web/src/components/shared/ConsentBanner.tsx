@@ -2,8 +2,8 @@
 
 import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@echoroom/ui";
+import { Alert, AlertDescription, AlertTitle } from "@echoroom/ui/alert";
 import { api } from "@/lib/trpc";
 
 /**

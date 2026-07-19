@@ -62,8 +62,8 @@ vi.mock("next-auth/react", () => ({
 
 // Mock toast
 const mockToast = vi.hoisted(() => vi.fn());
-vi.mock("@/components/ui", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@/components/ui")>();
+vi.mock("@echoroom/ui", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@echoroom/ui")>();
   return {
     ...original,
     toast: mockToast,

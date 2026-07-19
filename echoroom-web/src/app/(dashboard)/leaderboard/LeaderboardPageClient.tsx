@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { LeaderboardTable } from "@/components/social/LeaderboardTable";
-import { cn } from "@/components/ui";
+import { cn } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 type Period = "ALL" | "WEEK" | "MONTH";

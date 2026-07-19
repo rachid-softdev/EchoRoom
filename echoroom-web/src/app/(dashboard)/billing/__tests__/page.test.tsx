@@ -65,7 +65,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock @/components/ui
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Badge: ({ children, variant, className, ...props }: any) => (
     <span data-variant={variant} className={className} {...props}>
       {children}

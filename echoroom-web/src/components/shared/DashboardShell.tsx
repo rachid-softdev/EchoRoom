@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button, cn } from "@/components/ui";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Button, cn } from "@echoroom/ui";
+import { ThemeToggle } from "@echoroom/ui/ThemeToggle";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { CreditDisplay } from "./CreditDisplay";
 

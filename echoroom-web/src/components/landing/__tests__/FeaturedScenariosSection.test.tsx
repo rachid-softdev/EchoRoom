@@ -50,7 +50,7 @@ vi.mock("@/components/shared/ScenarioCard", () => ({
   ScenarioCard: ({ scenario }: any) => <div data-testid="scenario-card">{scenario.title}</div>,
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Badge: ({ children, ...props }: any) => <span {...props}>{children}</span>,
   Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
 }));
@@ -147,7 +147,7 @@ describe("FeaturedScenariosSection", () => {
     expect(screen.getByTestId("loading")).toBeInTheDocument();
   });
 
-  it("shows error state when query fails", () => {
+  it("shows a curated fallback instead of an error when the query fails", () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -157,7 +157,18 @@ describe("FeaturedScenariosSection", () => {
 
     render(<FeaturedScenariosSection />);
 
-    expect(screen.getByTestId("error")).toBeInTheDocument();
+    // No raw error screen should be surfaced
+    expect(screen.queryByTestId("error")).not.toBeInTheDocument();
+
+    // Clean fallback header
+    expect(screen.getByText(/Suggestions/)).toBeInTheDocument();
+    expect(screen.getByText(/Les scénarios les plus/)).toBeInTheDocument();
+
+    // Curated brand scenarios still render so the section stays complete
+    expect(screen.getAllByTestId("scenario-card")).toHaveLength(3);
+    expect(screen.getByText("Fake Recruiter Simulator")).toBeInTheDocument();
+    expect(screen.getByText("NPC Customer Support")).toBeInTheDocument();
+    expect(screen.getByText("AI Ex Girlfriend Chaos")).toBeInTheDocument();
   });
 
   it("shows empty state when no featured scenario is set", () => {

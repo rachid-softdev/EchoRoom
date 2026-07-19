@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Clock, Download, Loader2, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 interface AudioPlayerProps {
   /** The URL of the audio file to play, or null/undefined when unavailable */

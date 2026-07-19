@@ -3,7 +3,7 @@
 import { Loader2, Phone } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 export function MarketingNav() {
   const { data: session, status } = useSession();

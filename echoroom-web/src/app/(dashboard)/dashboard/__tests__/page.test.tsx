@@ -91,7 +91,7 @@ vi.mock("@/components/dashboard/SideWidgets", () => ({
 }));
 
 // Mock @/components/ui (Card, Badge, Button, Skeleton, etc.)
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Badge: ({ children, variant, className, ...props }: any) => (
     <span data-variant={variant} className={className} {...props}>
       {children}

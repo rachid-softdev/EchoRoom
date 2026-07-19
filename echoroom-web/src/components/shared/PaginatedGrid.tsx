@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 interface PaginatedGridProps {
   hasMore: boolean;

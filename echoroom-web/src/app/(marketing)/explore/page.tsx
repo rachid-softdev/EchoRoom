@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { SegmentedControl } from "@/components/ui";
+import { SegmentedControl } from "@echoroom/ui";
 import { Search, Clock, Flame, ArrowUp } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { DataLoader } from "@/components/shared/DataLoader";

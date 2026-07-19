@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@echoroom/ui";
 import { db } from "@/server/db";
 import { buildActivityFeed, formatRelativeDate } from "./profile-helpers";
 import type { CallFeedItem } from "./profile-helpers";

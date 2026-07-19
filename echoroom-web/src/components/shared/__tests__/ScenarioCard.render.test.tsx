@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
 }));
 
 // Mock @/components/ui
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Card: ({ children, className, ...props }: any) => (
     <div className={className} {...props}>
       {children}

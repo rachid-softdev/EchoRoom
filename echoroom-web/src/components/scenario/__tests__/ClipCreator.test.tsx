@@ -26,7 +26,7 @@ vi.mock("@/lib/trpc", () => ({
   },
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({
     children,
     disabled,

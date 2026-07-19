@@ -8,7 +8,7 @@ import { PaginatedGrid } from "../PaginatedGrid";
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({ children, onClick, disabled, className }: any) => (
     <button type="button" onClick={onClick} disabled={disabled} className={className}>
       {children}

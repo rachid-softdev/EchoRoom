@@ -12,7 +12,7 @@ import {
   CardTitle,
   Input,
   toast,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 export default function BlockedNumbersPageClient() {

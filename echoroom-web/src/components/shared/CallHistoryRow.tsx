@@ -1,6 +1,6 @@
 import { Phone, Play } from "lucide-react";
 import Link from "next/link";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button } from "@echoroom/ui";
 import { formatDate, formatDuration, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/constants";
 
 interface CallData {

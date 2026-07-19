@@ -16,7 +16,7 @@ import {
   CardTitle,
   Input,
   toast,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { api } from "@/lib/trpc";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 /**
  * Formulaire de pré-inscription pour la démonstration audio.

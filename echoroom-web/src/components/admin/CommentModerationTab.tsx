@@ -4,7 +4,7 @@ import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { DataLoader } from "@/components/shared/DataLoader";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Button, toast } from "@/components/ui";
+import { Button, toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 export function CommentModerationTab() {

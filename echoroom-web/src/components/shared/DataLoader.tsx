@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, RotateCcw } from "lucide-react";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, Skeleton } from "@echoroom/ui";
 
 /**
  * Generic query result shape accepted by DataLoader.

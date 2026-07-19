@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/components/ui";
+import { cn } from "@echoroom/ui";
 
 const EMOJIS = ["❤️", "😂", "😮", "🔥", "😭", "🤯", "💀", "👀"];
 

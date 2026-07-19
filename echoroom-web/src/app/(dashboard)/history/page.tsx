@@ -7,7 +7,7 @@ import { CallHistoryRow } from "@/components/shared/CallHistoryRow";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
-import { Button, Input } from "@/components/ui";
+import { Button, Input } from "@echoroom/ui";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
 import { api } from "@/lib/trpc";
 

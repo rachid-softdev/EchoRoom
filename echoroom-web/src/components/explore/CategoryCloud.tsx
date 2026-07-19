@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/components/ui/lib";
+import { cn } from "@echoroom/ui/lib";
 
 interface CategoryCloudProps {
   activeCategory: string;

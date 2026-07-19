@@ -23,7 +23,7 @@ vi.mock("lucide-react", () => ({
 
 // Mock the Button and toast components
 const mockToast = vi.fn();
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({
     children,
     onClick,

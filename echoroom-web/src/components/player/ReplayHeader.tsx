@@ -1,5 +1,5 @@
 import { Calendar, Clock, Phone } from "lucide-react";
-import { Badge } from "@/components/ui";
+import { Badge } from "@echoroom/ui";
 import { formatDuration, STATUS_LABELS } from "@/lib/constants";
 
 interface ReplayHeaderProps {

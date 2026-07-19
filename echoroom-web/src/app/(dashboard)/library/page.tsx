@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
 import { PaginatedGrid } from "@/components/shared/PaginatedGrid";
 import { ScenarioCard, type ScenarioCardData } from "@/components/shared/ScenarioCard";
-import { Button, Input } from "@/components/ui";
+import { Button, Input } from "@echoroom/ui";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
 import { api } from "@/lib/trpc";
 

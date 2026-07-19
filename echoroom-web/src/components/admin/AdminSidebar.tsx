@@ -3,7 +3,7 @@
 import { Ban, BarChart3, Flag, LayoutDashboard, ScrollText, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@echoroom/ui/ThemeToggle";
 
 const navItems = [
   { href: "/admin/moderation", label: "Modération", icon: Shield },

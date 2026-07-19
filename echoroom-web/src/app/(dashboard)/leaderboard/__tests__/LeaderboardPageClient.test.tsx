@@ -56,7 +56,7 @@ vi.mock("@/components/social/LeaderboardTable", () => ({
 }));
 
 // Mock @/components/ui (cn utility)
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   cn: (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" "),
 }));
 

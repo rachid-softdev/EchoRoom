@@ -2,7 +2,7 @@
 
 import { Medal, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cn } from "@/components/ui/lib";
+import { cn } from "@echoroom/ui/lib";
 
 interface BadgeInfo {
   id: string;

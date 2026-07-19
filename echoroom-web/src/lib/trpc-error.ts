@@ -2,7 +2,7 @@
 
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { TRPCClientErrorLike } from "@trpc/react-query";
-import { toast } from "@/components/ui";
+import { toast } from "@echoroom/ui";
 import type { AppRouter } from "@/server/rootRouter";
 
 type MutationLike<TData, TInput> = Pick<

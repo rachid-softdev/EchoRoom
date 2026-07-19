@@ -2,8 +2,8 @@
 
 import { Phone } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { Badge, Skeleton } from "@/components/ui";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Badge, Skeleton } from "@echoroom/ui";
+import { Tooltip } from "@echoroom/ui/tooltip";
 
 interface CreditDisplayProps {
   /** Credits to display. Falls back to `useSession()` if not provided. */

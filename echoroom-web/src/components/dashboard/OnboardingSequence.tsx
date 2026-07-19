@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { X, Check, Sparkles } from "lucide-react";
-import { Card, CardContent, Button, cn } from "@/components/ui";
+import { Card, CardContent, Button, cn } from "@echoroom/ui";
 
 interface OnboardingState {
   completed: boolean;

@@ -14,7 +14,7 @@ import {
   CardTitle,
   Input,
   toast,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";
 

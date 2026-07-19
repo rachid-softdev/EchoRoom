@@ -20,7 +20,7 @@ vi.mock("@/lib/trpc-provider", () => ({
 }));
 
 // Mock ToastProvider and Toaster — renders children directly
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   ToastProvider: ({ children }: any) => <>{children}</>,
   Toaster: () => null,
 }));

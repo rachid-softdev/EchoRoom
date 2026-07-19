@@ -1,5 +1,5 @@
 import { MessageSquare } from "lucide-react";
-import { Skeleton } from "@/components/ui";
+import { Skeleton } from "@echoroom/ui";
 
 interface TranscriptChunk {
   speaker: string;

@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
   Skeleton,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 interface BadgeDisplayProps {

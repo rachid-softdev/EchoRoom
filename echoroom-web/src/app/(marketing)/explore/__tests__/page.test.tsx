@@ -63,7 +63,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock @/components/ui (SegmentedControl, Input, Button)
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Input: (props: any) => <input {...props} />,
   Button: ({ children, onClick, variant, className, size, ...props }: any) => (
     <button

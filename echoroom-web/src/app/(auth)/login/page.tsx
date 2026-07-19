@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
   Input,
-} from "@/components/ui";
+} from "@echoroom/ui";
 
 export default function LoginPage() {
   const router = useRouter();

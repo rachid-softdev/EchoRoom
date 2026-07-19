@@ -3,7 +3,7 @@
 import { ChevronLeft, Search, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DataLoader } from "@/components/shared/DataLoader";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 const roleBadgeVariant: Record<string, "default" | "secondary" | "outline"> = {

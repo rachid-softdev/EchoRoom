@@ -116,7 +116,7 @@ vi.mock("@/components/shared/ConfirmDialog", () => ({
 }));
 
 // Mock @/components/ui
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Card: ({ children, className }: any) => (
     <div className={className} data-testid="card">
       {children}

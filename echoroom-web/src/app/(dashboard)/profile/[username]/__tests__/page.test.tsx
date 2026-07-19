@@ -54,7 +54,7 @@ vi.mock("@/components/shared/DashboardShell", () => ({
   ),
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Card: ({ children, className, ...props }: any) => (
     <div className={className} {...props}>
       {children}
