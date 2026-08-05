@@ -1,12 +1,21 @@
 # EchoRoom — Pricing Tiers & Feature-Flag System
 
-Status: Design + partial implementation (config + flag engine + plan storage proposal).
-Owner sign-off needed on: Ultra price, invite-only Ultra, subscription vs credit model.
+Status: **Implemented & tested** — config + flag engine + full router wiring + tier storage (Prisma `UserBilling.plan` / `Subscription`) + unit coverage of the tier matrix.
 
-> Implemented this pass: `src/config/pricing.ts` (4 tiers + `ultra`), `src/config/featureFlags.ts`
+> Implemented: `src/config/pricing.ts` (4 tiers + `ultra`), `src/config/featureFlags.ts`
 > (flag config + `isFeatureEnabled`), `src/lib/featureFlags.ts` (`requireFeature` middleware),
-> `src/lib/env.ts` (`STRIPE_PRICE_ULTRA`), and updated `src/config/__tests__/pricing.test.ts`.
-> NOT yet implemented: Prisma `UserBilling.plan` + `Subscription`, and wiring flags/tiers into routers.
+> `src/lib/env.ts` (`STRIPE_PRICE_ULTRA`), `src/server/services/billing/tierResolution.ts`,
+> `src/server/services/billing/dailyLimitOps.ts` (`bypassLimit` for ultra), Prisma `UserBilling.plan`
+> + `Subscription`, Stripe webhook plan sync, router wiring (calls / characters / clips / scenarios /
+> voices / apiKeys / admin), and tests: `src/config/__tests__/featureFlags.test.ts` (tier matrix +
+> ultra rule + overrides), `src/lib/__tests__/featureFlags.test.ts` (`requireFeature`), plus
+> `src/config/__tests__/pricing.test.ts`.
+>
+> **Ultra rule (product requirement):** the highest tier (ultra) can access *every* feature.
+> `isFeatureEnabled` lets ultra bypass tier restrictions (`enabledTiers` / targeted tiers) and
+> rollout percentages. Only hard controls still apply to ultra: `FF_*` env kill-switch, admin
+> DB override (`admin.setFeatureFlagOverride`), global `FEATURE_FLAGS` JSON boolean, and
+> `defaultEnabled=false`.
 
 ## 1. Tier → Feature / Permission matrix
 
@@ -74,20 +83,24 @@ migration; then it reads the persisted plan).
 - [x] `PlanTier` type + `TIER_RANK` / `tierMeetsMinimum` helpers
 - [x] Feature-flag config (config/featureFlags.ts) — typed, env-driven, safe-parse
 - [x] `isFeatureEnabled` + `requireFeature` (lib/featureFlags.ts)
+- [x] **Ultra rule**: highest tier bypasses tier restrictions + rollout (hard controls unchanged)
 - [x] `STRIPE_PRICE_ULTRA` env default
 - [x] Pricing unit test updated to 4 tiers
-- [ ] Prisma: `UserBilling.plan` + `Subscription` (proposed below, migrate in follow-up)
-- [ ] Wire `resolveTier` to `UserBilling.plan` post-migration
+- [x] Prisma: `UserBilling.plan` + `Subscription` (migrated)
+- [x] `resolveTier` wired to `UserBilling.plan` (tierResolution.ts + defaultTierResolver)
+- [x] Tests: tier×flag matrix + ultra rule + env/JSON/admin override precedence + `requireFeature`
 
 ### Follow-up wiring (per router — gate by flag or tier)
-- `billing.ts` — checkout must support `mode:"subscription"` + map price→tier; webhook sets `plan`.
-- `calls.ts` — `experimentalLongCalls` (600s), `betaMultiplayerRooms` (room creation), bypass `DailyCallLimit` for ultra.
-- `characters.ts` — `newCharacterCategory` filter in list.
-- `clips.ts` — `clipGenerationV2` pipeline selection.
-- `scenarios.ts` — add free-tier create gate; early-access is a Pro/Ultra listing boost.
-- `user.ts` / `profile.ts` — expose `tier` (needs `UserBilling.plan`).
-- `admin.ts` — flag override dashboard (read `FEATURE_FLAGS`, flip `FF_*`).
-- `auth.ts` — assign `plan=FREE` on registration.
+- [x] `billing.ts` — checkout `mode:"subscription"` + map price→tier; webhook sets `plan`
+- [x] `calls.ts` — `experimentalLongCalls` (600s), `betaMultiplayerRooms` (createRoom), bypass `DailyCallLimit` for ultra (callLifecycle + dailyLimitOps)
+- [x] `characters.ts` — `newCharacterCategory` filter in list (per-user rollout, cache split by flag state)
+- [x] `clips.ts` — `clipGenerationV2` pipeline selection
+- [x] `scenarios.ts` — free-tier create gate; early-access Pro/Ultra listing boost
+- [x] `profile.ts` / `user.ts` — expose `tier` (profile.me)
+- [x] `admin.ts` — flag override dashboard (`getFeatureFlags` / `setFeatureFlagOverride`)
+- [x] `auth.ts` — `UserBilling` created on registration (plan defaults FREE)
+- [x] `voices.ts` — `betaPremiumVoices` filters premium ElevenLabs voices by tier
+- [x] `apiKeys.ts` — `requireFeature("betaApiAccess")` on create/list/revoke
 
 ## 5. Recommended tier storage (Prisma snippet — NOT migrated yet)
 
