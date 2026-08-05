@@ -4,6 +4,9 @@ import "@testing-library/jest-dom/vitest";
  * Vitest setup — ensures env vars are properly set before any imports.
  * Without this, env.ts would receive empty strings from process.env
  * and fail Zod URL validation for optional vars.
+ *
+ * NODE_ENV is forced to "test" in vitest.config.ts (main process, before the
+ * dep optimizer runs) — do not duplicate it here.
  */
 process.env['DIRECT_URL'] = process.env['DIRECT_URL'] || "postgresql://localhost:5432/echoroom?schema=public";
 process.env['NEXTAUTH_URL'] = process.env['NEXTAUTH_URL'] || "http://localhost:3000";
