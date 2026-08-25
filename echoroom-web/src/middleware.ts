@@ -11,6 +11,7 @@ const publicPaths = [
   "/terms",
   "/privacy",
   "/legal",
+  "/dev",
   "/api/auth",
   "/api/webhooks",
   "/_next",
@@ -38,6 +39,11 @@ function withSecurityHeaders(response: NextResponse): NextResponse {
 
 export default auth((req: NextRequest & { auth?: unknown }) => {
   const { pathname } = req.nextUrl;
+
+  // Dev-only routes: block /dev/* in production
+  if (process.env.NODE_ENV === "production" && (pathname === "/dev" || pathname.startsWith("/dev/"))) {
+    return NextResponse.rewrite(new URL("/404", req.url));
+  }
 
   // Allow public paths
   if (isPublicPath(pathname)) {
