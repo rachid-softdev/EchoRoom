@@ -66,14 +66,6 @@ vi.mock("@/components/landing/FeaturedScenariosSection", () => ({
   FeaturedScenariosSection: () => <section data-testid="featured-scenarios-section" />,
 }));
 
-vi.mock("@/components/landing/LiveCounter", () => ({
-  LiveCounter: ({ className }: { className?: string }) => (
-    <span data-testid="live-counter" className={className}>
-      128
-    </span>
-  ),
-}));
-
 vi.mock("@/components/landing/CallAudioVisualizer", () => ({
   CallAudioVisualizer: () => <div data-testid="call-audio-visualizer" />,
 }));
@@ -146,18 +138,20 @@ describe("HomePage (landing page)", () => {
     expect(screen.getByText("AI Ex Girlfriend Chaos")).toBeInTheDocument();
   });
 
-  it("should render 'En tendance' label in community strip", () => {
+  it("should render the community strip with the scenarios label", () => {
     render(<HomePage />);
 
-    expect(screen.getByText(/En tendance/i)).toBeInTheDocument();
+    // "Scénarios" also appears in the "Scénarios sur mesure" card title
+    expect(screen.getAllByText(/Scénarios/i).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render reaction count in community strip", () => {
+  it("should render honest capabilities in the community strip", () => {
     render(<HomePage />);
 
-    // The component may use HTML entity &rsquo; which renders as right single quote (U+2019)
-    // Match both regular and curly apostrophe variants
-    expect(screen.getByText(/réactions aujourd['\u2019]hui/i)).toBeInTheDocument();
+    // No fabricated live stats — only real product capabilities
+    expect(screen.getByText(/Appels IA en direct/i)).toBeInTheDocument();
+    expect(screen.getByText(/Clips partageables/i)).toBeInTheDocument();
+    expect(screen.queryByText(/12\.4k|réactions aujourd/i)).not.toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------
@@ -227,7 +221,7 @@ describe("HomePage (landing page)", () => {
   it("should render final CTA section description", () => {
     render(<HomePage />);
 
-    expect(screen.getByText(/Rejoins les milliers de créateurs/i)).toBeInTheDocument();
+    expect(screen.getByText(/Crée ton premier appel IA/i)).toBeInTheDocument();
   });
 
   // -----------------------------------------------------------------------

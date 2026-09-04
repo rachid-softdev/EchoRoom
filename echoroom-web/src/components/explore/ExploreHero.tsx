@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { LiveCounter } from "@/components/landing/LiveCounter";
 import { ScenarioCard } from "@/components/shared/ScenarioCard";
 import type { ScenarioCardData } from "@/components/shared/ScenarioCard";
 import { Sparkles, MessageCircle, Heart } from "lucide-react";
@@ -19,13 +17,9 @@ const reactionEmojis = ["😈", "💕", "🤖", "👻", "😬", "🎮", "🌀", 
  * Compact hero strip for the explore page.
  *
  * Left (2/3): trending marquee + optional featured spotlight
- * Right (1/3): social proof (live counter, emoji stream, daily created count)
+ * Right (1/3): product capabilities — no fabricated live stats
  */
 export function ExploreHero({ trendingScenarios, featured }: ExploreHeroProps) {
-  const [dailyCreated] = useState(() =>
-    Math.floor(120 + Math.random() * 180)
-  );
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
       {/* ── Left: 2/3 ── */}
@@ -79,23 +73,25 @@ export function ExploreHero({ trendingScenarios, featured }: ExploreHeroProps) {
         )}
       </div>
 
-      {/* ── Right: 1/3 — Social proof ── */}
+      {/* ── Right: 1/3 — Product capabilities ── */}
       <div className="flex flex-row lg:flex-col gap-3">
-        {/* Live listener count */}
+        {/* Live audio calls */}
         <div className="flex-1 lg:flex-none rounded-xl bg-card border border-border p-3 flex flex-col justify-center">
-          <div className="text-2xl font-black text-primary tabular-nums leading-none">
-            <LiveCounter />
-          </div>
-          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            en écoute
+            <span className="text-sm font-bold text-foreground">
+              Appels IA en direct
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Parle à des personnages IA en temps réel.
           </div>
         </div>
 
-        {/* Mini reaction stream */}
+        {/* Instant emoji reactions */}
         <div className="flex-1 lg:flex-none rounded-xl bg-card border border-border p-3 flex flex-col justify-center">
           <div className="flex items-center gap-1.5 flex-wrap">
             {reactionEmojis.map((emoji, i) => (
@@ -111,18 +107,18 @@ export function ExploreHero({ trendingScenarios, featured }: ExploreHeroProps) {
           </div>
           <div className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
             <Heart className="w-3 h-3" />
-            <span>La communauté réagit</span>
+            <span>Réactions instantanées pendant l&apos;appel</span>
           </div>
         </div>
 
-        {/* Daily created count */}
+        {/* Shareable clips */}
         <div className="flex-1 lg:flex-none rounded-xl bg-card border border-border p-3 flex flex-col justify-center">
-          <div className="text-2xl font-black tabular-nums leading-none">
-            {dailyCreated.toLocaleString("fr-FR")}
+          <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <MessageCircle className="w-4 h-4" />
+            Clips partageables
           </div>
-          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-            <MessageCircle className="w-3 h-3" />
-            scénarios créés aujourd&rsquo;hui
+          <div className="text-xs text-muted-foreground mt-1">
+            Extrais un moment et partage-le en un clic.
           </div>
         </div>
       </div>
