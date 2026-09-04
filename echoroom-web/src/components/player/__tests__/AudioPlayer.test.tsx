@@ -50,7 +50,7 @@ vi.mock("lucide-react", () => ({
 // Mock Button from UI
 // ---------------------------------------------------------------------------
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({
     children,
     disabled,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Button, Input, Skeleton, toast } from "@/components/ui";
+import { Button, Input, Skeleton, toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 interface ClipCreatorProps {

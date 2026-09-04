@@ -31,7 +31,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 // Mock Alert components (they have lucide icons and style)
-vi.mock("@/components/ui/alert", () => ({
+vi.mock("@echoroom/ui/alert", () => ({
   Alert: ({
     children,
     variant,

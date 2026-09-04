@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Copy, RotateCcw } from "lucide-react";
-import { Button, toast } from "@/components/ui";
+import { Button, toast } from "@echoroom/ui";
 
 export default function Error({
   error,

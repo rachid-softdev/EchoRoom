@@ -3,7 +3,7 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 export function MobileNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

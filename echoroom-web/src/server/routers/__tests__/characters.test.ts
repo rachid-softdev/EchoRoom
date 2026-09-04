@@ -107,10 +107,14 @@ describe("charactersRouter.list", () => {
     const result = await handler({ input: {} });
 
     expect(result).toEqual(MOCK_CHARACTERS);
-    expect(mockCharacterCache.getCachedCharacters).toHaveBeenCalledWith({});
+    // Cache is split by icon flag state: no userId in this test, so the
+    // deterministic free-tier bucket falls outside the 25% rollout => "off".
+    expect(mockCharacterCache.getCachedCharacters).toHaveBeenCalledWith({
+      iconFlag: "off",
+    });
     expect(mockDb.character.findMany).toHaveBeenCalledWith({
       // ICON category is hidden when the newCharacterCategory flag is disabled
-      // (public list has no tier context, so the flag evaluates as disabled).
+      // (anonymous visitor resolves to the free-tier bucket, outside rollout).
       where: { NOT: { category: "ICON" } },
       orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
       select: expect.objectContaining({
@@ -119,7 +123,10 @@ describe("charactersRouter.list", () => {
         slug: true,
       }),
     });
-    expect(mockCharacterCache.setCachedCharacters).toHaveBeenCalledWith(MOCK_CHARACTERS, {});
+    expect(mockCharacterCache.setCachedCharacters).toHaveBeenCalledWith(
+      MOCK_CHARACTERS,
+      { iconFlag: "off" },
+    );
   });
 
   it("should return cached characters on cache hit", async () => {

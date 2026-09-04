@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TranscriptView } from "../TranscriptView";
 
 // Mock Skeleton from UI
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Skeleton: ({ className, ...props }: { className?: string; [key: string]: unknown }) => (
     <div className={className} data-testid="skeleton" {...props} />
   ),

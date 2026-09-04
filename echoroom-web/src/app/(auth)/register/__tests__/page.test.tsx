@@ -84,7 +84,7 @@ vi.mock("@/components/shared/PasswordStrengthMeter", () => ({
 }));
 
 // Mock @/components/ui
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({ children, onClick, variant, className, disabled, type, ...props }: any) => (
     <button
       onClick={onClick}

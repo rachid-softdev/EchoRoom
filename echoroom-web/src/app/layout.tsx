@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ConsentBanner } from "@/components/shared/ConsentBanner";
 import { Footer } from "@/components/shared/Footer";
 import { PublicHeader } from "@/components/shared/PublicHeader";
-import { Toaster, ToastProvider } from "@/components/ui";
+import { Toaster, ToastProvider } from "@echoroom/ui";
 import { TRPCReactProvider } from "@/lib/trpc-provider";
 
 const inter = Inter({

@@ -34,7 +34,7 @@ vi.mock("@/components/shared/CreditDisplay", () => ({
 }));
 
 // Mock ThemeToggle
-vi.mock("@/components/ui/ThemeToggle", () => ({
+vi.mock("@echoroom/ui/ThemeToggle", () => ({
   ThemeToggle: () => <div data-testid="theme-toggle">Theme</div>,
 }));
 
@@ -44,7 +44,7 @@ vi.mock("@/components/shared/Breadcrumbs", () => ({
 }));
 
 // Mock Button and cn
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({
     children,
     variant,

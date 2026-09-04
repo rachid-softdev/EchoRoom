@@ -51,7 +51,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 // Mock toast
-vi.mock("@/components/ui", async (importOriginal) => {
+vi.mock("@echoroom/ui", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,

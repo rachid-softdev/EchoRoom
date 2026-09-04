@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Phone, Play } from "lucide-react";
-import { Badge, Button, cn } from "@/components/ui";
+import { Badge, Button, cn } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 import { LeaderboardTable } from "@/components/social/LeaderboardTable";
 import { BadgePreview } from "./BadgePreview";

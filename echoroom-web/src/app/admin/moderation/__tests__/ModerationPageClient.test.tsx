@@ -31,7 +31,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 // Mock toast from UI
-vi.mock("@/components/ui", async (importOriginal) => {
+vi.mock("@echoroom/ui", async (importOriginal) => {
   const mod = await importOriginal();
   return {
     ...(mod as any),
@@ -45,6 +45,8 @@ vi.mock("lucide-react", () => ({
   X: () => <svg data-testid="icon-x" />,
   AlertTriangle: () => <svg data-testid="icon-alert-triangle" />,
   RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
+  Loader2: () => <svg data-testid="icon-loader" />,
+  RefreshCw: () => <svg data-testid="icon-refresh-cw" />,
 }));
 
 // Mock CommentModerationTab

@@ -124,7 +124,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock @/components/ui
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Skeleton: ({ className, ...props }: any) => (
     <div data-testid="skeleton" className={className} {...props} />
   ),
@@ -142,7 +142,7 @@ vi.mock("@/components/shared/CreditDisplay", () => ({
 }));
 
 // Mock ThemeToggle (used in DashboardShell)
-vi.mock("@/components/ui/ThemeToggle", () => ({
+vi.mock("@echoroom/ui/ThemeToggle", () => ({
   ThemeToggle: () => <button type="button" data-testid="theme-toggle">Theme</button>,
 }));
 

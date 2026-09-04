@@ -31,11 +31,11 @@ vi.mock("lucide-react", () => ({
   LayoutDashboard: () => <svg data-testid="icon-layout-dashboard" />,
 }));
 
-vi.mock("@/components/ui/ThemeToggle", () => ({
+vi.mock("@echoroom/ui/ThemeToggle", () => ({
   ThemeToggle: () => <button type="button" data-testid="theme-toggle">Theme</button>,
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(" "),
 }));
 

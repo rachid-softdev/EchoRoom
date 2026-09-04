@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui";
+import { Input } from "@echoroom/ui";
 import { Search, Sparkles, X } from "lucide-react";
-import { cn } from "@/components/ui/lib";
+import { cn } from "@echoroom/ui/lib";
 
 interface ChaosSearchProps {
   value: string;

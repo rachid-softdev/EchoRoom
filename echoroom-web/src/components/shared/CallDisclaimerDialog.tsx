@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui";
+} from "@echoroom/ui";
 
 const STORAGE_KEY = "echoroom-call-disclaimer-accepted";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Trophy } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage, cn, Skeleton } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage, cn, Skeleton } from "@echoroom/ui";
 
 interface LeaderboardEntry {
   rank: number;

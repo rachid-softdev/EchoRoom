@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, MessageCircle, Music, Share2 } from "lucide-react";
-import { Button, toast } from "@/components/ui";
+import { Button, toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 interface ShareButtonsProps {

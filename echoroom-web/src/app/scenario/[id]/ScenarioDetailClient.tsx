@@ -8,7 +8,7 @@ import { ScenarioCard, type ScenarioCardData } from "@/components/shared/Scenari
 import { ReactionBar } from "@/components/social/ReactionBar";
 import { ReportButton } from "@/components/social/ReportButton";
 import { ShareButtons } from "@/components/social/ShareButtons";
-import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Skeleton } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Skeleton } from "@echoroom/ui";
 import { useUser } from "@/hooks";
 import { api } from "@/lib/trpc";
 

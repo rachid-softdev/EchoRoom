@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CallAudioVisualizer } from "@/components/landing/CallAudioVisualizer";
 import { FeaturedScenariosSection } from "@/components/landing/FeaturedScenariosSection";
 import { LiveCounter } from "@/components/landing/LiveCounter";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 /* ─── Static community data ───────────────────────────── */
 const TRENDING_SCENARIOS = [

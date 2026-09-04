@@ -2,7 +2,11 @@ import type { Character, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "../db";
 import { publicProcedure, router } from "../procedures";
-import { getCachedCharacters, setCachedCharacters } from "../services/cache/characterCache";
+import {
+  getCachedCharacters,
+  setCachedCharacters,
+  type CharacterCacheParams,
+} from "../services/cache/characterCache";
 import { isFeatureEnabled } from "@/config/featureFlags";
 
 type CachedCharacter = Pick<
@@ -28,18 +32,27 @@ export const charactersRouter = router({
         })
         .optional(),
     )
-    .query(async ({ input }) => {
-      const cacheParams = { ...(input?.category ? { category: input.category } : {}) };
+    .query(async ({ input, ctx }) => {
+      // The ICON category is gated behind the newCharacterCategory flag
+      // (all tiers, progressive rollout). `list` is a public procedure so the
+      // session is optional: authenticated users are bucketed per-user (stable
+      // 25% rollout); anonymous visitors fall back to the "free" tier seed
+      // (deterministic per-tier bucket). The flag applies to every tier, so a
+      // tier-less evaluation would always be disabled — which is why we never
+      // call isFeatureEnabled without a tier here.
+      const iconEnabled = isFeatureEnabled("newCharacterCategory", {
+        tier: "free",
+        ...(ctx?.session?.user?.id ? { userId: ctx.session.user.id } : {}),
+      });
+      // Split the shared cache by flag state so a user whose bucket sees ICON
+      // characters never receives the other bucket's cached list (and vice
+      // versa).
+      const cacheParams: CharacterCacheParams = {
+        ...(input?.category ? { category: input.category } : {}),
+        iconFlag: iconEnabled ? "on" : "off",
+      };
       const cached = await getCachedCharacters<CachedCharacter[]>(cacheParams);
       if (cached) return cached;
-
-      // The ICON category is gated behind the newCharacterCategory flag
-      // (all tiers, progressive rollout). When disabled, hide it from results.
-      // NOTE: `list` is a public procedure with no authenticated tier, so the
-      // flag is evaluated without a tier context (effectively disabled for
-      // anonymous callers). The per-user rollout is enforced where a tier is
-      // available (e.g. character creation).
-      const iconEnabled = isFeatureEnabled("newCharacterCategory", {});
       const base: Prisma.CharacterWhereInput = input?.category
         ? { category: input.category }
         : {};

@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/trpc";
-import { Badge, Skeleton } from "@/components/ui";
+import { Badge, Skeleton } from "@echoroom/ui";
 import { Medal } from "lucide-react";
 
 interface BadgePreviewProps {

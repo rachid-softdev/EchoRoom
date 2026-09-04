@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Avatar, AvatarFallback, AvatarImage, Button, Input, toast } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage, Button, Input, toast } from "@echoroom/ui";
 import { useUser } from "@/hooks";
 import { api } from "@/lib/trpc";
 

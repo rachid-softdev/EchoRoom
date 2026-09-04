@@ -45,7 +45,7 @@ vi.mock("@/lib/trpc", () => ({
   },
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Card: ({ children }: any) => <div data-testid="card">{children}</div>,
   CardContent: ({ children }: any) => <div>{children}</div>,
   CardHeader: ({ children }: any) => <div>{children}</div>,

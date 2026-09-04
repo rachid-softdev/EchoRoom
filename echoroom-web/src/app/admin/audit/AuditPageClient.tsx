@@ -3,7 +3,7 @@
 import { ScrollText } from "lucide-react";
 import { useState } from "react";
 import { DataLoader } from "@/components/shared/DataLoader";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 const actionOptions = [

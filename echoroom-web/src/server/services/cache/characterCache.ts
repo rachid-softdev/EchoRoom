@@ -8,6 +8,13 @@ const VERSION_KEY = "cache:characters:version";
 
 export interface CharacterCacheParams {
   category?: string;
+  /**
+   * Rollout variant of the `newCharacterCategory` flag. The ICON category is
+   * shown to a per-user rollout bucket, so the shared cache must be split by
+   * flag state — otherwise a bucket that sees ICON characters would leak them
+   * to a bucket that does not.
+   */
+  iconFlag?: "on" | "off";
 }
 
 async function getCacheVersion(): Promise<number> {
@@ -31,7 +38,8 @@ export async function invalidateCharacterCache(): Promise<void> {
 
 function buildCacheKey(params: CharacterCacheParams, version: number): string {
   const category = params.category ?? "all";
-  return `${CACHE_PREFIX}v${version}:${category}`;
+  const icon = params.iconFlag ? `:icon-${params.iconFlag}` : "";
+  return `${CACHE_PREFIX}v${version}:${category}${icon}`;
 }
 
 export async function getCachedCharacters<T>(params?: CharacterCacheParams): Promise<T | null> {

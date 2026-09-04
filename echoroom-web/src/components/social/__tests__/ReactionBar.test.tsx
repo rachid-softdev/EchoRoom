@@ -24,8 +24,8 @@ vi.mock("@/lib/trpc", () => ({
   },
 }));
 
-vi.mock("@/components/ui", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/components/ui")>();
+vi.mock("@echoroom/ui", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@echoroom/ui")>();
   return {
     ...actual,
     toast: vi.fn(),

@@ -1,3 +1,11 @@
+// Force test mode BEFORE anything else: the vitest main process (dep
+// optimizer + forked workers) inherits the shell's NODE_ENV, which on
+// developer machines can be "production" — that breaks node:crypto /
+// node:async_hooks resolution in the optimizer and the whole suite.
+// Setting it here (main process) covers both the optimizer and workers.
+// (Object.assign: process.env.NODE_ENV is typed readonly in @types/node.)
+Object.assign(process.env, { NODE_ENV: "test" });
+
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 

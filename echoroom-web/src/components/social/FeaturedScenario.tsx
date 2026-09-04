@@ -11,7 +11,7 @@ import {
   Card,
   CardContent,
   Skeleton,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 export function FeaturedScenario() {

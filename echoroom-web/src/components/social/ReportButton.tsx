@@ -13,7 +13,7 @@ import {
   DialogTrigger,
   Textarea,
   toast,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { MIN_REPORT_REASON_LENGTH } from "@/lib/constants";
 import { api } from "@/lib/trpc";
 

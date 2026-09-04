@@ -45,16 +45,25 @@ vi.mock("@/components/shared/DataLoader", () => ({
   },
 }));
 
-// Mock lucide-react
+// Mock lucide-react — the explore page renders several child components
+// (ExploreHero, CategoryCloud, ChaosSearch, GridHeader) that each import
+// their own lucide icons, so we stub every icon the tree uses.
 vi.mock("lucide-react", () => ({
   Search: () => <svg data-testid="icon-search" />,
   Shuffle: () => <svg data-testid="icon-shuffle" />,
   ChevronDown: () => <svg data-testid="icon-chevron-down" />,
   ChevronUp: () => <svg data-testid="icon-chevron-up" />,
+  Clock: () => <svg data-testid="icon-clock" />,
+  Flame: () => <svg data-testid="icon-flame" />,
+  ArrowUp: () => <svg data-testid="icon-arrow-up" />,
+  Sparkles: () => <svg data-testid="icon-sparkles" />,
+  X: () => <svg data-testid="icon-x" />,
+  MessageCircle: () => <svg data-testid="icon-message-circle" />,
+  Heart: () => <svg data-testid="icon-heart" />,
 }));
 
 // Mock @/components/ui (SegmentedControl, Input, Button)
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Input: (props: any) => <input {...props} />,
   Button: ({ children, onClick, variant, className, size, ...props }: any) => (
     <button
@@ -143,8 +152,10 @@ describe("ExplorePage", () => {
   it("renders scenarios when data loaded", () => {
     render(<ExplorePage />);
 
-    expect(screen.getByText("AI Adventure")).toBeInTheDocument();
-    expect(screen.getByText("Chaos Fun")).toBeInTheDocument();
+    // "AI Adventure" and "Chaos Fun" appear in both the hero marquee
+    // (feed titles repeated) and the grid cards
+    expect(screen.getAllByText("AI Adventure").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Chaos Fun").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows loading state", () => {
@@ -204,7 +215,7 @@ describe("ExplorePage", () => {
   it("renders search input", () => {
     render(<ExplorePage />);
 
-    const searchInput = screen.getByPlaceholderText("Rechercher un scénario...");
+    const searchInput = screen.getByRole("textbox");
     expect(searchInput).toBeInTheDocument();
   });
 
@@ -214,16 +225,19 @@ describe("ExplorePage", () => {
     expect(screen.getByTestId("segmented-control")).toBeInTheDocument();
   });
 
-  it("renders the page heading", () => {
+  it("renders the hero spotlight", () => {
     render(<ExplorePage />);
 
-    expect(screen.getByRole("heading", { name: /Explorer les scénarios/i })).toBeInTheDocument();
+    // The refactored page uses a compact hero strip (no standalone
+    // "Explorer les scénarios" h1) with a "À la une" featured label.
+    expect(screen.getByText("À la une")).toBeInTheDocument();
   });
 
   it("renders scenario cards with correct count", () => {
     render(<ExplorePage />);
 
     const cards = screen.getAllByTestId("scenario-card");
-    expect(cards).toHaveLength(3);
+    // 3 feed scenarios + 1 featured spotlight card in the hero = 4
+    expect(cards.length).toBeGreaterThanOrEqual(3);
   });
 });

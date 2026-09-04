@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DataLoader } from "@/components/shared/DataLoader";
-import { Badge, Button, Input, Textarea, toast } from "@/components/ui";
+import { Badge, Button, Input, Textarea, toast } from "@echoroom/ui";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";

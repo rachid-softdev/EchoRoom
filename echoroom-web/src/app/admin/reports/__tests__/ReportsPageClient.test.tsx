@@ -17,7 +17,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 // Mock toast from UI
-vi.mock("@/components/ui", async (importOriginal) => {
+vi.mock("@echoroom/ui", async (importOriginal) => {
   const mod = await importOriginal();
   return {
     ...(mod as any),
@@ -27,13 +27,23 @@ vi.mock("@/components/ui", async (importOriginal) => {
 
 // Mock lucide-react icons used by ReportsPageClient and DataLoader
 vi.mock("lucide-react", () => ({
-  Flag: () => <svg data-testid="icon-flag" />,
-  Check: () => <svg data-testid="icon-check" />,
-  AlertTriangle: () => <svg data-testid="icon-alert-triangle" />,
-  RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
+  Flag: (props: any) => <svg data-testid="icon-flag" className={props?.className} />,
+  Check: (props: any) => <svg data-testid="icon-check" className={props?.className} />,
+  AlertTriangle: (props: any) => (
+    <svg data-testid="icon-alert-triangle" className={props?.className} />
+  ),
+  RotateCcw: (props: any) => (
+    <svg data-testid="icon-rotate-ccw" className={props?.className} />
+  ),
+  Loader2: (props: any) => (
+    <svg data-testid="icon-loader" className={props?.className} />
+  ),
+  RefreshCw: (props: any) => (
+    <svg data-testid="icon-refresh" className={props?.className} />
+  ),
 }));
 
-import { toast } from "@/components/ui";
+import { toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 import ReportsPageClient from "../ReportsPageClient";
 
@@ -113,7 +123,7 @@ describe("ReportsPageClient", () => {
   // Loading state
   // -----------------------------------------------------------------------
 
-  it("should show loading skeleton when data is loading", () => {
+  it("should show loading spinner when data is loading", () => {
     mockReportsQuery.mockReturnValue({
       isLoading: true,
       data: undefined,
@@ -124,8 +134,9 @@ describe("ReportsPageClient", () => {
 
     render(<ReportsPageClient />);
 
-    const skeletons = document.querySelectorAll(".animate-pulse");
-    expect(skeletons.length).toBeGreaterThan(0);
+    // PaginatedDataLoader renders a spinner (Loader2 with animate-spin) while loading
+    const spinners = document.querySelectorAll(".animate-spin");
+    expect(spinners.length).toBeGreaterThan(0);
   });
 
   // -----------------------------------------------------------------------
@@ -215,12 +226,12 @@ describe("ReportsPageClient", () => {
   });
 
   it("should change active filter when clicked", () => {
-    mockReportsQuery.mockImplementation(() => ({
+    mockReportsQuery.mockReturnValue({
       isLoading: false,
       data: { items: [] },
       isError: false,
       refetch: vi.fn(),
-    }));
+    });
 
     render(<ReportsPageClient />);
 

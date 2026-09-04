@@ -121,7 +121,7 @@ describe("TRPCReactProvider", () => {
     const source = fs.readFileSync(sourcePath, "utf-8");
 
     // Must check NEXT_PUBLIC_APP_URL when window is undefined
-    expect(source).toContain("process.env['NEXT_PUBLIC_APP_URL']");
+    expect(source).toMatch(/process\.env\[['"]NEXT_PUBLIC_APP_URL['"]\]/);
     // Fallback to localhost when not set server-side
     expect(source).toContain('return "http://localhost:3000"');
   });

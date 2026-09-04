@@ -1,7 +1,7 @@
 import { ArrowUpRight, BarChart3, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@echoroom/ui";
 
 export const metadata: Metadata = {
   title: "Admin — Analytiques — EchoRoom AI",

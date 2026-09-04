@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "@/components/ui";
+import { toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 import { EmojiPicker } from "./EmojiPicker";
 

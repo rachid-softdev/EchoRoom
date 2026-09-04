@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@echoroom/ui/ThemeToggle";
 
 export function PublicHeader() {
   const pathname = usePathname();

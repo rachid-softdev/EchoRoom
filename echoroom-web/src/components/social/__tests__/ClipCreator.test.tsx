@@ -35,7 +35,7 @@ vi.mock("lucide-react", () => ({
 
 const mockToast = vi.hoisted(() => vi.fn());
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Input: (props: Record<string, unknown>) => <input {...props} />,
   Button: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
     <button {...props}>{children}</button>

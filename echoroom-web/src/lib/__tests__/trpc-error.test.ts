@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock the toast function
 const mockToast = vi.fn();
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   toast: mockToast,
 }));
 

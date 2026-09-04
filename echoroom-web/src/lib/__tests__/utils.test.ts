@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 // cn() utility tests
 // ---------------------------------------------------------------------------
 // Tests for src/lib/utils.ts which re-exports the cn() function from
-// @/components/ui/lib. cn() combines clsx and tailwind-merge to merge
+// @echoroom/ui. cn() combines clsx and tailwind-merge to merge
 // Tailwind CSS classes with conflict resolution.
 
 describe("cn — class name utility", () => {

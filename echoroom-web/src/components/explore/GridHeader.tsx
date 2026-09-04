@@ -1,8 +1,8 @@
 "use client";
 
 import { Shuffle } from "lucide-react";
-import { Button } from "@/components/ui";
-import { cn } from "@/components/ui/lib";
+import { Button } from "@echoroom/ui";
+import { cn } from "@echoroom/ui/lib";
 
 interface GridHeaderProps {
   resultCount: number;

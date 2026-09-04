@@ -54,7 +54,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock @/components/ui (Badge, Button, Card, etc.)
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Badge: ({ children, variant, className, ...props }: any) => (
     <span data-variant={variant} className={className} {...props}>
       {children}
@@ -147,7 +147,7 @@ describe("PricingPage", () => {
 
     // Session loading should still render plan prices
     expect(screen.getByText("Gratuit")).toBeInTheDocument();
-    expect(screen.getByText(/9,99/)).toBeInTheDocument();
-    expect(screen.getByText(/24,99/)).toBeInTheDocument();
+    expect(screen.getByText("9,99 €")).toBeInTheDocument();
+    expect(screen.getByText("24,99 €")).toBeInTheDocument();
   });
 });

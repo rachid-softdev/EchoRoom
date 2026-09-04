@@ -13,7 +13,7 @@ vi.mock("next-auth/react", () => ({
 }));
 
 // Mock Tooltip to render its children and make content available for testing
-vi.mock("@/components/ui/tooltip", () => ({
+vi.mock("@echoroom/ui/tooltip", () => ({
   Tooltip: ({
     children,
     content,
@@ -29,7 +29,7 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Badge: ({
     children,
     variant,

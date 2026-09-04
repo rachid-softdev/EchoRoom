@@ -3,6 +3,7 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: [
     "./src/**/*.{ts,tsx}",
+    "../packages/echoroom-ui/src/**/*.{ts,tsx}",
   ],
   darkMode: "class",
   theme: {
@@ -29,6 +30,16 @@ const config: Config = {
           DEFAULT: "var(--destructive)",
           foreground: "var(--destructive-foreground)",
         },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        input: "var(--input)",
+        ring: "var(--ring)",
       },
       fontSize: {
         'fluid-hero': 'clamp(2.5rem, 5vw, 4.5rem)',    // 40px → 72px fluid

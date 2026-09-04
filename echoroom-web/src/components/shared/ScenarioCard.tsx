@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
   toast,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { CATEGORY_LABELS } from "@/lib/constants";
 
 /**

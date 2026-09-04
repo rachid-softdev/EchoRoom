@@ -1,2 +1,2 @@
-export { cn } from "../components/ui/lib";
+export { cn } from "@echoroom/ui";
 export { formatDate, formatDuration } from "./constants";

@@ -63,7 +63,7 @@ vi.mock("lucide-react", () => ({
   Sparkles: () => <svg data-testid="icon-sparkles" />,
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({ children, onClick, disabled, type, className, ...props }: any) => (
     <button onClick={onClick} disabled={disabled} type={type} className={className} {...props}>
       {children}

@@ -20,7 +20,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@/components/ui/ThemeToggle", () => ({
+vi.mock("@echoroom/ui/ThemeToggle", () => ({
   ThemeToggle: () => <div data-testid="theme-toggle" />,
 }));
 

@@ -15,7 +15,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
 }));
 

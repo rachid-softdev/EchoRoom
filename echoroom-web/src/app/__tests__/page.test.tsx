@@ -41,7 +41,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock Button component
-vi.mock("@/components/ui", () => ({
+vi.mock("@echoroom/ui", () => ({
   Button: ({
     children,
     variant,

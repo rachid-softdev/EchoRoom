@@ -116,7 +116,7 @@ export async function loadFlagOverridesFromDb(): Promise<void> {
   // Skip DB-backed overrides there; isFeatureEnabled falls back to config
   // defaults (and the FF_*/FEATURE_FLAGS env overrides), which is correct
   // for middleware evaluation.
-  if (process.env.NEXT_RUNTIME === "edge") return;
+  if (process.env["NEXT_RUNTIME"] === "edge") return;
   // Dynamic import avoids a static dependency cycle with the DB module.
   const { db } = await import("@/server/db");
   const rows = await db.featureFlagOverride.findMany();
@@ -178,8 +178,15 @@ function passesRollout(seed: string, ctx: FeatureContext, rollout: number): bool
  *
  * Precedence (highest first):
  *   1. Individual `FF_<NAME>` env var (quick kill-switch: true/false/1/0/yes/no).
- *   2. `FEATURE_FLAGS` JSON env (global boolean or targeted {tiers, rollout}).
- *   3. Config defaults (defaultEnabled + enabledTiers + rollout%).
+ *   2. Runtime admin override (DB-backed, set via admin.setFeatureFlagOverride).
+ *   3. `FEATURE_FLAGS` JSON env (global boolean or targeted {tiers, rollout}).
+ *   4. Config defaults (defaultEnabled + enabledTiers + rollout%).
+ *
+ * Ultra rule: the highest tier (ultra) can access every feature. Tier
+ * restrictions (enabledTiers / targeted tiers) and rollout percentages never
+ * apply to ultra — only the hard controls above (FF_* kill-switch, admin DB
+ * override, global JSON boolean) and the flag's master `defaultEnabled`
+ * switch can still disable a feature for ultra.
  *
  * On the client, `process.env.FF_*` / `FEATURE_FLAGS` are undefined, so only
  * config defaults apply — the authoritative gate always remains server-side.
@@ -202,12 +209,16 @@ export function isFeatureEnabled(flag: FeatureFlagId, ctx?: FeatureContext): boo
   if (jsonOverride) {
     if (jsonOverride.kind === "global") return jsonOverride.enabled;
     if (!ctx?.tier) return false;
+    // Highest tier bypasses targeted tiers + rollout (see "Ultra rule" above).
+    if (ctx.tier === "ultra") return true;
     if (!jsonOverride.tiers.includes(ctx.tier)) return false;
     return passesRollout(flag, ctx, jsonOverride.rollout);
   }
 
   if (!config.defaultEnabled) return false;
   if (!ctx?.tier) return false;
+  // Highest tier bypasses enabledTiers + rollout (see "Ultra rule" above).
+  if (ctx.tier === "ultra") return true;
   if (!config.enabledTiers.includes(ctx.tier)) return false;
   return passesRollout(flag, ctx, config.rollout);
 }

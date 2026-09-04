@@ -13,7 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui";
+} from "@echoroom/ui";
 import { PRICING_CONFIG, type PlanTier } from "@/config/pricing";
 import { api } from "@/lib/trpc";
 import { useApiToast } from "@/lib/trpc-error";

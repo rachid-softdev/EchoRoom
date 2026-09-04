@@ -2,7 +2,7 @@
 
 import { Scissors } from "lucide-react";
 import { useState } from "react";
-import { Button, Input, toast } from "@/components/ui";
+import { Button, Input, toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 
 interface ClipCreatorProps {

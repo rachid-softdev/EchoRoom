@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, RotateCcw } from "lucide-react";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, Skeleton } from "@echoroom/ui";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { api } from "@/lib/trpc";
 import { FeaturedScenario } from "@/components/social/FeaturedScenario";

@@ -4,7 +4,7 @@ import { AlertTriangle, Check, X } from "lucide-react";
 import { useState } from "react";
 import { CommentModerationTab } from "@/components/admin/CommentModerationTab";
 import { PaginatedDataLoader } from "@/components/shared/PaginatedDataLoader";
-import { Badge, Button, Card, CardContent, toast } from "@/components/ui";
+import { Badge, Button, Card, CardContent, toast } from "@echoroom/ui";
 import { usePaginatedQuery } from "@/hooks/usePaginatedQuery";
 import { api } from "@/lib/trpc";
 

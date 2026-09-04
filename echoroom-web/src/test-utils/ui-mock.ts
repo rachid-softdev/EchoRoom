@@ -54,13 +54,13 @@ function createComponentStub(displayName: string, defaultTag = "div"): MockCompo
  * Usage — spread into a `vi.mock()` factory:
  *
  * ```ts
- * vi.mock("@/components/ui", () => UIComponentStubs);
+ * vi.mock("@echoroom/ui", () => UIComponentStubs);
  * ```
  *
  * To override a specific component for a single test, use `createUIMock`:
  *
  * ```ts
- * vi.mock("@/components/ui", () => createUIMock({
+ * vi.mock("@echoroom/ui", () => createUIMock({
  *   Button: ({ children }) => <button data-testid="custom-btn">{children}</button>,
  * }));
  * ```
@@ -100,7 +100,7 @@ export const UIComponentStubs = {
  * @param overrides - A map of component names to their substitute stubs.
  *
  * @example
- *   vi.mock("@/components/ui", () => createUIMock({
+ *   vi.mock("@echoroom/ui", () => createUIMock({
  *     Button: ({ children }) => <button data-testid="my-btn">{children}</button>,
  *   }));
  */

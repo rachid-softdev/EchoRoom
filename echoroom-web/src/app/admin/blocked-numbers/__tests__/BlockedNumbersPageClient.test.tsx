@@ -20,7 +20,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 // Mock toast from UI
-vi.mock("@/components/ui", async (importOriginal) => {
+vi.mock("@echoroom/ui", async (importOriginal) => {
   const mod = await importOriginal();
   return {
     ...(mod as any),
@@ -37,7 +37,7 @@ vi.mock("lucide-react", () => ({
   RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
 }));
 
-import { toast } from "@/components/ui";
+import { toast } from "@echoroom/ui";
 import { api } from "@/lib/trpc";
 import BlockedNumbersPageClient from "../BlockedNumbersPageClient";
 

@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui";
+import { Button } from "@echoroom/ui";
 
 interface PaginatedQueryResult<T> {
   items: T[];

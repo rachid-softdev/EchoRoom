@@ -15,7 +15,7 @@ vi.mock("@/server/db", () => ({
     },
     userProfile: { upsert: vi.fn() },
     scenario: { findMany: vi.fn() },
-    call: { findMany: vi.fn() },
+    call: { findMany: vi.fn(), findFirst: vi.fn() },
     comment: { findMany: vi.fn() },
     purchase: { findMany: vi.fn() },
     $transaction: vi.fn(),

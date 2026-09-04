@@ -46,9 +46,11 @@ vi.mock("lucide-react", () => ({
   Zap: () => <svg data-testid="icon-zap" />,
   MessageCircle: () => <svg data-testid="icon-message-circle" />,
   Flame: () => <svg data-testid="icon-flame" />,
+  AlertTriangle: () => <svg data-testid="icon-alert-triangle" />,
+  RotateCcw: () => <svg data-testid="icon-rotate-ccw" />,
 }));
 
-// Mock sub-components used by dashboard
+// Mock sub-components that call tRPC / use browser APIs
 vi.mock("@/components/shared/DashboardShell", () => ({
   DashboardShell: ({ children, title }: { children: React.ReactNode; title: string }) => (
     <div data-testid="dashboard-shell" data-title={title}>
@@ -61,14 +63,35 @@ vi.mock("@/components/social/FeaturedScenario", () => ({
   FeaturedScenario: () => <div data-testid="featured-scenario" />,
 }));
 
-vi.mock("@/components/social/BadgeGrid", () => ({
-  BadgeGrid: ({ userId }: { userId: string }) => (
-    <div data-testid="badge-grid" data-user-id={userId} />
+vi.mock("@/components/dashboard/TrendingFeed", () => ({
+  TrendingFeed: () => <div data-testid="trending-feed" />,
+}));
+
+vi.mock("@/components/dashboard/OnboardingSequence", () => ({
+  OnboardingSequence: ({ callsCount, scenariosCount }: any) => (
+    <div
+      data-testid="onboarding"
+      data-calls={callsCount}
+      data-scenarios={scenariosCount}
+    />
   ),
 }));
 
-// Mock @/components/ui (Card, Badge, Button)
-vi.mock("@/components/ui", () => ({
+vi.mock("@/components/dashboard/SideWidgets", () => ({
+  SideWidgets: ({ userId, recentCalls }: any) => (
+    <div data-testid="side-widgets" data-user-id={userId}>
+      {(recentCalls ?? []).map((c: any) => (
+        <div key={c.id} data-testid="recent-call">
+          <span>{c.scenario?.title}</span>
+          {c.status === "COMPLETED" && <a href={`/call/${c.id}`}>replay</a>}
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
+// Mock @/components/ui (Card, Badge, Button, Skeleton, etc.)
+vi.mock("@echoroom/ui", () => ({
   Badge: ({ children, variant, className, ...props }: any) => (
     <span data-variant={variant} className={className} {...props}>
       {children}
@@ -109,6 +132,9 @@ vi.mock("@/components/ui", () => ({
     <h3 className={className} {...props}>
       {children}
     </h3>
+  ),
+  Skeleton: ({ className, ...props }: any) => (
+    <div data-testid="skeleton" className={className} {...props} />
   ),
 }));
 
@@ -158,10 +184,18 @@ describe("DashboardPage", () => {
     });
   });
 
+  it("renders the Chaos HQ dashboard shell", () => {
+    render(<DashboardPage />);
+    expect(screen.getByTestId("dashboard-shell")).toHaveAttribute(
+      "data-title",
+      "Chaos HQ",
+    );
+  });
+
   it("shows actual credits when loaded", () => {
     render(<DashboardPage />);
-
-    expect(screen.getByText("15")).toBeInTheDocument();
+    // EnergyBar renders the credits count
+    expect(screen.getByText(/15 crédits/)).toBeInTheDocument();
   });
 
   it("shows recent calls list", () => {
@@ -179,19 +213,17 @@ describe("DashboardPage", () => {
     expect(replayLinks.length).toBeGreaterThan(0);
   });
 
-  it("renders quick action cards", () => {
+  it("renders dashboard widget sections", () => {
     render(<DashboardPage />);
 
-    const nouvelAppel = screen.getAllByText(/nouvel appel/i);
-    expect(nouvelAppel.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/bibliothèque/i)).toBeInTheDocument();
-    const communaute = screen.getAllByText(/communauté/i);
-    expect(communaute.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("featured-scenario")).toBeInTheDocument();
+    expect(screen.getByTestId("trending-feed")).toBeInTheDocument();
+    expect(screen.getByTestId("side-widgets")).toBeInTheDocument();
   });
 
   // ── Loading state ────────────────────────────────────────────
 
-  it("shows 0 credits while loading", () => {
+  it("shows skeletons while loading", () => {
     mockDashboardQuery.mockReturnValue({
       isLoading: true,
       data: undefined,
@@ -200,56 +232,37 @@ describe("DashboardPage", () => {
 
     render(<DashboardPage />);
 
-    // Defaults to 0 when loading — use getAllByText since "0" may appear in other elements too
-    expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId("skeleton").length).toBeGreaterThanOrEqual(1);
   });
 
   // ── Error state ──────────────────────────────────────────────
 
-  it("shows 0 credits when query has error", () => {
+  it("shows error state when query fails", () => {
     mockDashboardQuery.mockReturnValue({
       isLoading: false,
       data: undefined,
       isError: true,
-      error: { message: "Error" },
+      error: { message: "Erreur réseau" },
     });
 
     render(<DashboardPage />);
 
-    expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByTestId("dashboard-shell")).toHaveAttribute("data-title", "Dashboard");
-  });
-
-  // ── Empty calls state ────────────────────────────────────────
-
-  it("shows empty calls state when no calls", () => {
-    mockDashboardQuery.mockReturnValue({
-      isLoading: false,
-      data: {
-        credits: 15,
-        todayCount: 0,
-        calls: [],
-        scenarios: [],
-      },
-      isError: false,
-    });
-
-    render(<DashboardPage />);
-
-    expect(screen.getByText("Pas encore d'appels")).toBeInTheDocument();
     expect(
-      screen.getByText("Lance-toi ! Crée un scénario absurde et partage-le avec la communauté."),
+      screen.getByText("Impossible de charger votre tableau de bord"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Créer mon premier scénario")).toBeInTheDocument();
+    expect(screen.getByText("Erreur réseau")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /réessayer/i }),
+    ).toBeInTheDocument();
   });
 
-  // ── Empty scenarios ──────────────────────────────────────────
+  // ── New user (onboarding) ──────────────────────────────────
 
-  it("shows create-first link when no scenarios created", () => {
+  it("shows onboarding sequence for a brand-new user", () => {
     mockDashboardQuery.mockReturnValue({
       isLoading: false,
       data: {
-        credits: 15,
+        credits: 0,
         todayCount: 0,
         calls: [],
         scenarios: [],
@@ -259,16 +272,17 @@ describe("DashboardPage", () => {
 
     render(<DashboardPage />);
 
-    expect(screen.getByText("Créer mon premier →")).toBeInTheDocument();
+    expect(screen.getByTestId("onboarding")).toBeInTheDocument();
   });
 
-  it("hides create-first link when user has scenarios", () => {
+  it("hides onboarding when user has scenarios", () => {
     render(<DashboardPage />); // has scenarios: [{ id: "s-1", title: "My Scenario" }]
 
-    expect(screen.queryByText("Créer mon premier →")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("onboarding")).not.toBeInTheDocument();
+    expect(screen.getByTestId("featured-scenario")).toBeInTheDocument();
   });
 
-  // ── Today count ──────────────────────────────────────────────
+  // ── Today count (EnergyBar) ───────────────────────────────
 
   it("shows encouragement message when todayCount > 0", () => {
     mockDashboardQuery.mockReturnValue({
@@ -283,11 +297,10 @@ describe("DashboardPage", () => {
     });
 
     render(<DashboardPage />);
-
     expect(screen.getByText("Bien joué !")).toBeInTheDocument();
   });
 
-  it("shows different message when todayCount > 5", () => {
+  it("shows 'En feu !' message when todayCount > 5", () => {
     mockDashboardQuery.mockReturnValue({
       isLoading: false,
       data: {
@@ -300,11 +313,10 @@ describe("DashboardPage", () => {
     });
 
     render(<DashboardPage />);
-
-    expect(screen.getByText("En pleine forme !")).toBeInTheDocument();
+    expect(screen.getByText("En feu !")).toBeInTheDocument();
   });
 
-  it("does not show encouragement when todayCount is 0", () => {
+  it("shows 'Prêt à lancer ?' when todayCount is 0", () => {
     mockDashboardQuery.mockReturnValue({
       isLoading: false,
       data: {
@@ -317,25 +329,22 @@ describe("DashboardPage", () => {
     });
 
     render(<DashboardPage />);
-
+    expect(screen.getByText("Prêt à lancer ?")).toBeInTheDocument();
     expect(screen.queryByText("Bien joué !")).not.toBeInTheDocument();
-    expect(screen.queryByText("En pleine forme !")).not.toBeInTheDocument();
   });
 
-  // ── Badges section ───────────────────────────────────────────
+  // ── Side widgets / badges ───────────────────────────────────
 
-  it("renders BadgeGrid when session has user id", () => {
-    mockUseSession.mockReturnValue({
-      data: { user: { id: "u-1", credits: 15 } },
-      status: "authenticated",
-    });
-
+  it("renders side widgets with the session user id", () => {
     render(<DashboardPage />);
 
-    expect(screen.getByTestId("badge-grid")).toHaveAttribute("data-user-id", "u-1");
+    expect(screen.getByTestId("side-widgets")).toHaveAttribute(
+      "data-user-id",
+      "u-1",
+    );
   });
 
-  it("shows login message when session has no user id", () => {
+  it("renders side widgets without user id when unauthenticated", () => {
     mockUseSession.mockReturnValue({
       data: { user: null },
       status: "unauthenticated",
@@ -343,7 +352,8 @@ describe("DashboardPage", () => {
 
     render(<DashboardPage />);
 
-    expect(screen.getByText("Connectez-vous pour voir vos badges")).toBeInTheDocument();
-    expect(screen.queryByTestId("badge-grid")).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("side-widgets"),
+    ).not.toHaveAttribute("data-user-id");
   });
 });
