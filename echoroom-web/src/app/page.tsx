@@ -1,8 +1,7 @@
-import { Headphones, MessageCircle, Share2, Shield, Sparkles, Users, Zap } from "lucide-react";
+import { Headphones, MessageCircle, Share2, Shield, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { CallAudioVisualizer } from "@/components/landing/CallAudioVisualizer";
 import { FeaturedScenariosSection } from "@/components/landing/FeaturedScenariosSection";
-import { LiveCounter } from "@/components/landing/LiveCounter";
 import { Button } from "@/components/ui";
 
 /* ─── Static community data ───────────────────────────── */
@@ -24,7 +23,7 @@ const FEATURES_HERO = [
     icon: MessageCircle,
     title: "Réactions en direct",
     description:
-      "Jusqu'à des milliers d'auditeurs peuvent écouter ton appel en direct, réagir avec des emojis et voter pour la suite de la conversation.",
+      "Les auditeurs peuvent écouter ton appel en direct, réagir avec des emojis et voter pour la suite de la conversation.",
     visual: "reactions",
   },
 ] as const;
@@ -111,10 +110,9 @@ function LiveCallPreview() {
 
         {/* Listener bar */}
         <div className="flex items-center gap-3 border-t border-border bg-muted/30 px-5 py-3">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Users className="w-3.5 h-3.5" />
-            <LiveCounter className="tabular-nums" />
-            <span>auditeurs</span>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+            <div className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse-soft" />
+            En direct
           </div>
           <div className="flex -space-x-1.5">
             {["bg-primary", "bg-destructive/70", "bg-cyan-400", "bg-white/30"].map((color, i) => (
@@ -133,21 +131,26 @@ function CommunityProofStrip() {
     <section className="border-y border-border">
       <div className="max-w-6xl mx-auto px-6 py-5">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-          {/* Live counter */}
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-soft" />
-              <span className="text-primary font-semibold tabular-nums">
-                <LiveCounter />
-              </span>
-              <span className="text-muted-foreground">en écoute</span>
-            </div>
+          {/* Product capabilities — no fabricated live stats */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span>🎙️</span> Appels IA en direct
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span>💬</span> Réactions emoji
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span>📤</span> Clips partageables
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span>🎁</span> 5 crédits offerts
+            </span>
           </div>
 
           {/* Trending scenarios */}
           <div className="flex items-center gap-2 text-muted-foreground">
-            <span className="hidden sm:inline">🔥 En tendance :</span>
-            <span className="sm:hidden">🔥</span>
+            <span className="hidden sm:inline">Scénarios :</span>
+            <span className="sm:hidden">📚</span>
             <div className="flex items-center gap-3 flex-wrap">
               {TRENDING_SCENARIOS.map((name) => (
                 <span
@@ -158,13 +161,6 @@ function CommunityProofStrip() {
                 </span>
               ))}
             </div>
-          </div>
-
-          {/* Reactions */}
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span>💬</span>
-            <span className="tabular-nums font-semibold text-foreground/80">12.4k</span>
-            <span className="hidden sm:inline">réactions aujourd&rsquo;hui</span>
           </div>
         </div>
       </div>
@@ -207,26 +203,19 @@ function HeroFeatureCard({
           <div className="relative rounded-2xl border border-border bg-card overflow-hidden">
             {/* Reaction stream preview */}
             <div className="px-5 py-4 border-b border-border">
-              <p className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
-                Reaction Feed
-              </p>
+<p className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
+                  Flux de réactions
+                </p>
             </div>
             <div className="space-y-3 px-5 py-4">
-              {[
-                { emoji: "😂", user: "tiktok_user_42", count: "2.3k" },
-                { emoji: "💀", user: "discord_npc", count: "1.8k" },
-                { emoji: "🔥", user: "chaos_creator", count: "956" },
-              ].map((reaction) => (
+              {["😂", "💀", "🔥", "😭", "👀"].map((emoji) => (
                 <div
-                  key={reaction.user}
-                  className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 hover:bg-muted/60 transition-colors duration-150"
+                  key={emoji}
+                  className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 animate-fade-in"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{reaction.emoji}</span>
-                    <span className="text-sm text-muted-foreground">@{reaction.user}</span>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums text-foreground/80">
-                    {reaction.count}
+                  <span className="text-lg">{emoji}</span>
+                  <span className="text-xs text-muted-foreground">
+                    &mdash; un auditeur réagit en direct
                   </span>
                 </div>
               ))}
@@ -317,23 +306,6 @@ export default function HomePage() {
               </div>
 
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <span
-                  className="inline-flex items-center gap-0.5"
-                  role="img"
-                  aria-label="5 étoiles"
-                >
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg
-                      key={i}
-                      className="w-3.5 h-3.5 text-primary"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </span>
                 5 crédits offerts &middot; Sans engagement &middot; Annulation à tout moment
               </p>
             </div>
@@ -381,8 +353,8 @@ export default function HomePage() {
             Prêt à faire du <span className="text-primary">bruit</span> ?
           </h2>
           <p className="text-muted-foreground leading-relaxed max-w-lg mx-auto mb-10 text-pretty">
-            Rejoins les milliers de créateurs qui utilisent déjà EchoRoom pour générer des appels IA
-            viraux. Ton premier appel est offert.
+            Crée ton premier appel IA et écoute les réactions en direct. 5 crédits offerts, sans
+            carte bancaire.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3">
             <Link href="/register">
